@@ -1,8 +1,10 @@
 import logging
 import os
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from urllib.parse import quote
 
 import jwt
 from fastapi import (
@@ -19,15 +21,27 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from content import STATUS_LABELS
 from db import (
     applications_col,
+    articles_col,
     contact_col,
     email_outbox_col,
+    notifications_col,
     payments_col,
     serialize_doc,
+    settings_col,
+    testimonials_col,
     uploads_col,
     visa_types_col,
 )
 from emailer import send_email, status_change_html, visa_ready_html
-from models import AdminLogin, SendVisaRequest, StatusUpdate
+from models import (
+    AdminLogin,
+    ArticleIn,
+    ReviewSummaryIn,
+    SendVisaRequest,
+    StatusUpdate,
+    TestimonialIn,
+    WhatsAppRequest,
+)
 from storage import APP_NAME, MIME_TYPES, put_object
 
 logger = logging.getLogger(__name__)
@@ -351,6 +365,196 @@ async def admin_emails(admin=Depends(require_admin), limit: int = Query(50, ge=1
     docs = await email_outbox_col.find({}).sort("created_at", -1).limit(limit).to_list(limit)
     configured = bool((os.environ.get("RESEND_API_KEY") or "").strip())
     return {"email_configured": configured, "items": serialize_doc(docs)}
+
+
+# ------------------------------------------------------- WhatsApp bildirimi
+def _wa_number(raw: str) -> str:
+    digits = re.sub(r"\D", "", raw or "")
+    if not digits:
+        return ""
+    if digits.startswith("00"):
+        digits = digits[2:]
+    if digits.startswith("0"):
+        digits = "90" + digits[1:]
+    if len(digits) == 10:
+        digits = "90" + digits
+    return digits
+
+
+@router.post("/admin/applications/{application_id}/whatsapp")
+async def admin_whatsapp_link(
+    application_id: str,
+    payload: WhatsAppRequest,
+    request: Request,
+    admin=Depends(require_admin),
+):
+    """Musteriye WhatsApp'tan gonderilecek hazir mesaji ve wa.me linkini uretir."""
+    app_doc = await applications_col.find_one({"id": application_id})
+    if not app_doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    phone = (app_doc.get("contact") or {}).get("phone") or ""
+    number = _wa_number(phone)
+    if not number:
+        raise HTTPException(400, "Basvuruda gecerli bir telefon numarasi bulunamadi.")
+
+    origin = (payload.origin_url or "").rstrip("/")
+    if not origin.startswith("http"):
+        origin = str(request.base_url).rstrip("/")
+    ref = app_doc.get("reference_code", "")
+    name = (app_doc.get("contact") or {}).get("full_name", "")
+    track_url = f"{origin}/takip?kod={ref}"
+    vr = app_doc.get("visa_result") or {}
+
+    if payload.message:
+        message = payload.message
+    elif payload.template == "visa_ready" and vr.get("file_id"):
+        message = (
+            f"Merhaba {name}, VizeAtlas Dubai'den yaziyoruz. "
+            f"{ref} numarali basvurunuz ONAYLANDI. Vize belgenizi e-postanizdan veya "
+            f"su adresten indirebilirsiniz: {origin}/api/files/{vr['file_id']}?download=1 "
+            f"Iyi yolculuklar dileriz."
+        )
+    elif payload.template == "documents_pending":
+        message = (
+            f"Merhaba {name}, {ref} numarali Dubai vize basvurunuzda eksik belge bulunuyor. "
+            f"Detaylar icin takip sayfaniz: {track_url}"
+        )
+    elif payload.template == "payment_pending":
+        message = (
+            f"Merhaba {name}, {ref} numarali basvurunuzun odemesi henuz tamamlanmadi. "
+            f"Odemenizi su adresten tamamlayabilirsiniz: {track_url}"
+        )
+    else:
+        message = (
+            f"Merhaba {name}, {ref} numarali Dubai vize basvurunuz hakkinda bilgi vermek istiyoruz. "
+            f"Takip sayfaniz: {track_url}"
+        )
+
+    url = f"https://wa.me/{number}?text={quote(message)}"
+    now = datetime.now(timezone.utc)
+    await notifications_col.insert_one(
+        {
+            "id": str(uuid.uuid4()),
+            "channel": "whatsapp",
+            "application_id": application_id,
+            "reference_code": ref,
+            "to": number,
+            "template": payload.template,
+            "message": message,
+            "created_at": now,
+            "created_by": admin.get("sub"),
+        }
+    )
+    return {"url": url, "message": message, "phone": number}
+
+
+# --------------------------------------------------------- musteri yorumlari
+@router.get("/admin/testimonials")
+async def admin_list_testimonials(admin=Depends(require_admin)):
+    docs = await testimonials_col.find({}).sort("order", 1).to_list(200)
+    summary = await settings_col.find_one({"key": "review_summary"})
+    return {
+        "items": serialize_doc(docs),
+        "review_summary": (summary or {}).get("value") or {},
+    }
+
+
+@router.post("/admin/testimonials")
+async def admin_create_testimonial(payload: TestimonialIn, admin=Depends(require_admin)):
+    now = datetime.now(timezone.utc)
+    doc = payload.model_dump()
+    if not doc.get("initials"):
+        parts = [p for p in doc["name"].split() if p]
+        doc["initials"] = "".join(p[0] for p in parts[:2]).upper()
+    doc.update({"id": str(uuid.uuid4()), "created_at": now, "updated_at": now})
+    await testimonials_col.insert_one(dict(doc))
+    return serialize_doc(doc)
+
+
+@router.put("/admin/testimonials/{testimonial_id}")
+async def admin_update_testimonial(
+    testimonial_id: str, payload: TestimonialIn, admin=Depends(require_admin)
+):
+    update = payload.model_dump()
+    update["updated_at"] = datetime.now(timezone.utc)
+    res = await testimonials_col.update_one({"id": testimonial_id}, {"$set": update})
+    if res.matched_count == 0:
+        raise HTTPException(404, "Yorum bulunamadi.")
+    doc = await testimonials_col.find_one({"id": testimonial_id})
+    return serialize_doc(doc)
+
+
+@router.delete("/admin/testimonials/{testimonial_id}")
+async def admin_delete_testimonial(testimonial_id: str, admin=Depends(require_admin)):
+    res = await testimonials_col.delete_one({"id": testimonial_id})
+    if res.deleted_count == 0:
+        raise HTTPException(404, "Yorum bulunamadi.")
+    return {"ok": True}
+
+
+@router.put("/admin/review-summary")
+async def admin_update_review_summary(payload: ReviewSummaryIn, admin=Depends(require_admin)):
+    value = payload.model_dump()
+    await settings_col.update_one(
+        {"key": "review_summary"},
+        {"$set": {"value": value, "updated_at": datetime.now(timezone.utc)}},
+        upsert=True,
+    )
+    return value
+
+
+# ------------------------------------------------------------- blog yazilari
+def _slugify(text: str) -> str:
+    tr = str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosucgiosu")
+    slug = text.translate(tr).lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", slug).strip("-")
+    return slug[:120] or str(uuid.uuid4())[:8]
+
+
+@router.get("/admin/articles")
+async def admin_list_articles(admin=Depends(require_admin)):
+    docs = await articles_col.find({}).sort("date", -1).to_list(200)
+    return {"items": serialize_doc(docs)}
+
+
+@router.post("/admin/articles")
+async def admin_create_article(payload: ArticleIn, admin=Depends(require_admin)):
+    now = datetime.now(timezone.utc)
+    doc = payload.model_dump()
+    doc["slug"] = _slugify(doc.get("slug") or doc["title"])
+    if await articles_col.find_one({"slug": doc["slug"]}):
+        doc["slug"] = f"{doc['slug']}-{str(uuid.uuid4())[:4]}"
+    doc["date"] = doc.get("date") or now.strftime("%Y-%m-%d")
+    doc["body"] = [b for b in (doc.get("body") or []) if b.strip()]
+    doc.update({"id": str(uuid.uuid4()), "created_at": now, "updated_at": now})
+    await articles_col.insert_one(dict(doc))
+    return serialize_doc(doc)
+
+
+@router.put("/admin/articles/{article_id}")
+async def admin_update_article(article_id: str, payload: ArticleIn, admin=Depends(require_admin)):
+    existing = await articles_col.find_one({"id": article_id})
+    if not existing:
+        raise HTTPException(404, "Yazi bulunamadi.")
+    update = payload.model_dump()
+    update["slug"] = _slugify(update.get("slug") or update["title"])
+    clash = await articles_col.find_one({"slug": update["slug"], "id": {"$ne": article_id}})
+    if clash:
+        update["slug"] = f"{update['slug']}-{str(uuid.uuid4())[:4]}"
+    update["body"] = [b for b in (update.get("body") or []) if b.strip()]
+    update["date"] = update.get("date") or existing.get("date")
+    update["updated_at"] = datetime.now(timezone.utc)
+    await articles_col.update_one({"id": article_id}, {"$set": update})
+    doc = await articles_col.find_one({"id": article_id})
+    return serialize_doc(doc)
+
+
+@router.delete("/admin/articles/{article_id}")
+async def admin_delete_article(article_id: str, admin=Depends(require_admin)):
+    res = await articles_col.delete_one({"id": article_id})
+    if res.deleted_count == 0:
+        raise HTTPException(404, "Yazi bulunamadi.")
+    return {"ok": True}
 
 
 @router.get("/admin/visa-types")

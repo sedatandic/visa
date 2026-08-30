@@ -8,6 +8,7 @@ import VisaTypes from "./pages/VisaTypes";
 import Documents from "./pages/Documents";
 import Services from "./pages/Services";
 import Articles from "./pages/Articles";
+import ArticleDetail from "./pages/ArticleDetail";
 import Faq from "./pages/Faq";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -22,6 +23,8 @@ import AdminApplicationDetail from "./pages/AdminApplicationDetail";
 import AdminMessages from "./pages/AdminMessages";
 import AdminEmails from "./pages/AdminEmails";
 import AdminVisaTypes from "./pages/AdminVisaTypes";
+import AdminTestimonials from "./pages/AdminTestimonials";
+import AdminArticles from "./pages/AdminArticles";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -46,6 +49,7 @@ function App() {
                     <Route path="/gerekli-belgeler" element={<Site><Documents /></Site>} />
                     <Route path="/hizmetler" element={<Site><Services /></Site>} />
                     <Route path="/gelismeler" element={<Site><Articles /></Site>} />
+                    <Route path="/gelismeler/:slug" element={<Site><ArticleDetail /></Site>} />
                     <Route path="/sss" element={<Site><Faq /></Site>} />
                     <Route path="/hakkimizda" element={<Site><About /></Site>} />
                     <Route path="/iletisim" element={<Site><Contact /></Site>} />
@@ -61,6 +65,8 @@ function App() {
                     <Route path="/admin/mesajlar" element={<RequireAdmin><AdminMessages /></RequireAdmin>} />
                     <Route path="/admin/e-postalar" element={<RequireAdmin><AdminEmails /></RequireAdmin>} />
                     <Route path="/admin/vize-tipleri" element={<RequireAdmin><AdminVisaTypes /></RequireAdmin>} />
+                    <Route path="/admin/yorumlar" element={<RequireAdmin><AdminTestimonials /></RequireAdmin>} />
+                    <Route path="/admin/yazilar" element={<RequireAdmin><AdminArticles /></RequireAdmin>} />
 
                     <Route path="*" element={<Site><NotFound /></Site>} />
                 </Routes>

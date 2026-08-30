@@ -88,3 +88,46 @@ class SendVisaRequest(BaseModel):
     origin_url: Optional[str] = None
     message: Optional[str] = ""
     set_approved: bool = True
+
+
+class TestimonialIn(BaseModel):
+    name: str = Field(..., min_length=2, max_length=80)
+    initials: Optional[str] = Field(default="", max_length=4)
+    city: Optional[str] = Field(default="", max_length=60)
+    visa: Optional[str] = Field(default="", max_length=80)
+    date: Optional[str] = Field(default="", max_length=20)
+    text: str = Field(..., min_length=10, max_length=800)
+    rating: int = Field(default=5, ge=1, le=5)
+    verified: bool = True
+    published: bool = True
+    order: int = 0
+
+
+class ReviewHighlightIn(BaseModel):
+    label: str = Field(..., min_length=2, max_length=60)
+    value: int = Field(..., ge=0, le=100)
+
+
+class ReviewSummaryIn(BaseModel):
+    average: float = Field(..., ge=0, le=5)
+    total_reviews: int = Field(..., ge=0)
+    total_applications: int = Field(..., ge=0)
+    recommend_rate: int = Field(default=95, ge=0, le=100)
+    highlights: List[ReviewHighlightIn] = Field(default_factory=list)
+
+
+class ArticleIn(BaseModel):
+    title: str = Field(..., min_length=5, max_length=160)
+    slug: Optional[str] = Field(default="", max_length=160)
+    date: Optional[str] = Field(default="", max_length=20)
+    excerpt: str = Field(..., min_length=20, max_length=400)
+    body: List[str] = Field(default_factory=list)
+    cover_image: Optional[str] = Field(default="", max_length=500)
+    published: bool = True
+    order: int = 0
+
+
+class WhatsAppRequest(BaseModel):
+    template: str = Field(default="visa_ready", max_length=40)
+    message: Optional[str] = Field(default="", max_length=1000)
+    origin_url: Optional[str] = None

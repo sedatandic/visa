@@ -27,6 +27,8 @@ import { Button } from "../components/ui/button";
 import { PricingTabs } from "../components/PricingTabs";
 import { ServiceCard, TourCard } from "../components/IconCards";
 import { ReviewSummary, TestimonialCard } from "../components/Testimonials";
+import { SampleVisa } from "../components/SampleVisa";
+import { RouteFlags } from "../components/FlagIcons";
 import {
     Accordion,
     AccordionContent,
@@ -266,6 +268,35 @@ export default function Home() {
                 </div>
             </section>
 
+            {/* SAMPLE VISA */}
+            <section className="section border-y border-border bg-[hsl(var(--cloud))]" data-testid="landing-sample-visa">
+                <div className="container-page grid items-center gap-10 lg:grid-cols-[1fr_1.05fr]">
+                    <div>
+                        <span className="eyebrow">Onaylanan Vize</span>
+                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Vizeniz böyle görünür</h2>
+                        <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                            BAE vizesi elektroniktir; pasaportunuza yapıştırılmaz. Başvurunuz onaylandığında
+                            giriş izni belgeniz PDF olarak e-postanıza gelir. Belgeyi telefonunuzdan veya
+                            çıktı alarak pasaport kontrolünde gösterirsiniz.
+                        </p>
+                        <ul className="mt-5 space-y-2.5 text-sm">
+                            {[
+                                "Tüm emirliklerde geçerli tek belge",
+                                "Kare kod ile sınırda hızlı doğrulama",
+                                "Kaybolursa takip sayfanızdan tekrar indirebilirsiniz",
+                            ].map((t) => (
+                                <li key={t} className="flex items-start gap-2">
+                                    <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                    <span>{t}</span>
+                                </li>
+                            ))}
+                        </ul>
+                        <RouteFlags className="mt-6" />
+                    </div>
+                    <SampleVisa />
+                </div>
+            </section>
+
             {/* SERVICES */}
             <section className="section border-y border-border bg-[hsl(var(--sand-surface))]" data-testid="landing-services">
                 <div className="container-page">
@@ -421,7 +452,7 @@ export default function Home() {
                         {(content?.articles || []).slice(0, 3).map((a) => (
                             <Link
                                 key={a.slug}
-                                to="/gelismeler"
+                                to={`/gelismeler/${a.slug}`}
                                 className="card-surface card-hoverable flex flex-col p-6"
                                 data-testid={`article-card-${a.slug}`}
                             >

@@ -8,6 +8,7 @@ import {
     FileCheck2,
     Loader2,
     Mail,
+    MessageCircle,
     Save,
     Send,
     Trash2,
@@ -98,6 +99,7 @@ export default function AdminApplicationDetail() {
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [sending, setSending] = useState(false);
+    const [whatsapping, setWhatsapping] = useState(false);
     const [status, setStatus] = useState("");
     const [note, setNote] = useState("");
     const [visaMessage, setVisaMessage] = useState("");
@@ -170,6 +172,22 @@ export default function AdminApplicationDetail() {
             toast.success("Vize belgesi kaldırıldı.");
         } catch (err) {
             toast.error(apiError(err, "İşlem başarısız."));
+        }
+    };
+
+    const sendWhatsApp = async (template) => {
+        setWhatsapping(true);
+        try {
+            const { data: res } = await api.post(`/admin/applications/${id}/whatsapp`, {
+                template,
+                origin_url: window.location.origin,
+            });
+            window.open(res.url, "_blank", "noopener,noreferrer");
+            toast.success("WhatsApp mesajı hazırlandı, pencerede gönder tuşuna basın.");
+        } catch (err) {
+            toast.error(apiError(err, "WhatsApp mesajı hazırlanamadı."));
+        } finally {
+            setWhatsapping(false);
         }
     };
 
@@ -434,6 +452,19 @@ export default function AdminApplicationDetail() {
                                                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gönderiliyor…</>
                                             ) : (
                                                 <><Send className="mr-2 h-4 w-4" /> {visa.sent_at ? "Tekrar gönder" : "Müşteriye gönder ve onayla"}</>
+                                            )}
+                                        </Button>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() => sendWhatsApp("visa_ready")}
+                                            disabled={whatsapping}
+                                            className="h-11 w-full border border-[hsl(var(--brand-green)/0.4)] bg-[hsl(var(--brand-green)/0.08)] text-[hsl(var(--brand-green))] hover:bg-[hsl(var(--brand-green)/0.14)]"
+                                            data-testid="send-visa-whatsapp-button"
+                                        >
+                                            {whatsapping ? (
+                                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Hazırlanıyor…</>
+                                            ) : (
+                                                <><MessageCircle className="mr-2 h-4 w-4" /> WhatsApp ile bildir</>
                                             )}
                                         </Button>
                                         <p className="flex items-start gap-1.5 text-xs leading-5 text-muted-foreground">

@@ -160,38 +160,47 @@ class BackendTester:
         self.log("Oversized file correctly rejected")
 
     def test_create_application_valid(self):
-        """POST /api/applications - valid payload"""
+        """POST /api/applications - valid payload (multi-traveler schema)"""
         assert self.test_file_id, "Need uploaded passport file"
         assert self.test_photo_id, "Need uploaded photo file"
         
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
         payload = {
-            "visa_type_id": "visa_30_single",
-            "applicant": {
-                "first_name": "Ahmet",
-                "last_name": "Yilmaz",
-                "email": "ahmet.test@example.com",
+            "contact": {
+                "full_name": "Ahmet Yilmaz",
+                "email": f"ahmet.test_{datetime.now().timestamp()}@example.com",
                 "phone": "+905551234567",
-                "birth_date": "1990-05-15",
-                "gender": "male",
-                "nationality": "TR",
-                "national_id": "12345678901",
-                "passport_no": "U12345678",
-                "passport_expiry": "2028-12-31",
                 "address_city": "Istanbul"
             },
+            "travelers": [
+                {
+                    "first_name": "AHMET",
+                    "last_name": "YILMAZ",
+                    "birth_date": "1990-05-15",
+                    "gender": "male",
+                    "applicant_type": "adult",
+                    "nationality": "TR",
+                    "national_id": "12345678901",
+                    "passport_no": "U12345678",
+                    "passport_expiry": "2028-12-31",
+                    "visa_type_id": "visa_30_single",
+                    "passport_file_id": self.test_file_id,
+                    "photo_file_id": self.test_photo_id
+                }
+            ],
             "travel": {
-                "arrival_date": "2026-03-15",
-                "departure_date": "2026-03-25",
+                "arrival_date": tomorrow,
+                "departure_date": return_date,
                 "purpose": "tourism",
+                "birth_country": "TR",
                 "accommodation": "Burj Al Arab",
                 "flight_no": "TK123",
                 "notes": "Test application"
             },
-            "documents": {
-                "passport_file_id": self.test_file_id,
-                "photo_file_id": self.test_photo_id,
-                "extra_file_ids": []
-            },
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {},
             "kvkk_accepted": True
         }
         r = requests.post(f"{self.base_url}/applications", json=payload, timeout=20)
@@ -236,12 +245,13 @@ class BackendTester:
     def test_track_application_correct(self):
         """GET /api/applications/track - correct credentials"""
         assert self.test_reference_code, "Need created application"
-        params = {"code": self.test_reference_code, "last_name": "Yilmaz"}
+        params = {"code": self.test_reference_code, "last_name": "YILMAZ"}
         r = requests.get(f"{self.base_url}/applications/track", params=params, timeout=10)
         assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
         result = r.json()
         assert result["reference_code"] == self.test_reference_code, "Reference code mismatch"
-        assert result["applicant"]["last_name"] == "Yilmaz", "Last name mismatch"
+        assert len(result["travelers"]) >= 1, "Expected at least one traveler"
+        assert result["travelers"][0]["last_name"] == "YILMAZ", "Last name mismatch"
         self.log(f"Tracked application: {result['status']}")
 
     def test_track_application_wrong_surname(self):
@@ -841,6 +851,378 @@ class BackendTester:
         self.log(f"Email outbox contains {len(data['items'])} records, all with status 'skipped'")
 
     # ============================================================
+    # PHASE 4: AI PASSPORT OCR, BLOG ARTICLES, TESTIMONIALS, WHATSAPP
+    # ============================================================
+
+    def test_passport_ocr_with_real_image(self):
+        """POST /api/passport/read - with real passport test image"""
+        try:
+            with open("/tmp/passport_test.jpg", "rb") as f:
+                passport_data = f.read()
+        except FileNotFoundError:
+            self.log("Skipping: /tmp/passport_test.jpg not found", "WARN")
+            return
+        
+        files = {"file": ("passport.jpg", io.BytesIO(passport_data), "image/jpeg")}
+        data = {"doc_type": "passport"}
+        r = requests.post(f"{self.base_url}/uploads", files=files, data=data, timeout=15)
+        assert r.status_code == 200, f"Upload failed: {r.status_code}: {r.text}"
+        file_id = r.json()["file_id"]
+        
+        form_data = {"file_id": file_id}
+        r = requests.post(f"{self.base_url}/passport/read", data=form_data, timeout=30)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        result = r.json()
+        assert "ok" in result, "Missing 'ok' field"
+        
+        if result["ok"]:
+            assert "data" in result, "Missing 'data' field"
+            data = result["data"]
+            assert "first_name" in data, "Missing first_name"
+            assert "last_name" in data, "Missing last_name"
+            assert "passport_no" in data, "Missing passport_no"
+            assert "birth_date" in data, "Missing birth_date"
+            assert "passport_expiry" in data, "Missing passport_expiry"
+            assert "gender" in data, "Missing gender"
+            assert "nationality" in data, "Missing nationality"
+            assert "confidence" in data, "Missing confidence"
+            assert "is_passport" in data, "Missing is_passport"
+            self.log(f"Passport OCR success: {data.get('first_name')} {data.get('last_name')}, passport: {data.get('passport_no')}, confidence: {data.get('confidence')}")
+        else:
+            self.log(f"Passport OCR returned ok=false: {result.get('reason')}, {result.get('message')}", "WARN")
+
+    def test_passport_ocr_with_pdf(self):
+        """POST /api/passport/read - PDF should return graceful error"""
+        pdf_data = b'%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj 3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n210\n%%EOF'
+        files = {"file": ("passport.pdf", io.BytesIO(pdf_data), "application/pdf")}
+        data = {"doc_type": "passport"}
+        r = requests.post(f"{self.base_url}/uploads", files=files, data=data, timeout=15)
+        assert r.status_code == 200, f"Upload failed: {r.status_code}"
+        file_id = r.json()["file_id"]
+        
+        form_data = {"file_id": file_id}
+        r = requests.post(f"{self.base_url}/passport/read", data=form_data, timeout=15)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        result = r.json()
+        assert result["ok"] is False, "PDF should return ok=false"
+        assert result["reason"] == "pdf", f"Expected reason='pdf', got {result.get('reason')}"
+        self.log("PDF correctly rejected with graceful error")
+
+    def test_passport_ocr_unknown_file_id(self):
+        """POST /api/passport/read - unknown file_id returns 404"""
+        form_data = {"file_id": "unknown-file-id-12345"}
+        r = requests.post(f"{self.base_url}/passport/read", data=form_data, timeout=10)
+        assert r.status_code == 404, f"Expected 404, got {r.status_code}"
+        self.log("Unknown file_id correctly returns 404")
+
+    def test_articles_list_public(self):
+        """GET /api/articles - list published articles"""
+        r = requests.get(f"{self.base_url}/articles", timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert isinstance(data, list), "Expected list of articles"
+        assert len(data) >= 3, f"Expected at least 3 articles, got {len(data)}"
+        for article in data[:3]:
+            assert "slug" in article, "Missing slug"
+            assert "title" in article, "Missing title"
+            assert "excerpt" in article, "Missing excerpt"
+            assert "date" in article, "Missing date"
+            assert "body" in article, "Missing body"
+        self.log(f"Found {len(data)} published articles")
+
+    def test_articles_detail_public(self):
+        """GET /api/articles/{slug} - get article detail with related"""
+        r_list = requests.get(f"{self.base_url}/articles", timeout=10)
+        assert r_list.status_code == 200, "Failed to get articles list"
+        articles = r_list.json()
+        if len(articles) == 0:
+            self.log("Skipping: no articles available", "WARN")
+            return
+        
+        test_slug = articles[0]["slug"]
+        r = requests.get(f"{self.base_url}/articles/{test_slug}", timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "article" in data, "Missing article"
+        assert "related" in data, "Missing related"
+        article = data["article"]
+        assert article["slug"] == test_slug, "Slug mismatch"
+        assert "title" in article, "Missing title"
+        assert "excerpt" in article, "Missing excerpt"
+        assert "body" in article, "Missing body"
+        assert isinstance(article["body"], list), "Body should be a list of paragraphs"
+        assert isinstance(data["related"], list), "Related should be a list"
+        self.log(f"Article detail: {article['title']}, {len(data['related'])} related articles")
+
+    def test_articles_detail_unknown_slug(self):
+        """GET /api/articles/{slug} - unknown slug returns 404"""
+        r = requests.get(f"{self.base_url}/articles/unknown-slug-12345", timeout=10)
+        assert r.status_code == 404, f"Expected 404, got {r.status_code}"
+        self.log("Unknown article slug correctly returns 404")
+
+    def test_admin_testimonials_list(self):
+        """GET /api/admin/testimonials"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.get(f"{self.base_url}/admin/testimonials", headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "items" in data, "Missing items"
+        assert "review_summary" in data, "Missing review_summary"
+        assert isinstance(data["items"], list), "items should be a list"
+        assert len(data["items"]) >= 6, f"Expected at least 6 testimonials, got {len(data['items'])}"
+        self.log(f"Admin testimonials: {len(data['items'])} testimonials")
+
+    def test_admin_testimonials_create(self):
+        """POST /api/admin/testimonials"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        payload = {
+            "name": "Test User OCR",
+            "initials": "TU",
+            "city": "Istanbul",
+            "visa": "30 Gun Tek Giris",
+            "date": "2026-01-15",
+            "text": "Harika bir hizmet, cok memnun kaldim. Tesekkurler!",
+            "rating": 5,
+            "verified": True,
+            "published": False,
+            "order": 999
+        }
+        r = requests.post(f"{self.base_url}/admin/testimonials", json=payload, headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "id" in data, "Missing id"
+        assert data["name"] == "Test User OCR", "Name mismatch"
+        assert data["published"] is False, "Published should be False"
+        self.test_testimonial_id = data["id"]
+        self.log(f"Testimonial created: {data['id']}")
+
+    def test_admin_testimonials_update(self):
+        """PUT /api/admin/testimonials/{id}"""
+        if not hasattr(self, 'test_testimonial_id'):
+            self.log("Skipping: no testimonial created", "WARN")
+            return
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        payload = {
+            "name": "Test User OCR Updated",
+            "initials": "TU",
+            "city": "Ankara",
+            "visa": "30 Gun Tek Giris",
+            "date": "2026-01-15",
+            "text": "Harika bir hizmet, cok memnun kaldim. Tesekkurler! (Updated)",
+            "rating": 5,
+            "verified": True,
+            "published": True,
+            "order": 999
+        }
+        r = requests.put(f"{self.base_url}/admin/testimonials/{self.test_testimonial_id}", json=payload, headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["name"] == "Test User OCR Updated", "Name not updated"
+        assert data["city"] == "Ankara", "City not updated"
+        assert data["published"] is True, "Published should be True"
+        self.log(f"Testimonial updated: {data['id']}")
+
+    def test_admin_testimonials_appears_in_public(self):
+        """Verify published testimonial appears in /api/content/site"""
+        if not hasattr(self, 'test_testimonial_id'):
+            self.log("Skipping: no testimonial created", "WARN")
+            return
+        r = requests.get(f"{self.base_url}/content/site", timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        data = r.json()
+        testimonials = data.get("testimonials", [])
+        found = any(t.get("id") == self.test_testimonial_id for t in testimonials)
+        assert found, f"Published testimonial {self.test_testimonial_id} not found in public content"
+        self.log("Published testimonial appears in public content")
+
+    def test_admin_testimonials_delete(self):
+        """DELETE /api/admin/testimonials/{id}"""
+        if not hasattr(self, 'test_testimonial_id'):
+            self.log("Skipping: no testimonial created", "WARN")
+            return
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.delete(f"{self.base_url}/admin/testimonials/{self.test_testimonial_id}", headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["ok"] is True, "Delete failed"
+        self.log(f"Testimonial deleted: {self.test_testimonial_id}")
+
+    def test_admin_review_summary_update(self):
+        """PUT /api/admin/review-summary"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        payload = {
+            "average": 4.8,
+            "total_reviews": 1234,
+            "total_applications": 5678,
+            "recommend_rate": 96,
+            "highlights": [
+                {"label": "Hizli Islem", "value": 98},
+                {"label": "Guvenilir", "value": 97}
+            ]
+        }
+        r = requests.put(f"{self.base_url}/admin/review-summary", json=payload, headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["average"] == 4.8, "Average not updated"
+        assert data["total_reviews"] == 1234, "Total reviews not updated"
+        assert len(data["highlights"]) == 2, "Highlights not updated"
+        self.log("Review summary updated")
+
+    def test_admin_articles_list(self):
+        """GET /api/admin/articles"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.get(f"{self.base_url}/admin/articles", headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "items" in data, "Missing items"
+        assert isinstance(data["items"], list), "items should be a list"
+        assert len(data["items"]) >= 3, f"Expected at least 3 articles, got {len(data['items'])}"
+        self.log(f"Admin articles: {len(data['items'])} articles")
+
+    def test_admin_articles_create(self):
+        """POST /api/admin/articles"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        payload = {
+            "title": "Test Article for OCR Testing",
+            "slug": "",
+            "date": "2026-01-20",
+            "excerpt": "This is a test article created by automated testing to verify the admin articles CRUD functionality.",
+            "body": ["First paragraph of the test article.", "Second paragraph with more details.", "Third paragraph concluding the article."],
+            "published": False,
+            "order": 999
+        }
+        r = requests.post(f"{self.base_url}/admin/articles", json=payload, headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "id" in data, "Missing id"
+        assert "slug" in data, "Missing slug"
+        assert data["title"] == "Test Article for OCR Testing", "Title mismatch"
+        assert data["published"] is False, "Published should be False"
+        assert len(data["slug"]) > 0, "Slug should be auto-generated"
+        self.test_article_id = data["id"]
+        self.test_article_slug = data["slug"]
+        self.log(f"Article created: {data['id']}, slug: {data['slug']}")
+
+    def test_admin_articles_update(self):
+        """PUT /api/admin/articles/{id}"""
+        if not hasattr(self, 'test_article_id'):
+            self.log("Skipping: no article created", "WARN")
+            return
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        payload = {
+            "title": "Test Article for OCR Testing (Updated)",
+            "slug": self.test_article_slug,
+            "date": "2026-01-20",
+            "excerpt": "This is an updated test article excerpt.",
+            "body": ["Updated first paragraph.", "Updated second paragraph."],
+            "published": True,
+            "order": 999
+        }
+        r = requests.put(f"{self.base_url}/admin/articles/{self.test_article_id}", json=payload, headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["title"] == "Test Article for OCR Testing (Updated)", "Title not updated"
+        assert data["published"] is True, "Published should be True"
+        self.log(f"Article updated: {data['id']}")
+
+    def test_admin_articles_appears_in_public(self):
+        """Verify published article appears in /api/articles"""
+        if not hasattr(self, 'test_article_slug'):
+            self.log("Skipping: no article created", "WARN")
+            return
+        r = requests.get(f"{self.base_url}/articles", timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        data = r.json()
+        found = any(a.get("slug") == self.test_article_slug for a in data)
+        assert found, f"Published article {self.test_article_slug} not found in public articles"
+        self.log("Published article appears in public articles list")
+
+    def test_admin_articles_unpublished_404(self):
+        """Unpublished article should 404 on public endpoint"""
+        if not hasattr(self, 'test_article_id'):
+            self.log("Skipping: no article created", "WARN")
+            return
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        payload = {"title": "Test Article for OCR Testing (Updated)", "slug": self.test_article_slug, "date": "2026-01-20", "excerpt": "Test", "body": ["Test"], "published": False, "order": 999}
+        r = requests.put(f"{self.base_url}/admin/articles/{self.test_article_id}", json=payload, headers=headers, timeout=10)
+        assert r.status_code == 200, "Failed to unpublish article"
+        
+        r = requests.get(f"{self.base_url}/articles/{self.test_article_slug}", timeout=10)
+        assert r.status_code == 404, f"Unpublished article should return 404, got {r.status_code}"
+        self.log("Unpublished article correctly returns 404")
+
+    def test_admin_articles_delete(self):
+        """DELETE /api/admin/articles/{id}"""
+        if not hasattr(self, 'test_article_id'):
+            self.log("Skipping: no article created", "WARN")
+            return
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.delete(f"{self.base_url}/admin/articles/{self.test_article_id}", headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["ok"] is True, "Delete failed"
+        self.log(f"Article deleted: {self.test_article_id}")
+
+    def test_admin_whatsapp_link_visa_ready(self):
+        """POST /api/admin/applications/{id}/whatsapp - visa_ready template"""
+        if not hasattr(self, 'test_application_id'):
+            self.log("Skipping: no application created", "WARN")
+            return
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        payload = {
+            "template": "visa_ready",
+            "origin_url": "https://visa-application-ae.preview.emergentagent.com"
+        }
+        r = requests.post(f"{self.base_url}/admin/applications/{self.test_application_id}/whatsapp", json=payload, headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "url" in data, "Missing url"
+        assert "message" in data, "Missing message"
+        assert "phone" in data, "Missing phone"
+        assert data["url"].startswith("https://wa.me/"), f"Invalid WhatsApp URL: {data['url']}"
+        assert "905" in data["phone"], f"Phone should be normalized to 905xx format, got {data['phone']}"
+        self.log(f"WhatsApp link generated: {data['url'][:50]}...")
+
+    def test_admin_whatsapp_link_no_phone(self):
+        """POST /api/admin/applications/{id}/whatsapp - application without phone returns 400"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        png_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        files1 = {"file": ("p.png", io.BytesIO(png_data), "image/png")}
+        r1 = requests.post(f"{self.base_url}/uploads", files=files1, data={"doc_type": "passport"}, timeout=15)
+        passport_id = r1.json()["file_id"]
+        files2 = {"file": ("ph.png", io.BytesIO(png_data), "image/png")}
+        r2 = requests.post(f"{self.base_url}/uploads", files=files2, data={"doc_type": "photo"}, timeout=15)
+        photo_id = r2.json()["file_id"]
+        
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
+        app_payload = {
+            "contact": {"full_name": "No Phone User", "email": f"nophone_{datetime.now().timestamp()}@test.com", "phone": "", "address_city": "Istanbul"},
+            "travelers": [{"first_name": "TEST", "last_name": "USER", "birth_date": "1990-01-01", "gender": "male", "applicant_type": "adult", "nationality": "TR", "passport_no": "U99999999", "passport_expiry": "2028-12-31", "visa_type_id": "visa_30_single", "passport_file_id": passport_id, "photo_file_id": photo_id}],
+            "travel": {"arrival_date": tomorrow, "departure_date": return_date, "purpose": "tourism", "birth_country": "TR"},
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {},
+            "kvkk_accepted": True
+        }
+        r_app = requests.post(f"{self.base_url}/applications", json=app_payload, timeout=15)
+        assert r_app.status_code == 200, "Failed to create application"
+        app_id = r_app.json()["id"]
+        
+        payload = {"template": "visa_ready", "origin_url": "https://visa-application-ae.preview.emergentagent.com"}
+        r = requests.post(f"{self.base_url}/admin/applications/{app_id}/whatsapp", json=payload, headers=headers, timeout=10)
+        assert r.status_code == 400, f"Expected 400 for no phone, got {r.status_code}"
+        self.log("WhatsApp link correctly returns 400 when no phone")
+
+    def test_admin_whatsapp_link_unknown_application(self):
+        """POST /api/admin/applications/{id}/whatsapp - unknown application returns 404"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        payload = {"template": "visa_ready", "origin_url": "https://visa-application-ae.preview.emergentagent.com"}
+        r = requests.post(f"{self.base_url}/admin/applications/unknown-id-12345/whatsapp", json=payload, headers=headers, timeout=10)
+        assert r.status_code == 404, f"Expected 404, got {r.status_code}"
+        self.log("WhatsApp link correctly returns 404 for unknown application")
+
+    # ============================================================
     # RUN ALL TESTS
     # ============================================================
 
@@ -913,6 +1295,37 @@ class BackendTester:
         self.test("Admin send visa email", self.test_admin_send_visa_email)
         self.test("Admin delete visa document", self.test_admin_delete_visa_document)
         self.test("Admin emails outbox", self.test_admin_emails_outbox)
+        
+        # Phase 4: AI Passport OCR
+        self.test("Passport OCR - real image", self.test_passport_ocr_with_real_image)
+        self.test("Passport OCR - PDF graceful error", self.test_passport_ocr_with_pdf)
+        self.test("Passport OCR - unknown file_id 404", self.test_passport_ocr_unknown_file_id)
+        
+        # Phase 4: Blog Articles
+        self.test("Articles list (public)", self.test_articles_list_public)
+        self.test("Articles detail (public)", self.test_articles_detail_public)
+        self.test("Articles detail - unknown slug 404", self.test_articles_detail_unknown_slug)
+        
+        # Phase 4: Admin Testimonials CRUD
+        self.test("Admin testimonials list", self.test_admin_testimonials_list)
+        self.test("Admin testimonials create", self.test_admin_testimonials_create)
+        self.test("Admin testimonials update", self.test_admin_testimonials_update)
+        self.test("Admin testimonials appears in public", self.test_admin_testimonials_appears_in_public)
+        self.test("Admin testimonials delete", self.test_admin_testimonials_delete)
+        self.test("Admin review summary update", self.test_admin_review_summary_update)
+        
+        # Phase 4: Admin Articles CRUD
+        self.test("Admin articles list", self.test_admin_articles_list)
+        self.test("Admin articles create", self.test_admin_articles_create)
+        self.test("Admin articles update", self.test_admin_articles_update)
+        self.test("Admin articles appears in public", self.test_admin_articles_appears_in_public)
+        self.test("Admin articles unpublished 404", self.test_admin_articles_unpublished_404)
+        self.test("Admin articles delete", self.test_admin_articles_delete)
+        
+        # Phase 4: Admin WhatsApp Link Generation
+        self.test("Admin WhatsApp link - visa_ready", self.test_admin_whatsapp_link_visa_ready)
+        self.test("Admin WhatsApp link - no phone 400", self.test_admin_whatsapp_link_no_phone)
+        self.test("Admin WhatsApp link - unknown app 404", self.test_admin_whatsapp_link_unknown_application)
         
         # Summary
         self.log("\n" + "="*60)

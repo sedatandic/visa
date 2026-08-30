@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, NavLink, Navigate, useNavigate } from "react-router-dom";
-import { LayoutDashboard, LogOut, Mail, MessageSquare, Tag } from "lucide-react";
+import { FileText, LayoutDashboard, LogOut, Mail, MessageSquare, Star, Tag } from "lucide-react";
 import { Button } from "./ui/button";
 import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
@@ -10,6 +10,8 @@ const NAV = [
     { to: "/admin/mesajlar", label: "Mesajlar", icon: MessageSquare },
     { to: "/admin/e-postalar", label: "E-postalar", icon: Mail },
     { to: "/admin/vize-tipleri", label: "Vize Tipleri", icon: Tag },
+    { to: "/admin/yorumlar", label: "Yorumlar", icon: Star },
+    { to: "/admin/yazilar", label: "Blog Yazıları", icon: FileText },
 ];
 
 export const RequireAdmin = ({ children }) => {

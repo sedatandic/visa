@@ -14,6 +14,7 @@ import {
     Lock,
     Plus,
     ShieldCheck,
+    Sparkles,
     Trash2,
     User,
     Users,
@@ -108,6 +109,7 @@ export default function Apply() {
     const [extraDocs, setExtraDocs] = useState({ ticket: null, hotel: null, other: null });
     const [kvkk, setKvkk] = useState(false);
     const [errors, setErrors] = useState({});
+    const [ocr, setOcr] = useState({});
     const [quote, setQuote] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [created, setCreated] = useState(null);
@@ -187,6 +189,62 @@ export default function Apply() {
             return;
         }
         setTravelers((list) => list.filter((t) => t.key !== key));
+    };
+
+    // --- Yapay zeka ile pasaport okuma -------------------------------------
+    const readPassportWithAI = async (key, fileInfo) => {
+        if (!fileInfo?.file_id) return;
+        if ((fileInfo.content_type || "").includes("pdf")) return;
+        setOcr((s) => ({ ...s, [key]: { status: "loading" } }));
+        try {
+            const form = new FormData();
+            form.append("file_id", fileInfo.file_id);
+            const { data } = await api.post("/passport/read", form, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            if (!data?.ok) {
+                setOcr((s) => ({ ...s, [key]: { status: "failed", message: data?.message || "" } }));
+                return;
+            }
+            const d = data.data || {};
+            const patch = {};
+            const fields = [
+                "first_name",
+                "last_name",
+                "birth_date",
+                "gender",
+                "passport_no",
+                "passport_expiry",
+                "national_id",
+                "nationality",
+            ];
+            setTravelers((list) =>
+                list.map((t) => {
+                    if (t.key !== key) return t;
+                    fields.forEach((f) => {
+                        const value = d[f];
+                        if (!value) return;
+                        if (f === "nationality" && t.nationality && t.nationality !== "TR") return;
+                        if (!t[f] || t[f] === "TR") patch[f] = value;
+                    });
+                    return { ...t, ...patch };
+                })
+            );
+            setOcr((s) => ({
+                ...s,
+                [key]: {
+                    status: "done",
+                    filled: Object.keys(patch).length,
+                    name: `${d.first_name || ""} ${d.last_name || ""}`.trim(),
+                    passport_no: d.passport_no || "",
+                },
+            }));
+            if (Object.keys(patch).length) {
+                toast.success("Pasaport okundu, bilgiler dolduruldu. Lütfen kontrol edin.");
+            }
+        } catch (err) {
+            setOcr((s) => ({ ...s, [key]: { status: "failed", message: apiError(err, "") } }));
+        }
     };
 
     const setC = (key) => (e) => {
@@ -469,6 +527,47 @@ export default function Apply() {
                                                         </div>
                                                     </div>
 
+                                                    <div className="mt-5 rounded-xl border border-dashed border-primary/40 bg-primary/[0.04] p-4" data-testid={`traveler-${idx}-ai-passport-box`}>
+                                                        <p className="flex items-center gap-2 text-sm font-bold">
+                                                            <Sparkles className="h-4 w-4 text-primary" />
+                                                            Pasaportunuzu yükleyin, bilgiler otomatik dolsun
+                                                        </p>
+                                                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                                            Pasaportunuzun kimlik sayfasının fotoğrafını yükleyin; ad, soyad,
+                                                            pasaport numarası ve tarihleri yapay zeka okuyup aşağıdaki alanlara
+                                                            yazsın. Yüklediğiniz dosya evrak adımında da kullanılır.
+                                                        </p>
+                                                        <div className="mt-3">
+                                                            <FileDropzone
+                                                                label="Pasaport kimlik sayfası"
+                                                                hint="JPG veya PNG"
+                                                                docType="passport"
+                                                                value={t.passportFile}
+                                                                onChange={(f) => {
+                                                                    updateTraveler(t.key, { passportFile: f });
+                                                                    readPassportWithAI(t.key, f);
+                                                                }}
+                                                                testId={`traveler-${idx}-passport-ai-input`}
+                                                            />
+                                                        </div>
+                                                        {ocr[t.key]?.status === "loading" && (
+                                                            <p className="mt-2 flex items-center gap-2 text-xs font-medium text-primary" data-testid={`traveler-${idx}-ocr-loading`}>
+                                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                                Pasaport yapay zeka ile okunuyor...
+                                                            </p>
+                                                        )}
+                                                        {ocr[t.key]?.status === "done" && (
+                                                            <p className="mt-2 text-xs font-semibold text-[hsl(var(--brand-green))]" data-testid={`traveler-${idx}-ocr-success`}>
+                                                                Pasaport okundu: {ocr[t.key].name} {ocr[t.key].passport_no ? `· ${ocr[t.key].passport_no}` : ""} — lütfen bilgileri kontrol edin.
+                                                            </p>
+                                                        )}
+                                                        {ocr[t.key]?.status === "failed" && (
+                                                            <p className="mt-2 text-xs text-muted-foreground" data-testid={`traveler-${idx}-ocr-failed`}>
+                                                                Pasaport otomatik okunamadı; bilgileri elle girebilirsiniz.
+                                                            </p>
+                                                        )}
+                                                    </div>
+
                                                     <div className="mt-5 grid gap-5 sm:grid-cols-2">
                                                         <Field label="Ad" required error={te.first_name}>
                                                             <Input value={t.first_name} onChange={(e) => updateTraveler(t.key, { first_name: e.target.value })} placeholder="AHMET" data-testid={`traveler-${idx}-first-name`} />
@@ -668,12 +767,37 @@ export default function Apply() {
                                                         <div>
                                                             <FileDropzone
                                                                 label="Pasaport Fotoğrafı"
-                                                                hint="Zorunlu"
+                                                                hint="Zorunlu · Yapay zeka okur"
                                                                 docType="passport"
                                                                 value={t.passportFile}
-                                                                onChange={(f) => updateTraveler(t.key, { passportFile: f })}
+                                                                onChange={(f) => {
+                                                                    updateTraveler(t.key, { passportFile: f });
+                                                                    readPassportWithAI(t.key, f);
+                                                                }}
                                                                 testId={`traveler-${idx}-passport-upload-input`}
                                                             />
+                                                            {ocr[t.key]?.status === "loading" && (
+                                                                <p className="mt-2 flex items-center gap-2 text-xs font-medium text-primary" data-testid={`traveler-${idx}-docs-ocr-loading`}>
+                                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                                    Pasaport yapay zeka ile okunuyor...
+                                                                </p>
+                                                            )}
+                                                            {ocr[t.key]?.status === "done" && (
+                                                                <div className="mt-2 rounded-lg border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.07)] p-3" data-testid={`traveler-${idx}-docs-ocr-success`}>
+                                                                    <p className="flex items-center gap-2 text-xs font-semibold text-[hsl(var(--brand-green))]">
+                                                                        <Sparkles className="h-3.5 w-3.5" />
+                                                                        Pasaport okundu: {ocr[t.key].name} {ocr[t.key].passport_no ? `· ${ocr[t.key].passport_no}` : ""}
+                                                                    </p>
+                                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                                        Boş alanlar otomatik dolduruldu. Lütfen 1. adımdaki bilgileri kontrol edin.
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                            {ocr[t.key]?.status === "failed" && (
+                                                                <p className="mt-2 text-xs text-muted-foreground" data-testid={`traveler-${idx}-docs-ocr-failed`}>
+                                                                    Pasaport otomatik okunamadı; bilgileri elle girebilirsiniz.
+                                                                </p>
+                                                            )}
                                                             {te.passport && (
                                                                 <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive">
                                                                     <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {te.passport}

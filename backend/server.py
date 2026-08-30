@@ -2,12 +2,21 @@ import logging
 import os
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from content import VISA_TYPES, compute_pricing
-from db import applications_col, client, ensure_indexes, visa_types_col
+from content import ARTICLES, REVIEW_SUMMARY, TESTIMONIALS, VISA_TYPES, compute_pricing
+from db import (
+    applications_col,
+    articles_col,
+    client,
+    ensure_indexes,
+    settings_col,
+    testimonials_col,
+    visa_types_col,
+)
 from storage import init_storage
 
 logging.basicConfig(
@@ -90,11 +99,61 @@ async def migrate_legacy_applications():
         logger.info("migrated %d legacy applications to multi-traveller schema", migrated)
 
 
+async def seed_content_collections():
+    """Blog yazilari, musteri yorumlari ve puan ozetini ilk kurulumda tohumlar."""
+    if await articles_col.count_documents({}) == 0:
+        now = datetime.now(timezone.utc)
+        for order, a in enumerate(ARTICLES):
+            await articles_col.insert_one(
+                {
+                    "id": str(uuid.uuid4()),
+                    "slug": a["slug"],
+                    "title": a["title"],
+                    "date": a["date"],
+                    "excerpt": a["excerpt"],
+                    "body": list(a.get("body") or []),
+                    "cover_image": a.get("cover_image", ""),
+                    "published": True,
+                    "order": order,
+                    "created_at": now,
+                    "updated_at": now,
+                }
+            )
+        logger.info("seeded %d articles", len(ARTICLES))
+
+    if await testimonials_col.count_documents({}) == 0:
+        now = datetime.now(timezone.utc)
+        for order, t in enumerate(TESTIMONIALS):
+            doc = dict(t)
+            doc.update(
+                {
+                    "id": str(uuid.uuid4()),
+                    "published": True,
+                    "order": order,
+                    "created_at": now,
+                    "updated_at": now,
+                }
+            )
+            await testimonials_col.insert_one(doc)
+        logger.info("seeded %d testimonials", len(TESTIMONIALS))
+
+    if not await settings_col.find_one({"key": "review_summary"}):
+        await settings_col.insert_one(
+            {
+                "key": "review_summary",
+                "value": dict(REVIEW_SUMMARY),
+                "updated_at": datetime.now(timezone.utc),
+            }
+        )
+        logger.info("seeded review summary")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
         await ensure_indexes()
         await seed_visa_types()
+        await seed_content_collections()
         await migrate_legacy_applications()
     except Exception as exc:
         logger.error("startup db init failed: %s", exc)

@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { COMPANY } from "../lib/site";
 import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
+import { UaeFlag } from "./FlagIcons";
 
 const LINKS = [
     { to: "/vize-tipleri", label: "Hizmet Bedelleri" },
@@ -41,6 +42,7 @@ export const Navbar = () => {
             <div className="container-page flex h-[72px] items-center justify-between gap-4">
                 <Link to="/" className="flex items-center gap-2.5" data-testid="navbar-logo-link">
                     <BrandMark />
+                    <UaeFlag className="ml-1 hidden h-5 w-8 sm:block" />
                 </Link>
 
                 <nav className="hidden items-center gap-0.5 xl:flex">

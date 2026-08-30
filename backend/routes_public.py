@@ -30,7 +30,16 @@ from content import (
     WHY_US,
     compute_pricing,
 )
-from db import applications_col, contact_col, serialize_doc, uploads_col, visa_types_col
+from db import (
+    applications_col,
+    articles_col,
+    contact_col,
+    serialize_doc,
+    settings_col,
+    testimonials_col,
+    uploads_col,
+    visa_types_col,
+)
 from emailer import (
     admin_notify_html,
     applicant_received_html,
@@ -38,6 +47,7 @@ from emailer import (
     send_email,
 )
 from models import ApplicationCreate, ContactCreate, QuoteRequest
+from passport_ai import read_passport
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
 
 logger = logging.getLogger(__name__)
@@ -80,6 +90,11 @@ async def get_visa_types():
 
 @router.get("/content/site")
 async def get_site_content():
+    testimonials = await testimonials_col.find({"published": True}).sort("order", 1).to_list(50)
+    summary_doc = await settings_col.find_one({"key": "review_summary"})
+    article_docs = (
+        await articles_col.find({"published": True}).sort("date", -1).limit(20).to_list(20)
+    )
     return {
         "company": COMPANY,
         "visa_categories": VISA_CATEGORIES,
@@ -95,12 +110,38 @@ async def get_site_content():
         "faq": FAQ,
         "required_documents": REQUIRED_DOCUMENTS,
         "photo_rules": PHOTO_RULES,
-        "testimonials": TESTIMONIALS,
-        "review_summary": REVIEW_SUMMARY,
-        "articles": ARTICLES,
+        "testimonials": serialize_doc(testimonials) or TESTIMONIALS,
+        "review_summary": (summary_doc or {}).get("value") or REVIEW_SUMMARY,
+        "articles": serialize_doc(article_docs) or ARTICLES,
         "important_notice": IMPORTANT_NOTICE,
         "status_labels": STATUS_LABELS,
     }
+
+
+@router.get("/articles")
+async def list_articles(limit: int = 50):
+    docs = await articles_col.find({"published": True}).sort("date", -1).limit(limit).to_list(limit)
+    if not docs:
+        return ARTICLES
+    return serialize_doc(docs)
+
+
+@router.get("/articles/{slug}")
+async def get_article(slug: str):
+    doc = await articles_col.find_one({"slug": slug, "published": True})
+    if not doc:
+        fallback = next((a for a in ARTICLES if a["slug"] == slug), None)
+        if not fallback:
+            raise HTTPException(404, "Yazi bulunamadi.")
+        doc = fallback
+    article = serialize_doc(doc)
+    related = (
+        await articles_col.find({"published": True, "slug": {"$ne": slug}})
+        .sort("date", -1)
+        .limit(3)
+        .to_list(3)
+    )
+    return {"article": article, "related": serialize_doc(related)}
 
 
 @router.post("/pricing/quote")
@@ -156,6 +197,50 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
         "size": record["size"],
         "url": f"/api/files/{file_id}",
     }
+
+
+@router.post("/passport/read")
+async def read_passport_document(file_id: str = Form(...)):
+    """Yuklenen pasaport goruntusunu yapay zeka ile okuyup form alanlarini doldurur."""
+    record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
+    if not record:
+        raise HTTPException(404, "Dosya bulunamadi.")
+    content_type = record.get("content_type") or ""
+    if content_type == "application/pdf":
+        return {
+            "ok": False,
+            "reason": "pdf",
+            "message": "PDF dosyalari otomatik okunamiyor. Lutfen bilgileri elle girin.",
+        }
+    try:
+        data, ct = get_object(record["storage_path"])
+    except Exception as exc:
+        logger.error("passport fetch failed: %s", exc)
+        raise HTTPException(502, "Dosya okunamadi.")
+
+    try:
+        result = await read_passport(data, content_type or ct)
+    except Exception as exc:
+        logger.error("passport ai failed: %s", exc)
+        return {
+            "ok": False,
+            "reason": "ai_error",
+            "message": "Pasaport otomatik okunamadi. Bilgileri elle girebilirsiniz.",
+        }
+
+    if not result.get("is_passport") or not (result.get("passport_no") or result.get("last_name")):
+        return {
+            "ok": False,
+            "reason": "not_readable",
+            "message": "Goruntuden bilgiler okunamadi. Daha net bir fotograf yukleyin veya elle girin.",
+            "data": result,
+        }
+
+    await uploads_col.update_one(
+        {"id": file_id},
+        {"$set": {"ocr": {"at": datetime.now(timezone.utc), "confidence": result.get("confidence")}}},
+    )
+    return {"ok": True, "data": result}
 
 
 @router.get("/files/{file_id}")

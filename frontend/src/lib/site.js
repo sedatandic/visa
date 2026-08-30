@@ -90,7 +90,7 @@ export function formatDateTime(value) {
     });
 }
 
-export function setMeta(title, description) {
+export function setMeta(title, description, options = {}) {
     document.title = title;
     let tag = document.querySelector('meta[name="description"]');
     if (!tag) {
@@ -99,4 +99,50 @@ export function setMeta(title, description) {
         document.head.appendChild(tag);
     }
     tag.setAttribute("content", description);
+
+    // canonical
+    const path = options.canonicalPath || window.location.pathname;
+    let link = document.querySelector('link[rel="canonical"]');
+    if (!link) {
+        link = document.createElement("link");
+        link.setAttribute("rel", "canonical");
+        document.head.appendChild(link);
+    }
+    link.setAttribute("href", `${window.location.origin}${path}`);
+
+    // Open Graph
+    const og = {
+        "og:title": title,
+        "og:description": description,
+        "og:type": options.ogType || "website",
+        "og:url": `${window.location.origin}${path}`,
+        "og:locale": "tr_TR",
+    };
+    if (options.image) og["og:image"] = options.image;
+    Object.entries(og).forEach(([property, content]) => {
+        let m = document.querySelector(`meta[property="${property}"]`);
+        if (!m) {
+            m = document.createElement("meta");
+            m.setAttribute("property", property);
+            document.head.appendChild(m);
+        }
+        m.setAttribute("content", content);
+    });
+}
+
+/** Sayfaya JSON-LD yapisal veri ekler (varsa gunceller). */
+export function setJsonLd(id, data) {
+    const elementId = `jsonld-${id}`;
+    let script = document.getElementById(elementId);
+    if (!data) {
+        if (script) script.remove();
+        return;
+    }
+    if (!script) {
+        script = document.createElement("script");
+        script.type = "application/ld+json";
+        script.id = elementId;
+        document.head.appendChild(script);
+    }
+    script.textContent = JSON.stringify(data);
 }

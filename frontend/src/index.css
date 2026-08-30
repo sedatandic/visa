@@ -30,7 +30,7 @@
         --border: 214 16% 87%;
         --input: 214 16% 87%;
         --ring: 152 82% 23%;
-        --radius: 0.625rem;
+        --radius: 0.9rem;
 
         /* --- Marka tokenları (bileşenlerde kullanılıyor) --- */
         --navy: 210 24% 8%; /* bayrak siyahı - footer / koyu bloklar */
@@ -50,8 +50,8 @@
         --status-info: 206 72% 27%;
         --status-danger: 352 78% 38%;
 
-        --font-heading: "Spectral", Georgia, "Times New Roman", serif;
-        --font-body: "IBM Plex Sans", "Segoe UI", Roboto, sans-serif;
+        --font-heading: "Figtree", "Segoe UI", Roboto, sans-serif;
+        --font-body: "Figtree", "Segoe UI", Roboto, sans-serif;
         --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 
         --shadow-soft: 0 10px 30px rgba(11, 15, 20, 0.1);
@@ -110,8 +110,8 @@
     h5,
     .font-heading {
         font-family: var(--font-heading);
-        letter-spacing: -0.015em;
-        font-weight: 600;
+        letter-spacing: -0.02em;
+        font-weight: 800;
     }
     ::selection {
         background-color: hsl(var(--brand-green) / 0.18);
@@ -141,7 +141,7 @@
         box-shadow: var(--shadow-soft);
     }
     .eyebrow {
-        @apply inline-flex items-center gap-2 rounded-md border-l-[3px] border-l-[hsl(var(--brand-green))] bg-[hsl(var(--brand-red)/0.08)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[hsl(var(--brand-red))];
+        @apply inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[hsl(var(--brand-red))];
     }
     .font-mono-code {
         font-family: var(--font-mono);

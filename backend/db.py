@@ -21,6 +21,10 @@ uploads_col = db["uploads"]
 payments_col = db["payment_transactions"]
 contact_col = db["contact_messages"]
 email_outbox_col = db["email_outbox"]
+articles_col = db["articles"]
+testimonials_col = db["testimonials"]
+settings_col = db["site_settings"]
+notifications_col = db["notifications"]
 
 
 def serialize_doc(doc):
@@ -57,3 +61,7 @@ async def ensure_indexes():
     await uploads_col.create_index("id", unique=True)
     await payments_col.create_index("session_id")
     await visa_types_col.create_index("id", unique=True)
+    await articles_col.create_index("slug", unique=True)
+    await articles_col.create_index("id", unique=True)
+    await testimonials_col.create_index("id", unique=True)
+    await settings_col.create_index("key", unique=True)

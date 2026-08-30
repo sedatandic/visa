@@ -1,22 +1,30 @@
 [
   {
-    "content": "Koyu mod: tema context + navbar toggle + dark token kontrolü",
+    "content": "Yapay zeka ile pasaport okuma (backend + form otomatik doldurma)",
     "status": "completed"
   },
   {
-    "content": "Görselleri yenile (Dubai + ofis/belge fotoğrafları)",
+    "content": "Gerçek BAE vizesi örneği (kişisel bilgiler bulanık) + UAE bayrağı",
     "status": "completed"
   },
   {
-    "content": "Ana sayfaya puan özeti + zenginleştirilmiş müşteri yorumları",
+    "content": "Blog: SEO uyumlu ayrı yazı sayfaları + admin yazı yönetimi",
     "status": "completed"
   },
   {
-    "content": "Kırmızı vurguyu artır (hero, eyebrow, rozetler, yıldızlar)",
+    "content": "Admin: müşteri yorumları ve puan özeti yönetimi",
     "status": "completed"
   },
   {
-    "content": "Koyu modda diğer sayfaları (başvuru, admin, mobil) doğrula",
+    "content": "WhatsApp bildirimi (admin panelden tek tık)",
+    "status": "completed"
+  },
+  {
+    "content": "Referans siteye yakın sade tasarım (Figtree, pill butonlar, kırmızı fiyat)",
+    "status": "completed"
+  },
+  {
+    "content": "Test: yeni akışların uçtan uca doğrulanması",
     "status": "in_progress"
   }
 ]

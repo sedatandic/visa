@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Mail, MapPin, Phone, Clock } from "lucide-react";
 import { COMPANY } from "../lib/site";
+import { TrFlag, UaeFlag } from "./FlagIcons";
 
 export const Footer = () => (
     <footer className="mt-auto bg-[hsl(var(--navy))] text-white" data-testid="site-footer">
@@ -29,6 +30,11 @@ export const Footer = () => (
                     bağımsız bir danışmanlık hizmetidir. Resmî bir devlet kurumu değiliz; başvurunuzu
                     sizin adınıza hazırlar ve yetkili mercilere iletiriz.
                 </p>
+                <div className="mt-5 flex items-center gap-3">
+                    <TrFlag className="h-5 w-8" />
+                    <span className="text-xs font-semibold text-white/60">Türkiye → Birleşik Arap Emirlikleri</span>
+                    <UaeFlag className="h-5 w-8" />
+                </div>
             </div>
 
             <div>

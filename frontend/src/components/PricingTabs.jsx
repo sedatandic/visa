@@ -43,10 +43,10 @@ export const PricingTabs = ({ compactHeading = false }) => {
                         aria-selected={active === c.id}
                         onClick={() => setActive(c.id)}
                         data-testid={`pricing-tab-${c.id}`}
-                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors duration-150 ${
+                        className={`rounded-full border px-5 py-2.5 text-sm font-bold transition-colors duration-150 ${
                             active === c.id
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border bg-card text-foreground/80 hover:border-primary/50"
+                                ? "border-[hsl(var(--brand-red))] bg-[hsl(var(--brand-red))] text-white"
+                                : "border-border bg-card text-foreground/80 hover:border-[hsl(var(--brand-red)/0.5)]"
                         }`}
                     >
                         {c.label}
