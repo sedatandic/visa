@@ -1,10 +1,19 @@
 import logging
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+)
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from content import STATUS_LABELS
@@ -14,10 +23,12 @@ from db import (
     email_outbox_col,
     payments_col,
     serialize_doc,
+    uploads_col,
     visa_types_col,
 )
-from emailer import send_email, status_change_html
-from models import AdminLogin, StatusUpdate
+from emailer import send_email, status_change_html, visa_ready_html
+from models import AdminLogin, SendVisaRequest, StatusUpdate
+from storage import APP_NAME, MIME_TYPES, put_object
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -113,10 +124,12 @@ async def admin_applications(
         term = q.strip()
         query["$or"] = [
             {"reference_code": {"$regex": term, "$options": "i"}},
-            {"applicant.first_name": {"$regex": term, "$options": "i"}},
-            {"applicant.last_name": {"$regex": term, "$options": "i"}},
-            {"applicant.email": {"$regex": term, "$options": "i"}},
-            {"applicant.passport_no": {"$regex": term, "$options": "i"}},
+            {"contact.full_name": {"$regex": term, "$options": "i"}},
+            {"contact.email": {"$regex": term, "$options": "i"}},
+            {"contact.phone": {"$regex": term, "$options": "i"}},
+            {"travelers.first_name": {"$regex": term, "$options": "i"}},
+            {"travelers.last_name": {"$regex": term, "$options": "i"}},
+            {"travelers.passport_no": {"$regex": term, "$options": "i"}},
         ]
     total = await applications_col.count_documents(query)
     docs = (
@@ -164,9 +177,10 @@ async def admin_update_application(application_id: str, payload: StatusUpdate, a
     )
     fresh = await applications_col.find_one({"id": application_id})
     email_status = None
-    if payload.notify and payload.status != doc.get("status"):
+    to_email = (fresh.get("contact") or {}).get("email") or (fresh.get("applicant") or {}).get("email")
+    if payload.notify and payload.status != doc.get("status") and to_email:
         res = await send_email(
-            fresh["applicant"]["email"],
+            to_email,
             f"Basvuru durumu guncellendi - {fresh['reference_code']}",
             status_change_html(serialize_doc(fresh), STATUS_LABELS[payload.status], payload.note or ""),
             kind="status_change",
@@ -174,6 +188,145 @@ async def admin_update_application(application_id: str, payload: StatusUpdate, a
         )
         email_status = res.get("status")
     return {"application": serialize_doc(fresh), "email_notification": email_status}
+
+
+# ------------------------------------------------- approved visa document
+@router.post("/admin/applications/{application_id}/visa-document")
+async def admin_upload_visa_document(
+    application_id: str,
+    file: UploadFile = File(...),
+    admin=Depends(require_admin),
+):
+    app_doc = await applications_col.find_one({"id": application_id})
+    if not app_doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+
+    filename = file.filename or "vize.pdf"
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in {"pdf", "jpg", "jpeg", "png"}:
+        raise HTTPException(400, "Vize belgesi PDF, JPG veya PNG olmalidir.")
+    data = await file.read()
+    if not data:
+        raise HTTPException(400, "Dosya bos gorunuyor.")
+    if len(data) > 15 * 1024 * 1024:
+        raise HTTPException(400, "Dosya boyutu en fazla 15 MB olabilir.")
+
+    file_id = str(uuid.uuid4())
+    content_type = MIME_TYPES.get(ext, file.content_type or "application/octet-stream")
+    path = f"{APP_NAME}/visas/{application_id}/{file_id}.{ext}"
+    try:
+        result = put_object(path, data, content_type)
+    except Exception as exc:
+        logger.error("visa upload failed: %s", exc)
+        raise HTTPException(502, "Dosya yuklenemedi. Lutfen tekrar deneyin.")
+
+    now = datetime.now(timezone.utc)
+    await uploads_col.insert_one(
+        {
+            "id": file_id,
+            "doc_type": "visa_result",
+            "storage_path": result["path"],
+            "original_filename": filename,
+            "content_type": content_type,
+            "size": result.get("size", len(data)),
+            "is_deleted": False,
+            "created_at": now,
+        }
+    )
+    visa_result = {
+        "file_id": file_id,
+        "filename": filename,
+        "content_type": content_type,
+        "size": result.get("size", len(data)),
+        "uploaded_at": now,
+        "sent_at": None,
+        "send_status": None,
+        "sent_to": None,
+    }
+    await applications_col.update_one(
+        {"id": application_id},
+        {"$set": {"visa_result": visa_result, "updated_at": now}},
+    )
+    fresh = await applications_col.find_one({"id": application_id})
+    return {"application": serialize_doc(fresh)}
+
+
+@router.delete("/admin/applications/{application_id}/visa-document")
+async def admin_delete_visa_document(application_id: str, admin=Depends(require_admin)):
+    app_doc = await applications_col.find_one({"id": application_id})
+    if not app_doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    vr = app_doc.get("visa_result") or {}
+    if vr.get("file_id"):
+        await uploads_col.update_one({"id": vr["file_id"]}, {"$set": {"is_deleted": True}})
+    await applications_col.update_one(
+        {"id": application_id},
+        {"$set": {"visa_result": None, "updated_at": datetime.now(timezone.utc)}},
+    )
+    fresh = await applications_col.find_one({"id": application_id})
+    return {"application": serialize_doc(fresh)}
+
+
+@router.post("/admin/applications/{application_id}/send-visa")
+async def admin_send_visa(
+    application_id: str,
+    payload: SendVisaRequest,
+    request: Request,
+    admin=Depends(require_admin),
+):
+    app_doc = await applications_col.find_one({"id": application_id})
+    if not app_doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    vr = app_doc.get("visa_result") or {}
+    if not vr.get("file_id"):
+        raise HTTPException(400, "Once onaylanan vize belgesini yukleyin.")
+    to_email = (app_doc.get("contact") or {}).get("email") or (app_doc.get("applicant") or {}).get("email")
+    if not to_email:
+        raise HTTPException(400, "Basvuruda e-posta adresi bulunamadi.")
+
+    origin = (payload.origin_url or "").rstrip("/")
+    if not origin.startswith("http"):
+        origin = str(request.base_url).rstrip("/")
+    download_url = f"{origin}/api/files/{vr['file_id']}?download=1"
+
+    now = datetime.now(timezone.utc)
+    update = {
+        "visa_result.sent_at": now,
+        "visa_result.sent_to": to_email,
+        "updated_at": now,
+    }
+    if payload.set_approved and app_doc.get("status") != "approved":
+        update["status"] = "approved"
+
+    res = await send_email(
+        to_email,
+        f"Vizeniz hazir - {app_doc['reference_code']}",
+        visa_ready_html(serialize_doc(app_doc), download_url, payload.message or ""),
+        kind="visa_delivered",
+        meta={"reference_code": app_doc["reference_code"]},
+    )
+    update["visa_result.send_status"] = res.get("status")
+
+    push = {}
+    if update.get("status") == "approved":
+        push = {
+            "status_history": {
+                "status": "approved",
+                "at": now,
+                "note": payload.message or "Vize belgesi basvuru sahibine iletildi",
+            }
+        }
+    mongo_update = {"$set": update}
+    if push:
+        mongo_update["$push"] = push
+    await applications_col.update_one({"id": application_id}, mongo_update)
+
+    fresh = await applications_col.find_one({"id": application_id})
+    return {
+        "application": serialize_doc(fresh),
+        "email_notification": res.get("status"),
+        "download_url": download_url,
+    }
 
 
 @router.get("/admin/contact-messages")

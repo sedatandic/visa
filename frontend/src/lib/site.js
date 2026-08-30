@@ -40,6 +40,8 @@ export const PURPOSE_LABELS = {
     other: "Diğer",
 };
 
+export const PURPOSES = Object.entries(PURPOSE_LABELS).map(([value, label]) => ({ value, label }));
+
 export const COMPANY = {
     brand: "VizeAtlas",
     brandSuffix: "Dubai",
@@ -58,7 +60,8 @@ export function formatMoney(amount, currency = "TRY") {
         minimumFractionDigits: value % 1 === 0 ? 0 : 2,
         maximumFractionDigits: 2,
     });
-    return `${formatted} ${currency === "TRY" || !currency ? "₺" : currency.toUpperCase()}`;
+    const cur = (currency || "TRY").toUpperCase();
+    return `${formatted} ${cur === "TRY" ? "₺" : cur}`;
 }
 
 export function formatDate(value) {

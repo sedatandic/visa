@@ -481,6 +481,340 @@ class BackendTester:
         self.log(f"Visa type price restored to: {original_price}")
 
     # ============================================================
+    # PHASE 3: MULTI-TRAVELER & FAMILY PRICING TESTS
+    # ============================================================
+
+    def test_pricing_quote_single_traveler(self):
+        """POST /api/pricing/quote - single traveler (no discount)"""
+        payload = {
+            "visa_type_ids": ["visa_30_single"],
+            "addons": {"express": False, "insurance": False}
+        }
+        r = requests.post(f"{self.base_url}/pricing/quote", json=payload, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["traveler_count"] == 1, f"Expected 1 traveler, got {data['traveler_count']}"
+        assert data["family_discount_rate"] == 0.0, f"Expected no discount, got {data['family_discount_rate']}"
+        assert data["family_discount"] == 0.0, f"Expected 0 discount, got {data['family_discount']}"
+        assert data["subtotal"] == data["total"], "Single traveler: subtotal should equal total"
+        self.log(f"Single traveler pricing: {data}")
+
+    def test_pricing_quote_two_travelers(self):
+        """POST /api/pricing/quote - 2 travelers (no discount)"""
+        payload = {
+            "visa_type_ids": ["visa_30_single", "visa_30_child"],
+            "addons": {"express": False, "insurance": False}
+        }
+        r = requests.post(f"{self.base_url}/pricing/quote", json=payload, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["traveler_count"] == 2, f"Expected 2 travelers, got {data['traveler_count']}"
+        assert data["family_discount_rate"] == 0.0, f"Expected no discount for 2 travelers, got {data['family_discount_rate']}"
+        self.log(f"Two travelers pricing: {data}")
+
+    def test_pricing_quote_three_travelers_discount(self):
+        """POST /api/pricing/quote - 3 travelers (5% discount)"""
+        payload = {
+            "visa_type_ids": ["visa_30_single", "visa_30_single", "visa_30_child"],
+            "addons": {"express": False, "insurance": False}
+        }
+        r = requests.post(f"{self.base_url}/pricing/quote", json=payload, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["traveler_count"] == 3, f"Expected 3 travelers, got {data['traveler_count']}"
+        assert data["family_discount_rate"] == 0.05, f"Expected 5% discount, got {data['family_discount_rate']}"
+        expected_discount = round(data["subtotal"] * 0.05, 2)
+        assert data["family_discount"] == expected_discount, f"Discount mismatch: expected {expected_discount}, got {data['family_discount']}"
+        expected_total = round(data["subtotal"] - data["family_discount"] + data["addons_total"], 2)
+        assert data["total"] == expected_total, f"Total mismatch: expected {expected_total}, got {data['total']}"
+        self.log(f"Three travelers pricing (5% discount): {data}")
+
+    def test_pricing_quote_five_travelers_discount(self):
+        """POST /api/pricing/quote - 5 travelers (8% discount)"""
+        payload = {
+            "visa_type_ids": ["visa_30_single"] * 5,
+            "addons": {"express": False, "insurance": False}
+        }
+        r = requests.post(f"{self.base_url}/pricing/quote", json=payload, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["traveler_count"] == 5, f"Expected 5 travelers, got {data['traveler_count']}"
+        assert data["family_discount_rate"] == 0.08, f"Expected 8% discount, got {data['family_discount_rate']}"
+        expected_discount = round(data["subtotal"] * 0.08, 2)
+        assert data["family_discount"] == expected_discount, f"Discount mismatch: expected {expected_discount}, got {data['family_discount']}"
+        self.log(f"Five travelers pricing (8% discount): {data}")
+
+    def test_pricing_quote_with_addons_per_person(self):
+        """POST /api/pricing/quote - 3 travelers with per-person addons"""
+        payload = {
+            "visa_type_ids": ["visa_30_single", "visa_30_single", "visa_30_child"],
+            "addons": {"express": True, "insurance": True}
+        }
+        r = requests.post(f"{self.base_url}/pricing/quote", json=payload, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["traveler_count"] == 3, f"Expected 3 travelers, got {data['traveler_count']}"
+        assert len(data["addons"]) == 2, f"Expected 2 addons, got {len(data['addons'])}"
+        for addon in data["addons"]:
+            assert addon["quantity"] == 3, f"Per-person addon should have quantity 3, got {addon['quantity']}"
+        expected_total = round(data["subtotal"] - data["family_discount"] + data["addons_total"], 2)
+        assert data["total"] == expected_total, f"Total mismatch with addons: expected {expected_total}, got {data['total']}"
+        self.log(f"Three travelers with addons: {data}")
+
+    def test_pricing_quote_invalid_visa_type(self):
+        """POST /api/pricing/quote - invalid visa type"""
+        payload = {
+            "visa_type_ids": ["invalid_visa_id"],
+            "addons": {"express": False, "insurance": False}
+        }
+        r = requests.post(f"{self.base_url}/pricing/quote", json=payload, timeout=10)
+        assert r.status_code == 400, f"Expected 400 for invalid visa type, got {r.status_code}"
+        self.log("Invalid visa type rejected correctly")
+
+    def test_multi_traveler_application_two_travelers(self):
+        """POST /api/applications - 2 travelers with correct file mapping"""
+        png_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        
+        files1 = {"file": ("passport1.png", io.BytesIO(png_data), "image/png")}
+        r1 = requests.post(f"{self.base_url}/uploads", files=files1, data={"doc_type": "passport"}, timeout=15)
+        assert r1.status_code == 200, f"Upload 1 failed: {r1.status_code}"
+        passport1_id = r1.json()["file_id"]
+        
+        files2 = {"file": ("photo1.png", io.BytesIO(png_data), "image/png")}
+        r2 = requests.post(f"{self.base_url}/uploads", files=files2, data={"doc_type": "photo"}, timeout=15)
+        assert r2.status_code == 200, f"Upload 2 failed: {r2.status_code}"
+        photo1_id = r2.json()["file_id"]
+        
+        files3 = {"file": ("passport2.png", io.BytesIO(png_data), "image/png")}
+        r3 = requests.post(f"{self.base_url}/uploads", files=files3, data={"doc_type": "passport"}, timeout=15)
+        assert r3.status_code == 200, f"Upload 3 failed: {r3.status_code}"
+        passport2_id = r3.json()["file_id"]
+        
+        files4 = {"file": ("photo2.png", io.BytesIO(png_data), "image/png")}
+        r4 = requests.post(f"{self.base_url}/uploads", files=files4, data={"doc_type": "photo"}, timeout=15)
+        assert r4.status_code == 200, f"Upload 4 failed: {r4.status_code}"
+        photo2_id = r4.json()["file_id"]
+        
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
+        payload = {
+            "contact": {
+                "full_name": "Mehmet Yilmaz",
+                "email": f"test2travelers_{datetime.now().timestamp()}@test.com",
+                "phone": "+905551234567",
+                "address_city": "Istanbul"
+            },
+            "travelers": [
+                {
+                    "first_name": "MEHMET",
+                    "last_name": "YILMAZ",
+                    "birth_date": "1985-05-15",
+                    "gender": "male",
+                    "applicant_type": "adult",
+                    "nationality": "TR",
+                    "passport_no": "U12345678",
+                    "passport_expiry": "2028-12-31",
+                    "visa_type_id": "visa_30_single",
+                    "passport_file_id": passport1_id,
+                    "photo_file_id": photo1_id
+                },
+                {
+                    "first_name": "AYSE",
+                    "last_name": "YILMAZ",
+                    "birth_date": "2015-08-20",
+                    "gender": "female",
+                    "applicant_type": "child",
+                    "nationality": "TR",
+                    "passport_no": "U87654321",
+                    "passport_expiry": "2028-12-31",
+                    "visa_type_id": "visa_30_child",
+                    "passport_file_id": passport2_id,
+                    "photo_file_id": photo2_id
+                }
+            ],
+            "travel": {
+                "arrival_date": tomorrow,
+                "departure_date": return_date,
+                "purpose": "tourism",
+                "birth_country": "TR"
+            },
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {},
+            "kvkk_accepted": True
+        }
+        
+        r = requests.post(f"{self.base_url}/applications", json=payload, timeout=15)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert len(data["travelers"]) == 2, f"Expected 2 travelers, got {len(data['travelers'])}"
+        
+        assert data["travelers"][0]["documents"]["passport_file_id"] == passport1_id, "Traveler 1 passport file mismatch"
+        assert data["travelers"][0]["documents"]["photo_file_id"] == photo1_id, "Traveler 1 photo file mismatch"
+        assert data["travelers"][1]["documents"]["passport_file_id"] == passport2_id, "Traveler 2 passport file mismatch"
+        assert data["travelers"][1]["documents"]["photo_file_id"] == photo2_id, "Traveler 2 photo file mismatch"
+        
+        assert "pricing" in data, "Missing pricing in response"
+        assert data["pricing"]["traveler_count"] == 2, f"Pricing traveler count mismatch"
+        
+        self.test_application_id_multi = data["id"]
+        self.test_reference_code_multi = data["reference_code"]
+        self.log(f"Multi-traveler application created: {data['reference_code']}, travelers: {len(data['travelers'])}")
+
+    def test_multi_traveler_application_invalid_file_id(self):
+        """POST /api/applications - reject invalid file_id"""
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
+        payload = {
+            "contact": {
+                "full_name": "Test User",
+                "email": f"testinvalid_{datetime.now().timestamp()}@test.com",
+                "phone": "+905551234567",
+                "address_city": "Istanbul"
+            },
+            "travelers": [
+                {
+                    "first_name": "TEST",
+                    "last_name": "USER",
+                    "birth_date": "1990-01-01",
+                    "gender": "male",
+                    "applicant_type": "adult",
+                    "nationality": "TR",
+                    "passport_no": "U99999999",
+                    "passport_expiry": "2028-12-31",
+                    "visa_type_id": "visa_30_single",
+                    "passport_file_id": "invalid-file-id-12345",
+                    "photo_file_id": "invalid-file-id-67890"
+                }
+            ],
+            "travel": {
+                "arrival_date": tomorrow,
+                "departure_date": return_date,
+                "purpose": "tourism",
+                "birth_country": "TR"
+            },
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {},
+            "kvkk_accepted": True
+        }
+        
+        r = requests.post(f"{self.base_url}/applications", json=payload, timeout=15)
+        assert r.status_code == 400, f"Expected 400 for invalid file_id, got {r.status_code}"
+        self.log("Invalid file_id rejected correctly")
+
+    def test_track_application_any_traveler_lastname(self):
+        """GET /api/applications/track - works with any traveler's last name"""
+        if not hasattr(self, 'test_reference_code_multi'):
+            self.log("Skipping: no multi-traveler application created", "WARN")
+            return
+        
+        r1 = requests.get(f"{self.base_url}/applications/track", params={"code": self.test_reference_code_multi, "last_name": "YILMAZ"}, timeout=10)
+        assert r1.status_code == 200, f"Expected 200 with first traveler's last name, got {r1.status_code}"
+        
+        r2 = requests.get(f"{self.base_url}/applications/track", params={"code": self.test_reference_code_multi, "last_name": "yilmaz"}, timeout=10)
+        assert r2.status_code == 200, f"Expected 200 with case-insensitive match, got {r2.status_code}"
+        
+        self.log("Track application works with any traveler's last name")
+
+    def test_payment_checkout_multi_traveler_amount(self):
+        """POST /api/payments/checkout - verify amount equals multi-traveler total"""
+        if not hasattr(self, 'test_application_id_multi'):
+            self.log("Skipping: no multi-traveler application created", "WARN")
+            return
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r_app = requests.get(f"{self.base_url}/admin/applications/{self.test_application_id_multi}", headers=headers, timeout=10)
+        assert r_app.status_code == 200, f"Failed to get application: {r_app.status_code}"
+        app_data = r_app.json()["application"]
+        expected_total = app_data["pricing"]["total"]
+        
+        payload = {
+            "application_id": self.test_application_id_multi,
+            "origin_url": "https://visa-application-ae.preview.emergentagent.com"
+        }
+        r = requests.post(f"{self.base_url}/payments/checkout", json=payload, timeout=15)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "checkout_url" in data, "Missing checkout_url"
+        assert "session_id" in data, "Missing session_id"
+        
+        self.log(f"Checkout created for multi-traveler app, expected total: {expected_total}")
+
+    def test_admin_upload_visa_document(self):
+        """POST /api/admin/applications/{id}/visa-document"""
+        if not hasattr(self, 'test_application_id_multi'):
+            self.log("Skipping: no multi-traveler application created", "WARN")
+            return
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        pdf_data = b'%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj 3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n210\n%%EOF'
+        
+        files = {"file": ("approved_visa.pdf", io.BytesIO(pdf_data), "application/pdf")}
+        r = requests.post(f"{self.base_url}/admin/applications/{self.test_application_id_multi}/visa-document", files=files, headers=headers, timeout=15)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "application" in data, "Missing application in response"
+        assert data["application"]["visa_result"] is not None, "visa_result should be populated"
+        assert "file_id" in data["application"]["visa_result"], "Missing file_id in visa_result"
+        
+        self.visa_document_file_id = data["application"]["visa_result"]["file_id"]
+        self.log(f"Visa document uploaded: {self.visa_document_file_id}")
+
+    def test_admin_send_visa_email(self):
+        """POST /api/admin/applications/{id}/send-visa"""
+        if not hasattr(self, 'test_application_id_multi'):
+            self.log("Skipping: no multi-traveler application created", "WARN")
+            return
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        payload = {
+            "origin_url": "https://visa-application-ae.preview.emergentagent.com",
+            "message": "Vizeniz hazir. Iyi yolculuklar!",
+            "set_approved": True
+        }
+        
+        r = requests.post(f"{self.base_url}/admin/applications/{self.test_application_id_multi}/send-visa", json=payload, headers=headers, timeout=15)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "application" in data, "Missing application in response"
+        assert data["application"]["status"] == "approved", f"Status should be approved, got {data['application']['status']}"
+        assert data["application"]["visa_result"]["sent_at"] is not None, "sent_at should be populated"
+        assert data["email_notification"] == "skipped", f"Expected 'skipped' email status, got {data['email_notification']}"
+        
+        self.log(f"Visa email sent (status: {data['email_notification']}), application status: {data['application']['status']}")
+
+    def test_admin_delete_visa_document(self):
+        """DELETE /api/admin/applications/{id}/visa-document"""
+        if not hasattr(self, 'test_application_id_multi'):
+            self.log("Skipping: no multi-traveler application created", "WARN")
+            return
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.delete(f"{self.base_url}/admin/applications/{self.test_application_id_multi}/visa-document", headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["application"]["visa_result"] is None, "visa_result should be None after deletion"
+        self.log("Visa document deleted successfully")
+
+    def test_admin_emails_outbox(self):
+        """GET /api/admin/emails - verify email records"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.get(f"{self.base_url}/admin/emails", headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "items" in data, "Missing items in response"
+        assert isinstance(data["items"], list), "items should be a list"
+        
+        email_kinds = [item.get("kind") for item in data["items"]]
+        assert "application_received" in email_kinds, "Missing application_received email"
+        
+        for item in data["items"]:
+            assert item.get("status") == "skipped", f"Expected 'skipped' status, got {item.get('status')}"
+        
+        self.log(f"Email outbox contains {len(data['items'])} records, all with status 'skipped'")
+
+    # ============================================================
     # RUN ALL TESTS
     # ============================================================
 
@@ -533,6 +867,26 @@ class BackendTester:
         self.test("Admin emails", self.test_admin_emails)
         self.test("Admin visa types", self.test_admin_visa_types)
         self.test("Admin update visa type", self.test_admin_update_visa_type)
+        
+        # Phase 3: Multi-traveler pricing
+        self.test("Pricing quote - single traveler", self.test_pricing_quote_single_traveler)
+        self.test("Pricing quote - two travelers", self.test_pricing_quote_two_travelers)
+        self.test("Pricing quote - three travelers (5% discount)", self.test_pricing_quote_three_travelers_discount)
+        self.test("Pricing quote - five travelers (8% discount)", self.test_pricing_quote_five_travelers_discount)
+        self.test("Pricing quote - with per-person addons", self.test_pricing_quote_with_addons_per_person)
+        self.test("Pricing quote - invalid visa type", self.test_pricing_quote_invalid_visa_type)
+        
+        # Phase 3: Multi-traveler applications
+        self.test("Multi-traveler application - 2 travelers", self.test_multi_traveler_application_two_travelers)
+        self.test("Multi-traveler application - invalid file_id", self.test_multi_traveler_application_invalid_file_id)
+        self.test("Track application - any traveler's last name", self.test_track_application_any_traveler_lastname)
+        self.test("Payment checkout - multi-traveler amount", self.test_payment_checkout_multi_traveler_amount)
+        
+        # Phase 3: Admin visa document upload & send
+        self.test("Admin upload visa document", self.test_admin_upload_visa_document)
+        self.test("Admin send visa email", self.test_admin_send_visa_email)
+        self.test("Admin delete visa document", self.test_admin_delete_visa_document)
+        self.test("Admin emails outbox", self.test_admin_emails_outbox)
         
         # Summary
         self.log("\n" + "="*60)

@@ -62,13 +62,15 @@ async def _mark_paid(session_id: str):
         },
     )
     fresh = await applications_col.find_one({"id": app_doc["id"]})
-    await send_email(
-        fresh["applicant"]["email"],
-        f"Odemeniz alindi - {fresh['reference_code']}",
-        payment_received_html(serialize_doc(fresh)),
-        kind="payment_received",
-        meta={"reference_code": fresh["reference_code"]},
-    )
+    to_email = (fresh.get("contact") or {}).get("email") or (fresh.get("applicant") or {}).get("email")
+    if to_email:
+        await send_email(
+            to_email,
+            f"Odemeniz alindi - {fresh['reference_code']}",
+            payment_received_html(serialize_doc(fresh)),
+            kind="payment_received",
+            meta={"reference_code": fresh["reference_code"]},
+        )
 
 
 @router.post("/payments/checkout")
@@ -86,16 +88,22 @@ async def create_checkout(payload: CheckoutRequest, request: Request):
     amount = float(app_doc["price"])  # server-side amount only
     currency = (app_doc.get("currency") or "TRY").lower()
     sc = _client(request)
+    
+    # Build metadata - handle both single and multi-traveler applications
+    metadata = {
+        "application_id": str(app_doc["id"]),
+        "reference_code": str(app_doc["reference_code"]),
+    }
+    # For backward compatibility with Phase 2 single-traveler apps
+    if "visa_type_id" in app_doc:
+        metadata["visa_type_id"] = str(app_doc["visa_type_id"])
+    
     req = CheckoutSessionRequest(
         amount=amount,
         currency=currency,
         success_url=f"{origin}/odeme/basarili?session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{origin}/odeme/iptal?ref={app_doc['reference_code']}",
-        metadata={
-            "application_id": str(app_doc["id"]),
-            "reference_code": str(app_doc["reference_code"]),
-            "visa_type_id": str(app_doc["visa_type_id"]),
-        },
+        metadata=metadata,
     )
     try:
         session = await sc.create_checkout_session(req)

@@ -8,15 +8,26 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 
 from content import (
+    ADDONS,
+    ARTICLES,
     COMPANY,
+    FAMILY_DISCOUNT_TEXT,
+    FAMILY_DISCOUNT_TIERS,
     FAQ,
+    IMPORTANT_NOTICE,
+    MAX_TRAVELERS,
+    PARTNERS,
     PHOTO_RULES,
     PROCESS_STEPS,
     REQUIRED_DOCUMENTS,
+    SERVICES,
     STATUS_LABELS,
     TESTIMONIALS,
+    TOURS,
+    VISA_CATEGORIES,
     VISA_TYPES,
     WHY_US,
+    compute_pricing,
 )
 from db import applications_col, contact_col, serialize_doc, uploads_col, visa_types_col
 from emailer import (
@@ -25,7 +36,7 @@ from emailer import (
     contact_admin_html,
     send_email,
 )
-from models import ApplicationCreate, ContactCreate
+from models import ApplicationCreate, ContactCreate, QuoteRequest
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
 
 logger = logging.getLogger(__name__)
@@ -36,7 +47,8 @@ ALLOWED_EXT = {"jpg", "jpeg", "png", "webp", "pdf"}
 
 
 def generate_reference_code() -> str:
-    letters = "".join(random.choices(string.ascii_uppercase.replace("O", "").replace("I", ""), k=2))
+    alphabet = "ABCDEFGHJKLMNPRSTUVYZ"
+    letters = "".join(random.choices(alphabet, k=2))
     digits = "".join(random.choices(string.digits, k=6))
     return f"DV-{letters}{digits}"
 
@@ -47,6 +59,13 @@ def public_application_view(doc: dict) -> dict:
         return d
     d.pop("admin_notes", None)
     return d
+
+
+async def get_visa_type(visa_type_id: str):
+    visa = await visa_types_col.find_one({"id": visa_type_id})
+    if not visa:
+        visa = next((v for v in VISA_TYPES if v["id"] == visa_type_id), None)
+    return visa
 
 
 # ---------------------------------------------------------------- content
@@ -62,14 +81,35 @@ async def get_visa_types():
 async def get_site_content():
     return {
         "company": COMPANY,
+        "visa_categories": VISA_CATEGORIES,
+        "addons": list(ADDONS.values()),
+        "family_discount_tiers": [{"min": m, "rate": r} for m, r in FAMILY_DISCOUNT_TIERS],
+        "family_discount_text": FAMILY_DISCOUNT_TEXT,
+        "max_travelers": MAX_TRAVELERS,
         "process_steps": PROCESS_STEPS,
         "why_us": WHY_US,
+        "services": SERVICES,
+        "tours": TOURS,
+        "partners": PARTNERS,
         "faq": FAQ,
         "required_documents": REQUIRED_DOCUMENTS,
         "photo_rules": PHOTO_RULES,
         "testimonials": TESTIMONIALS,
+        "articles": ARTICLES,
+        "important_notice": IMPORTANT_NOTICE,
         "status_labels": STATUS_LABELS,
     }
+
+
+@router.post("/pricing/quote")
+async def pricing_quote(payload: QuoteRequest):
+    prices = []
+    for vid in payload.visa_type_ids:
+        visa = await get_visa_type(vid)
+        if not visa:
+            raise HTTPException(400, f"Gecersiz vize tipi: {vid}")
+        prices.append(float(visa["price"]))
+    return compute_pricing(prices, payload.addons.model_dump())
 
 
 # ---------------------------------------------------------------- uploads
@@ -87,7 +127,8 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
 
     file_id = str(uuid.uuid4())
     content_type = MIME_TYPES.get(ext, file.content_type or "application/octet-stream")
-    path = f"{APP_NAME}/uploads/{doc_type}/{file_id}.{ext}"
+    safe_type = "".join(c for c in doc_type if c.isalnum() or c in "-_") or "other"
+    path = f"{APP_NAME}/uploads/{safe_type}/{file_id}.{ext}"
     try:
         result = put_object(path, data, content_type)
     except Exception as exc:
@@ -96,7 +137,7 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
 
     record = {
         "id": file_id,
-        "doc_type": doc_type,
+        "doc_type": safe_type,
         "storage_path": result["path"],
         "original_filename": filename,
         "content_type": content_type,
@@ -107,7 +148,7 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
     await uploads_col.insert_one(dict(record))
     return {
         "file_id": file_id,
-        "doc_type": doc_type,
+        "doc_type": safe_type,
         "original_filename": filename,
         "content_type": content_type,
         "size": record["size"],
@@ -116,7 +157,7 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
 
 
 @router.get("/files/{file_id}")
-async def get_file(file_id: str):
+async def get_file(file_id: str, download: int = 0):
     record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
     if not record:
         raise HTTPException(404, "Dosya bulunamadi.")
@@ -125,28 +166,50 @@ async def get_file(file_id: str):
     except Exception as exc:
         logger.error("file fetch failed: %s", exc)
         raise HTTPException(502, "Dosya okunamadi.")
+    headers = {"Cache-Control": "private, max-age=300"}
+    if download:
+        name = record.get("original_filename") or f"{file_id}"
+        headers["Content-Disposition"] = f'attachment; filename="{name}"'
     return Response(
         content=data,
         media_type=record.get("content_type") or content_type,
-        headers={"Cache-Control": "private, max-age=300"},
+        headers=headers,
     )
 
 
 # ----------------------------------------------------------- applications
 @router.post("/applications")
 async def create_application(payload: ApplicationCreate):
-    visa = await visa_types_col.find_one({"id": payload.visa_type_id})
-    if not visa:
-        visa = next((v for v in VISA_TYPES if v["id"] == payload.visa_type_id), None)
-    if not visa:
-        raise HTTPException(400, "Gecersiz vize tipi.")
+    travelers = []
+    prices = []
+    for t in payload.travelers:
+        visa = await get_visa_type(t.visa_type_id)
+        if not visa:
+            raise HTTPException(400, "Gecersiz vize tipi secildi.")
+        for fid in (t.passport_file_id, t.photo_file_id):
+            exists = await uploads_col.find_one({"id": fid, "is_deleted": False})
+            if not exists:
+                raise HTTPException(400, "Yuklenen belgeler bulunamadi. Lutfen belgeleri tekrar yukleyin.")
+        data = t.model_dump()
+        data.update(
+            {
+                "id": str(uuid.uuid4()),
+                "visa_type_name": visa["name"],
+                "visa_short_name": visa.get("short_name", visa["name"]),
+                "processing_days": visa.get("processing_days", ""),
+                "price": float(visa["price"]),
+                "currency": visa.get("currency", "TRY"),
+                "documents": {
+                    "passport_file_id": t.passport_file_id,
+                    "photo_file_id": t.photo_file_id,
+                },
+            }
+        )
+        travelers.append(data)
+        prices.append(float(visa["price"]))
 
-    for fid in (payload.documents.passport_file_id, payload.documents.photo_file_id):
-        exists = await uploads_col.find_one({"id": fid, "is_deleted": False})
-        if not exists:
-            raise HTTPException(400, "Yuklenen belgeler bulunamadi. Lutfen belgeleri tekrar yukleyin.")
+    pricing = compute_pricing(prices, payload.addons.model_dump())
 
-    # unique reference code
     reference_code = generate_reference_code()
     while await applications_col.find_one({"reference_code": reference_code}):
         reference_code = generate_reference_code()
@@ -156,21 +219,28 @@ async def create_application(payload: ApplicationCreate):
         "id": str(uuid.uuid4()),
         "reference_code": reference_code,
         "status": "submitted",
-        "visa_type_id": visa["id"],
-        "visa_type_name": visa["name"],
-        "processing_days": visa.get("processing_days", ""),
-        "price": float(visa["price"]),
-        "currency": visa.get("currency", "TRY"),
-        "applicant": payload.applicant.model_dump(),
+        "contact": payload.contact.model_dump(),
+        "travelers": travelers,
         "travel": payload.travel.model_dump(),
-        "documents": payload.documents.model_dump(),
+        "addons": payload.addons.model_dump(),
+        "extra_documents": payload.extra_documents.model_dump(),
+        "pricing": pricing,
+        "price": pricing["total"],
+        "currency": pricing["currency"],
+        "processing_days": "24 saat" if payload.addons.express else travelers[0].get("processing_days", ""),
+        "visa_type_name": (
+            travelers[0]["visa_type_name"]
+            if len(travelers) == 1
+            else f"{travelers[0]['visa_short_name']} + {len(travelers) - 1} yolcu"
+        ),
         "payment": {
             "status": "pending",
             "session_id": None,
-            "amount": float(visa["price"]),
-            "currency": visa.get("currency", "TRY"),
+            "amount": pricing["total"],
+            "currency": pricing["currency"],
             "paid_at": None,
         },
+        "visa_result": None,
         "kvkk_accepted": bool(payload.kvkk_accepted),
         "admin_notes": "",
         "status_history": [{"status": "submitted", "at": now, "note": "Basvuru olusturuldu"}],
@@ -179,10 +249,8 @@ async def create_application(payload: ApplicationCreate):
     }
     await applications_col.insert_one(dict(doc))
 
-    # emails (never break the flow)
-    applicant_email = doc["applicant"]["email"]
     email_result = await send_email(
-        applicant_email,
+        doc["contact"]["email"],
         f"Dubai vize basvurunuz alindi - {reference_code}",
         applicant_received_html(serialize_doc(doc)),
         kind="application_received",
@@ -192,7 +260,7 @@ async def create_application(payload: ApplicationCreate):
     if admin_email:
         await send_email(
             admin_email,
-            f"Yeni basvuru: {reference_code}",
+            f"Yeni basvuru: {reference_code} ({len(travelers)} yolcu)",
             admin_notify_html(serialize_doc(doc)),
             kind="admin_new_application",
             meta={"reference_code": reference_code},
@@ -212,7 +280,18 @@ async def track_application(code: str, last_name: str):
     doc = await applications_col.find_one({"reference_code": code})
     if not doc:
         raise HTTPException(404, "Bu takip koduyla bir basvuru bulunamadi.")
-    if (doc.get("applicant", {}).get("last_name", "") or "").strip().lower() != last_name.lower():
+
+    candidates = set()
+    for t in doc.get("travelers") or []:
+        candidates.add((t.get("last_name") or "").strip().lower())
+    applicant = doc.get("applicant") or {}
+    if applicant.get("last_name"):
+        candidates.add(applicant["last_name"].strip().lower())
+    contact_name = (doc.get("contact") or {}).get("full_name") or ""
+    if contact_name.strip():
+        candidates.add(contact_name.strip().split()[-1].lower())
+
+    if last_name.lower() not in candidates:
         raise HTTPException(404, "Takip kodu ve soyad bilgisi eslesmiyor.")
     return public_application_view(doc)
 

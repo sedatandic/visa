@@ -200,10 +200,15 @@ export default function AdminDashboard() {
                                             <tr key={a.id} className="border-t border-border transition-colors hover:bg-muted/50">
                                                 <td className="px-5 py-3.5 font-heading font-semibold">{a.reference_code}</td>
                                                 <td className="px-5 py-3.5">
-                                                    <p className="font-medium">{a.applicant?.first_name} {a.applicant?.last_name}</p>
-                                                    <p className="text-xs text-muted-foreground">{a.applicant?.email}</p>
+                                                    <p className="font-medium">{a.contact?.full_name || `${a.applicant?.first_name || ""} ${a.applicant?.last_name || ""}`}</p>
+                                                    <p className="text-xs text-muted-foreground">{a.contact?.email || a.applicant?.email}</p>
                                                 </td>
-                                                <td className="px-5 py-3.5 text-muted-foreground">{a.visa_type_name}</td>
+                                                <td className="px-5 py-3.5 text-muted-foreground">
+                                                    {a.visa_type_name}
+                                                    <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold">
+                                                        {(a.travelers || []).length || 1} yolcu
+                                                    </span>
+                                                </td>
                                                 <td className="px-5 py-3.5 font-medium">{formatMoney(a.price, a.currency)}</td>
                                                 <td className="px-5 py-3.5"><StatusBadge status={a.status} /></td>
                                                 <td className="px-5 py-3.5"><PaymentBadge status={a.payment?.status} /></td>
@@ -231,8 +236,8 @@ export default function AdminDashboard() {
                                         <div className="flex items-start justify-between gap-3">
                                             <div>
                                                 <p className="font-heading font-bold">{a.reference_code}</p>
-                                                <p className="text-sm">{a.applicant?.first_name} {a.applicant?.last_name}</p>
-                                                <p className="text-xs text-muted-foreground">{a.visa_type_name}</p>
+                                                <p className="text-sm">{a.contact?.full_name || `${a.applicant?.first_name || ""} ${a.applicant?.last_name || ""}`}</p>
+                                                <p className="text-xs text-muted-foreground">{a.visa_type_name} · {(a.travelers || []).length || 1} yolcu</p>
                                             </div>
                                             <span className="font-medium">{formatMoney(a.price, a.currency)}</span>
                                         </div>

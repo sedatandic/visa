@@ -2,23 +2,27 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
     AlertCircle,
+    AlertTriangle,
     ArrowLeft,
     ArrowRight,
+    Baby,
     CalendarDays,
     CheckCircle2,
     CreditCard,
     FileText,
     Loader2,
     Lock,
+    Plus,
     ShieldCheck,
+    Trash2,
     User,
+    Users,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
-import { formatDate, formatMoney, setMeta } from "../lib/site";
+import { PURPOSES, PURPOSE_LABELS, formatDate, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
-import { VisaTypeCard } from "../components/VisaTypeCard";
 import { FileDropzone } from "../components/FileDropzone";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -26,6 +30,7 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Progress } from "../components/ui/progress";
 import { Checkbox } from "../components/ui/checkbox";
+import { Switch } from "../components/ui/switch";
 import {
     Select,
     SelectContent,
@@ -35,43 +40,28 @@ import {
 } from "../components/ui/select";
 
 const STEPS = [
-    { key: "visa", label: "Vize Seçimi", icon: ShieldCheck },
-    { key: "personal", label: "Kişisel Bilgiler", icon: User },
-    { key: "travel", label: "Seyahat Bilgileri", icon: CalendarDays },
-    { key: "documents", label: "Belgeler", icon: FileText },
+    { key: "people", label: "Kişisel Bilgiler", icon: Users },
+    { key: "visa", label: "Vize Detayları", icon: CalendarDays },
+    { key: "docs", label: "Evraklar", icon: FileText },
     { key: "summary", label: "Özet & Ödeme", icon: CreditCard },
 ];
 
-const emptyApplicant = {
+let travelerSeq = 0;
+const newTraveler = (type = "adult") => ({
+    key: `t${++travelerSeq}`,
+    applicant_type: type,
     first_name: "",
     last_name: "",
-    email: "",
-    phone: "",
     birth_date: "",
     gender: "",
     nationality: "TR",
     national_id: "",
     passport_no: "",
     passport_expiry: "",
-    address_city: "",
-};
-
-const emptyTravel = {
-    arrival_date: "",
-    departure_date: "",
-    purpose: "tourism",
-    accommodation: "",
-    flight_no: "",
-    notes: "",
-};
-
-const PURPOSES = [
-    { value: "tourism", label: "Turistik gezi" },
-    { value: "business", label: "İş seyahati" },
-    { value: "family", label: "Aile / arkadaş ziyareti" },
-    { value: "transit", label: "Transit geçiş" },
-    { value: "other", label: "Diğer" },
-];
+    visa_type_id: "",
+    passportFile: null,
+    photoFile: null,
+});
 
 const Field = ({ label, children, error, required, htmlFor }) => (
     <div className="space-y-2">
@@ -88,10 +78,10 @@ const Field = ({ label, children, error, required, htmlFor }) => (
     </div>
 );
 
-const SummaryRow = ({ label, value }) => (
+const SummaryRow = ({ label, value, strong }) => (
     <div className="flex items-start justify-between gap-4 border-b border-border py-2.5 last:border-0">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <span className="text-right text-sm font-semibold">{value || "-"}</span>
+        <span className={`text-sm ${strong ? "font-semibold" : "text-muted-foreground"}`}>{label}</span>
+        <span className={`text-right text-sm ${strong ? "font-bold" : "font-semibold"}`}>{value || "-"}</span>
     </div>
 );
 
@@ -100,44 +90,107 @@ export default function Apply() {
     const navigate = useNavigate();
 
     const [visaTypes, setVisaTypes] = useState([]);
-    const [selectedVisa, setSelectedVisa] = useState(null);
+    const [addonMeta, setAddonMeta] = useState([]);
+    const [maxTravelers, setMaxTravelers] = useState(10);
     const [step, setStep] = useState(0);
-    const [applicant, setApplicant] = useState(emptyApplicant);
-    const [travel, setTravel] = useState(emptyTravel);
-    const [passportFile, setPassportFile] = useState(null);
-    const [photoFile, setPhotoFile] = useState(null);
+    const [contact, setContact] = useState({ full_name: "", email: "", phone: "", address_city: "" });
+    const [travelers, setTravelers] = useState([newTraveler()]);
+    const [travel, setTravel] = useState({
+        arrival_date: "",
+        departure_date: "",
+        purpose: "tourism",
+        birth_country: "TR",
+        accommodation: "",
+        flight_no: "",
+        notes: "",
+    });
+    const [addons, setAddons] = useState({ express: false, insurance: false });
+    const [extraDocs, setExtraDocs] = useState({ ticket: null, hotel: null, other: null });
     const [kvkk, setKvkk] = useState(false);
     const [errors, setErrors] = useState({});
+    const [quote, setQuote] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [created, setCreated] = useState(null);
     const [paying, setPaying] = useState(false);
 
     useEffect(() => {
         setMeta(
-            "Dubai Vize Başvuru Formu | VizeAtlas Dubai",
-            "Dubai vize başvurunuzu 5 dakikada online tamamlayın: kişisel bilgiler, seyahat detayları, belge yükleme ve güvenli ödeme."
+            "Dubai Vize Başvuru Formu | Aile Başvurusu | VizeAtlas Dubai",
+            "Dubai vize başvurunuzu online tamamlayın. Tek formda birden fazla yolcu ekleyin; çocuk vizesi ve aile indirimi otomatik hesaplanır."
         );
     }, []);
 
     useEffect(() => {
-        api.get("/visa-types")
-            .then(({ data }) => {
-                setVisaTypes(data);
+        Promise.all([api.get("/visa-types"), api.get("/content/site")])
+            .then(([v, c]) => {
+                setVisaTypes(v.data);
+                setAddonMeta(c.data.addons || []);
+                setMaxTravelers(c.data.max_travelers || 10);
                 const wanted = searchParams.get("vize");
-                if (wanted) {
-                    const found = data.find((v) => v.id === wanted);
-                    if (found) {
-                        setSelectedVisa(found);
-                        setStep(1);
-                    }
+                if (wanted && v.data.some((x) => x.id === wanted)) {
+                    const found = v.data.find((x) => x.id === wanted);
+                    setTravelers((list) =>
+                        list.map((t, i) =>
+                            i === 0
+                                ? { ...t, visa_type_id: wanted, applicant_type: found.applicant_type || "adult" }
+                                : t
+                        )
+                    );
                 }
             })
             .catch(() => toast.error("Vize tipleri yüklenemedi."));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const setA = (key) => (e) => {
-        setApplicant((f) => ({ ...f, [key]: e.target.value }));
+    // live authoritative price quote
+    const selectedVisaIds = travelers.map((t) => t.visa_type_id).filter(Boolean);
+    const quoteKey = JSON.stringify([selectedVisaIds, addons]);
+    useEffect(() => {
+        if (selectedVisaIds.length !== travelers.length || selectedVisaIds.length === 0) {
+            setQuote(null);
+            return;
+        }
+        let cancelled = false;
+        api.post("/pricing/quote", { visa_type_ids: selectedVisaIds, addons })
+            .then(({ data }) => {
+                if (!cancelled) setQuote(data);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [quoteKey]);
+
+    const visaOptionsFor = (type) =>
+        visaTypes.filter((v) =>
+            type === "child" ? v.category === "child" : v.category !== "child"
+        );
+
+    const updateTraveler = (key, patch) => {
+        setTravelers((list) => list.map((t) => (t.key === key ? { ...t, ...patch } : t)));
+        setErrors((p) => ({ ...p, [key]: undefined }));
+    };
+
+    const addTraveler = (type) => {
+        if (travelers.length >= maxTravelers) {
+            toast.error(`Tek başvuruda en fazla ${maxTravelers} yolcu ekleyebilirsiniz.`);
+            return;
+        }
+        setTravelers((list) => [...list, newTraveler(type)]);
+        toast.success(type === "child" ? "Çocuk yolcu eklendi." : "Yolcu eklendi.");
+    };
+
+    const removeTraveler = (key) => {
+        if (travelers.length === 1) {
+            toast.error("En az bir yolcu bulunmalı.");
+            return;
+        }
+        setTravelers((list) => list.filter((t) => t.key !== key));
+    };
+
+    const setC = (key) => (e) => {
+        setContact((f) => ({ ...f, [key]: e.target.value }));
         setErrors((p) => ({ ...p, [key]: undefined }));
     };
     const setT = (key) => (e) => {
@@ -147,23 +200,33 @@ export default function Apply() {
 
     const validateStep = useCallback(() => {
         const e = {};
-        if (step === 0 && !selectedVisa) {
-            toast.error("Lütfen bir vize tipi seçin.");
-            return false;
+        if (step === 0) {
+            if (contact.full_name.trim().length < 3) e.full_name = "Adınızı ve soyadınızı yazın.";
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) e.email = "Geçerli bir e-posta adresi girin.";
+            if (contact.phone.replace(/\D/g, "").length < 10) e.phone = "Telefon numaranızı alan koduyla girin.";
+            travelers.forEach((t) => {
+                const te = {};
+                if (t.first_name.trim().length < 2) te.first_name = "Ad zorunlu (en az 2 karakter).";
+                if (t.last_name.trim().length < 2) te.last_name = "Soyad zorunlu (en az 2 karakter).";
+                if (!t.birth_date) te.birth_date = "Doğum tarihi zorunlu.";
+                if (!t.gender) te.gender = "Cinsiyet seçimi zorunlu.";
+                if (t.passport_no.trim().length < 4) te.passport_no = "Pasaport numarası zorunlu.";
+                if (!t.passport_expiry) te.passport_expiry = "Pasaport geçerlilik tarihi zorunlu.";
+                else if (new Date(t.passport_expiry) < new Date())
+                    te.passport_expiry = "Pasaport geçerlilik tarihi geçmiş görünüyor.";
+                if (t.birth_date && t.applicant_type === "child") {
+                    const age = (Date.now() - new Date(t.birth_date).getTime()) / 31557600000;
+                    if (age >= 18) te.birth_date = "Çocuk başvurusu için yolcu 18 yaşından küçük olmalı.";
+                }
+                if (Object.keys(te).length) e[t.key] = te;
+            });
         }
         if (step === 1) {
-            if (applicant.first_name.trim().length < 2) e.first_name = "Adınızı yazın (en az 2 karakter).";
-            if (applicant.last_name.trim().length < 2) e.last_name = "Soyadınızı yazın (en az 2 karakter).";
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(applicant.email)) e.email = "Geçerli bir e-posta adresi girin.";
-            if (applicant.phone.replace(/\D/g, "").length < 10) e.phone = "Telefon numaranızı alan koduyla girin.";
-            if (!applicant.birth_date) e.birth_date = "Doğum tarihinizi seçin.";
-            if (!applicant.gender) e.gender = "Cinsiyet seçimi zorunludur.";
-            if (applicant.passport_no.trim().length < 4) e.passport_no = "Pasaport numaranızı girin.";
-            if (!applicant.passport_expiry) e.passport_expiry = "Pasaport geçerlilik tarihini seçin.";
-            else if (new Date(applicant.passport_expiry) < new Date())
-                e.passport_expiry = "Pasaportunuzun geçerlilik tarihi geçmiş görünüyor.";
-        }
-        if (step === 2) {
+            travelers.forEach((t) => {
+                if (!t.visa_type_id) e[t.key] = { ...(e[t.key] || {}), visa_type_id: "Vize türü seçin." };
+            });
+            if (travel.birth_country !== "TR")
+                e.birth_country = "Üzgünüz, başvuru şu an yalnızca Türkiye doğumlu kişiler için yapılabilmektedir.";
             if (!travel.arrival_date) e.arrival_date = "Gidiş tarihinizi seçin.";
             if (!travel.departure_date) e.departure_date = "Dönüş tarihinizi seçin.";
             if (
@@ -173,9 +236,13 @@ export default function Apply() {
             )
                 e.departure_date = "Dönüş tarihi gidiş tarihinden önce olamaz.";
         }
-        if (step === 3) {
-            if (!passportFile) e.passport = "Pasaport taraması yüklemeniz gerekiyor.";
-            if (!photoFile) e.photo = "Biyometrik fotoğraf yüklemeniz gerekiyor.";
+        if (step === 2) {
+            travelers.forEach((t) => {
+                const te = {};
+                if (!t.passportFile) te.passport = "Pasaport fotoğrafı zorunlu.";
+                if (!t.photoFile) te.photo = "Vesikalık fotoğraf zorunlu.";
+                if (Object.keys(te).length) e[t.key] = { ...(e[t.key] || {}), ...te };
+            });
         }
         setErrors(e);
         if (Object.keys(e).length) {
@@ -183,7 +250,7 @@ export default function Apply() {
             return false;
         }
         return true;
-    }, [step, selectedVisa, applicant, travel, passportFile, photoFile]);
+    }, [step, contact, travelers, travel]);
 
     const next = () => {
         if (!validateStep()) return;
@@ -203,13 +270,27 @@ export default function Apply() {
         setSubmitting(true);
         try {
             const { data } = await api.post("/applications", {
-                visa_type_id: selectedVisa.id,
-                applicant,
+                contact,
+                travelers: travelers.map((t) => ({
+                    first_name: t.first_name,
+                    last_name: t.last_name,
+                    birth_date: t.birth_date,
+                    gender: t.gender,
+                    applicant_type: t.applicant_type,
+                    nationality: t.nationality,
+                    national_id: t.national_id,
+                    passport_no: t.passport_no,
+                    passport_expiry: t.passport_expiry,
+                    visa_type_id: t.visa_type_id,
+                    passport_file_id: t.passportFile.file_id,
+                    photo_file_id: t.photoFile.file_id,
+                })),
                 travel,
-                documents: {
-                    passport_file_id: passportFile.file_id,
-                    photo_file_id: photoFile.file_id,
-                    extra_file_ids: [],
+                addons,
+                extra_documents: {
+                    ticket_file_id: extraDocs.ticket?.file_id || null,
+                    hotel_file_id: extraDocs.hotel?.file_id || null,
+                    other_file_ids: extraDocs.other ? [extraDocs.other.file_id] : [],
                 },
                 kvkk_accepted: true,
             });
@@ -245,13 +326,20 @@ export default function Apply() {
     };
 
     const progress = useMemo(() => ((step + 1) / STEPS.length) * 100, [step]);
+    const visaById = (id) => visaTypes.find((v) => v.id === id);
+
+    const urgentTrip = useMemo(() => {
+        if (!travel.arrival_date) return false;
+        const diff = new Date(travel.arrival_date).getTime() - Date.now();
+        return diff > 0 && diff < 1000 * 60 * 60 * 72;
+    }, [travel.arrival_date]);
 
     return (
         <div data-testid="application-wizard">
             <PageHeader
                 eyebrow="Başvuru Formu"
                 title="Dubai vize başvurunuzu tamamlayın"
-                description="Bilgileriniz yalnızca vize başvurunuz için kullanılır. Ödeme adımından önce tüm bilgilerinizi özet ekranında kontrol edebilirsiniz."
+                description="Tek formda birden fazla yolcu ekleyebilirsiniz. Çocuk vizesi indirimi ve aile indirimi otomatik hesaplanır."
             />
 
             <section className="section">
@@ -266,7 +354,7 @@ export default function Apply() {
                                 return (
                                     <div key={s.key} className="flex min-w-fit items-center gap-2">
                                         <span
-                                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-bold transition-colors duration-150 ${
+                                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-bold ${
                                                 done
                                                     ? "border-primary bg-primary text-primary-foreground"
                                                     : active
@@ -274,18 +362,12 @@ export default function Apply() {
                                                       : "border-border bg-card text-muted-foreground"
                                             }`}
                                         >
-                                            {done ? <CheckCircle2 className="h-4.5 w-4.5" /> : <Icon className="h-4 w-4" />}
+                                            {done ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                                         </span>
-                                        <span
-                                            className={`whitespace-nowrap text-xs font-semibold sm:text-sm ${
-                                                active ? "text-foreground" : "text-muted-foreground"
-                                            }`}
-                                        >
+                                        <span className={`whitespace-nowrap text-xs font-semibold sm:text-sm ${active ? "text-foreground" : "text-muted-foreground"}`}>
                                             {s.label}
                                         </span>
-                                        {i < STEPS.length - 1 && (
-                                            <span className="mx-1 hidden h-px w-6 bg-border lg:block" aria-hidden="true" />
-                                        )}
+                                        {i < STEPS.length - 1 && <span className="mx-1 hidden h-px w-8 bg-border lg:block" aria-hidden="true" />}
                                     </div>
                                 );
                             })}
@@ -301,101 +383,201 @@ export default function Apply() {
                             transition={{ duration: 0.22 }}
                             className="card-surface p-6 sm:p-8"
                         >
-                            {/* STEP 0: VISA */}
+                            {/* STEP 0 */}
                             {step === 0 && (
-                                <div>
-                                    <h2 className="font-heading text-xl font-bold">1. Vize tipini seçin</h2>
+                                <div data-testid="wizard-personal-info-form">
+                                    <h2 className="font-heading text-xl font-bold">1. Kişisel bilgiler</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        Kalış sürenize uygun vizeyi seçin. Daha sonra bu adıma geri dönebilirsiniz.
+                                        İlk olarak sizinle iletişim kuracağımız bilgileri, ardondan seyahat edecek
+                                        yolcuları ekleyin. Bilgileri pasaportta yazdığı gibi, Türkçe karakter
+                                        kullanmadan girin.
                                     </p>
-                                    <div className="mt-6 grid gap-5 md:grid-cols-2">
-                                        {visaTypes.map((v) => (
-                                            <VisaTypeCard
-                                                key={v.id}
-                                                visa={v}
-                                                compact
-                                                selected={selectedVisa?.id === v.id}
-                                                onSelect={(visa) => setSelectedVisa(visa)}
-                                            />
-                                        ))}
+
+                                    <div className="mt-6 rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
+                                        <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                                            İletişim bilgileri
+                                        </h3>
+                                        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                                            <Field label="Adınız Soyadınız" required htmlFor="c-name" error={errors.full_name}>
+                                                <Input id="c-name" value={contact.full_name} onChange={setC("full_name")} placeholder="AHMET YILMAZ" data-testid="input-contact-name" />
+                                            </Field>
+                                            <Field label="E-Posta Adresi" required htmlFor="c-email" error={errors.email}>
+                                                <Input id="c-email" type="email" value={contact.email} onChange={setC("email")} placeholder="ornek@eposta.com" data-testid="input-contact-email" />
+                                            </Field>
+                                            <Field label="Telefon Numaranız" required htmlFor="c-phone" error={errors.phone}>
+                                                <Input id="c-phone" value={contact.phone} onChange={setC("phone")} placeholder="0555 111 22 33" data-testid="input-contact-phone" />
+                                            </Field>
+                                            <Field label="Yaşadığınız şehir" htmlFor="c-city">
+                                                <Input id="c-city" value={contact.address_city} onChange={setC("address_city")} placeholder="İstanbul" data-testid="input-contact-city" />
+                                            </Field>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="font-heading text-base font-bold">
+                                            Yolcular <span className="text-muted-foreground">({travelers.length})</span>
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            <Button type="button" variant="secondary" className="h-10 border border-border" onClick={() => addTraveler("adult")} data-testid="add-adult-traveler-button">
+                                                <Plus className="mr-1.5 h-4 w-4" /> Yetişkin ekle
+                                            </Button>
+                                            <Button type="button" variant="secondary" className="h-10 border border-border" onClick={() => addTraveler("child")} data-testid="add-child-traveler-button">
+                                                <Baby className="mr-1.5 h-4 w-4" /> Çocuk ekle
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-5 space-y-6">
+                                        {travelers.map((t, idx) => {
+                                            const te = errors[t.key] || {};
+                                            return (
+                                                <div key={t.key} className="rounded-xl border border-border p-5" data-testid={`traveler-card-${idx}`}>
+                                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                                                                {t.applicant_type === "child" ? <Baby className="h-4.5 w-4.5 text-primary" /> : <User className="h-4.5 w-4.5 text-primary" />}
+                                                            </span>
+                                                            <div>
+                                                                <p className="font-heading text-sm font-bold">{idx + 1}. Yolcu</p>
+                                                                <p className="text-xs text-muted-foreground">{t.applicant_type === "child" ? "Çocuk (18 yaş altı)" : "Yetişkin"}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="flex rounded-lg border border-border bg-card p-0.5">
+                                                                {[
+                                                                    { v: "adult", l: "Yetişkin" },
+                                                                    { v: "child", l: "Çocuk" },
+                                                                ].map((opt) => (
+                                                                    <button
+                                                                        key={opt.v}
+                                                                        type="button"
+                                                                        onClick={() => updateTraveler(t.key, { applicant_type: opt.v, visa_type_id: "" })}
+                                                                        data-testid={`traveler-${idx}-type-${opt.v}`}
+                                                                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                                                            t.applicant_type === opt.v ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                                                                        }`}
+                                                                    >
+                                                                        {opt.l}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                            {travelers.length > 1 && (
+                                                                <Button type="button" variant="secondary" className="h-9 border border-border text-destructive" onClick={() => removeTraveler(t.key)} data-testid={`remove-traveler-${idx}`}>
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                                                        <Field label="Ad" required error={te.first_name}>
+                                                            <Input value={t.first_name} onChange={(e) => updateTraveler(t.key, { first_name: e.target.value })} placeholder="AHMET" data-testid={`traveler-${idx}-first-name`} />
+                                                        </Field>
+                                                        <Field label="Soyad" required error={te.last_name}>
+                                                            <Input value={t.last_name} onChange={(e) => updateTraveler(t.key, { last_name: e.target.value })} placeholder="YILMAZ" data-testid={`traveler-${idx}-last-name`} />
+                                                        </Field>
+                                                        <Field label="Doğum tarihi" required error={te.birth_date}>
+                                                            <Input type="date" value={t.birth_date} onChange={(e) => updateTraveler(t.key, { birth_date: e.target.value })} data-testid={`traveler-${idx}-birth-date`} />
+                                                        </Field>
+                                                        <Field label="Cinsiyet" required error={te.gender}>
+                                                            <Select value={t.gender} onValueChange={(v) => updateTraveler(t.key, { gender: v })}>
+                                                                <SelectTrigger data-testid={`traveler-${idx}-gender`}>
+                                                                    <SelectValue placeholder="Seçiniz" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="male">Erkek</SelectItem>
+                                                                    <SelectItem value="female">Kadın</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </Field>
+                                                        <Field label="Pasaport numarası" required error={te.passport_no}>
+                                                            <Input value={t.passport_no} onChange={(e) => updateTraveler(t.key, { passport_no: e.target.value })} placeholder="U12345678" data-testid={`traveler-${idx}-passport-no`} />
+                                                        </Field>
+                                                        <Field label="Pasaport geçerlilik tarihi" required error={te.passport_expiry}>
+                                                            <Input type="date" value={t.passport_expiry} onChange={(e) => updateTraveler(t.key, { passport_expiry: e.target.value })} data-testid={`traveler-${idx}-passport-expiry`} />
+                                                        </Field>
+                                                        <Field label="T.C. Kimlik No">
+                                                            <Input value={t.national_id} onChange={(e) => updateTraveler(t.key, { national_id: e.target.value })} placeholder="11 haneli kimlik numarası" data-testid={`traveler-${idx}-national-id`} />
+                                                        </Field>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-4">
+                                        <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#7A4B00]" />
+                                        <p className="text-sm leading-6 text-[#7A4B00]">
+                                            18 yaşından küçük çocuklar bireysel olarak başvuru yapamaz. Çocukları
+                                            mutlaka ebeveyn ile aynı başvuruya ekleyin.
+                                        </p>
                                     </div>
                                 </div>
                             )}
 
-                            {/* STEP 1: PERSONAL */}
+                            {/* STEP 1 */}
                             {step === 1 && (
-                                <div data-testid="wizard-personal-info-form">
-                                    <h2 className="font-heading text-xl font-bold">2. Kişisel bilgiler</h2>
+                                <div data-testid="wizard-visa-details-form">
+                                    <h2 className="font-heading text-xl font-bold">2. Vize ve seyahat bilgileri</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        Bilgilerinizi pasaportunuzda yazdığı gibi, Türkçe karakter kullanmadan girin.
+                                        Her yolcu için vize türünü seçin, ardından seyahat tarihlerinizi girin.
                                     </p>
-                                    <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                                        <Field label="Ad" required htmlFor="first_name" error={errors.first_name}>
-                                            <Input id="first_name" value={applicant.first_name} onChange={setA("first_name")} placeholder="AHMET" data-testid="input-first-name" />
-                                        </Field>
-                                        <Field label="Soyad" required htmlFor="last_name" error={errors.last_name}>
-                                            <Input id="last_name" value={applicant.last_name} onChange={setA("last_name")} placeholder="YILMAZ" data-testid="input-last-name" />
-                                        </Field>
-                                        <Field label="E-posta" required htmlFor="email" error={errors.email}>
-                                            <Input id="email" type="email" value={applicant.email} onChange={setA("email")} placeholder="ornek@eposta.com" data-testid="input-email" />
-                                        </Field>
-                                        <Field label="Telefon" required htmlFor="phone" error={errors.phone}>
-                                            <Input id="phone" value={applicant.phone} onChange={setA("phone")} placeholder="0555 111 22 33" data-testid="input-phone" />
-                                        </Field>
-                                        <Field label="Doğum tarihi" required htmlFor="birth_date" error={errors.birth_date}>
-                                            <Input id="birth_date" type="date" value={applicant.birth_date} onChange={setA("birth_date")} data-testid="input-birth-date" />
-                                        </Field>
-                                        <Field label="Cinsiyet" required error={errors.gender}>
-                                            <Select
-                                                value={applicant.gender}
-                                                onValueChange={(v) => {
-                                                    setApplicant((f) => ({ ...f, gender: v }));
-                                                    setErrors((p) => ({ ...p, gender: undefined }));
-                                                }}
-                                            >
-                                                <SelectTrigger data-testid="select-gender">
-                                                    <SelectValue placeholder="Seçiniz" />
+
+                                    <div className="mt-6 space-y-4">
+                                        {travelers.map((t, idx) => {
+                                            const te = errors[t.key] || {};
+                                            const options = visaOptionsFor(t.applicant_type);
+                                            const selected = visaById(t.visa_type_id);
+                                            return (
+                                                <div key={t.key} className="rounded-xl border border-border p-5" data-testid={`visa-select-card-${idx}`}>
+                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                        <p className="font-heading text-sm font-bold">
+                                                            {t.first_name || `${idx + 1}. Yolcu`} {t.last_name}
+                                                            <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                                {t.applicant_type === "child" ? "Çocuk" : "Yetişkin"}
+                                                            </span>
+                                                        </p>
+                                                        {selected && (
+                                                            <span className="font-heading text-base font-bold">{formatMoney(selected.price, selected.currency)}</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="mt-4">
+                                                        <Field label="Vize Türü" required error={te.visa_type_id}>
+                                                            <Select value={t.visa_type_id} onValueChange={(v) => updateTraveler(t.key, { visa_type_id: v })}>
+                                                                <SelectTrigger data-testid={`traveler-${idx}-visa-type`}>
+                                                                    <SelectValue placeholder="Seçiniz" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {options.map((v) => (
+                                                                        <SelectItem key={v.id} value={v.id}>
+                                                                            {v.name} – {formatMoney(v.price, v.currency)}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </Field>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div className="mt-7 grid gap-5 sm:grid-cols-2">
+                                        <Field label="Doğum Ülkesi" required error={errors.birth_country}>
+                                            <Select value={travel.birth_country} onValueChange={(v) => { setTravel((f) => ({ ...f, birth_country: v })); setErrors((p) => ({ ...p, birth_country: undefined })); }}>
+                                                <SelectTrigger data-testid="select-birth-country">
+                                                    <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="male">Erkek</SelectItem>
-                                                    <SelectItem value="female">Kadın</SelectItem>
+                                                    <SelectItem value="TR">Türkiye</SelectItem>
+                                                    <SelectItem value="OTHER">Diğer ülkeler</SelectItem>
                                                 </SelectContent>
                                             </Select>
-                                        </Field>
-                                        <Field label="T.C. Kimlik No" htmlFor="national_id">
-                                            <Input id="national_id" value={applicant.national_id} onChange={setA("national_id")} placeholder="11 haneli kimlik numarası" data-testid="input-national-id" />
-                                        </Field>
-                                        <Field label="Yaşadığınız şehir" htmlFor="address_city">
-                                            <Input id="address_city" value={applicant.address_city} onChange={setA("address_city")} placeholder="İstanbul" data-testid="input-city" />
-                                        </Field>
-                                        <Field label="Pasaport numarası" required htmlFor="passport_no" error={errors.passport_no}>
-                                            <Input id="passport_no" value={applicant.passport_no} onChange={setA("passport_no")} placeholder="U12345678" data-testid="input-passport-no" />
-                                        </Field>
-                                        <Field label="Pasaport geçerlilik tarihi" required htmlFor="passport_expiry" error={errors.passport_expiry}>
-                                            <Input id="passport_expiry" type="date" value={applicant.passport_expiry} onChange={setA("passport_expiry")} data-testid="input-passport-expiry" />
-                                        </Field>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* STEP 2: TRAVEL */}
-                            {step === 2 && (
-                                <div data-testid="wizard-travel-form">
-                                    <h2 className="font-heading text-xl font-bold">3. Seyahat bilgileri</h2>
-                                    <p className="mt-2 text-sm text-muted-foreground">
-                                        Kesin bileti almadıysanız tahmini tarihleri girebilirsiniz.
-                                    </p>
-                                    <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                                        <Field label="Dubai'ye gidiş tarihi" required htmlFor="arrival_date" error={errors.arrival_date}>
-                                            <Input id="arrival_date" type="date" value={travel.arrival_date} onChange={setT("arrival_date")} data-testid="input-arrival-date" />
-                                        </Field>
-                                        <Field label="Dönüş tarihi" required htmlFor="departure_date" error={errors.departure_date}>
-                                            <Input id="departure_date" type="date" value={travel.departure_date} onChange={setT("departure_date")} data-testid="input-departure-date" />
                                         </Field>
                                         <Field label="Seyahat amacı">
                                             <Select value={travel.purpose} onValueChange={(v) => setTravel((f) => ({ ...f, purpose: v }))}>
                                                 <SelectTrigger data-testid="select-purpose">
-                                                    <SelectValue placeholder="Seçiniz" />
+                                                    <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {PURPOSES.map((p) => (
@@ -404,77 +586,141 @@ export default function Apply() {
                                                 </SelectContent>
                                             </Select>
                                         </Field>
-                                        <Field label="Uçuş numarası" htmlFor="flight_no">
-                                            <Input id="flight_no" value={travel.flight_no} onChange={setT("flight_no")} placeholder="Örn. TK760" data-testid="input-flight-no" />
+                                        <Field label="Giriş (gidiş) tarihi" required error={errors.arrival_date}>
+                                            <Input type="date" value={travel.arrival_date} onChange={setT("arrival_date")} data-testid="input-arrival-date" />
+                                        </Field>
+                                        <Field label="Dönüş tarihi" required error={errors.departure_date}>
+                                            <Input type="date" value={travel.departure_date} onChange={setT("departure_date")} data-testid="input-departure-date" />
+                                        </Field>
+                                        <Field label="Uçuş numarası">
+                                            <Input value={travel.flight_no} onChange={setT("flight_no")} placeholder="Örn. TK760" data-testid="input-flight-no" />
+                                        </Field>
+                                        <Field label="Otel / konaklama">
+                                            <Input value={travel.accommodation} onChange={setT("accommodation")} placeholder="Otel adı veya adres" data-testid="input-accommodation" />
                                         </Field>
                                     </div>
-                                    <div className="mt-5 space-y-5">
-                                        <Field label="Otel / konaklama adresi" htmlFor="accommodation">
-                                            <Input id="accommodation" value={travel.accommodation} onChange={setT("accommodation")} placeholder="Otel adı veya kalacağınız adres" data-testid="input-accommodation" />
+
+                                    <div className="mt-5">
+                                        <Field label="Eklemek istediğiniz not">
+                                            <Textarea rows={3} value={travel.notes} onChange={setT("notes")} placeholder="Danışmanımızın bilmesi gereken bir durum varsa yazın…" data-testid="input-notes" />
                                         </Field>
-                                        <Field label="Eklemek istediğiniz not" htmlFor="notes">
-                                            <Textarea id="notes" rows={4} value={travel.notes} onChange={setT("notes")} placeholder="Danışmanımızın bilmesi gereken bir durum varsa yazın…" data-testid="input-notes" />
-                                        </Field>
+                                    </div>
+
+                                    {urgentTrip && (
+                                        <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.12)] p-4" data-testid="urgent-trip-warning">
+                                            <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#7A4B00]" />
+                                            <p className="text-sm leading-6 text-[#7A4B00]">
+                                                <strong>Seyahat tarihinize 72 saatten az kaldı!</strong> Başvurunuzun
+                                                zamanında sonuçlanması için ekspres vize hizmetini seçmenizi öneririz.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-8">
+                                        <h3 className="font-heading text-base font-bold">Ek hizmetler</h3>
+                                        <p className="mt-1.5 text-sm text-muted-foreground">Ücretler yolcu başına eklenir.</p>
+                                        <div className="mt-4 space-y-4">
+                                            {addonMeta.map((a) => (
+                                                <label key={a.id} className="flex cursor-pointer items-start gap-4 rounded-xl border border-border bg-card p-5" data-testid={`addon-toggle-row-${a.id}`}>
+                                                    <Switch
+                                                        checked={!!addons[a.id]}
+                                                        onCheckedChange={(c) => setAddons((s) => ({ ...s, [a.id]: !!c }))}
+                                                        className="mt-1"
+                                                        data-testid={`addon-switch-${a.id}`}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                                            <p className="font-heading text-sm font-bold">{a.name}</p>
+                                                            <span className="font-heading text-sm font-bold text-primary">
+                                                                + {formatMoney(a.price, a.currency)} / kişi
+                                                            </span>
+                                                        </div>
+                                                        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{a.description}</p>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* STEP 3: DOCUMENTS */}
-                            {step === 3 && (
+                            {/* STEP 2 */}
+                            {step === 2 && (
                                 <div data-testid="wizard-document-upload-dropzone">
-                                    <h2 className="font-heading text-xl font-bold">4. Belgeleri yükleyin</h2>
+                                    <h2 className="font-heading text-xl font-bold">3. Evrak yükleme</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        Belgeleriniz şifreli olarak saklanır ve yalnızca başvurunuz için kullanılır.
+                                        Her yolcu için pasaport ve vesikalık fotoğraf zorunludur. Belgeleriniz şifreli
+                                        olarak saklanır ve yalnızca başvurunuz için kullanılır.
                                     </p>
+
                                     <div className="mt-6 space-y-7">
-                                        <div>
-                                            <FileDropzone
-                                                label="Pasaport ana sayfası (fotoğraflı sayfa)"
-                                                hint="Zorunlu"
-                                                docType="passport"
-                                                value={passportFile}
-                                                onChange={(f) => {
-                                                    setPassportFile(f);
-                                                    setErrors((p) => ({ ...p, passport: undefined }));
-                                                }}
-                                                testId="passport-upload-input"
-                                            />
-                                            {errors.passport && (
-                                                <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive">
-                                                    <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {errors.passport}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <FileDropzone
-                                                label="Biyometrik fotoğraf (vesikalık)"
-                                                hint="Zorunlu"
-                                                docType="photo"
-                                                value={photoFile}
-                                                onChange={(f) => {
-                                                    setPhotoFile(f);
-                                                    setErrors((p) => ({ ...p, photo: undefined }));
-                                                }}
-                                                testId="biometric-photo-upload-input"
-                                            />
-                                            {errors.photo && (
-                                                <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive">
-                                                    <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {errors.photo}
-                                                </p>
-                                            )}
+                                        {travelers.map((t, idx) => {
+                                            const te = errors[t.key] || {};
+                                            return (
+                                                <div key={t.key} className="rounded-xl border border-border p-5" data-testid={`docs-card-${idx}`}>
+                                                    <p className="font-heading text-sm font-bold">
+                                                        {t.first_name || `${idx + 1}. Yolcu`} {t.last_name}
+                                                        <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                            {t.applicant_type === "child" ? "Çocuk" : "Yetişkin"}
+                                                        </span>
+                                                    </p>
+                                                    <div className="mt-5 grid gap-6 md:grid-cols-2">
+                                                        <div>
+                                                            <FileDropzone
+                                                                label="Pasaport Fotoğrafı"
+                                                                hint="Zorunlu"
+                                                                docType="passport"
+                                                                value={t.passportFile}
+                                                                onChange={(f) => updateTraveler(t.key, { passportFile: f })}
+                                                                testId={`traveler-${idx}-passport-upload-input`}
+                                                            />
+                                                            {te.passport && (
+                                                                <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive">
+                                                                    <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {te.passport}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <FileDropzone
+                                                                label="Vesikalık Fotoğraf"
+                                                                hint="Zorunlu"
+                                                                docType="photo"
+                                                                value={t.photoFile}
+                                                                onChange={(f) => updateTraveler(t.key, { photoFile: f })}
+                                                                testId={`traveler-${idx}-photo-upload-input`}
+                                                            />
+                                                            {te.photo && (
+                                                                <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive">
+                                                                    <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {te.photo}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
+                                            <p className="font-heading text-sm font-bold">Opsiyonel belgeler (tüm başvuru için)</p>
+                                            <div className="mt-5 grid gap-6 md:grid-cols-3">
+                                                <FileDropzone label="Dönüş Uçak Bileti" hint="Opsiyonel" docType="ticket" value={extraDocs.ticket} onChange={(f) => setExtraDocs((s) => ({ ...s, ticket: f }))} testId="ticket-upload-input" />
+                                                <FileDropzone label="Otel Rezervasyonu" hint="Opsiyonel" docType="hotel" value={extraDocs.hotel} onChange={(f) => setExtraDocs((s) => ({ ...s, hotel: f }))} testId="hotel-upload-input" />
+                                                <FileDropzone label="Diğer Evrak" hint="Opsiyonel" docType="other" value={extraDocs.other} onChange={(f) => setExtraDocs((s) => ({ ...s, other: f }))} testId="other-upload-input" />
+                                            </div>
                                         </div>
                                     </div>
+
                                     <div className="mt-7 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-4 text-sm leading-6 text-[#7A4B00]">
-                                        Fotoğrafınız beyaz fonda, son 6 ay içinde çekilmiş, gözlüksüz ve şapkasız
+                                        Fotoğraflarınız beyaz fonda, son 6 ay içinde çekilmiş, gözlüksüz ve şapkasız
                                         olmalıdır. Uygun olmayan fotoğraf en sık ret sebebidir.
                                     </div>
                                 </div>
                             )}
 
-                            {/* STEP 4: SUMMARY */}
-                            {step === 4 && (
+                            {/* STEP 3 */}
+                            {step === 3 && (
                                 <div data-testid="wizard-summary-section">
-                                    <h2 className="font-heading text-xl font-bold">5. Özet ve ödeme</h2>
+                                    <h2 className="font-heading text-xl font-bold">4. Özet ve ödeme</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Bilgilerinizi kontrol edin. "Ödemeye geç" butonuna bastığınızda başvurunuz
                                         oluşturulur ve güvenli ödeme sayfasına yönlendirilirsiniz.
@@ -484,9 +730,7 @@ export default function Apply() {
                                         <div className="mt-5 rounded-xl border border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.08)] p-4" data-testid="application-created-banner">
                                             <p className="text-sm font-semibold text-[#14532D]">
                                                 Başvurunuz kaydedildi. Takip kodunuz:{" "}
-                                                <span className="font-heading tracking-wider" data-testid="created-reference-code">
-                                                    {created.reference_code}
-                                                </span>
+                                                <span className="font-heading tracking-wider" data-testid="created-reference-code">{created.reference_code}</span>
                                             </p>
                                             <p className="mt-1 text-xs text-[#14532D]/80">
                                                 Ödemeniz tamamlanmadığı sürece başvurunuz işleme alınmaz. Bu kodu saklayın.
@@ -496,85 +740,95 @@ export default function Apply() {
 
                                     <div className="mt-6 space-y-6">
                                         <div className="rounded-xl border border-border p-5">
-                                            <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">Vize</h3>
+                                            <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">İletişim</h3>
                                             <div className="mt-3">
-                                                <SummaryRow label="Vize tipi" value={selectedVisa?.name} />
-                                                <SummaryRow label="Giriş hakkı" value={selectedVisa?.entry_label} />
-                                                <SummaryRow label="Sonuçlanma süresi" value={selectedVisa?.processing_days} />
-                                                <SummaryRow label="Tutar" value={selectedVisa ? formatMoney(selectedVisa.price, selectedVisa.currency) : "-"} />
+                                                <SummaryRow label="Ad Soyad" value={contact.full_name} />
+                                                <SummaryRow label="E-posta" value={contact.email} />
+                                                <SummaryRow label="Telefon" value={contact.phone} />
                                             </div>
                                         </div>
+
                                         <div className="rounded-xl border border-border p-5">
-                                            <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">Başvuru sahibi</h3>
-                                            <div className="mt-3">
-                                                <SummaryRow label="Ad Soyad" value={`${applicant.first_name} ${applicant.last_name}`} />
-                                                <SummaryRow label="E-posta" value={applicant.email} />
-                                                <SummaryRow label="Telefon" value={applicant.phone} />
-                                                <SummaryRow label="Doğum tarihi" value={formatDate(applicant.birth_date)} />
-                                                <SummaryRow label="Pasaport No" value={applicant.passport_no} />
-                                                <SummaryRow label="Pasaport geçerlilik" value={formatDate(applicant.passport_expiry)} />
+                                            <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                                                Yolcular ({travelers.length})
+                                            </h3>
+                                            <div className="mt-3 space-y-4">
+                                                {travelers.map((t, idx) => {
+                                                    const v = visaById(t.visa_type_id);
+                                                    return (
+                                                        <div key={t.key} className="rounded-lg bg-[hsl(var(--cloud))] p-4" data-testid={`summary-traveler-${idx}`}>
+                                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                                <p className="text-sm font-bold">
+                                                                    {t.first_name} {t.last_name}
+                                                                    <span className="ml-2 text-xs font-medium text-muted-foreground">
+                                                                        {t.applicant_type === "child" ? "Çocuk" : "Yetişkin"}
+                                                                    </span>
+                                                                </p>
+                                                                <span className="font-heading text-sm font-bold">{v ? formatMoney(v.price, v.currency) : "-"}</span>
+                                                            </div>
+                                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                                {v?.name} · Pasaport: {t.passport_no} · Geçerlilik: {formatDate(t.passport_expiry)}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
+
                                         <div className="rounded-xl border border-border p-5">
                                             <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">Seyahat</h3>
                                             <div className="mt-3">
                                                 <SummaryRow label="Gidiş" value={formatDate(travel.arrival_date)} />
                                                 <SummaryRow label="Dönüş" value={formatDate(travel.departure_date)} />
-                                                <SummaryRow label="Amacı" value={PURPOSES.find((p) => p.value === travel.purpose)?.label} />
+                                                <SummaryRow label="Amacı" value={PURPOSE_LABELS[travel.purpose]} />
                                                 <SummaryRow label="Konaklama" value={travel.accommodation} />
                                             </div>
                                         </div>
-                                        <div className="rounded-xl border border-border p-5">
-                                            <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">Belgeler</h3>
-                                            <div className="mt-3">
-                                                <SummaryRow label="Pasaport taraması" value={passportFile?.original_filename} />
-                                                <SummaryRow label="Biyometrik fotoğraf" value={photoFile?.original_filename} />
+
+                                        {quote && (
+                                            <div className="rounded-xl border border-primary/30 bg-primary/5 p-5" data-testid="summary-price-breakdown">
+                                                <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">Fiyat dökümü</h3>
+                                                <div className="mt-3">
+                                                    <SummaryRow label={`Vize bedelleri (${quote.traveler_count} yolcu)`} value={formatMoney(quote.subtotal, quote.currency)} />
+                                                    {quote.family_discount > 0 && (
+                                                        <SummaryRow
+                                                            label={`Aile indirimi (%${Math.round(quote.family_discount_rate * 100)})`}
+                                                            value={`- ${formatMoney(quote.family_discount, quote.currency)}`}
+                                                        />
+                                                    )}
+                                                    {(quote.addons || []).map((a) => (
+                                                        <SummaryRow key={a.id} label={`${a.name} x${a.quantity}`} value={formatMoney(a.total, quote.currency)} />
+                                                    ))}
+                                                    <SummaryRow label="Toplam" value={formatMoney(quote.total, quote.currency)} strong />
+                                                </div>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
 
                                     {!created && (
                                         <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
-                                            <Checkbox
-                                                checked={kvkk}
-                                                onCheckedChange={(v) => setKvkk(!!v)}
-                                                className="mt-0.5"
-                                                data-testid="kvkk-checkbox"
-                                            />
+                                            <Checkbox checked={kvkk} onCheckedChange={(v) => setKvkk(!!v)} className="mt-0.5" data-testid="kvkk-checkbox" />
                                             <span className="text-sm leading-6">
-                                                KVKK aydınlatma metnini okudum, bilgilerimin vize başvurumun
-                                                hazırlanması amacıyla işlenmesini onaylıyorum.
+                                                KVKK aydınlatma metnini okudum, bilgilerimin ve yüklediğim belgelerin vize
+                                                başvurumun hazırlanması amacıyla işlenmesini onaylıyorum.
                                             </span>
                                         </label>
                                     )}
                                 </div>
                             )}
 
-                            {/* NAV BUTTONS */}
+                            {/* NAV */}
                             <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    className="h-11 border border-border"
-                                    onClick={back}
-                                    disabled={step === 0}
-                                    data-testid="wizard-prev-step-button"
-                                >
+                                <Button type="button" variant="secondary" className="h-11 border border-border" onClick={back} disabled={step === 0} data-testid="wizard-prev-step-button">
                                     <ArrowLeft className="mr-2 h-4 w-4" /> Geri
                                 </Button>
 
                                 {step < STEPS.length - 1 ? (
                                     <Button type="button" className="h-11 px-6" onClick={next} data-testid="wizard-next-step-button">
-                                        Devam et <ArrowRight className="ml-2 h-4 w-4" />
+                                        Devam Et <ArrowRight className="ml-2 h-4 w-4" />
                                     </Button>
                                 ) : (
-                                    <Button
-                                        type="button"
-                                        className="h-12 px-7 text-base"
-                                        onClick={startPayment}
-                                        disabled={submitting || paying}
-                                        data-testid="wizard-pay-button"
-                                    >
+                                    <Button type="button" className="h-12 px-7 text-base" onClick={startPayment} disabled={submitting || paying} data-testid="wizard-pay-button">
                                         {submitting || paying ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -594,31 +848,48 @@ export default function Apply() {
                         <aside className="space-y-5">
                             <div className="card-surface p-5" data-testid="wizard-order-summary">
                                 <h3 className="font-heading text-base font-bold">Başvuru özeti</h3>
-                                {selectedVisa ? (
-                                    <>
-                                        <p className="mt-3 text-sm font-semibold">{selectedVisa.name}</p>
-                                        <p className="text-xs text-muted-foreground">{selectedVisa.entry_label} · {selectedVisa.processing_days}</p>
-                                        <div className="mt-4 flex items-end justify-between border-t border-border pt-4">
-                                            <span className="text-sm text-muted-foreground">Toplam</span>
+                                <p className="mt-2 text-sm text-muted-foreground">{travelers.length} yolcu</p>
+                                {quote ? (
+                                    <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Vize bedelleri</span>
+                                            <span className="font-semibold">{formatMoney(quote.subtotal, quote.currency)}</span>
+                                        </div>
+                                        {quote.family_discount > 0 && (
+                                            <div className="flex justify-between text-[hsl(var(--success))]">
+                                                <span>Aile indirimi (%{Math.round(quote.family_discount_rate * 100)})</span>
+                                                <span className="font-semibold">- {formatMoney(quote.family_discount, quote.currency)}</span>
+                                            </div>
+                                        )}
+                                        {(quote.addons || []).map((a) => (
+                                            <div key={a.id} className="flex justify-between">
+                                                <span className="text-muted-foreground">{a.name} x{a.quantity}</span>
+                                                <span className="font-semibold">{formatMoney(a.total, quote.currency)}</span>
+                                            </div>
+                                        ))}
+                                        <div className="flex items-end justify-between border-t border-border pt-3">
+                                            <span className="text-sm font-semibold">Toplam</span>
                                             <span className="font-heading text-2xl font-bold" data-testid="summary-total-price">
-                                                {formatMoney(selectedVisa.price, selectedVisa.currency)}
+                                                {formatMoney(quote.total, quote.currency)}
                                             </span>
                                         </div>
-                                    </>
+                                    </div>
                                 ) : (
-                                    <p className="mt-3 text-sm text-muted-foreground">Henüz vize tipi seçilmedi.</p>
+                                    <p className="mt-4 border-t border-border pt-4 text-sm text-muted-foreground">
+                                        Fiyat hesabı için her yolcu için vize türü seçin.
+                                    </p>
                                 )}
                             </div>
 
                             <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
                                 <div className="flex items-center gap-2">
-                                    <ShieldCheck className="h-4.5 w-4.5 text-primary" />
+                                    <ShieldCheck className="h-4 w-4 text-primary" />
                                     <h3 className="font-heading text-sm font-bold">Bilgileriniz güvende</h3>
                                 </div>
                                 <ul className="mt-3 space-y-2 text-xs leading-5 text-muted-foreground">
                                     <li>• Kart bilgileriniz sunucularımıza kaydedilmez.</li>
                                     <li>• Belgeleriniz yalnızca başvurunuz için kullanılır.</li>
-                                    <li>• Ödeme sonrası takip kodunuz e-postanıza gönderilir.</li>
+                                    <li>• Onaylanan vizeniz PDF olarak e-postanıza gönderilir.</li>
                                 </ul>
                             </div>
 
@@ -628,12 +899,7 @@ export default function Apply() {
                                     Formu doldururken takılırsanız WhatsApp butonundan yazın; danışmanımız
                                     adım adım yardımcı olsun.
                                 </p>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    className="mt-4 h-10 w-full border border-border"
-                                    onClick={() => navigate("/gerekli-belgeler")}
-                                >
+                                <Button type="button" variant="secondary" className="mt-4 h-10 w-full border border-border" onClick={() => navigate("/gerekli-belgeler")}>
                                     Gerekli belgeleri gör
                                 </Button>
                             </div>

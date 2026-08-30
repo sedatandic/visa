@@ -34,8 +34,10 @@ export const Footer = () => (
                     Hızlı Bağlantılar
                 </h3>
                 <ul className="mt-4 space-y-2.5 text-sm text-white/80">
-                    <li><Link to="/vize-tipleri" className="transition-colors hover:text-primary">Vize Tipleri & Fiyatlar</Link></li>
+                    <li><Link to="/vize-tipleri" className="transition-colors hover:text-primary">Hizmet Bedelleri</Link></li>
                     <li><Link to="/gerekli-belgeler" className="transition-colors hover:text-primary">Gerekli Belgeler</Link></li>
+                    <li><Link to="/hizmetler" className="transition-colors hover:text-primary">Hizmetler & Turlar</Link></li>
+                    <li><Link to="/gelismeler" className="transition-colors hover:text-primary">Dubai'den Gelişmeler</Link></li>
                     <li><Link to="/sss" className="transition-colors hover:text-primary">Sıkça Sorulan Sorular</Link></li>
                     <li><Link to="/takip" className="transition-colors hover:text-primary">Başvuru Takip</Link></li>
                     <li><Link to="/hakkimizda" className="transition-colors hover:text-primary">Hakkımızda</Link></li>

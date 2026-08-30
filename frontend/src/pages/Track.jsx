@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CreditCard, Loader2, Search } from "lucide-react";
+import { CreditCard, Download, FileCheck2, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
-import { api, apiError } from "../lib/api";
+import { api, apiError, API } from "../lib/api";
 import { STATUS_META, formatDate, formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { PaymentBadge, StatusBadge } from "../components/StatusBadge";
@@ -22,7 +22,7 @@ export default function Track() {
     useEffect(() => {
         setMeta(
             "Başvuru Takip | VizeAtlas Dubai",
-            "Takip kodunuz ve soyadınızla Dubai vize başvurunuzun durumunu anında sorgulayın."
+            "Takip kodunuz ve soyadınızla Dubai vize başvurunuzun durumunu sorgulayın, onaylanan vizenizi indirin."
         );
     }, []);
 
@@ -61,12 +61,15 @@ export default function Track() {
         }
     };
 
+    const pricing = result?.pricing;
+    const visaFile = result?.visa_result;
+
     return (
         <div data-testid="track-page">
             <PageHeader
                 eyebrow="Başvuru Takip"
                 title="Başvurunuzun durumunu sorgulayın"
-                description="Başvuru oluşturulduğunda size verilen takip kodu ve soyadınızla başvurunuzun güncel durumunu görüntüleyebilirsiniz."
+                description="Takip kodunuz ve yolculardan birinin soyadı ile başvurunuzun güncel durumunu görüntüleyebilir, onaylanan vizenizi indirebilirsiniz."
             />
 
             <section className="section">
@@ -75,34 +78,18 @@ export default function Track() {
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="t-code">Takip kodu *</Label>
-                                <Input
-                                    id="t-code"
-                                    value={code}
-                                    onChange={(e) => setCode(e.target.value.toUpperCase())}
-                                    placeholder="DV-AB123456"
-                                    data-testid="tracking-code-input"
-                                />
+                                <Input id="t-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="DV-AB123456" data-testid="tracking-code-input" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="t-last">Soyad *</Label>
-                                <Input
-                                    id="t-last"
-                                    value={lastName}
-                                    onChange={(e) => setLastName(e.target.value)}
-                                    placeholder="YILMAZ"
-                                    data-testid="tracking-lastname-input"
-                                />
+                                <Input id="t-last" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="YILMAZ" data-testid="tracking-lastname-input" />
                             </div>
                         </div>
                         <Button type="submit" disabled={loading} className="mt-6 h-12 w-full px-7 text-base sm:w-auto" data-testid="tracking-submit-button">
                             {loading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sorgulanıyor…
-                                </>
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sorgulanıyor…</>
                             ) : (
-                                <>
-                                    <Search className="mr-2 h-4 w-4" /> Başvurumu sorgula
-                                </>
+                                <><Search className="mr-2 h-4 w-4" /> Başvurumu sorgula</>
                             )}
                         </Button>
                         {error && (
@@ -120,7 +107,7 @@ export default function Track() {
                                         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Takip kodu</p>
                                         <p className="font-heading text-2xl font-bold tracking-wider">{result.reference_code}</p>
                                         <p className="mt-1 text-sm text-muted-foreground">
-                                            {result.applicant?.first_name} {result.applicant?.last_name} · {result.visa_type_name}
+                                            {result.contact?.full_name} · {(result.travelers || []).length} yolcu
                                         </p>
                                     </div>
                                     <div className="flex flex-col items-start gap-2 sm:items-end">
@@ -145,10 +132,27 @@ export default function Track() {
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-muted-foreground">Tutar</p>
+                                        <p className="text-xs text-muted-foreground">Toplam tutar</p>
                                         <p className="text-sm font-semibold">{formatMoney(result.price, result.currency)}</p>
                                     </div>
                                 </div>
+
+                                {visaFile?.file_id && (
+                                    <div className="mt-6 flex flex-col gap-3 rounded-xl border border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.08)] p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="visa-download-box">
+                                        <div className="flex items-start gap-2.5">
+                                            <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-[#14532D]" />
+                                            <div>
+                                                <p className="text-sm font-semibold text-[#14532D]">Vizeniz hazır!</p>
+                                                <p className="text-xs text-[#14532D]/80">{visaFile.filename}</p>
+                                            </div>
+                                        </div>
+                                        <Button asChild className="h-11 shrink-0" data-testid="tracking-download-visa-button">
+                                            <a href={`${API}/files/${visaFile.file_id}?download=1`} target="_blank" rel="noreferrer">
+                                                <Download className="mr-2 h-4 w-4" /> Vizeyi indir
+                                            </a>
+                                        </Button>
+                                    </div>
+                                )}
 
                                 {result.payment?.status !== "paid" && (
                                     <div className="mt-6 flex flex-col gap-3 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -157,15 +161,56 @@ export default function Track() {
                                         </p>
                                         <Button onClick={payNow} disabled={paying} className="h-11 shrink-0" data-testid="tracking-pay-button">
                                             {paying ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Açılıyor…
-                                                </>
+                                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Açılıyor…</>
                                             ) : (
-                                                <>
-                                                    <CreditCard className="mr-2 h-4 w-4" /> Ödemeyi tamamla
-                                                </>
+                                                <><CreditCard className="mr-2 h-4 w-4" /> Ödemeyi tamamla</>
                                             )}
                                         </Button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="card-surface p-6" data-testid="tracking-travelers">
+                                <h2 className="font-heading text-lg font-bold">Yolcular</h2>
+                                <div className="mt-4 space-y-3">
+                                    {(result.travelers || []).map((t, i) => (
+                                        <div key={t.id || i} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[hsl(var(--cloud))] p-4">
+                                            <div>
+                                                <p className="text-sm font-bold">
+                                                    {t.first_name} {t.last_name}
+                                                    <span className="ml-2 text-xs font-medium text-muted-foreground">
+                                                        {t.applicant_type === "child" ? "Çocuk" : "Yetişkin"}
+                                                    </span>
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">{t.visa_type_name} · Pasaport: {t.passport_no}</p>
+                                            </div>
+                                            <span className="font-heading text-sm font-bold">{formatMoney(t.price, t.currency)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {pricing && (
+                                    <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Vize bedelleri</span>
+                                            <span className="font-semibold">{formatMoney(pricing.subtotal, pricing.currency)}</span>
+                                        </div>
+                                        {pricing.family_discount > 0 && (
+                                            <div className="flex justify-between text-[hsl(var(--success))]">
+                                                <span>Aile indirimi (%{Math.round(pricing.family_discount_rate * 100)})</span>
+                                                <span className="font-semibold">- {formatMoney(pricing.family_discount, pricing.currency)}</span>
+                                            </div>
+                                        )}
+                                        {(pricing.addons || []).map((a) => (
+                                            <div key={a.id} className="flex justify-between">
+                                                <span className="text-muted-foreground">{a.name} x{a.quantity}</span>
+                                                <span className="font-semibold">{formatMoney(a.total, pricing.currency)}</span>
+                                            </div>
+                                        ))}
+                                        <div className="flex items-end justify-between border-t border-border pt-2">
+                                            <span className="font-semibold">Toplam</span>
+                                            <span className="font-heading text-xl font-bold">{formatMoney(pricing.total, pricing.currency)}</span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -177,14 +222,10 @@ export default function Track() {
                                         <li key={i} className="flex gap-4">
                                             <div className="flex flex-col items-center">
                                                 <span className="mt-1 h-2.5 w-2.5 rounded-full bg-primary" />
-                                                {i < (result.status_history || []).length - 1 && (
-                                                    <span className="mt-1 w-px flex-1 bg-border" />
-                                                )}
+                                                {i < (result.status_history || []).length - 1 && <span className="mt-1 w-px flex-1 bg-border" />}
                                             </div>
                                             <div className="pb-1">
-                                                <p className="text-sm font-semibold">
-                                                    {STATUS_META[h.status]?.label || h.status}
-                                                </p>
+                                                <p className="text-sm font-semibold">{STATUS_META[h.status]?.label || h.status}</p>
                                                 <p className="text-xs text-muted-foreground">{formatDateTime(h.at)}</p>
                                                 {h.note && <p className="mt-1 text-sm text-muted-foreground">{h.note}</p>}
                                             </div>
@@ -197,9 +238,7 @@ export default function Track() {
 
                     <p className="mt-8 text-center text-sm text-muted-foreground">
                         Takip kodunuzu bulamıyor musunuz?{" "}
-                        <Link to="/iletisim" className="font-semibold text-primary hover:underline">
-                            Bize ulaşın
-                        </Link>
+                        <Link to="/iletisim" className="font-semibold text-primary hover:underline">Bize ulaşın</Link>
                     </p>
                 </div>
             </section>

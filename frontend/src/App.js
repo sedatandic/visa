@@ -6,6 +6,8 @@ import { RequireAdmin } from "./components/AdminLayout";
 import Home from "./pages/Home";
 import VisaTypes from "./pages/VisaTypes";
 import Documents from "./pages/Documents";
+import Services from "./pages/Services";
+import Articles from "./pages/Articles";
 import Faq from "./pages/Faq";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -42,6 +44,8 @@ function App() {
                     <Route path="/" element={<Site><Home /></Site>} />
                     <Route path="/vize-tipleri" element={<Site><VisaTypes /></Site>} />
                     <Route path="/gerekli-belgeler" element={<Site><Documents /></Site>} />
+                    <Route path="/hizmetler" element={<Site><Services /></Site>} />
+                    <Route path="/gelismeler" element={<Site><Articles /></Site>} />
                     <Route path="/sss" element={<Site><Faq /></Site>} />
                     <Route path="/hakkimizda" element={<Site><About /></Site>} />
                     <Route path="/iletisim" element={<Site><Contact /></Site>} />
@@ -52,46 +56,11 @@ function App() {
                     <Route path="/odeme/iptal" element={<Site><PaymentCancel /></Site>} />
 
                     <Route path="/admin/giris" element={<AdminLogin />} />
-                    <Route
-                        path="/admin"
-                        element={
-                            <RequireAdmin>
-                                <AdminDashboard />
-                            </RequireAdmin>
-                        }
-                    />
-                    <Route
-                        path="/admin/basvuru/:id"
-                        element={
-                            <RequireAdmin>
-                                <AdminApplicationDetail />
-                            </RequireAdmin>
-                        }
-                    />
-                    <Route
-                        path="/admin/mesajlar"
-                        element={
-                            <RequireAdmin>
-                                <AdminMessages />
-                            </RequireAdmin>
-                        }
-                    />
-                    <Route
-                        path="/admin/e-postalar"
-                        element={
-                            <RequireAdmin>
-                                <AdminEmails />
-                            </RequireAdmin>
-                        }
-                    />
-                    <Route
-                        path="/admin/vize-tipleri"
-                        element={
-                            <RequireAdmin>
-                                <AdminVisaTypes />
-                            </RequireAdmin>
-                        }
-                    />
+                    <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+                    <Route path="/admin/basvuru/:id" element={<RequireAdmin><AdminApplicationDetail /></RequireAdmin>} />
+                    <Route path="/admin/mesajlar" element={<RequireAdmin><AdminMessages /></RequireAdmin>} />
+                    <Route path="/admin/e-postalar" element={<RequireAdmin><AdminEmails /></RequireAdmin>} />
+                    <Route path="/admin/vize-tipleri" element={<RequireAdmin><AdminVisaTypes /></RequireAdmin>} />
 
                     <Route path="*" element={<Site><NotFound /></Site>} />
                 </Routes>

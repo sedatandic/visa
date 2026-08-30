@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, ArrowRight, Camera, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Camera, CheckCircle2, FileText } from "lucide-react";
 import { api } from "../lib/api";
 import { IMAGES, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
@@ -12,7 +12,7 @@ export default function Documents() {
     useEffect(() => {
         setMeta(
             "Dubai Vizesi Gerekli Belgeler | VizeAtlas Dubai",
-            "Dubai (BAE) vize başvurusu için gereken belgeler: pasaport taraması, biyometrik fotoğraf kriterleri, uçuş ve konaklama bilgileri."
+            "Dubai (BAE) vize başvurusu için gereken belgeler: pasaport fotoğrafı, vesikalık fotoğraf kriterleri, dönüş uçak bileti ve otel rezervasyonu."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
     }, []);
@@ -20,8 +20,8 @@ export default function Documents() {
     return (
         <div data-testid="documents-page">
             <PageHeader
-                eyebrow="Gerekli Belgeler"
-                title="Başvuru için yanınızda olması gerekenler"
+                eyebrow="Gerekli Evraklar"
+                title="Başvuru için gereken belgeler"
                 description="Dubai vizesi tamamen elektronik düzenlenir. Pasaportunuzu kargoya vermenize gerek yoktur; aşağıdaki belgelerin dijital kopyaları yeterlidir."
             />
 
@@ -30,9 +30,9 @@ export default function Documents() {
                     <div>
                         <ul className="space-y-4" data-testid="required-documents-checklist">
                             {(content?.required_documents || []).map((d) => (
-                                <li key={d.title} className="card-surface flex items-start gap-4 p-5">
+                                <li key={d.key} className="card-surface flex items-start gap-4 p-5">
                                     <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                                        <CheckCircle2 className="h-5 w-5 text-primary" />
+                                        {d.required ? <CheckCircle2 className="h-5 w-5 text-primary" /> : <FileText className="h-5 w-5 text-primary" />}
                                     </span>
                                     <div>
                                         <div className="flex flex-wrap items-center gap-2">
@@ -79,12 +79,7 @@ export default function Documents() {
 
                     <div className="space-y-6">
                         <div className="overflow-hidden rounded-2xl border border-border" style={{ boxShadow: "var(--shadow-card)" }}>
-                            <img
-                                src={IMAGES.travelFlatlay}
-                                alt="Seyahat hazırlığı: harita, defter ve fotoğraf makinesi"
-                                className="h-[240px] w-full object-cover"
-                                loading="lazy"
-                            />
+                            <img src={IMAGES.travelFlatlay} alt="Seyahat hazırlığı: harita, defter ve fotoğraf makinesi" className="h-[240px] w-full object-cover" loading="lazy" />
                         </div>
                         <div className="card-surface p-6">
                             <h2 className="font-heading text-base font-bold">Pasaport taraması nasıl olmalı?</h2>
@@ -92,15 +87,15 @@ export default function Documents() {
                                 <li>• Fotoğrafın bulunduğu sayfanın tamamı görünmeli.</li>
                                 <li>• Köşeler kesilmemiş, yazılar okunabilir olmalı.</li>
                                 <li>• Parlama ve gölge olmaması için doğal ışıkta çekin.</li>
-                                <li>• Renkli tarama veya net telefon fotoğrafı kabul edilir.</li>
+                                <li>• Pasaport dönüş tarihinden itibaren en az 6 ay geçerli olmalı.</li>
                                 <li>• Dosya formatı: JPG, PNG veya PDF (maks. 10 MB).</li>
                             </ul>
                         </div>
                         <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-6">
-                            <h2 className="font-heading text-base font-bold">Belgeniz uygun mu, emin değilsiniz?</h2>
+                            <h2 className="font-heading text-base font-bold">Aile başvurusu yapıyorsanız</h2>
                             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                Yüklediğiniz her belgeyi başvuru öncesi kontrol ediyoruz. Uygun olmayan bir
-                                belge varsa sizi arayarak nasıl düzelteceğinizi anlatıyoruz.
+                                Her yolcu için ayrı pasaport ve vesikalık fotoğraf yüklemeniz gerekir. Uçak
+                                bileti ve otel rezervasyonu ise tüm başvuru için bir kez yüklenir.
                             </p>
                             <Button asChild variant="secondary" className="mt-4 h-11 border border-border">
                                 <Link to="/iletisim">Danışmana sor</Link>

@@ -6,8 +6,10 @@ import { COMPANY } from "../lib/site";
 import { BrandMark } from "./BrandMark";
 
 const LINKS = [
-    { to: "/vize-tipleri", label: "Vize Tipleri & Fiyatlar" },
+    { to: "/vize-tipleri", label: "Hizmet Bedelleri" },
     { to: "/gerekli-belgeler", label: "Gerekli Belgeler" },
+    { to: "/hizmetler", label: "Hizmetler" },
+    { to: "/gelismeler", label: "Gelişmeler" },
     { to: "/sss", label: "S.S.S." },
     { to: "/takip", label: "Başvuru Takip" },
     { to: "/iletisim", label: "İletişim" },
@@ -39,14 +41,14 @@ export const Navbar = () => {
                     <BrandMark />
                 </Link>
 
-                <nav className="hidden items-center gap-1 lg:flex">
+                <nav className="hidden items-center gap-0.5 xl:flex">
                     {LINKS.map((l) => (
                         <NavLink
                             key={l.to}
                             to={l.to}
                             data-testid={`nav-link-${l.to.replace("/", "")}`}
                             className={({ isActive }) =>
-                                `rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+                                `whitespace-nowrap rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors duration-150 ${
                                     isActive
                                         ? "bg-primary/10 text-primary"
                                         : "text-foreground/80 hover:bg-muted hover:text-foreground"
@@ -61,7 +63,7 @@ export const Navbar = () => {
                 <div className="hidden items-center gap-3 lg:flex">
                     <a
                         href={COMPANY.phoneHref}
-                        className="flex items-center gap-2 text-sm font-semibold text-foreground/80 transition-colors hover:text-primary"
+                        className="hidden items-center gap-2 text-sm font-semibold text-foreground/80 transition-colors hover:text-primary 2xl:flex"
                         data-testid="navbar-phone-link"
                     >
                         <Phone className="h-4 w-4" />
@@ -75,7 +77,7 @@ export const Navbar = () => {
                 <button
                     type="button"
                     onClick={() => setOpen((v) => !v)}
-                    className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card text-foreground lg:hidden"
+                    className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card text-foreground xl:hidden"
                     aria-label="Menüyü aç/kapat"
                     data-testid="mobile-menu-toggle"
                 >
@@ -84,7 +86,7 @@ export const Navbar = () => {
             </div>
 
             {open && (
-                <div className="border-t border-border bg-card lg:hidden" data-testid="mobile-menu">
+                <div className="border-t border-border bg-card xl:hidden" data-testid="mobile-menu">
                     <div className="container-page flex flex-col gap-1 py-4">
                         {LINKS.map((l) => (
                             <NavLink

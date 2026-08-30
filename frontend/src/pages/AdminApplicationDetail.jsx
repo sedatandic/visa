@@ -1,8 +1,21 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Download, ExternalLink, Loader2, Save } from "lucide-react";
+import {
+    ArrowLeft,
+    Baby,
+    Download,
+    ExternalLink,
+    FileCheck2,
+    Loader2,
+    Mail,
+    Save,
+    Send,
+    Trash2,
+    UploadCloud,
+    User,
+} from "lucide-react";
 import { toast } from "sonner";
-import { api, apiError, fileUrl } from "../lib/api";
+import { api, apiError, fileUrl, API } from "../lib/api";
 import {
     STATUS_META,
     STATUS_OPTIONS,
@@ -42,35 +55,24 @@ const Row = ({ label, value }) => (
 const DocumentViewer = ({ fileId, title }) => {
     if (!fileId) {
         return (
-            <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed border-border p-5 text-center text-xs text-muted-foreground">
                 {title}: yüklenmemiş
             </div>
         );
     }
     const url = fileUrl(fileId);
     return (
-        <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold">{title}</p>
-                <a
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                    data-testid={`open-document-${title}`}
-                >
-                    Yeni sekmede aç <ExternalLink className="h-3 w-3" />
+        <div className="rounded-xl border border-border bg-card p-3">
+            <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold">{title}</p>
+                <a href={url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline" data-testid={`open-document-${title}`}>
+                    Aç <ExternalLink className="h-3 w-3" />
                 </a>
             </div>
             <Dialog>
                 <DialogTrigger asChild>
-                    <button type="button" className="mt-3 block w-full overflow-hidden rounded-lg border border-border">
-                        <img
-                            src={url}
-                            alt={title}
-                            className="h-48 w-full bg-muted object-contain"
-                            data-testid={`document-thumbnail-${title}`}
-                        />
+                    <button type="button" className="mt-2 block w-full overflow-hidden rounded-lg border border-border">
+                        <img src={url} alt={title} className="h-32 w-full bg-muted object-contain" data-testid={`document-thumbnail-${title}`} />
                     </button>
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl bg-card">
@@ -78,11 +80,7 @@ const DocumentViewer = ({ fileId, title }) => {
                         <DialogTitle>{title}</DialogTitle>
                     </DialogHeader>
                     <img src={url} alt={title} className="max-h-[70vh] w-full object-contain" />
-                    <a
-                        href={url}
-                        download
-                        className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-                    >
+                    <a href={`${url}?download=1`} className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
                         <Download className="h-4 w-4" /> İndir
                     </a>
                 </DialogContent>
@@ -94,14 +92,18 @@ const DocumentViewer = ({ fileId, title }) => {
 export default function AdminApplicationDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const fileRef = useRef(null);
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [sending, setSending] = useState(false);
     const [status, setStatus] = useState("");
     const [note, setNote] = useState("");
+    const [visaMessage, setVisaMessage] = useState("");
 
     useEffect(() => {
-        setMeta("Başvuru Detayı | VizeAtlas Dubai", "Başvuru detayı ve belge görüntüleyici.");
+        setMeta("Başvuru Detayı | VizeAtlas Dubai", "Başvuru detayı, belge görüntüleyici ve vize teslimi.");
     }, []);
 
     const load = useCallback(async () => {
@@ -130,23 +132,70 @@ export default function AdminApplicationDetail() {
     const save = async () => {
         setSaving(true);
         try {
-            const { data: res } = await api.patch(`/admin/applications/${id}`, {
-                status,
-                note,
-                notify: true,
-            });
+            const { data: res } = await api.patch(`/admin/applications/${id}`, { status, note, notify: true });
             setData((d) => ({ ...d, application: res.application }));
-            if (res.email_notification === "sent") {
-                toast.success("Durum güncellendi ve başvuru sahibine e-posta gönderildi.");
-            } else if (res.email_notification === "skipped") {
-                toast.success("Durum güncellendi. (E-posta servisi yapılandırılmadığı için bildirim gönderilmedi.)");
-            } else {
-                toast.success("Durum güncellendi.");
-            }
+            if (res.email_notification === "sent") toast.success("Durum güncellendi ve başvuru sahibine e-posta gönderildi.");
+            else if (res.email_notification === "skipped") toast.success("Durum güncellendi. (E-posta servisi yapılandırılmadığı için bildirim gönderilmedi.)");
+            else toast.success("Durum güncellendi.");
         } catch (err) {
             toast.error(apiError(err, "Güncelleme başarısız."));
         } finally {
             setSaving(false);
+        }
+    };
+
+    const uploadVisa = async (files) => {
+        const file = files?.[0];
+        if (!file) return;
+        const form = new FormData();
+        form.append("file", file);
+        setUploading(true);
+        try {
+            const { data: res } = await api.post(`/admin/applications/${id}/visa-document`, form, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            setData((d) => ({ ...d, application: res.application }));
+            toast.success("Vize belgesi yüklendi. Şimdi müşteriye gönderebilirsiniz.");
+        } catch (err) {
+            toast.error(apiError(err, "Vize belgesi yüklenemedi."));
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const removeVisa = async () => {
+        try {
+            const { data: res } = await api.delete(`/admin/applications/${id}/visa-document`);
+            setData((d) => ({ ...d, application: res.application }));
+            toast.success("Vize belgesi kaldırıldı.");
+        } catch (err) {
+            toast.error(apiError(err, "İşlem başarısız."));
+        }
+    };
+
+    const sendVisa = async () => {
+        setSending(true);
+        try {
+            const { data: res } = await api.post(`/admin/applications/${id}/send-visa`, {
+                origin_url: window.location.origin,
+                message: visaMessage,
+                set_approved: true,
+            });
+            setData((d) => ({ ...d, application: res.application }));
+            setStatus(res.application.status);
+            if (res.email_notification === "sent") {
+                toast.success("Vize belgesi müşteriye e-posta ile gönderildi ve başvuru onaylandı.");
+            } else if (res.email_notification === "skipped") {
+                toast.success(
+                    "Başvuru onaylandı ve belge takip sayfasından indirilebilir hale geldi. E-posta servisi yapılandırılmadığı için bildirim gönderilemedi."
+                );
+            } else {
+                toast.error("E-posta gönderilirken bir hata oluştu, ancak belge takip sayfasına eklendi.");
+            }
+        } catch (err) {
+            toast.error(apiError(err, "Gönderim başarısız."));
+        } finally {
+            setSending(false);
         }
     };
 
@@ -171,6 +220,10 @@ export default function AdminApplicationDetail() {
     }
 
     const a = data.application;
+    const travelers = a.travelers || [];
+    const pricing = a.pricing;
+    const extra = a.extra_documents || {};
+    const visa = a.visa_result;
 
     return (
         <AdminLayout>
@@ -184,7 +237,7 @@ export default function AdminApplicationDetail() {
                         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Takip kodu</p>
                         <h1 className="font-heading text-3xl font-bold tracking-wider">{a.reference_code}</h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            {a.applicant?.first_name} {a.applicant?.last_name} · {a.visa_type_name} · {formatMoney(a.price, a.currency)}
+                            {a.contact?.full_name} · {travelers.length} yolcu · {formatMoney(a.price, a.currency)}
                         </p>
                     </div>
                     <div className="flex flex-col items-start gap-2 sm:items-end">
@@ -196,17 +249,45 @@ export default function AdminApplicationDetail() {
                 <div className="mt-7 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
                     <div className="space-y-6">
                         <div className="card-surface p-6">
-                            <h2 className="font-heading text-base font-bold">Başvuru sahibi</h2>
+                            <h2 className="font-heading text-base font-bold">İletişim</h2>
                             <div className="mt-3">
-                                <Row label="Ad Soyad" value={`${a.applicant?.first_name} ${a.applicant?.last_name}`} />
-                                <Row label="E-posta" value={a.applicant?.email} />
-                                <Row label="Telefon" value={a.applicant?.phone} />
-                                <Row label="Doğum tarihi" value={formatDate(a.applicant?.birth_date)} />
-                                <Row label="Cinsiyet" value={a.applicant?.gender === "female" ? "Kadın" : "Erkek"} />
-                                <Row label="T.C. Kimlik No" value={a.applicant?.national_id} />
-                                <Row label="Şehir" value={a.applicant?.address_city} />
-                                <Row label="Pasaport No" value={a.applicant?.passport_no} />
-                                <Row label="Pasaport geçerlilik" value={formatDate(a.applicant?.passport_expiry)} />
+                                <Row label="Ad Soyad" value={a.contact?.full_name} />
+                                <Row label="E-posta" value={a.contact?.email} />
+                                <Row label="Telefon" value={a.contact?.phone} />
+                                <Row label="Şehir" value={a.contact?.address_city} />
+                            </div>
+                        </div>
+
+                        <div className="card-surface p-6">
+                            <h2 className="font-heading text-base font-bold">Yolcular ({travelers.length})</h2>
+                            <div className="mt-4 space-y-5">
+                                {travelers.map((t, i) => (
+                                    <div key={t.id || i} className="rounded-xl border border-border p-4" data-testid={`admin-traveler-${i}`}>
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2.5">
+                                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                                                    {t.applicant_type === "child" ? <Baby className="h-4 w-4 text-primary" /> : <User className="h-4 w-4 text-primary" />}
+                                                </span>
+                                                <div>
+                                                    <p className="text-sm font-bold">{t.first_name} {t.last_name}</p>
+                                                    <p className="text-xs text-muted-foreground">{t.applicant_type === "child" ? "Çocuk" : "Yetişkin"} · {t.visa_type_name}</p>
+                                                </div>
+                                            </div>
+                                            <span className="font-heading text-sm font-bold">{formatMoney(t.price, t.currency)}</span>
+                                        </div>
+                                        <div className="mt-3 grid gap-x-6 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2">
+                                            <p>Doğum: <strong className="text-foreground">{formatDate(t.birth_date)}</strong></p>
+                                            <p>Cinsiyet: <strong className="text-foreground">{t.gender === "female" ? "Kadın" : "Erkek"}</strong></p>
+                                            <p>Pasaport: <strong className="text-foreground">{t.passport_no}</strong></p>
+                                            <p>Geçerlilik: <strong className="text-foreground">{formatDate(t.passport_expiry)}</strong></p>
+                                            {t.national_id ? <p>T.C. No: <strong className="text-foreground">{t.national_id}</strong></p> : null}
+                                        </div>
+                                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                            <DocumentViewer fileId={t.documents?.passport_file_id || t.passport_file_id} title={`Pasaport ${i + 1}`} />
+                                            <DocumentViewer fileId={t.documents?.photo_file_id || t.photo_file_id} title={`Vesikalık ${i + 1}`} />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -216,10 +297,41 @@ export default function AdminApplicationDetail() {
                                 <Row label="Gidiş" value={formatDate(a.travel?.arrival_date)} />
                                 <Row label="Dönüş" value={formatDate(a.travel?.departure_date)} />
                                 <Row label="Amacı" value={PURPOSE_LABELS[a.travel?.purpose] || a.travel?.purpose} />
+                                <Row label="Doğum ülkesi" value={a.travel?.birth_country === "TR" ? "Türkiye" : a.travel?.birth_country} />
                                 <Row label="Konaklama" value={a.travel?.accommodation} />
                                 <Row label="Uçuş no" value={a.travel?.flight_no} />
                                 <Row label="Not" value={a.travel?.notes} />
                             </div>
+                            {(extra.ticket_file_id || extra.hotel_file_id || (extra.other_file_ids || []).length > 0) && (
+                                <div className="mt-5 border-t border-border pt-4">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ek belgeler</p>
+                                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                                        {extra.ticket_file_id && <DocumentViewer fileId={extra.ticket_file_id} title="Uçak Bileti" />}
+                                        {extra.hotel_file_id && <DocumentViewer fileId={extra.hotel_file_id} title="Otel Rezervasyonu" />}
+                                        {(extra.other_file_ids || []).map((fid, i) => (
+                                            <DocumentViewer key={fid} fileId={fid} title={`Diğer ${i + 1}`} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="card-surface p-6">
+                            <h2 className="font-heading text-base font-bold">Fiyat dökümü</h2>
+                            {pricing ? (
+                                <div className="mt-3">
+                                    <Row label={`Vize bedelleri (${pricing.traveler_count} yolcu)`} value={formatMoney(pricing.subtotal, pricing.currency)} />
+                                    {pricing.family_discount > 0 && (
+                                        <Row label={`Aile indirimi (%${Math.round(pricing.family_discount_rate * 100)})`} value={`- ${formatMoney(pricing.family_discount, pricing.currency)}`} />
+                                    )}
+                                    {(pricing.addons || []).map((ad) => (
+                                        <Row key={ad.id} label={`${ad.name} x${ad.quantity}`} value={formatMoney(ad.total, pricing.currency)} />
+                                    ))}
+                                    <Row label="Toplam" value={formatMoney(pricing.total, pricing.currency)} />
+                                </div>
+                            ) : (
+                                <p className="mt-3 text-sm text-muted-foreground">Fiyat dökümü yok.</p>
+                            )}
                         </div>
 
                         <div className="card-surface p-6">
@@ -260,6 +372,102 @@ export default function AdminApplicationDetail() {
                     </div>
 
                     <div className="space-y-6">
+                        {/* VISA DELIVERY */}
+                        <div className="card-surface p-6" data-testid="admin-visa-delivery-panel">
+                            <div className="flex items-center gap-2">
+                                <FileCheck2 className="h-4.5 w-4.5 text-primary" />
+                                <h2 className="font-heading text-base font-bold">Onaylanan vizeyi gönder</h2>
+                            </div>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                Onaylanan vize belgesini (PDF veya görsel) yükleyin, ardından tek tıkla
+                                başvuru sahibine e-posta ile gönderin. Belge aynı zamanda takip sayfasından
+                                indirilebilir hale gelir.
+                            </p>
+
+                            <input
+                                ref={fileRef}
+                                type="file"
+                                accept="application/pdf,image/jpeg,image/png"
+                                className="hidden"
+                                data-testid="visa-document-file-input"
+                                onChange={(e) => uploadVisa(e.target.files)}
+                            />
+
+                            {visa?.file_id ? (
+                                <div className="mt-5 rounded-xl border border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.07)] p-4" data-testid="visa-document-uploaded">
+                                    <p className="text-sm font-semibold text-[#14532D]">{visa.filename}</p>
+                                    <p className="mt-0.5 text-xs text-[#14532D]/80">
+                                        Yüklendi: {formatDateTime(visa.uploaded_at)}
+                                        {visa.sent_at ? ` · Gönderildi: ${formatDateTime(visa.sent_at)}` : " · Henüz gönderilmedi"}
+                                    </p>
+                                    {visa.send_status && (
+                                        <p className="mt-1 text-xs font-semibold text-[#14532D]">
+                                            E-posta durumu: {visa.send_status === "sent" ? "Gönderildi" : visa.send_status === "skipped" ? "Atlandı (anahtar yok)" : "Hata"}
+                                        </p>
+                                    )}
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        <Button asChild variant="secondary" className="h-10 border border-border">
+                                            <a href={`${API}/files/${visa.file_id}`} target="_blank" rel="noreferrer">
+                                                <ExternalLink className="mr-2 h-4 w-4" /> Önizle
+                                            </a>
+                                        </Button>
+                                        <Button variant="secondary" className="h-10 border border-border" onClick={() => fileRef.current?.click()} disabled={uploading} data-testid="visa-document-replace-button">
+                                            <UploadCloud className="mr-2 h-4 w-4" /> Değiştir
+                                        </Button>
+                                        <Button variant="secondary" className="h-10 border border-border text-destructive" onClick={removeVisa} data-testid="visa-document-delete-button">
+                                            <Trash2 className="mr-2 h-4 w-4" /> Kaldır
+                                        </Button>
+                                    </div>
+
+                                    <div className="mt-5 space-y-3">
+                                        <Label htmlFor="visa-message">Müşteriye not (opsiyonel)</Label>
+                                        <Textarea
+                                            id="visa-message"
+                                            rows={3}
+                                            value={visaMessage}
+                                            onChange={(e) => setVisaMessage(e.target.value)}
+                                            placeholder="Örn. Vizeniz 30 gün geçerlidir, giriş tarihinden itibaren işlemeye başlar."
+                                            data-testid="visa-message-input"
+                                        />
+                                        <Button onClick={sendVisa} disabled={sending} className="h-11 w-full" data-testid="send-visa-button">
+                                            {sending ? (
+                                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gönderiliyor…</>
+                                            ) : (
+                                                <><Send className="mr-2 h-4 w-4" /> {visa.sent_at ? "Tekrar gönder" : "Müşteriye gönder ve onayla"}</>
+                                            )}
+                                        </Button>
+                                        <p className="flex items-start gap-1.5 text-xs leading-5 text-muted-foreground">
+                                            <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                            Gönderim ile başvuru durumu otomatik olarak "Onaylandı" olur.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => fileRef.current?.click()}
+                                    className="mt-5 flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-card px-4 py-8 text-center transition-colors hover:border-primary/50"
+                                    data-testid="visa-document-dropzone"
+                                >
+                                    {uploading ? (
+                                        <>
+                                            <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                                            <span className="text-sm font-semibold">Yükleniyor…</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
+                                                <UploadCloud className="h-5 w-5 text-primary" />
+                                            </span>
+                                            <span className="text-sm font-semibold">Vize belgesini yükleyin</span>
+                                            <span className="text-xs text-muted-foreground">PDF / JPG / PNG · Maks. 15 MB</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                        </div>
+
+                        {/* STATUS */}
                         <div className="card-surface p-6">
                             <h2 className="font-heading text-base font-bold">Durumu güncelle</h2>
                             <div className="mt-4 space-y-4">
@@ -277,34 +485,17 @@ export default function AdminApplicationDetail() {
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="admin-note">Danışman notu (başvuru sahibine e-postada gönderilir)</Label>
-                                    <Textarea
-                                        id="admin-note"
-                                        rows={4}
-                                        value={note}
-                                        onChange={(e) => setNote(e.target.value)}
-                                        placeholder="Örn. Fotoğrafınız yeniden yüklenmeli."
-                                        data-testid="admin-note-input"
-                                    />
+                                    <Label htmlFor="admin-note">Danışman notu (e-postada gönderilir)</Label>
+                                    <Textarea id="admin-note" rows={4} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Örn. Fotoğrafınız yeniden yüklenmeli." data-testid="admin-note-input" />
                                 </div>
                                 <Button onClick={save} disabled={saving} className="h-11 w-full" data-testid="admin-save-status-button">
                                     {saving ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor…
-                                        </>
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor…</>
                                     ) : (
-                                        <>
-                                            <Save className="mr-2 h-4 w-4" /> Kaydet
-                                        </>
+                                        <><Save className="mr-2 h-4 w-4" /> Kaydet</>
                                     )}
                                 </Button>
                             </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h2 className="font-heading text-base font-bold">Yüklenen belgeler</h2>
-                            <DocumentViewer fileId={a.documents?.passport_file_id} title="Pasaport" />
-                            <DocumentViewer fileId={a.documents?.photo_file_id} title="Biyometrik Fotoğraf" />
                         </div>
                     </div>
                 </div>
