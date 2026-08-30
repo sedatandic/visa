@@ -50,6 +50,8 @@ export const Footer = () => (
                     <li><Link to="/takip" className="transition-colors hover:text-primary">Başvuru Takip</Link></li>
                     <li><Link to="/hakkimizda" className="transition-colors hover:text-primary">Hakkımızda</Link></li>
                     <li><Link to="/kvkk" className="transition-colors hover:text-primary">KVKK & Gizlilik</Link></li>
+                    <li><Link to="/iade-kosullari" className="transition-colors hover:text-primary" data-testid="footer-refund-link">İade ve İptal Koşulları</Link></li>
+                    <li><Link to="/hizmet-sozlesmesi" className="transition-colors hover:text-primary" data-testid="footer-service-terms-link">Mesafeli Hizmet Sözleşmesi</Link></li>
                 </ul>
             </div>
 

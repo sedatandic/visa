@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
     ArrowLeft,
     Baby,
+    Banknote,
     Download,
     ExternalLink,
     FileCheck2,
@@ -100,6 +101,7 @@ export default function AdminApplicationDetail() {
     const [uploading, setUploading] = useState(false);
     const [sending, setSending] = useState(false);
     const [whatsapping, setWhatsapping] = useState(false);
+    const [markingPaid, setMarkingPaid] = useState(false);
     const [status, setStatus] = useState("");
     const [note, setNote] = useState("");
     const [visaMessage, setVisaMessage] = useState("");
@@ -172,6 +174,22 @@ export default function AdminApplicationDetail() {
             toast.success("Vize belgesi kaldırıldı.");
         } catch (err) {
             toast.error(apiError(err, "İşlem başarısız."));
+        }
+    };
+
+    const markPaid = async () => {
+        setMarkingPaid(true);
+        try {
+            const { data: res } = await api.post(`/admin/applications/${id}/mark-paid`);
+            if (res.application) {
+                setData((d) => ({ ...d, application: res.application }));
+                setStatus(res.application.status);
+            }
+            toast.success("Ödeme onaylandı, başvuru incelemeye alındı.");
+        } catch (err) {
+            toast.error(apiError(err, "Ödeme onaylanamadı."));
+        } finally {
+            setMarkingPaid(false);
         }
     };
 
@@ -368,6 +386,32 @@ export default function AdminApplicationDetail() {
                                             <p className="text-xs text-muted-foreground">{formatDateTime(t.created_at)}</p>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+
+                            {a.payment?.status !== "paid" && (
+                                <div className="mt-4 rounded-lg border border-dashed border-border p-4">
+                                    <p className="text-sm font-semibold">
+                                        {a.payment?.method === "bank_transfer"
+                                            ? "Müşteri havale/EFT ile ödemeyi seçti"
+                                            : "Ödeme henüz alınmadı"}
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                        Havale/EFT tutarı hesabınıza geçtiyse ödemeyi onaylayın; müşteriye
+                                        bilgilendirme e-postası gider ve başvuru incelemeye alınır.
+                                    </p>
+                                    <Button
+                                        onClick={markPaid}
+                                        disabled={markingPaid}
+                                        className="mt-3 h-10"
+                                        data-testid="mark-paid-button"
+                                    >
+                                        {markingPaid ? (
+                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> İşleniyor…</>
+                                        ) : (
+                                            <><Banknote className="mr-2 h-4 w-4" /> Havale ödemesini onayla</>
+                                        )}
+                                    </Button>
                                 </div>
                             )}
                         </div>

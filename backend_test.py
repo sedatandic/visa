@@ -67,26 +67,71 @@ class BackendTester:
         self.log(f"Health: {data}")
 
     def test_visa_types(self):
-        """GET /api/visa-types"""
+        """GET /api/visa-types - includes new visa types"""
         r = requests.get(f"{self.base_url}/visa-types", timeout=10)
         assert r.status_code == 200, f"Expected 200, got {r.status_code}"
         data = r.json()
         assert isinstance(data, list), "Expected list of visa types"
-        assert len(data) >= 5, f"Expected at least 5 visa types, got {len(data)}"
+        assert len(data) >= 9, f"Expected at least 9 visa types (including new ones), got {len(data)}"
+        
+        # Check for new visa types
+        visa_ids = [v["id"] for v in data]
+        assert "visa_transit_48" in visa_ids, "Missing visa_transit_48"
+        assert "visa_freelancer_2y" in visa_ids, "Missing visa_freelancer_2y"
+        
+        # Verify new visa types structure
+        transit = next((v for v in data if v["id"] == "visa_transit_48"), None)
+        assert transit is not None, "visa_transit_48 not found"
+        assert transit["name"] == "48 Saatlik Transit Vize", f"Transit visa name mismatch: {transit['name']}"
+        assert transit["price"] == 1299.0, f"Transit visa price mismatch: {transit['price']}"
+        assert transit["currency"] == "TRY", "Transit visa currency should be TRY"
+        assert transit["duration_days"] == 2, "Transit visa duration should be 2 days"
+        
+        freelancer = next((v for v in data if v["id"] == "visa_freelancer_2y"), None)
+        assert freelancer is not None, "visa_freelancer_2y not found"
+        assert freelancer["name"] == "2 Yıllık Freelancer (Serbest Çalışma) Vizesi", f"Freelancer visa name mismatch: {freelancer['name']}"
+        assert freelancer["price"] == 109000.0, f"Freelancer visa price mismatch: {freelancer['price']}"
+        assert freelancer["currency"] == "TRY", "Freelancer visa currency should be TRY"
+        assert freelancer["duration_days"] == 730, "Freelancer visa duration should be 730 days"
+        
         for vt in data:
             assert "id" in vt, "Visa type missing id"
             assert "name" in vt, "Visa type missing name"
             assert "price" in vt, "Visa type missing price"
-        self.log(f"Found {len(data)} visa types")
+        self.log(f"Found {len(data)} visa types (including visa_transit_48 and visa_freelancer_2y)")
 
     def test_site_content(self):
-        """GET /api/content/site"""
+        """GET /api/content/site - includes promo, bank_transfer, 17 FAQs"""
         r = requests.get(f"{self.base_url}/content/site", timeout=10)
         assert r.status_code == 200, f"Expected 200, got {r.status_code}"
         data = r.json()
-        required = ["company", "process_steps", "why_us", "faq", "required_documents", "photo_rules", "testimonials", "review_summary", "status_labels"]
+        required = ["company", "process_steps", "why_us", "faq", "required_documents", "photo_rules", "testimonials", "review_summary", "status_labels", "promo", "bank_transfer"]
         for key in required:
             assert key in data, f"Missing {key} in site content"
+        
+        # Verify promo structure
+        promo = data.get("promo")
+        assert promo is not None, "promo is None"
+        assert "title" in promo, "Missing 'title' in promo"
+        assert "detail" in promo, "Missing 'detail' in promo"
+        self.log(f"Promo: {promo['title']}")
+        
+        # Verify bank_transfer structure
+        bank_transfer = data.get("bank_transfer")
+        assert bank_transfer is not None, "bank_transfer is None"
+        assert "enabled" in bank_transfer, "Missing 'enabled' in bank_transfer"
+        assert "iban" in bank_transfer, "Missing 'iban' in bank_transfer"
+        assert "steps" in bank_transfer, "Missing 'steps' in bank_transfer"
+        assert "note" in bank_transfer, "Missing 'note' in bank_transfer"
+        assert isinstance(bank_transfer["steps"], list), "bank_transfer steps should be a list"
+        self.log(f"Bank transfer: {bank_transfer['iban']}")
+        
+        # Verify FAQ count (should be 17)
+        faq = data.get("faq")
+        assert faq is not None, "faq is None"
+        assert isinstance(faq, list), "faq should be a list"
+        assert len(faq) == 17, f"Expected 17 FAQ items, got {len(faq)}"
+        self.log(f"FAQ: {len(faq)} items")
         
         # Verify review_summary structure
         review_summary = data.get("review_summary")
@@ -284,6 +329,36 @@ class BackendTester:
         assert result["ok"] is True, "Contact form submission failed"
         self.log("Contact form submitted successfully")
 
+    def test_legal_content(self):
+        """GET /api/content/legal - refund_terms and service_terms"""
+        r = requests.get(f"{self.base_url}/content/legal", timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "refund_terms" in data, "Missing refund_terms"
+        assert "service_terms" in data, "Missing service_terms"
+        
+        # Verify refund_terms structure
+        refund = data["refund_terms"]
+        assert "updated_at" in refund, "Missing updated_at in refund_terms"
+        assert "intro" in refund, "Missing intro in refund_terms"
+        assert "sections" in refund, "Missing sections in refund_terms"
+        assert isinstance(refund["sections"], list), "refund_terms sections should be a list"
+        assert len(refund["sections"]) >= 5, f"Expected at least 5 refund sections, got {len(refund['sections'])}"
+        for section in refund["sections"]:
+            assert "title" in section, "Section missing title"
+            assert "items" in section, "Section missing items"
+            assert isinstance(section["items"], list), "Section items should be a list"
+        
+        # Verify service_terms structure
+        service = data["service_terms"]
+        assert "updated_at" in service, "Missing updated_at in service_terms"
+        assert "intro" in service, "Missing intro in service_terms"
+        assert "sections" in service, "Missing sections in service_terms"
+        assert isinstance(service["sections"], list), "service_terms sections should be a list"
+        assert len(service["sections"]) >= 6, f"Expected at least 6 service sections, got {len(service['sections'])}"
+        
+        self.log(f"Legal content: {len(refund['sections'])} refund sections, {len(service['sections'])} service sections")
+
     # ============================================================
     # PAYMENT ENDPOINTS
     # ============================================================
@@ -324,6 +399,103 @@ class BackendTester:
         assert "status" in result, "Missing status"
         assert "payment_status" in result, "Missing payment_status"
         self.log(f"Payment status: {result['payment_status']}")
+
+    def test_bank_transfer_payment_valid(self):
+        """POST /api/payments/bank-transfer - valid application"""
+        # Create a new application for bank transfer test
+        png_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        files1 = {"file": ("p.png", io.BytesIO(png_data), "image/png")}
+        r1 = requests.post(f"{self.base_url}/uploads", files=files1, data={"doc_type": "passport"}, timeout=15)
+        passport_id = r1.json()["file_id"]
+        files2 = {"file": ("ph.png", io.BytesIO(png_data), "image/png")}
+        r2 = requests.post(f"{self.base_url}/uploads", files=files2, data={"doc_type": "photo"}, timeout=15)
+        photo_id = r2.json()["file_id"]
+        
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
+        app_payload = {
+            "contact": {
+                "full_name": "Bank Transfer Test",
+                "email": f"banktest_{datetime.now().timestamp()}@test.com",
+                "phone": "+905551234567",
+                "address_city": "Istanbul"
+            },
+            "travelers": [{
+                "first_name": "BANK",
+                "last_name": "TEST",
+                "birth_date": "1990-01-01",
+                "gender": "male",
+                "applicant_type": "adult",
+                "nationality": "TR",
+                "passport_no": "U99999999",
+                "passport_expiry": "2028-12-31",
+                "visa_type_id": "visa_30_single",
+                "passport_file_id": passport_id,
+                "photo_file_id": photo_id
+            }],
+            "travel": {
+                "arrival_date": tomorrow,
+                "departure_date": return_date,
+                "purpose": "tourism",
+                "birth_country": "TR"
+            },
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {},
+            "kvkk_accepted": True
+        }
+        r_app = requests.post(f"{self.base_url}/applications", json=app_payload, timeout=15)
+        assert r_app.status_code == 200, f"Failed to create application: {r_app.status_code}"
+        app_id = r_app.json()["id"]
+        
+        # Now test bank transfer
+        payload = {
+            "application_id": app_id,
+            "origin_url": "https://visa-application-ae.preview.emergentagent.com"
+        }
+        r = requests.post(f"{self.base_url}/payments/bank-transfer", json=payload, timeout=15)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        result = r.json()
+        assert result["ok"] is True, "Bank transfer selection failed"
+        assert "reference_code" in result, "Missing reference_code"
+        assert "amount" in result, "Missing amount"
+        assert "currency" in result, "Missing currency"
+        assert "bank" in result, "Missing bank details"
+        assert "iban" in result["bank"], "Missing IBAN in bank details"
+        assert "steps" in result["bank"], "Missing steps in bank details"
+        
+        self.test_bank_transfer_app_id = app_id
+        self.log(f"Bank transfer selected: {result['reference_code']}, amount: {result['amount']} {result['currency']}")
+
+    def test_bank_transfer_payment_unknown_app(self):
+        """POST /api/payments/bank-transfer - unknown application"""
+        payload = {
+            "application_id": "unknown-id-12345",
+            "origin_url": "https://visa-application-ae.preview.emergentagent.com"
+        }
+        r = requests.post(f"{self.base_url}/payments/bank-transfer", json=payload, timeout=10)
+        assert r.status_code == 404, f"Expected 404, got {r.status_code}"
+        self.log("Unknown application correctly rejected for bank transfer")
+
+    def test_bank_transfer_payment_already_paid(self):
+        """POST /api/payments/bank-transfer - already paid application"""
+        if not hasattr(self, 'test_bank_transfer_app_id'):
+            self.log("Skipping: no bank transfer application created", "WARN")
+            return
+        
+        # Mark as paid first via admin
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r_mark = requests.post(f"{self.base_url}/admin/applications/{self.test_bank_transfer_app_id}/mark-paid", headers=headers, timeout=10)
+        assert r_mark.status_code == 200, "Failed to mark as paid"
+        
+        # Try to select bank transfer again
+        payload = {
+            "application_id": self.test_bank_transfer_app_id,
+            "origin_url": "https://visa-application-ae.preview.emergentagent.com"
+        }
+        r = requests.post(f"{self.base_url}/payments/bank-transfer", json=payload, timeout=10)
+        assert r.status_code == 400, f"Expected 400 for already paid, got {r.status_code}"
+        self.log("Already paid application correctly rejected for bank transfer")
 
     # ============================================================
     # ADMIN ENDPOINTS
@@ -516,6 +688,97 @@ class BackendTester:
         assert r.status_code == 200, "Failed to restore original price"
         self.log(f"Visa type price restored to: {original_price}")
 
+    def test_admin_mark_paid_valid(self):
+        """POST /api/admin/applications/{id}/mark-paid - mark bank transfer as paid"""
+        # Create a new application for mark-paid test
+        png_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        files1 = {"file": ("p.png", io.BytesIO(png_data), "image/png")}
+        r1 = requests.post(f"{self.base_url}/uploads", files=files1, data={"doc_type": "passport"}, timeout=15)
+        passport_id = r1.json()["file_id"]
+        files2 = {"file": ("ph.png", io.BytesIO(png_data), "image/png")}
+        r2 = requests.post(f"{self.base_url}/uploads", files=files2, data={"doc_type": "photo"}, timeout=15)
+        photo_id = r2.json()["file_id"]
+        
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
+        app_payload = {
+            "contact": {
+                "full_name": "Mark Paid Test",
+                "email": f"markpaid_{datetime.now().timestamp()}@test.com",
+                "phone": "+905551234567",
+                "address_city": "Istanbul"
+            },
+            "travelers": [{
+                "first_name": "MARK",
+                "last_name": "PAID",
+                "birth_date": "1990-01-01",
+                "gender": "male",
+                "applicant_type": "adult",
+                "nationality": "TR",
+                "passport_no": "U88888888",
+                "passport_expiry": "2028-12-31",
+                "visa_type_id": "visa_30_single",
+                "passport_file_id": passport_id,
+                "photo_file_id": photo_id
+            }],
+            "travel": {
+                "arrival_date": tomorrow,
+                "departure_date": return_date,
+                "purpose": "tourism",
+                "birth_country": "TR"
+            },
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {},
+            "kvkk_accepted": True
+        }
+        r_app = requests.post(f"{self.base_url}/applications", json=app_payload, timeout=15)
+        assert r_app.status_code == 200, f"Failed to create application: {r_app.status_code}"
+        app_id = r_app.json()["id"]
+        
+        # Select bank transfer
+        payload = {
+            "application_id": app_id,
+            "origin_url": "https://visa-application-ae.preview.emergentagent.com"
+        }
+        r = requests.post(f"{self.base_url}/payments/bank-transfer", json=payload, timeout=15)
+        assert r.status_code == 200, "Failed to select bank transfer"
+        
+        # Now mark as paid
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.post(f"{self.base_url}/admin/applications/{app_id}/mark-paid", headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        result = r.json()
+        assert result["ok"] is True, "Mark paid failed"
+        assert "application" in result, "Missing application in response"
+        assert result["application"]["payment"]["status"] == "paid", f"Payment status should be 'paid', got {result['application']['payment']['status']}"
+        assert result["application"]["status"] == "reviewing", f"Application status should be 'reviewing', got {result['application']['status']}"
+        assert result["email_notification"] == "skipped", f"Expected 'skipped' email notification, got {result['email_notification']}"
+        
+        self.test_mark_paid_app_id = app_id
+        self.log(f"Application marked as paid: {app_id}, status: {result['application']['status']}")
+
+    def test_admin_mark_paid_already_paid(self):
+        """POST /api/admin/applications/{id}/mark-paid - already paid returns already_paid=true"""
+        if not hasattr(self, 'test_mark_paid_app_id'):
+            self.log("Skipping: no mark-paid application created", "WARN")
+            return
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.post(f"{self.base_url}/admin/applications/{self.test_mark_paid_app_id}/mark-paid", headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        result = r.json()
+        assert result["ok"] is True, "Mark paid failed"
+        assert result.get("already_paid") is True, "Expected already_paid=true"
+        self.log("Already paid application correctly returns already_paid=true")
+
+    def test_admin_mark_paid_unknown_app(self):
+        """POST /api/admin/applications/{id}/mark-paid - unknown application"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.post(f"{self.base_url}/admin/applications/unknown-id-12345/mark-paid", headers=headers, timeout=10)
+        assert r.status_code == 404, f"Expected 404, got {r.status_code}"
+        self.log("Unknown application correctly returns 404 for mark-paid")
+
     # ============================================================
     # PHASE 3: MULTI-TRAVELER & FAMILY PRICING TESTS
     # ============================================================
@@ -606,6 +869,32 @@ class BackendTester:
         r = requests.post(f"{self.base_url}/pricing/quote", json=payload, timeout=10)
         assert r.status_code == 400, f"Expected 400 for invalid visa type, got {r.status_code}"
         self.log("Invalid visa type rejected correctly")
+
+    def test_pricing_quote_new_visa_types(self):
+        """POST /api/pricing/quote - with new visa types (transit and freelancer)"""
+        # Test transit visa
+        payload_transit = {
+            "visa_type_ids": ["visa_transit_48"],
+            "addons": {"express": False, "insurance": False}
+        }
+        r = requests.post(f"{self.base_url}/pricing/quote", json=payload_transit, timeout=10)
+        assert r.status_code == 200, f"Expected 200 for transit visa, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["traveler_count"] == 1, f"Expected 1 traveler, got {data['traveler_count']}"
+        assert data["subtotal"] == 1299.0, f"Expected 1299.0 for transit visa, got {data['subtotal']}"
+        self.log(f"Transit visa pricing: {data}")
+        
+        # Test freelancer visa
+        payload_freelancer = {
+            "visa_type_ids": ["visa_freelancer_2y"],
+            "addons": {"express": False, "insurance": False}
+        }
+        r = requests.post(f"{self.base_url}/pricing/quote", json=payload_freelancer, timeout=10)
+        assert r.status_code == 200, f"Expected 200 for freelancer visa, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["traveler_count"] == 1, f"Expected 1 traveler, got {data['traveler_count']}"
+        assert data["subtotal"] == 109000.0, f"Expected 109000.0 for freelancer visa, got {data['subtotal']}"
+        self.log(f"Freelancer visa pricing: {data}")
 
     def test_multi_traveler_application_two_travelers(self):
         """POST /api/applications - 2 travelers with correct file mapping"""
@@ -1252,11 +1541,15 @@ class BackendTester:
         
         # Contact
         self.test("Submit contact form", self.test_contact_form)
+        self.test("Get legal content", self.test_legal_content)
         
         # Payments
         self.test("Create payment checkout (valid)", self.test_payment_checkout_valid)
         self.test("Create payment checkout (unknown app)", self.test_payment_checkout_unknown_app)
         self.test("Get payment status", self.test_payment_status)
+        self.test("Bank transfer payment (valid)", self.test_bank_transfer_payment_valid)
+        self.test("Bank transfer payment (unknown app)", self.test_bank_transfer_payment_unknown_app)
+        self.test("Bank transfer payment (already paid)", self.test_bank_transfer_payment_already_paid)
         
         # Admin auth
         self.test("Admin login (invalid)", self.test_admin_login_invalid)
@@ -1275,6 +1568,9 @@ class BackendTester:
         self.test("Admin emails", self.test_admin_emails)
         self.test("Admin visa types", self.test_admin_visa_types)
         self.test("Admin update visa type", self.test_admin_update_visa_type)
+        self.test("Admin mark paid (valid)", self.test_admin_mark_paid_valid)
+        self.test("Admin mark paid (already paid)", self.test_admin_mark_paid_already_paid)
+        self.test("Admin mark paid (unknown app)", self.test_admin_mark_paid_unknown_app)
         
         # Phase 3: Multi-traveler pricing
         self.test("Pricing quote - single traveler", self.test_pricing_quote_single_traveler)
@@ -1283,6 +1579,7 @@ class BackendTester:
         self.test("Pricing quote - five travelers (8% discount)", self.test_pricing_quote_five_travelers_discount)
         self.test("Pricing quote - with per-person addons", self.test_pricing_quote_with_addons_per_person)
         self.test("Pricing quote - invalid visa type", self.test_pricing_quote_invalid_visa_type)
+        self.test("Pricing quote - new visa types", self.test_pricing_quote_new_visa_types)
         
         # Phase 3: Multi-traveler applications
         self.test("Multi-traveler application - 2 travelers", self.test_multi_traveler_application_two_travelers)

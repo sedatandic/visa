@@ -3,7 +3,7 @@
 ## 1. Objectives
 - Türkçe, modern, **sade** ve güven veren bir Dubai/UAE vize başvuru sitesi (kopya değil; benzer bilgi mimarisi/UX, özgün marka/renk).
 - Vize tipleri + fiyatlar + genel bilgilendirme + hızlı başvuru akışı.
-- Çekirdek iş akışı: **başvuru oluşturma → dosya yükleme → ödeme (Stripe) → takip kodu**.
+- Çekirdek iş akışı: **başvuru oluşturma → dosya yükleme → ödeme → takip kodu**.
 - Başvuruları MongoDB’ye kaydetme, admin panelde listeleme/detay/güncelleme.
 - E-posta bildirimleri (başvuru sahibine + admin’e): **API anahtarı yoksa akışı bozmadan “skipped” olarak outbox’a yaz**.
 - Güven ve “insan eliyle tasarlanmış” kurumsal görünüm:
@@ -22,6 +22,13 @@
   - **SEO Blog:** Yazıları ayrı sayfalara çıkarma + admin yönetimi.
   - **DB içerik yönetimi:** Yorumlar + puan özeti + blog yazıları DB’ye taşındı ve admin’den yönetiliyor.
   - **WhatsApp bildirimi:** Admin’den tek tıkla wa.me linki ve hazır mesaj oluşturma (harici WhatsApp API yok; bilinçli).
+- **Phase 6 (tamamlandı):**
+  - dubaivizecisi.com incelemesi sonrası eksik içerik/operasyon akışları eklendi.
+  - Havale/EFT ödeme seçeneği + admin onayı.
+  - Yasal sayfalar (iade/sözleşme).
+  - Yeni vize tipleri (Transit/Freelancer).
+  - Promosyon bandı + WhatsApp/E-posta alternatif başvuru.
+  - Dribbble referansına yakın hero kompozisyonu (kolaj + rozet + marquee).
 
 ---
 
@@ -124,32 +131,20 @@
 
 **Test / Doğrulama**
 - `testing_agent_v3` (iteration_2.json): Phase 3 spesifik akışlar %100 PASS.
-- Bulunan tek kritik hata:
-  - Çoklu yolcuda Stripe checkout `KeyError: visa_type_id` → **düzeltildi** (`routes_payments.py`, metadata geri-uyumluluk).
-- Ek düzeltme:
-  - `payment_received` e-postası `contact.email` üzerinden gönderilecek şekilde güncellendi.
+- Kritik fix: Stripe checkout çoklu yolcuda `visa_type_id` metadata KeyError → düzeltildi (`routes_payments.py`).
 
 ---
 
 ### Phase 4 — Marka/Tema Yenileme + Koyu Mod + Sosyal Kanıt (Tamamlandı)
 **Amaç:** Görsel dili güçlendirmek, “AI şablonu” hissini kırmak, BAE bayrak renkleriyle özgün kurumsal kimlik + gece modu + sosyal kanıt.
 
-**User Stories (min 5)**
-1. Kullanıcı olarak gece kullanımı için koyu temaya geçebilmek istiyorum.
-2. Kullanıcı olarak tema tercihim sayfa yenilemelerinde ve sayfalar arasında kaybolmasın.
-3. Kullanıcı olarak sitede gerçek fotoğraflar görüp güven duymak istiyorum.
-4. Kullanıcı olarak diğer müşterilerin deneyimlerini (puan, yorum) görüp karar vermek istiyorum.
-5. Admin olarak koyu temada da rahatça paneli kullanmak istiyorum.
-
 **Adımlar / Çıktılar**
 - Tema / Tipografi:
   - UAE bayrak paleti (yeşil primary, kırmızı accent/destructive, siyah/beyaz temeller).
-  - **Kırmızı vurgular artırıldı**: hero başlık, eyebrow, yıldızlar/ikonlar, rozetler, bayrak şeridi.
   - Token tabanlı renkler: hard-coded renkler temizlendi, CSS var’lara taşındı.
 - Koyu Mod:
   - `ThemeToggle` eklendi: navbar + admin header.
   - `html.dark` ile dark tokenlar; localStorage anahtarı: `vizeatlas-theme`.
-  - Tema meta rengi: light `#0B6B3A`, dark `#0D1115`.
 - Görseller:
   - Hero: Burj Khalifa (gündüz).
   - İkincil: Sheikh Zayed yolu, Burj Al Arab, Dubai gece.
@@ -166,69 +161,89 @@
 ### Phase 5 — Operasyonel içerik yönetimi + SEO Blog + WhatsApp + AI Pasaport Okuma (Tamamlandı)
 **Amaç:** Operasyonu hızlandırmak (admin araçları), arama motoru görünürlüğü (SEO blog), müşteri iletişimi (WhatsApp), form doldurmayı hızlandırmak (AI pasaport okuma), güven artırmak (gerçek vize örneği).
 
-**User Stories (min 5)**
-1. Kullanıcı olarak pasaportumu yüklediğimde ad/soyad/pasaport no/doğum tarihi gibi alanların otomatik dolmasını istiyorum.
-2. Kullanıcı olarak blog yazılarına Google’dan geldiğimde ayrı sayfada, okunaklı ve paylaşılabilir bir içerik görmek istiyorum.
-3. Admin olarak blog yazısı ekleyip düzenleyip yayına alabilmek istiyorum.
-4. Admin olarak müşteri yorumlarını ve puan özetini panelden yönetmek istiyorum.
-5. Admin olarak vize onaylandığında müşteriye WhatsApp’tan hızlı bir bilgilendirme mesajı hazırlayıp göndermek istiyorum.
-
 **Adımlar / Çıktılar**
 - AI Pasaport Okuma:
-  - Backend: `backend/passport_ai.py` (Emergent LLM key + vision model) + `POST /api/passport/read`.
-  - PDF pasaport yüklenirse: graceful `{ok:false, reason:'pdf'}`.
-  - Frontend: `/basvuru` 1. adımda her yolcu kartında “Pasaportu yükleyin, bilgiler otomatik dolsun” alanı.
-    - Boş alanlar otomatik doldurulur; kullanıcı kontrol eder.
-    - Aynı dosya evrak adımında da kullanılır.
+  - Backend: `backend/passport_ai.py` + `POST /api/passport/read`.
+  - Frontend: `/basvuru` 1. adımda “Pasaportu yükleyin, bilgiler otomatik dolsun”.
 - Örnek BAE Vizesi:
-  - Kullanıcı tarafından sağlanan PDF’ten **kişisel detayları blur** + “ÖRNEKTİR/SPECIMEN” filigranı.
-  - Çıktı: `frontend/public/ornek-vize.jpg`.
-  - Home: “Vizeniz böyle görünür” bölümünde gösterim.
+  - Kullanıcı PDF’inden kişisel detayları blur + filigran.
+  - Çıktı: `frontend/public/ornek-vize.jpg` + Home’da gösterim.
 - UAE + TR bayrak ikonları:
-  - `FlagIcons.jsx` (SVG) — navbar ve footer’da (Türkiye → BAE) ve örnek vize başlığında.
+  - `FlagIcons.jsx` (SVG) — navbar ve footer’da.
 - Blog (SEO):
   - DB: `articles` koleksiyonu (seed + admin CRUD).
-  - Public API: `GET /api/articles`, `GET /api/articles/{slug}` (related dahil).
-  - Frontend:
-    - `/gelismeler` liste (kartlar + “Yazının devamını oku”).
-    - `/gelismeler/:slug` detay (breadcrumb, canonical, OG, **Article JSON-LD**).
+  - Public API: `GET /api/articles`, `GET /api/articles/{slug}`.
+  - Frontend: `/gelismeler` liste, `/gelismeler/:slug` detay (canonical, OG, Article JSON-LD).
 - Yorumlar (DB + Admin):
   - DB: `testimonials` + `site_settings.review_summary`.
-  - Admin:
-    - `GET/POST/PUT/DELETE /api/admin/testimonials`
-    - `PUT /api/admin/review-summary`
-    - UI: `/admin/yorumlar` (yorum CRUD + puan özeti düzenleme).
+  - Admin UI: `/admin/yorumlar`.
 - WhatsApp Bildirimi (Link tabanlı):
-  - Backend: `POST /api/admin/applications/{id}/whatsapp` → `wa.me` linki + hazır Türkçe mesaj.
-  - Log: `notifications` koleksiyonuna kayıt.
-  - Frontend: admin başvuru detayında “WhatsApp ile bildir” butonu.
-  - Not: Harici WhatsApp API entegrasyonu yok; bilinçli tercih (anahtar gerektirmeyen hızlı operasyon).
-- Tasarımın sadeleştirilmesi (dubaivizeal.com’a yakınlaşma):
-  - Font: **Figtree**.
-  - CTA/sekme görünümü: pill butonlar.
-  - Fiyat kartları: kırmızı fiyat + kırmızı “En çok tercih edilen” şeridi.
-  - Sade beyaz yüzeyler, daha az “şablon” hissi.
+  - Backend: `POST /api/admin/applications/{id}/whatsapp`.
+  - Frontend: Admin detay “WhatsApp ile bildir”.
+- Tasarım sadeleştirme:
+  - Figtree, pill butonlar, kırmızı fiyat/şerit.
 
 **Test / Doğrulama**
-- `testing_agent_v3` (iteration_4.json):
-  - Backend: **%96.9 (63/65)** — kalan 2 madde düşük öncelik/test tarafı.
-  - Frontend: ana akışlar PASS; regresyon yok.
-- Manuel doğrulama:
-  - Pasaport yükleme sonrası alanların dolması doğrulandı (OCR success ve form alanları filled).
+- `testing_agent_v3` (iteration_4.json): Backend %96.9, Frontend ana akışlar PASS.
+- Manuel doğrulama: OCR auto-fill PASS.
+
+---
+
+### Phase 6 — dubaivizecisi.com boşluk kapatma + Havale/EFT + Yasal sayfalar + Dribbble Hero (Tamamlandı)
+**Amaç:** Rakip sitedeki eksik operasyonel parçaları tamamlamak, ödeme yöntemini genişletmek, yasal şeffaflık eklemek ve hero’yu modern danışmanlık tasarımına yaklaştırmak.
+
+**User Stories (min 5)**
+1. Kullanıcı olarak kredi kartı dışında **Havale/EFT** ile de ödeme yapabilmek istiyorum.
+2. Kullanıcı olarak iade/iptal koşullarını ve hizmet sözleşmesini net görmek istiyorum.
+3. Kullanıcı olarak transit vize / freelancer vizesi gibi özel paketleri de görebilmek istiyorum.
+4. Kullanıcı olarak form doldurmak istemezsem WhatsApp/E-posta ile başvuru alternatifini görmek istiyorum.
+5. Admin olarak havale ödemesini panelden onaylayıp başvuruyu incelemeye alabilmek istiyorum.
+
+**Adımlar / Çıktılar**
+- Yeni vize tipleri:
+  - `visa_transit_48` (48 Saat Transit) ve `visa_freelancer_2y` (2 Yıl Freelancer).
+- SSS genişletme:
+  - 18 yaş kuralı, Formül A, havale, süre aşımı/Escape Report, RED/iade, WhatsApp ile başvuru vb. (toplam 17 SSS).
+- Yasal sayfalar:
+  - Backend: `GET /api/content/legal` → `refund_terms`, `service_terms`.
+  - Frontend: `/iade-kosullari`, `/hizmet-sozlesmesi` + footer linkleri.
+- Havale/EFT ödeme akışı:
+  - Backend:
+    - `POST /api/payments/bank-transfer` → `payment.method=bank_transfer`, `payment.status=awaiting_transfer`, bank bilgileri + `bank_transfer_instructions` e-postası.
+    - Admin: `POST /api/admin/applications/{id}/mark-paid` → `payment.status=paid`, `status=reviewing`, `payment_received` e-postası.
+  - Frontend:
+    - `/basvuru` ödeme adımında “Havale/EFT” seçimi + banka bilgileri blok gösterimi.
+    - Admin başvuru detayında “Havale ödemesini onayla” butonu.
+- Promosyon + alternatif başvuru:
+  - Home’da otel indirimi promosyon bandı.
+  - “WhatsApp’tan başvur / E-posta ile gönder” bölümü.
+- Dribbble referans hero:
+  - Üst üste binen görsel kolajı, 7+ yıl deneyim rozeti, puan rozet kartı.
+  - Yumuşak degrade zemin.
+  - Kayan hizmet şeridi (marquee).
+
+**Test / Doğrulama**
+- `testing_agent_v3` (iteration_5.json):
+  - Backend: %91.8 (67/73) — kalanlar zaman aşımı/kurulum, kritik bug yok.
+  - Frontend: %100 PASS (yeni UI öğeleri ve responsive doğrulandı).
+- Manuel API doğrulama:
+  - `POST /api/payments/bank-transfer` PASS.
+  - `POST /api/admin/applications/{id}/mark-paid` PASS (paid→reviewing).
+  - `POST /api/admin/applications/{id}/whatsapp` PASS.
 
 ---
 
 ## 3. Next Actions
-1. **(Opsiyonel) Resend anahtarını ekle** → canlı e-posta gönderimini E2E doğrula (application_received, payment_received, visa_delivered).
+1. **(Opsiyonel) Resend anahtarını ekle** → canlı e-posta gönderimini E2E doğrula (application_received, bank_transfer_instructions, payment_received, visa_delivered).
 2. **(Opsiyonel) Stripe prod hazırlığı**: canlı anahtarlar + webhook secret + success/cancel URL’leri prod domain.
 3. İçerik onayı:
    - Blog yazıları (başlık/slug/özet) ve hukuk/uyumluluk kontrolü.
    - Yorumlar/puan metrikleri (gerçek sayılarla güncelleme).
-   - Örnek vize görselinin “örnek” etiketi ve KVKK metinleri.
+   - Banka bilgileri (IBAN/ünvan/banka adı) gerçek bilgilerle değiştirme.
 4. Operasyonel güvenlik:
    - Admin şifresi değişimi, env değişkenleri ve erişim kısıtları.
    - Rate limit / basic bot koruması (opsiyonel).
-5. (Opsiyonel) WhatsApp’ı gerçek API ile otomatik gönderime taşımak istenirse: Twilio/Meta entegrasyonu.
+5. (Opsiyonel) WhatsApp’ı otomatik gönderime taşımak istenirse: Twilio/Meta entegrasyonu.
 
 ---
 
@@ -244,6 +259,7 @@
 - **AI pasaport okuma:** pasaport yüklenince form alanları otomatik dolar, kullanıcı kontrol eder; akış bozulmaz.
 - **SEO blog:** /gelismeler ve /gelismeler/:slug sayfaları meta/canonical/JSON-LD ile çalışır.
 - **WhatsApp bildirimi:** admin tek tıkla wa.me linki ve mesaj üretir; loglanır.
+- **Havale/EFT:** kullanıcı bank transfer seçer, sistem bank bilgilerini ve referansı gösterir; admin “mark-paid” ile ödemeyi onaylar ve başvuru incelemeye geçer.
 - `RESEND_API_KEY` yokken hiçbir kritik akış kırılmaz; tüm “atlanan” mailler `email_outbox`’a kaydolur.
 
 ---
@@ -253,20 +269,17 @@
 - Phase 2: Backend + Frontend tamamlandı; E2E test PASS (iteration_1).
 - **Phase 3: TAMAMLANDI**
   - `testing_agent_v3` iteration_2: Phase 3 özellikleri %100 PASS.
-  - Kritik fix: Stripe checkout çoklu yolcuda `visa_type_id` metadata KeyError → düzeltildi (`routes_payments.py`).
-  - İyileştirme: `payment_received` e-postası `contact.email` üzerinden gönderilecek şekilde düzeltildi.
-  - UI: Navbar link sarması `whitespace-nowrap` ile giderildi.
+  - Kritik fix: Stripe checkout çoklu yolcuda `visa_type_id` metadata KeyError → düzeltildi.
 - **Phase 4: TAMAMLANDI**
   - UAE bayrak paleti + koyu mod + sosyal kanıt + gerçek görseller.
-  - `ThemeToggle` navbar + admin header’da; tema kalıcı.
-  - `testing_agent_v3` iteration_3: PASS; regresyon yok.
+  - `testing_agent_v3` iteration_3: PASS.
 - **Phase 5: TAMAMLANDI**
-  - AI pasaport okuma endpoint’i: `POST /api/passport/read` + Apply adım 1 auto-fill.
-  - Gerçek vize PDF’inden kişisel verileri blur + filigranlı örnek: `public/ornek-vize.jpg` + Home’da gösterim.
-  - UAE + TR bayrak ikonları: navbar/footer + içerik.
-  - Blog: DB destekli `articles` + public endpoints + SEO’lu `/gelismeler/:slug` + admin CRUD `/admin/yazilar`.
-  - Yorumlar: DB’ye taşındı + admin CRUD `/admin/yorumlar` + puan özeti düzenleme.
-  - WhatsApp bildirimi: wa.me link + mesaj üretimi + `notifications` log.
-  - Tasarım sadeleştirildi ve referans siteye yaklaştırıldı: Figtree, pill butonlar, kırmızı fiyat/şerit.
-  - `testing_agent_v3` iteration_4: Backend %96.9 (63/65, düşük öncelik/test), Frontend ana akışlar PASS; regresyon yok.
-- Kalan opsiyonel işler: RESEND_API_KEY ile canlı e-posta doğrulaması, Stripe prod geçişi, içerik onayı ve operasyonel güvenlik ayarları.
+  - AI pasaport okuma, örnek vize görseli, blog/yorum CMS, WhatsApp link tabanlı bildirim.
+  - `testing_agent_v3` iteration_4: Backend %96.9, Frontend PASS.
+- **Phase 6: TAMAMLANDI**
+  - Yeni vize tipleri (Transit/Freelancer), genişletilmiş SSS, yasal sayfalar.
+  - Havale/EFT ödeme akışı + admin onayı.
+  - Promosyon bandı + WhatsApp/E-posta alternatif başvuru.
+  - Dribbble benzeri hero (kolaj + rozet + marquee).
+  - `testing_agent_v3` iteration_5: Backend %91.8 (zaman aşımı/kurulum kaynaklı), Frontend %100 PASS.
+- Kalan opsiyonel işler: RESEND_API_KEY ile canlı e-posta doğrulaması, Stripe prod geçişi, içerik/hukuk onayı, gerçek banka bilgileri, operasyonel güvenlik ayarları.

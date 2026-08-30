@@ -11,6 +11,7 @@ import {
     CreditCard,
     FileText,
     Loader2,
+    Landmark,
     Lock,
     Plus,
     ShieldCheck,
@@ -22,7 +23,7 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
-import { PURPOSES, PURPOSE_LABELS, formatDate, formatMoney, setMeta } from "../lib/site";
+import { COMPANY, PURPOSES, PURPOSE_LABELS, formatDate, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { Button } from "../components/ui/button";
@@ -110,6 +111,8 @@ export default function Apply() {
     const [kvkk, setKvkk] = useState(false);
     const [errors, setErrors] = useState({});
     const [ocr, setOcr] = useState({});
+    const [payMethod, setPayMethod] = useState("card");
+    const [transferInfo, setTransferInfo] = useState(null);
     const [quote, setQuote] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [created, setCreated] = useState(null);
@@ -379,6 +382,28 @@ export default function Apply() {
             window.location.href = data.checkout_url;
         } catch (err) {
             toast.error(apiError(err, "Ödeme sayfası açılamadı. Lütfen tekrar deneyin."));
+            setPaying(false);
+        }
+    };
+
+    const startBankTransfer = async () => {
+        let app = created;
+        if (!app) {
+            app = await submitApplication();
+            if (!app) return;
+        }
+        setPaying(true);
+        try {
+            const { data } = await api.post("/payments/bank-transfer", {
+                application_id: app.id,
+                origin_url: window.location.origin,
+            });
+            sessionStorage.setItem("dv_last_reference", app.reference_code);
+            setTransferInfo(data);
+            toast.success("Havale/EFT bilgileri hazır. Ödemenizi yaptıktan sonra dekontu iletin.");
+        } catch (err) {
+            toast.error(apiError(err, "Havale bilgileri alınamadı."));
+        } finally {
             setPaying(false);
         }
     };
@@ -938,6 +963,81 @@ export default function Apply() {
                                             </span>
                                         </label>
                                     )}
+
+                                    {/* ÖDEME YÖNTEMİ */}
+                                    <div className="mt-6" data-testid="payment-method-section">
+                                        <h3 className="font-heading text-base font-bold">Ödeme yöntemi</h3>
+                                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                            {[
+                                                {
+                                                    id: "card",
+                                                    title: "Kredi / Banka Kartı",
+                                                    detail: "3D Secure ile güvenli ödeme, anında işleme alınır.",
+                                                    icon: CreditCard,
+                                                },
+                                                {
+                                                    id: "transfer",
+                                                    title: "Havale / EFT",
+                                                    detail: "Banka hesabımıza gönderin, dekont sonrası işleme alınır.",
+                                                    icon: Landmark,
+                                                },
+                                            ].map((m) => (
+                                                <button
+                                                    key={m.id}
+                                                    type="button"
+                                                    onClick={() => setPayMethod(m.id)}
+                                                    data-testid={`payment-method-${m.id}`}
+                                                    className={`flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-colors duration-150 ${
+                                                        payMethod === m.id
+                                                            ? "border-primary bg-primary/[0.05]"
+                                                            : "border-border hover:border-primary/40"
+                                                    }`}
+                                                >
+                                                    <m.icon className={`mt-0.5 h-5 w-5 shrink-0 ${payMethod === m.id ? "text-primary" : "text-muted-foreground"}`} />
+                                                    <span>
+                                                        <span className="block text-sm font-bold">{m.title}</span>
+                                                        <span className="mt-1 block text-xs leading-5 text-muted-foreground">{m.detail}</span>
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {transferInfo && (
+                                            <div className="mt-4 rounded-xl border border-primary/30 bg-primary/[0.05] p-5" data-testid="bank-transfer-details">
+                                                <h4 className="font-heading text-sm font-bold">{transferInfo.bank?.title}</h4>
+                                                <dl className="mt-3 space-y-2 text-sm">
+                                                    <div className="flex justify-between gap-3">
+                                                        <dt className="text-muted-foreground">Hesap sahibi</dt>
+                                                        <dd className="text-right font-semibold">{transferInfo.bank?.account_name}</dd>
+                                                    </div>
+                                                    <div className="flex justify-between gap-3">
+                                                        <dt className="text-muted-foreground">Banka</dt>
+                                                        <dd className="text-right font-semibold">{transferInfo.bank?.bank_name}</dd>
+                                                    </div>
+                                                    <div className="flex justify-between gap-3">
+                                                        <dt className="text-muted-foreground">IBAN</dt>
+                                                        <dd className="text-right font-mono-code font-semibold" data-testid="bank-transfer-iban">{transferInfo.bank?.iban}</dd>
+                                                    </div>
+                                                    <div className="flex justify-between gap-3">
+                                                        <dt className="text-muted-foreground">Açıklama</dt>
+                                                        <dd className="text-right font-mono-code font-semibold">{transferInfo.reference_code}</dd>
+                                                    </div>
+                                                    <div className="flex justify-between gap-3 border-t border-border pt-2">
+                                                        <dt className="text-muted-foreground">Tutar</dt>
+                                                        <dd className="text-right font-bold text-[hsl(var(--brand-red))]">
+                                                            {formatMoney(transferInfo.amount, transferInfo.currency)}
+                                                        </dd>
+                                                    </div>
+                                                </dl>
+                                                <p className="mt-3 text-xs leading-5 text-muted-foreground">{transferInfo.bank?.note}</p>
+                                                <Button asChild variant="secondary" className="mt-4 h-10 border border-border">
+                                                    <a href={`https://wa.me/${(COMPANY.whatsapp || "").replace(/\D/g, "")}?text=${encodeURIComponent(`Merhaba, ${transferInfo.reference_code} numaralı başvurumun havale dekontunu göndermek istiyorum.`)}`} target="_blank" rel="noreferrer" data-testid="send-receipt-whatsapp">
+                                                        Dekontu WhatsApp'tan gönder
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
@@ -952,11 +1052,15 @@ export default function Apply() {
                                         Devam Et <ArrowRight className="ml-2 h-4 w-4" />
                                     </Button>
                                 ) : (
-                                    <Button type="button" className="h-12 px-7 text-base" onClick={startPayment} disabled={submitting || paying} data-testid="wizard-pay-button">
+                                    <Button type="button" className="h-12 px-7 text-base" onClick={payMethod === "transfer" ? startBankTransfer : startPayment} disabled={submitting || paying} data-testid="wizard-pay-button">
                                         {submitting || paying ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                {submitting ? "Başvuru kaydediliyor…" : "Ödeme sayfası açılıyor…"}
+                                                {submitting ? "Başvuru kaydediliyor…" : payMethod === "transfer" ? "Hazırlanıyor…" : "Ödeme sayfası açılıyor…"}
+                                            </>
+                                        ) : payMethod === "transfer" ? (
+                                            <>
+                                                <Landmark className="mr-2 h-4 w-4" /> Havale bilgilerini al
                                             </>
                                         ) : (
                                             <>

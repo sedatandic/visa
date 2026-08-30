@@ -169,6 +169,53 @@ VISA_TYPES = [
             "Uzman danışman desteği",
         ],
     },
+    {
+        "id": "visa_transit_48",
+        "slug": "transit-vize",
+        "name": "48 Saatlik Transit Vize",
+        "short_name": "Transit Vize",
+        "category": "other",
+        "duration_days": 2,
+        "entry_type": "single",
+        "entry_label": "Transit",
+        "applicant_type": "adult",
+        "price": 1299.0,
+        "currency": "TRY",
+        "processing_days": "1-2 iş günü",
+        "popular": False,
+        "order": 8,
+        "description": "BAE üzerinden başka bir ülkeye aktarma yapacaklar için 48 saat şehir çıkışına izin veren kısa süreli vize.",
+        "features": [
+            "48 saat kalış hakkı",
+            "Aktarmalı uçuşlar için",
+            "Şehre çıkış imkânı",
+            "Hızlı sonuçlanma",
+        ],
+    },
+    {
+        "id": "visa_freelancer_2y",
+        "slug": "2-yillik-freelancer-vizesi",
+        "name": "2 Yıllık Freelancer (Serbest Çalışma) Vizesi",
+        "short_name": "Freelancer Vize",
+        "category": "other",
+        "duration_days": 730,
+        "entry_type": "multiple",
+        "entry_label": "2 Yıl Çok Giriş",
+        "applicant_type": "adult",
+        "price": 109000.0,
+        "currency": "TRY",
+        "processing_days": "15-25 iş günü",
+        "popular": False,
+        "order": 9,
+        "description": "BAE'de serbest çalışmak, oturum kartı (Emirates ID) almak ve 2 yıl boyunca dilediğiniz zaman giriş çıkış yapmak için uygun vize.",
+        "features": [
+            "2 yıl geçerli oturum izni",
+            "Emirates ID (oturum kartı)",
+            "Sınırsız giriş-çıkış",
+            "Banka hesabı açma imkânı",
+            "Süreç boyunca danışman desteği",
+        ],
+    },
 ]
 
 VISA_CATEGORIES = [
@@ -401,14 +448,37 @@ FAQ = [
         "a": "Resmî harcın dışında kalan hizmet bedelimizi iade ediyoruz. Ret gerekçesini sizinle paylaşıp yeniden başvuru için yol haritası sunuyoruz.",
     },
     {
+        "q": "18 yaş altı çocuklar tek başına vize alabilir mi?",
+        "a": "Hayır. 18 yaş altındaki yolcular anne veya babasıyla birlikte başvuru yapmalı ve seyahat etmelidir. Tek başına yapılan başvurularda ret riski çok yüksektir.",
+    },
+    {
+        "q": "Anne ile çocuğun soyadı farklı; hangi ek belgeler gerekiyor?",
+        "a": "Soyadı uyuşmayan çocuk yolcular için pasaport ve vesikalık dışında; velinin önlü arkalı kimlik fotoğrafı ve e-Devlet'ten alacağınız doğum belgesi (Formül A) gerekir. Boşanma durumunda velayet belgesi de istenebilir.",
+    },
+    {
+        "q": "Ödemeyi havale/EFT ile yapabilir miyim?",
+        "a": "Evet. Ödeme adımında 'Havale / EFT' seçeneğini işaretleyin; başvuru referans kodunuzla birlikte banka bilgilerimiz ekranda ve e-postanızda yer alır. Ödemeniz hesabımıza geçtiğinde başvurunuz işleme alınır.",
+    },
+    {
+        "q": "Vize süremi aşarsam ne olur?",
+        "a": "Vize süreniz dolmadan ülkeden çıkmanız veya yurt içi uzatma yaptırmanız gerekir. Süre aşımında BAE makamları günlük ceza uygular; kaçak kalış tespit edilirse tarafınıza kaçış raporu (Escape Report) düzenlenir ve doğan tüm masraflar faturalandırılır.",
+    },
+    {
+        "q": "Başvurum reddedilirse ücret iadesi yapılıyor mu?",
+        "a": "Resmî makamlara ödenen harç iade edilmez; iade koşullarımızın tamamını 'İade ve İptal Koşulları' sayfamızda bulabilirsiniz. Ret gerekçesi ortadan kalktığında yeniden başvuru yapılabilir (aktif vize, başka acenteden devam eden başvuru veya geçmiş deport kaydı gibi).",
+    },
+    {
+        "q": "Form doldurmak istemiyorum, WhatsApp'tan başvurabilir miyim?",
+        "a": "Evet. Pasaportunuzun kimlik sayfası ile bir vesikalık fotoğrafınızı WhatsApp hattımıza veya e-posta adresimize gönderin; başvurunuzu sizin adınıza biz oluşturup ödeme bağlantısını iletelim.",
+    },
+    {
         "q": "Başvurumu nasıl takip ederim?",
         "a": "Başvurunuz oluştuğunda size bir takip kodu veriyoruz. 'Başvuru Takip' sayfasından takip kodunuz ve soyadınızla durumu anında görebilir, onaylanan vizenizi indirebilirsiniz.",
     },
 ]
 
 ARTICLES = [
-    {
-        "slug": "dubai-vizesi-hangi-emirliklerde-gecerli",
+    {        "slug": "dubai-vizesi-hangi-emirliklerde-gecerli",
         "title": "Dubai Vizesi Abu Dabi ve Şarja'da Geçerli mi?",
         "date": "2026-08-25",
         "excerpt": "Dubai vizesi aslında bir Birleşik Arap Emirlikleri vizesidir. Aldığınız vize yalnızca Dubai'de değil, yedi emirliğin tamamında geçerlidir.",
@@ -532,3 +602,134 @@ def compute_pricing(visa_prices, addons: dict, currency: str = "TRY") -> dict:
         "total": total,
         "currency": currency,
     }
+
+
+# --------------------------------------------------------------- Odeme / hukuk
+
+PROMO = {
+    "title": "Anlaşmalı Dubai otellerinde %30'a varan indirim",
+    "detail": "Vize başvurunuzu tamamlayan misafirlerimize anlaşmalı otel ve tur fiyatlarımızı danışmanınız WhatsApp üzerinden iletir.",
+}
+
+BANK_TRANSFER = {
+    "enabled": True,
+    "title": "Havale / EFT ile ödeme",
+    "account_name": "VizeAtlas Turizm ve Danışmanlık A.Ş.",
+    "bank_name": "Örnek Bank A.Ş.",
+    "iban": "TR00 0000 0000 0000 0000 0000 00",
+    "currency": "TRY",
+    "note": "Açıklama kısmına mutlaka başvuru referans kodunuzu yazın. Ödemeniz hesabımıza geçtiğinde başvurunuz işleme alınır ve size e-posta ile bilgi veririz.",
+    "steps": [
+        "Başvurunuzu tamamlayın ve referans kodunuzu not alın.",
+        "Toplam tutarı aşağıdaki hesaba havale/EFT ile gönderin.",
+        "Açıklamaya referans kodunuzu yazın.",
+        "Dekontu WhatsApp veya e-posta ile iletin; başvurunuz işleme alınsın.",
+    ],
+}
+
+REFUND_TERMS = {
+    "updated_at": "2026-08-01",
+    "intro": "Aşağıdaki koşullar, VizeAtlas Dubai üzerinden alınan vize danışmanlık hizmetleri için geçerlidir. Başvurunuzu tamamladığınızda bu koşulları kabul etmiş sayılırsınız.",
+    "sections": [
+        {
+            "title": "Başvuru öncesi iptal",
+            "items": [
+                "Başvurunuz henüz resmî makamlara iletilmediyse, ödemenizin tamamı 5 iş günü içinde iade edilir.",
+                "İptal talebinizi e-posta veya WhatsApp üzerinden referans kodunuzla iletmeniz yeterlidir.",
+            ],
+        },
+        {
+            "title": "Başvuru iletildikten sonra",
+            "items": [
+                "Başvurunuz BAE makamlarına iletildikten sonra resmî harç iadesi mümkün değildir.",
+                "Hizmet bedelimizin iadesi, işlem aşamasına göre değerlendirilir ve tarafınıza yazılı olarak bildirilir.",
+            ],
+        },
+        {
+            "title": "Ret (RED) durumu",
+            "items": [
+                "Vize başvurunuzun reddedilmesi hâlinde resmî makamlara ödenen harç iade edilmez.",
+                "Ret gerekçesi ortadan kalktığında (aktif vize, başka sağlayıcıda açık başvuru, geçmiş deport kaydı vb.) yeniden başvuru yapılabilir.",
+                "Yeniden başvuruda hizmet bedelimizde indirim uygulanır.",
+            ],
+        },
+        {
+            "title": "Eksik veya hatalı bilgi",
+            "items": [
+                "Yolcu tarafından hatalı iletilen ad, soyad, pasaport numarası gibi bilgilerden doğan retlerde iade yapılmaz.",
+                "Bu nedenle başvuru öncesi tüm bilgileri kontrol etmenizi ve pasaportunuzla birebir aynı olmasını sağlamanızı rica ederiz.",
+            ],
+        },
+        {
+            "title": "Süre aşımı ve kaçış raporu (Escape Report)",
+            "items": [
+                "Vize süresi dolduktan sonra ülkede kalmaya devam eden yolcular için BAE makamları günlük ceza uygular.",
+                "Kaçak kalış tespit edilirse kaçış raporu (Escape Report) düzenlenir ve doğan tüm masraflar yolcuya faturalandırılır.",
+                "Turistik vize başvurusu yapan tüm misafirler bu şartı kabul etmiş sayılır.",
+            ],
+        },
+        {
+            "title": "İade süreci",
+            "items": [
+                "Onaylanan iadeler, ödemenin yapıldığı yönteme (kredi kartı veya banka hesabı) iade edilir.",
+                "Kredi kartı iadelerinin hesabınıza yansıması bankanıza bağlı olarak 5-14 gün sürebilir.",
+            ],
+        },
+    ],
+}
+
+SERVICE_TERMS = {
+    "updated_at": "2026-08-01",
+    "intro": "Bu mesafeli hizmet sözleşmesi, VizeAtlas Dubai (Hizmet Sağlayıcı) ile online başvuru yapan misafir (Alıcı) arasında elektronik ortamda kurulur.",
+    "sections": [
+        {
+            "title": "1. Sözleşmenin konusu",
+            "items": [
+                "Sözleşmenin konusu, Alıcı'nın Birleşik Arap Emirlikleri giriş vizesi başvurusunun Hizmet Sağlayıcı tarafından hazırlanması, kontrol edilmesi ve yetkili makamlara iletilmesidir.",
+                "Hizmet Sağlayıcı bir danışmanlık hizmeti sunar; vizenin onaylanması yetkisi münhasıran BAE makamlarına aittir.",
+            ],
+        },
+        {
+            "title": "2. Alıcı'nın yükümlülükleri",
+            "items": [
+                "Alıcı, başvuru bilgilerinin pasaportuyla birebir aynı ve doğru olduğunu beyan eder.",
+                "Alıcı, yüklediği belgelerin kendisine ait, güncel ve gerçek olduğunu kabul eder.",
+                "Alıcı, vize süresine uymakla ve süre bitiminden önce ülkeden çıkış yapmakla yükümlüdür.",
+            ],
+        },
+        {
+            "title": "3. Hizmet Sağlayıcı'nın yükümlülükleri",
+            "items": [
+                "Başvuru evraklarını kontrol eder, eksik veya hatalı belgeleri Alıcı'ya bildirir.",
+                "Başvuru sonucunu e-posta ve başvuru takip sayfası üzerinden Alıcı ile paylaşır.",
+                "Alıcı'nın kişisel verilerini KVKK kapsamında işler ve üçüncü kişilerle yalnızca başvuru amacıyla paylaşır.",
+            ],
+        },
+        {
+            "title": "4. Ödeme",
+            "items": [
+                "Ödemeler kredi/banka kartı ile 3D Secure altyapısı üzerinden veya havale/EFT yoluyla yapılır.",
+                "Havale/EFT ödemelerinde başvuru, tutar hesaba geçtikten sonra işleme alınır.",
+            ],
+        },
+        {
+            "title": "5. Cayma hakkı ve iade",
+            "items": [
+                "Başvuru resmî makamlara iletilmeden önce iptal ve iade talebinde bulunulabilir.",
+                "Başvurunun iletilmesinden sonra resmî harç iadesi yapılamaz; ayrıntılar İade ve İptal Koşulları sayfasında yer alır.",
+            ],
+        },
+        {
+            "title": "6. Süre aşımı",
+            "items": [
+                "Vize süresini aşan kalışlarda doğacak ceza, kaçış raporu (Escape Report) ve tüm masraflar Alıcı'ya aittir.",
+            ],
+        },
+        {
+            "title": "7. Uyuşmazlık",
+            "items": [
+                "Taraflar arasındaki uyuşmazlıklarda İstanbul Mahkemeleri ve İcra Daireleri yetkilidir.",
+            ],
+        },
+    ],
+}

@@ -191,6 +191,27 @@ def payment_received_html(app_doc: dict) -> str:
     return _wrap("Ödemeniz alındı", body)
 
 
+def bank_transfer_html(app_doc: dict, bank: dict) -> str:
+    steps = "".join(
+        f'<li style="margin:0 0 6px;font-size:13px;line-height:21px;">{s}</li>'
+        for s in (bank.get("steps") or [])
+    )
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {_contact_name(app_doc)},</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Başvurunuz oluşturuldu. Ödemenizi aşağıdaki hesaba havale/EFT ile gönderdiğinizde başvurunuz işleme alınacaktır.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      {_row('Takip Kodu', app_doc.get('reference_code',''))}
+      {_row('Tutar', money(app_doc.get('price', 0), app_doc.get('currency', 'TRY')))}
+      {_row('Hesap Sahibi', bank.get('account_name',''))}
+      {_row('Banka', bank.get('bank_name',''))}
+      {_row('IBAN', bank.get('iban',''))}
+    </table>
+    <ul style="margin:16px 0 0;padding-left:18px;color:#52606D;">{steps}</ul>
+    <p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#52606D;">{bank.get('note','')}</p>
+    """
+    return _wrap("Havale / EFT ödeme bilgileri", body)
+
+
 def status_change_html(app_doc: dict, status_label: str, note: str = "") -> str:
     note_html = (
         f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#52606D;">Danışman notu: {note}</p>'

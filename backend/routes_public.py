@@ -10,6 +10,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 from content import (
     ADDONS,
     ARTICLES,
+    BANK_TRANSFER,
     COMPANY,
     FAMILY_DISCOUNT_TEXT,
     FAMILY_DISCOUNT_TIERS,
@@ -19,8 +20,11 @@ from content import (
     PARTNERS,
     PHOTO_RULES,
     PROCESS_STEPS,
+    PROMO,
+    REFUND_TERMS,
     REQUIRED_DOCUMENTS,
     REVIEW_SUMMARY,
+    SERVICE_TERMS,
     SERVICES,
     STATUS_LABELS,
     TESTIMONIALS,
@@ -115,7 +119,14 @@ async def get_site_content():
         "articles": serialize_doc(article_docs) or ARTICLES,
         "important_notice": IMPORTANT_NOTICE,
         "status_labels": STATUS_LABELS,
+        "promo": PROMO,
+        "bank_transfer": {k: v for k, v in BANK_TRANSFER.items()},
     }
+
+
+@router.get("/content/legal")
+async def get_legal_content():
+    return {"refund_terms": REFUND_TERMS, "service_terms": SERVICE_TERMS}
 
 
 @router.get("/articles")

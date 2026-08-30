@@ -13,6 +13,7 @@ import Faq from "./pages/Faq";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Kvkk from "./pages/Kvkk";
+import LegalTerms from "./pages/LegalTerms";
 import Apply from "./pages/Apply";
 import Track from "./pages/Track";
 import PaymentSuccess from "./pages/PaymentSuccess";
@@ -54,6 +55,8 @@ function App() {
                     <Route path="/hakkimizda" element={<Site><About /></Site>} />
                     <Route path="/iletisim" element={<Site><Contact /></Site>} />
                     <Route path="/kvkk" element={<Site><Kvkk /></Site>} />
+                    <Route path="/iade-kosullari" element={<Site><LegalTerms variant="refund" /></Site>} />
+                    <Route path="/hizmet-sozlesmesi" element={<Site><LegalTerms variant="service" /></Site>} />
                     <Route path="/basvuru" element={<Site><Apply /></Site>} />
                     <Route path="/takip" element={<Site><Track /></Site>} />
                     <Route path="/odeme/basarili" element={<Site><PaymentSuccess /></Site>} />

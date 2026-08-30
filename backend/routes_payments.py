@@ -8,8 +8,9 @@ from emergentintegrations.payments.stripe.checkout import (
 )
 from fastapi import APIRouter, HTTPException, Request
 
+from content import BANK_TRANSFER
 from db import applications_col, payments_col, serialize_doc
-from emailer import payment_received_html, send_email
+from emailer import bank_transfer_html, payment_received_html, send_email
 from models import CheckoutRequest
 
 logger = logging.getLogger(__name__)
@@ -130,6 +131,53 @@ async def create_checkout(payload: CheckoutRequest, request: Request):
         {"$set": {"payment.session_id": session.session_id, "updated_at": now}},
     )
     return {"checkout_url": session.url, "session_id": session.session_id}
+
+
+@router.post("/payments/bank-transfer")
+async def choose_bank_transfer(payload: CheckoutRequest):
+    """Havale/EFT ile odeme secildiginde basvuruyu 'transfer bekleniyor' durumuna alir."""
+    app_doc = await applications_col.find_one({"id": payload.application_id})
+    if not app_doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    if (app_doc.get("payment") or {}).get("status") == "paid":
+        raise HTTPException(400, "Bu basvurunun odemesi zaten alinmis.")
+
+    now = datetime.now(timezone.utc)
+    await applications_col.update_one(
+        {"id": app_doc["id"]},
+        {
+            "$set": {
+                "payment.method": "bank_transfer",
+                "payment.status": "awaiting_transfer",
+                "payment.selected_at": now,
+                "updated_at": now,
+            },
+            "$push": {
+                "status_history": {
+                    "status": app_doc.get("status", "payment_pending"),
+                    "at": now,
+                    "note": "Musteri havale/EFT ile odemeyi secti",
+                }
+            },
+        },
+    )
+    fresh = await applications_col.find_one({"id": app_doc["id"]})
+    to_email = (fresh.get("contact") or {}).get("email")
+    if to_email:
+        await send_email(
+            to_email,
+            f"Havale/EFT odeme bilgileri - {fresh['reference_code']}",
+            bank_transfer_html(serialize_doc(fresh), BANK_TRANSFER),
+            kind="bank_transfer_instructions",
+            meta={"reference_code": fresh["reference_code"]},
+        )
+    return {
+        "ok": True,
+        "reference_code": fresh["reference_code"],
+        "amount": fresh.get("price"),
+        "currency": fresh.get("currency", "TRY"),
+        "bank": BANK_TRANSFER,
+    }
 
 
 @router.get("/payments/status/{session_id}")

@@ -13,6 +13,8 @@ import {
     IdCard,
     Image as ImageIcon,
     Instagram,
+    MessageCircle,
+    Percent,
     PlaneTakeoff,
     Quote,
     ShieldCheck,
@@ -22,7 +24,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "../lib/api";
-import { IMAGES, setMeta } from "../lib/site";
+import { COMPANY, IMAGES, setMeta } from "../lib/site";
 import { Button } from "../components/ui/button";
 import { PricingTabs } from "../components/PricingTabs";
 import { ServiceCard, TourCard } from "../components/IconCards";
@@ -82,6 +84,16 @@ export default function Home() {
                             e-postanıza gelsin.
                         </p>
 
+                        {content?.promo && (
+                            <div className="mt-6 flex items-start gap-3 rounded-xl border border-[hsl(var(--brand-red)/0.28)] bg-[hsl(var(--brand-red)/0.06)] p-4" data-testid="hero-promo-banner">
+                                <Percent className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--brand-red))]" />
+                                <div>
+                                    <p className="text-sm font-bold text-[hsl(var(--brand-red))]">{content.promo.title}</p>
+                                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{content.promo.detail}</p>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="mt-8 flex flex-wrap items-center gap-3">
                             <Button asChild className="h-12 px-7 text-base" data-testid="hero-apply-now-button">
                                 <Link to="/basvuru">
@@ -126,39 +138,95 @@ export default function Home() {
                         initial={{ opacity: 0, scale: 0.97 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.5, delay: 0.1 }}
-                        className="relative"
+                        className="relative pb-10 pl-2 sm:pb-14"
                     >
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="col-span-2 overflow-hidden rounded-2xl border border-border" style={{ boxShadow: "var(--shadow-float)" }}>
-                                <img
-                                    src={IMAGES.heroSkyline}
-                                    alt="Dubai silueti ve Burj Khalifa gün batımında"
-                                    className="h-[220px] w-full object-cover sm:h-[280px]"
-                                    loading="eager"
-                                />
-                            </div>
-                            <div className="overflow-hidden rounded-xl border border-border">
-                                <img src={IMAGES.burjAlArabAerial} alt="Burj Al Arab ve Jumeirah kıyısı" className="h-[130px] w-full object-cover" loading="lazy" />
-                            </div>
-                            <div className="overflow-hidden rounded-xl border border-border">
-                                <img src={IMAGES.dubaiHighway} alt="Sheikh Zayed Yolu ve Dubai gökdelenleri" className="h-[130px] w-full object-cover" loading="lazy" />
-                            </div>
+                        <div className="overflow-hidden rounded-[28px] border border-border" style={{ boxShadow: "var(--shadow-float)" }}>
+                            <img
+                                src={IMAGES.heroSkyline}
+                                alt="Dubai silueti ve Burj Khalifa gün batımında"
+                                className="h-[280px] w-full object-cover sm:h-[380px]"
+                                loading="eager"
+                            />
                         </div>
+
                         <div
-                            className="absolute -bottom-6 left-4 right-4 overflow-hidden rounded-xl border border-border bg-card p-4 sm:left-6 sm:right-auto sm:w-[280px]"
+                            className="absolute -bottom-2 -left-2 hidden w-[190px] overflow-hidden rounded-[22px] border-4 border-background sm:block"
+                            style={{ boxShadow: "var(--shadow-soft)" }}
+                        >
+                            <img
+                                src={IMAGES.burjAlArabAerial}
+                                alt="Burj Al Arab ve Jumeirah kıyısı"
+                                className="h-[130px] w-full object-cover"
+                                loading="lazy"
+                            />
+                        </div>
+
+                        <div
+                            className="absolute -right-2 top-6 hidden w-[150px] overflow-hidden rounded-[22px] border-4 border-background lg:block"
+                            style={{ boxShadow: "var(--shadow-soft)" }}
+                        >
+                            <img
+                                src={IMAGES.dubaiHighway}
+                                alt="Sheikh Zayed Yolu ve Dubai gökdelenleri"
+                                className="h-[110px] w-full object-cover"
+                                loading="lazy"
+                            />
+                        </div>
+
+                        <div
+                            className="absolute bottom-2 right-2 w-[230px] rounded-[22px] border border-border bg-card p-4 sm:right-6"
                             style={{ boxShadow: "var(--shadow-soft)" }}
                             data-testid="hero-rating-card"
                         >
-                            <span className="absolute left-0 top-0 h-full w-1 bg-[hsl(var(--brand-red))]" aria-hidden="true" />
                             <div className="flex items-center gap-1 text-[hsl(var(--brand-red))]">
                                 {[0, 1, 2, 3, 4].map((i) => (
                                     <Star key={i} className="h-4 w-4 fill-current" />
                                 ))}
                             </div>
-                            <p className="mt-2 text-sm font-semibold leading-tight">4.500+ başarılı başvuru</p>
-                            <p className="text-xs text-muted-foreground">2019'dan bu yana Türkiye'den başvuran misafirlerimiz</p>
+                            <p className="mt-2 text-sm font-bold leading-tight">4.500+ başarılı başvuru</p>
+                            <p className="text-xs text-muted-foreground">2019'dan bu yana yanınızdayız</p>
+                        </div>
+
+                        <div
+                            className="absolute -top-4 left-6 hidden items-center gap-2.5 rounded-full border border-border bg-card px-4 py-2.5 sm:flex"
+                            style={{ boxShadow: "var(--shadow-soft)" }}
+                            data-testid="hero-experience-badge"
+                        >
+                            <span className="font-heading text-2xl font-extrabold leading-none text-[hsl(var(--brand-red))]">7+</span>
+                            <span className="text-xs font-semibold leading-tight">
+                                yıllık
+                                <br />
+                                deneyim
+                            </span>
                         </div>
                     </motion.div>
+                </div>
+
+                {/* MARQUEE RIBBON */}
+                <div className="relative border-t border-border bg-[hsl(var(--navy))] py-3" data-testid="hero-marquee">
+                    <div className="marquee">
+                        <div className="marquee-track">
+                            {[0, 1].map((dup) => (
+                                <div key={dup} className="flex shrink-0 items-center gap-8 pr-8" aria-hidden={dup === 1}>
+                                    {[
+                                        "Turistik Vize",
+                                        "Aile Başvurusu",
+                                        "Ekspres Vize",
+                                        "Vize Uzatma",
+                                        "Transit Vize",
+                                        "Freelancer Vize",
+                                        "Otel & Tur Paketleri",
+                                        "Havalimanı Transferi",
+                                    ].map((t) => (
+                                        <span key={t} className="flex items-center gap-8 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-white/85">
+                                            {t}
+                                            <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--brand-red))]" />
+                                        </span>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -294,6 +362,57 @@ export default function Home() {
                         <RouteFlags className="mt-6" />
                     </div>
                     <SampleVisa />
+                </div>
+            </section>
+
+            {/* WHATSAPP ALTERNATIVE */}
+            <section className="section" data-testid="landing-whatsapp-apply">
+                <div className="container-page">
+                    <div className="grid items-center gap-8 rounded-2xl border border-border bg-card p-7 sm:p-10 lg:grid-cols-[1.2fr_0.8fr]">
+                        <div>
+                            <span className="eyebrow">Alternatif Başvuru</span>
+                            <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
+                                Form doldurmak istemiyorsanız WhatsApp'tan başvurun
+                            </h2>
+                            <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                                Pasaportunuzun kimlik sayfası ile bir vesikalık fotoğrafınızı WhatsApp
+                                hattımıza gönderin; başvurunuzu sizin adınıza biz oluşturalım, ödeme
+                                bağlantısını ve takip kodunuzu size iletelim.
+                            </p>
+                            <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
+                                {[
+                                    "Pasaport + 1 vesikalık yeterli",
+                                    "Danışman evrakları kontrol eder",
+                                    "Kart veya havale ile ödeme",
+                                    "Takip kodu WhatsApp'tan gelir",
+                                ].map((t) => (
+                                    <li key={t} className="flex items-start gap-2 text-sm">
+                                        <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                        <span>{t}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Button asChild className="h-12 text-base" data-testid="whatsapp-apply-button">
+                                <a
+                                    href={`https://wa.me/${(COMPANY.whatsapp || "").replace(/\D/g, "")}?text=${encodeURIComponent("Merhaba, Dubai vizesi için başvuru yapmak istiyorum. Pasaport ve fotoğrafımı gönderiyorum.")}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <MessageCircle className="mr-2 h-5 w-5" /> WhatsApp'tan başvur
+                                </a>
+                            </Button>
+                            <Button asChild variant="secondary" className="h-12 border border-border text-base">
+                                <a href={`mailto:${COMPANY.email}?subject=${encodeURIComponent("Dubai vize başvurusu")}`} data-testid="email-apply-button">
+                                    E-posta ile gönder
+                                </a>
+                            </Button>
+                            <p className="text-xs leading-5 text-muted-foreground">
+                                Çalışma saatleri: {COMPANY.workingHours}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </section>
 

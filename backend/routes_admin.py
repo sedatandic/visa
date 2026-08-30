@@ -32,7 +32,7 @@ from db import (
     uploads_col,
     visa_types_col,
 )
-from emailer import send_email, status_change_html, visa_ready_html
+from emailer import payment_received_html, send_email, status_change_html, visa_ready_html
 from models import (
     AdminLogin,
     ArticleIn,
@@ -365,6 +365,56 @@ async def admin_emails(admin=Depends(require_admin), limit: int = Query(50, ge=1
     docs = await email_outbox_col.find({}).sort("created_at", -1).limit(limit).to_list(limit)
     configured = bool((os.environ.get("RESEND_API_KEY") or "").strip())
     return {"email_configured": configured, "items": serialize_doc(docs)}
+
+
+@router.post("/admin/applications/{application_id}/mark-paid")
+async def admin_mark_paid(application_id: str, admin=Depends(require_admin)):
+    """Havale/EFT ile odemesi hesaba gecen basvuruyu odendi olarak isaretler."""
+    app_doc = await applications_col.find_one({"id": application_id})
+    if not app_doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    if (app_doc.get("payment") or {}).get("status") == "paid":
+        return {"ok": True, "already_paid": True}
+
+    now = datetime.now(timezone.utc)
+    new_status = "reviewing" if app_doc.get("status") in ("submitted", "payment_pending") else app_doc.get("status")
+    await applications_col.update_one(
+        {"id": application_id},
+        {
+            "$set": {
+                "payment.status": "paid",
+                "payment.method": (app_doc.get("payment") or {}).get("method") or "bank_transfer",
+                "payment.paid_at": now,
+                "payment.marked_by": admin.get("sub"),
+                "status": new_status,
+                "updated_at": now,
+            },
+            "$push": {
+                "status_history": {
+                    "status": new_status,
+                    "at": now,
+                    "note": "Havale/EFT odemesi admin tarafindan onaylandi",
+                }
+            },
+        },
+    )
+    fresh = await applications_col.find_one({"id": application_id})
+    to_email = (fresh.get("contact") or {}).get("email")
+    notification = "skipped"
+    if to_email:
+        result = await send_email(
+            to_email,
+            f"Odemeniz alindi - {fresh['reference_code']}",
+            payment_received_html(serialize_doc(fresh)),
+            kind="payment_received",
+            meta={"reference_code": fresh["reference_code"]},
+        )
+        notification = result.get("status", "skipped")
+    return {
+        "ok": True,
+        "application": serialize_doc(fresh),
+        "email_notification": notification,
+    }
 
 
 # ------------------------------------------------------- WhatsApp bildirimi
