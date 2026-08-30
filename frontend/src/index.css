@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 36 56% 97%;
+        --foreground: 210 45% 12%;
+        --card: 0 0% 100%;
+        --card-foreground: 210 45% 12%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 210 45% 12%;
+        --primary: 181 84% 35%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 36 45% 92%;
+        --secondary-foreground: 210 45% 12%;
+        --muted: 210 20% 96%;
+        --muted-foreground: 210 14% 36%;
+        --accent: 181 84% 35%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 84% 55%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 210 22% 86%;
+        --input: 210 22% 86%;
+        --ring: 181 84% 35%;
+        --radius: 0.75rem;
+
+        --navy: 210 65% 12%;
+        --sand-surface: 36 45% 91%;
+        --cloud: 213 33% 97%;
+        --gold: 38 92% 50%;
+        --teal-hover: 181 85% 30%;
+        --success: 142 71% 40%;
+
+        --font-heading: "Space Grotesk", "Segoe UI", sans-serif;
+        --font-body: "Work Sans", "Segoe UI", sans-serif;
+        --shadow-soft: 0 10px 30px rgba(11, 31, 51, 0.08);
+        --shadow-card: 0 8px 20px rgba(11, 31, 51, 0.06);
+        --shadow-float: 0 18px 50px rgba(11, 31, 51, 0.14);
+        --focus-ring: 0 0 0 4px rgba(14, 165, 164, 0.22);
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    html {
+        scroll-behavior: smooth;
+    }
+    body {
+        @apply bg-background text-foreground;
+        margin: 0;
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    .font-heading {
+        font-family: var(--font-heading);
+        letter-spacing: -0.02em;
+    }
+    ::selection {
+        background-color: hsl(181 84% 35% / 0.2);
+        color: hsl(var(--foreground));
+    }
+    :focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+    }
+}
+
+@layer components {
+    .container-page {
+        @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+    }
+    .section {
+        @apply py-14 sm:py-20;
+    }
+    .card-surface {
+        @apply rounded-xl border border-border bg-card;
+        box-shadow: var(--shadow-card);
+    }
+    .card-hoverable {
+        @apply transition-shadow duration-200 hover:border-primary/40;
+    }
+    .card-hoverable:hover {
+        box-shadow: var(--shadow-soft);
+    }
+    .eyebrow {
+        @apply inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary;
+    }
+    .hero-glow {
+        background:
+            radial-gradient(
+                900px circle at 18% 8%,
+                rgba(14, 165, 164, 0.16),
+                transparent 55%
+            ),
+            radial-gradient(
+                700px circle at 82% 0%,
+                rgba(245, 158, 11, 0.12),
+                transparent 60%
+            );
+    }
+    .noise-overlay::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.05;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+
+    [data-debug-wrapper="true"] > * {
+        margin-left: inherit;
+        margin-right: inherit;
+        margin-top: inherit;
+        margin-bottom: inherit;
+        padding-left: inherit;
+        padding-right: inherit;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        column-gap: inherit;
+        row-gap: inherit;
+        gap: inherit;
+        border-left-width: inherit;
+        border-right-width: inherit;
+        border-top-width: inherit;
+        border-bottom-width: inherit;
+        border-left-style: inherit;
+        border-right-style: inherit;
+        border-top-style: inherit;
+        border-bottom-style: inherit;
+        border-left-color: inherit;
+        border-right-color: inherit;
+        border-top-color: inherit;
+        border-bottom-color: inherit;
+    }
+}

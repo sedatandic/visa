@@ -1,0 +1,114 @@
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, ArrowRight, Camera, CheckCircle2 } from "lucide-react";
+import { api } from "../lib/api";
+import { IMAGES, setMeta } from "../lib/site";
+import { PageHeader } from "../components/SiteLayout";
+import { Button } from "../components/ui/button";
+
+export default function Documents() {
+    const [content, setContent] = useState(null);
+
+    useEffect(() => {
+        setMeta(
+            "Dubai Vizesi Gerekli Belgeler | VizeAtlas Dubai",
+            "Dubai (BAE) vize başvurusu için gereken belgeler: pasaport taraması, biyometrik fotoğraf kriterleri, uçuş ve konaklama bilgileri."
+        );
+        api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
+    }, []);
+
+    return (
+        <div data-testid="documents-page">
+            <PageHeader
+                eyebrow="Gerekli Belgeler"
+                title="Başvuru için yanınızda olması gerekenler"
+                description="Dubai vizesi tamamen elektronik düzenlenir. Pasaportunuzu kargoya vermenize gerek yoktur; aşağıdaki belgelerin dijital kopyaları yeterlidir."
+            />
+
+            <section className="section">
+                <div className="container-page grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
+                    <div>
+                        <ul className="space-y-4" data-testid="required-documents-checklist">
+                            {(content?.required_documents || []).map((d) => (
+                                <li key={d.title} className="card-surface flex items-start gap-4 p-5">
+                                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                                        <CheckCircle2 className="h-5 w-5 text-primary" />
+                                    </span>
+                                    <div>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h2 className="font-heading text-base font-semibold">{d.title}</h2>
+                                            <span
+                                                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                                                    d.required
+                                                        ? "border-[rgba(220,38,38,0.3)] bg-[rgba(220,38,38,0.1)] text-[#7F1D1D]"
+                                                        : "border-border bg-muted text-muted-foreground"
+                                                }`}
+                                            >
+                                                {d.required ? "Zorunlu" : "Opsiyonel"}
+                                            </span>
+                                        </div>
+                                        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{d.detail}</p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <div className="mt-8 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-6">
+                            <div className="flex items-center gap-2.5">
+                                <AlertTriangle className="h-5 w-5 text-[#7A4B00]" />
+                                <h2 className="font-heading text-base font-bold text-[#7A4B00]">
+                                    En sık yaşanan ret sebebi: uygun olmayan fotoğraf
+                                </h2>
+                            </div>
+                            <ul className="mt-4 space-y-2.5">
+                                {(content?.photo_rules || []).map((r) => (
+                                    <li key={r} className="flex items-start gap-2 text-sm leading-6 text-[#7A4B00]">
+                                        <Camera className="mt-1 h-3.5 w-3.5 shrink-0" />
+                                        {r}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <Button asChild className="mt-8 h-12 px-7 text-base" data-testid="documents-apply-button">
+                            <Link to="/basvuru">
+                                Belgeleri yükleyerek başla <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="overflow-hidden rounded-2xl border border-border" style={{ boxShadow: "var(--shadow-card)" }}>
+                            <img
+                                src={IMAGES.travelFlatlay}
+                                alt="Seyahat hazırlığı: harita, defter ve fotoğraf makinesi"
+                                className="h-[240px] w-full object-cover"
+                                loading="lazy"
+                            />
+                        </div>
+                        <div className="card-surface p-6">
+                            <h2 className="font-heading text-base font-bold">Pasaport taraması nasıl olmalı?</h2>
+                            <ul className="mt-3 space-y-2.5 text-sm leading-6 text-muted-foreground">
+                                <li>• Fotoğrafın bulunduğu sayfanın tamamı görünmeli.</li>
+                                <li>• Köşeler kesilmemiş, yazılar okunabilir olmalı.</li>
+                                <li>• Parlama ve gölge olmaması için doğal ışıkta çekin.</li>
+                                <li>• Renkli tarama veya net telefon fotoğrafı kabul edilir.</li>
+                                <li>• Dosya formatı: JPG, PNG veya PDF (maks. 10 MB).</li>
+                            </ul>
+                        </div>
+                        <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-6">
+                            <h2 className="font-heading text-base font-bold">Belgeniz uygun mu, emin değilsiniz?</h2>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                Yüklediğiniz her belgeyi başvuru öncesi kontrol ediyoruz. Uygun olmayan bir
+                                belge varsa sizi arayarak nasıl düzelteceğinizi anlatıyoruz.
+                            </p>
+                            <Button asChild variant="secondary" className="mt-4 h-11 border border-border">
+                                <Link to="/iletisim">Danışmana sor</Link>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
+}

@@ -1,0 +1,59 @@
+import os
+from datetime import datetime, date
+from pathlib import Path
+
+from dotenv import load_dotenv
+from motor.motor_asyncio import AsyncIOMotorClient
+
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / ".env")
+
+MONGO_URL = os.environ["MONGO_URL"]
+DB_NAME = os.environ.get("DB_NAME", "test_database")
+
+client = AsyncIOMotorClient(MONGO_URL)
+db = client[DB_NAME]
+
+# Collections
+visa_types_col = db["visa_types"]
+applications_col = db["visa_applications"]
+uploads_col = db["uploads"]
+payments_col = db["payment_transactions"]
+contact_col = db["contact_messages"]
+email_outbox_col = db["email_outbox"]
+
+
+def serialize_doc(doc):
+    """Recursively convert a Mongo document into a JSON-serializable structure."""
+    if doc is None:
+        return None
+    if isinstance(doc, list):
+        return [serialize_doc(d) for d in doc]
+    if isinstance(doc, dict):
+        out = {}
+        for k, v in doc.items():
+            if k == "_id":
+                continue
+            out[k] = serialize_doc(v)
+        return out
+    if isinstance(doc, datetime):
+        return doc.isoformat()
+    if isinstance(doc, date):
+        return doc.isoformat()
+    try:
+        from bson import ObjectId
+
+        if isinstance(doc, ObjectId):
+            return str(doc)
+    except Exception:
+        pass
+    return doc
+
+
+async def ensure_indexes():
+    await applications_col.create_index("id", unique=True)
+    await applications_col.create_index("reference_code", unique=True)
+    await applications_col.create_index("created_at")
+    await uploads_col.create_index("id", unique=True)
+    await payments_col.create_index("session_id")
+    await visa_types_col.create_index("id", unique=True)
