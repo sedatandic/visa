@@ -311,21 +311,14 @@ WHY_US = [
 
 SERVICES = [
     {"key": "visa", "title": "Dubai Vizesi", "detail": "Vize başvurunuzu eksiksiz ve hatasız tamamlamanız için baştan sona uzman desteği."},
-    {"key": "tour", "title": "Kişiye Özel Tur Paketleri", "detail": "Kusursuz bir Dubai tatili için tüm programınızı siz gitmeden adım adım planlıyoruz."},
-    {"key": "hotel", "title": "Otel Rezervasyonu", "detail": "Anlaşmalı olduğumuz prestijli Dubai otellerinde avantajlı konaklama seçenekleri."},
-    {"key": "transfer", "title": "Havalimanı Transferi", "detail": "Özel araç ve Türkçe konuşan ekibimizle Dubai'ye indiğiniz andan itibaren yanınızdayız."},
-    {"key": "citytour", "title": "Şehir Turları", "detail": "Size özel planlanan rehberli şehir turlarıyla Dubai'yi doğru başlıklarla keşfedin."},
-    {"key": "activity", "title": "Aktiviteler", "detail": "Çöl safariden su sporlarına, helikopter turlarından ikonik yapı biletlerine kadar geniş seçenek."},
+    {"key": "family", "title": "Aile Başvurusu", "detail": "Tek formda tüm aileyi ekleyin; aile ve çocuk indirimleri otomatik hesaplansın."},
+    {"key": "documents", "title": "Evrak Kontrolü", "detail": "Pasaport, vesikalık ve ek belgeleriniz başvuru gönderilmeden önce ücretsiz kontrol edilir."},
+    {"key": "express", "title": "Ekspres Vize", "detail": "Acil seyahatlerde başvurunuz öncelikli sıraya alınır, sonuç 24 saat içinde gelir."},
+    {"key": "extension", "title": "Vize Uzatma", "detail": "Ülkeden çıkmadan kalış sürenizi uzatma işlemlerinizi sizin adınıza yürütüyoruz."},
+    {"key": "support", "title": "Başvuru Takibi ve Destek", "detail": "Takip kodunuzla süreci anlık izleyin; danışmanınız her aşamada ulaşılabilir olsun."},
 ]
 
-TOURS = [
-    {"key": "helicopter", "title": "Helikopter Turları", "detail": "Dubai silüetini bulutların üzerinden izleyerek ayrıcalıklı bir başlangıç yapın."},
-    {"key": "safari", "title": "Çöl Safari Turları", "detail": "Kızıl kumlarda hız ve maceranın birleştiği gerçek bir çöl deneyimi."},
-    {"key": "yacht", "title": "Yat Turları", "detail": "Şehir manzarası eşliğinde özel bir yatın konforunda lüks bir dokunuş."},
-    {"key": "jetski", "title": "Jetski Turları", "detail": "Denizin üzerinde özgürce hızlanabileceğiniz enerjik bir serüven."},
-    {"key": "tickets", "title": "İkonik Yapı Biletleri", "detail": "Şehrin en ünlü noktalarına hızlı ve zahmetsiz giriş."},
-    {"key": "city", "title": "Şehir Turları", "detail": "Türkçe rehber ve özel araçlarla şehri bizim deneyimimizle tanıyın."},
-]
+TOURS = []
 
 PARTNERS = [
     "Emirates", "flydubai", "Turkish Airlines", "Pegasus", "Atlasjet Global", "SunExpress",
@@ -554,11 +547,34 @@ STATUS_LABELS = {
 
 COMPANY = {
     "brand": "VizeAtlas Dubai",
+    "legal_name": "VizeAtlas Turizm ve Danışmanlık A.Ş.",
     "phone": "+90 850 000 00 00",
     "whatsapp": "908500000000",
     "email": "destek@vizeatlas.com",
     "address": "Levent, İstanbul / Türkiye",
     "working_hours": "Hafta içi 09:00 - 19:00, Cumartesi 10:00 - 16:00",
+    "tursab_no": "0000",
+    "tursab_type": "A Grubu Seyahat Acentesi",
+    "tax_office": "Beşiktaş Vergi Dairesi",
+    "tax_no": "0000000000",
+    "mersis_no": "0000000000000000",
+    "trade_registry_no": "000000-0",
+    "founded_year": "2019",
+}
+
+AGENCY_INFO = {
+    "title": "Acente Bilgilerimiz",
+    "description": "VizeAtlas Dubai, TÜRSAB üyesi bir seyahat acentesidir. Tüm başvurularınız acente güvencesiyle yürütülür.",
+    "items": [
+        {"label": "Ticaret Unvanı", "value": COMPANY["legal_name"]},
+        {"label": "TÜRSAB Belge No", "value": COMPANY["tursab_no"]},
+        {"label": "Acente Türü", "value": COMPANY["tursab_type"]},
+        {"label": "Vergi Dairesi / No", "value": f"{COMPANY['tax_office']} / {COMPANY['tax_no']}"},
+        {"label": "MERSİS No", "value": COMPANY["mersis_no"]},
+        {"label": "Ticaret Sicil No", "value": COMPANY["trade_registry_no"]},
+        {"label": "Adres", "value": COMPANY["address"]},
+        {"label": "Kuruluş", "value": COMPANY["founded_year"]},
+    ],
 }
 
 
@@ -607,8 +623,8 @@ def compute_pricing(visa_prices, addons: dict, currency: str = "TRY") -> dict:
 # --------------------------------------------------------------- Odeme / hukuk
 
 PROMO = {
-    "title": "Anlaşmalı Dubai otellerinde %30'a varan indirim",
-    "detail": "Vize başvurunuzu tamamlayan misafirlerimize anlaşmalı otel ve tur fiyatlarımızı danışmanınız WhatsApp üzerinden iletir.",
+    "title": "Aile başvurularında %8'e varan indirim",
+    "detail": "Tek formda birden fazla yolcu eklediğinizde aile indirimi otomatik uygulanır; çocuk vizelerinde ayrıca indirimli fiyat geçerlidir.",
 }
 
 BANK_TRANSFER = {

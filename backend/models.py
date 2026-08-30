@@ -127,6 +127,34 @@ class ArticleIn(BaseModel):
     order: int = 0
 
 
+class BankTransferIn(BaseModel):
+    enabled: bool = True
+    title: str = Field(default="Havale / EFT ile ödeme", max_length=120)
+    account_name: str = Field(..., min_length=2, max_length=160)
+    bank_name: str = Field(..., min_length=2, max_length=120)
+    iban: str = Field(..., min_length=10, max_length=40)
+    currency: str = Field(default="TRY", max_length=5)
+    note: Optional[str] = Field(default="", max_length=600)
+    steps: List[str] = Field(default_factory=list)
+
+
+class CompanyInfoIn(BaseModel):
+    brand: Optional[str] = Field(default="", max_length=80)
+    legal_name: str = Field(..., min_length=2, max_length=160)
+    phone: Optional[str] = Field(default="", max_length=40)
+    whatsapp: Optional[str] = Field(default="", max_length=30)
+    email: Optional[str] = Field(default="", max_length=120)
+    address: Optional[str] = Field(default="", max_length=240)
+    working_hours: Optional[str] = Field(default="", max_length=160)
+    tursab_no: Optional[str] = Field(default="", max_length=30)
+    tursab_type: Optional[str] = Field(default="", max_length=80)
+    tax_office: Optional[str] = Field(default="", max_length=80)
+    tax_no: Optional[str] = Field(default="", max_length=30)
+    mersis_no: Optional[str] = Field(default="", max_length=30)
+    trade_registry_no: Optional[str] = Field(default="", max_length=30)
+    founded_year: Optional[str] = Field(default="", max_length=10)
+
+
 class WhatsAppRequest(BaseModel):
     template: str = Field(default="visa_ready", max_length=40)
     message: Optional[str] = Field(default="", max_length=1000)

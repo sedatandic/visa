@@ -26,6 +26,8 @@ import AdminEmails from "./pages/AdminEmails";
 import AdminVisaTypes from "./pages/AdminVisaTypes";
 import AdminTestimonials from "./pages/AdminTestimonials";
 import AdminArticles from "./pages/AdminArticles";
+import AdminBankTransfer from "./pages/AdminBankTransfer";
+import AdminCompany from "./pages/AdminCompany";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -70,6 +72,8 @@ function App() {
                     <Route path="/admin/vize-tipleri" element={<RequireAdmin><AdminVisaTypes /></RequireAdmin>} />
                     <Route path="/admin/yorumlar" element={<RequireAdmin><AdminTestimonials /></RequireAdmin>} />
                     <Route path="/admin/yazilar" element={<RequireAdmin><AdminArticles /></RequireAdmin>} />
+                    <Route path="/admin/banka" element={<RequireAdmin><AdminBankTransfer /></RequireAdmin>} />
+                    <Route path="/admin/acente" element={<RequireAdmin><AdminCompany /></RequireAdmin>} />
 
                     <Route path="*" element={<Site><NotFound /></Site>} />
                 </Routes>

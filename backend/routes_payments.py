@@ -9,7 +9,7 @@ from emergentintegrations.payments.stripe.checkout import (
 from fastapi import APIRouter, HTTPException, Request
 
 from content import BANK_TRANSFER
-from db import applications_col, payments_col, serialize_doc
+from db import applications_col, payments_col, serialize_doc, settings_col
 from emailer import bank_transfer_html, payment_received_html, send_email
 from models import CheckoutRequest
 
@@ -162,12 +162,14 @@ async def choose_bank_transfer(payload: CheckoutRequest):
         },
     )
     fresh = await applications_col.find_one({"id": app_doc["id"]})
+    settings_doc = await settings_col.find_one({"key": "bank_transfer"})
+    bank = (settings_doc or {}).get("value") or BANK_TRANSFER
     to_email = (fresh.get("contact") or {}).get("email")
     if to_email:
         await send_email(
             to_email,
             f"Havale/EFT odeme bilgileri - {fresh['reference_code']}",
-            bank_transfer_html(serialize_doc(fresh), BANK_TRANSFER),
+            bank_transfer_html(serialize_doc(fresh), bank),
             kind="bank_transfer_instructions",
             meta={"reference_code": fresh["reference_code"]},
         )
@@ -176,7 +178,7 @@ async def choose_bank_transfer(payload: CheckoutRequest):
         "reference_code": fresh["reference_code"],
         "amount": fresh.get("price"),
         "currency": fresh.get("currency", "TRY"),
-        "bank": BANK_TRANSFER,
+        "bank": bank,
     }
 
 

@@ -662,6 +662,113 @@ class BackendTester:
         assert len(result) >= 5, f"Expected at least 5 visa types, got {len(result)}"
         self.log(f"Admin visa types: {len(result)} types")
 
+    def test_admin_get_bank_transfer(self):
+        """GET /api/admin/bank-transfer - requires auth"""
+        assert self.admin_token, "Need admin token"
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.get(f"{self.base_url}/admin/bank-transfer", headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        result = r.json()
+        assert "enabled" in result, "Missing 'enabled' in bank transfer"
+        assert "iban" in result, "Missing 'iban' in bank transfer"
+        assert "account_name" in result, "Missing 'account_name' in bank transfer"
+        assert "bank_name" in result, "Missing 'bank_name' in bank transfer"
+        assert "steps" in result, "Missing 'steps' in bank transfer"
+        assert isinstance(result["steps"], list), "steps should be a list"
+        self.log(f"Bank transfer settings: IBAN={result['iban']}, enabled={result['enabled']}")
+
+    def test_admin_get_bank_transfer_without_auth(self):
+        """GET /api/admin/bank-transfer - without auth returns 401"""
+        r = requests.get(f"{self.base_url}/admin/bank-transfer", timeout=10)
+        assert r.status_code == 401, f"Expected 401 without auth, got {r.status_code}"
+        self.log("Bank transfer endpoint correctly requires authentication")
+
+    def test_admin_update_bank_transfer(self):
+        """PUT /api/admin/bank-transfer - update bank details"""
+        assert self.admin_token, "Need admin token"
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Get current settings
+        r_get = requests.get(f"{self.base_url}/admin/bank-transfer", headers=headers, timeout=10)
+        assert r_get.status_code == 200, "Failed to get current bank transfer settings"
+        original = r_get.json()
+        
+        # Update with test values
+        test_iban = "TR99 9999 9999 9999 9999 9999 99"
+        test_account = "Test Account Name"
+        test_bank = "Test Bank"
+        payload = {
+            "enabled": True,
+            "title": "Havale / EFT ile ödeme",
+            "account_name": test_account,
+            "bank_name": test_bank,
+            "iban": test_iban,
+            "currency": "TRY",
+            "note": "Test note for bank transfer",
+            "steps": ["Step 1", "Step 2", "Step 3"]
+        }
+        r = requests.put(f"{self.base_url}/admin/bank-transfer", json=payload, headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        result = r.json()
+        assert result["iban"] == test_iban, f"IBAN not updated: expected {test_iban}, got {result['iban']}"
+        assert result["account_name"] == test_account, f"Account name not updated"
+        assert result["bank_name"] == test_bank, f"Bank name not updated"
+        assert len(result["steps"]) == 3, f"Expected 3 steps, got {len(result['steps'])}"
+        self.log(f"Bank transfer updated: IBAN={result['iban']}, account={result['account_name']}")
+        
+        # Verify it's reflected in GET /api/content/site
+        r_site = requests.get(f"{self.base_url}/content/site", timeout=10)
+        assert r_site.status_code == 200, "Failed to get site content"
+        site_data = r_site.json()
+        assert "bank_transfer" in site_data, "Missing bank_transfer in site content"
+        assert site_data["bank_transfer"]["iban"] == test_iban, "Updated IBAN not reflected in site content"
+        self.log("Bank transfer update reflected in /api/content/site")
+        
+        # Restore original settings
+        r_restore = requests.put(f"{self.base_url}/admin/bank-transfer", json=original, headers=headers, timeout=10)
+        assert r_restore.status_code == 200, "Failed to restore original bank transfer settings"
+        self.log("Bank transfer settings restored")
+
+    def test_site_content_services_and_tours(self):
+        """GET /api/content/site - verify services (6 visa-only) and tours (empty)"""
+        r = requests.get(f"{self.base_url}/content/site", timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        data = r.json()
+        
+        # Check services
+        services = data.get("services")
+        assert services is not None, "services is None"
+        assert isinstance(services, list), "services should be a list"
+        assert len(services) == 6, f"Expected 6 visa-only services, got {len(services)}"
+        
+        service_keys = [s.get("key") for s in services]
+        expected_keys = ["visa", "family", "documents", "express", "extension", "support"]
+        for key in expected_keys:
+            assert key in service_keys, f"Missing service key: {key}"
+        
+        # Verify no hotel/tour related services
+        service_titles = " ".join([s.get("title", "") + " " + s.get("detail", "") for s in services]).lower()
+        forbidden_words = ["otel", "tur", "havalimanı", "safari", "hotel", "tour"]
+        for word in forbidden_words:
+            assert word not in service_titles, f"Found forbidden word '{word}' in services"
+        
+        self.log(f"Services: {len(services)} visa-only services, no hotel/tour content")
+        
+        # Check tours
+        tours = data.get("tours")
+        assert tours is not None, "tours is None"
+        assert isinstance(tours, list), "tours should be a list"
+        assert len(tours) == 0, f"Expected empty tours list, got {len(tours)} items"
+        self.log("Tours: empty list (correctly removed)")
+        
+        # Check promo text
+        promo = data.get("promo")
+        assert promo is not None, "promo is None"
+        assert "title" in promo, "Missing 'title' in promo"
+        expected_promo = "Aile başvurularında %8'e varan indirim"
+        assert promo["title"] == expected_promo, f"Promo title mismatch: expected '{expected_promo}', got '{promo['title']}'"
+        self.log(f"Promo: '{promo['title']}' (correctly updated)")
+
     def test_admin_update_visa_type(self):
         """PATCH /api/admin/visa-types/{id}"""
         assert self.admin_token, "Need admin token"
@@ -1511,6 +1618,130 @@ class BackendTester:
         assert r.status_code == 404, f"Expected 404, got {r.status_code}"
         self.log("WhatsApp link correctly returns 404 for unknown application")
 
+
+    # ============================================================
+    # COMPANY / AGENCY INFO TESTS (TÜRSAB)
+    # ============================================================
+
+    def test_site_content_has_company_and_agency(self):
+        """GET /api/content/site returns company and agency_info with TÜRSAB details"""
+        r = requests.get(f"{self.base_url}/content/site", timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        data = r.json()
+        
+        # Check company object
+        assert "company" in data, "Response missing 'company' key"
+        company = data["company"]
+        assert "tursab_no" in company, "Company missing 'tursab_no'"
+        assert "tursab_type" in company, "Company missing 'tursab_type'"
+        assert "legal_name" in company, "Company missing 'legal_name'"
+        assert "tax_office" in company, "Company missing 'tax_office'"
+        assert "tax_no" in company, "Company missing 'tax_no'"
+        assert "mersis_no" in company, "Company missing 'mersis_no'"
+        assert "trade_registry_no" in company, "Company missing 'trade_registry_no'"
+        assert "founded_year" in company, "Company missing 'founded_year'"
+        
+        # Check agency_info object
+        assert "agency_info" in data, "Response missing 'agency_info' key"
+        agency_info = data["agency_info"]
+        assert "items" in agency_info, "agency_info missing 'items'"
+        assert isinstance(agency_info["items"], list), "agency_info.items is not a list"
+        
+        # Check items structure (only non-empty values should be present)
+        if agency_info["items"]:
+            first_item = agency_info["items"][0]
+            assert "label" in first_item, "Item missing 'label'"
+            assert "value" in first_item, "Item missing 'value'"
+            assert first_item["value"], "Item value should not be empty"
+        
+        self.log(f"Site content has company and agency_info with {len(agency_info['items'])} items")
+
+    def test_admin_company_get(self):
+        """GET /api/admin/company returns merged company info"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.get(f"{self.base_url}/admin/company", headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        data = r.json()
+        
+        # Check all expected fields
+        expected_fields = ["legal_name", "tursab_no", "tursab_type", "tax_office", "tax_no", 
+                          "mersis_no", "trade_registry_no", "address", "phone", "email", 
+                          "whatsapp", "working_hours", "founded_year"]
+        for field in expected_fields:
+            assert field in data, f"Response missing '{field}'"
+        
+        self.log(f"Admin company GET returned all expected fields")
+
+    def test_admin_company_put(self):
+        """PUT /api/admin/company saves and reflects changes in public API"""
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Update with test values
+        test_data = {
+            "legal_name": "Test Turizm A.Ş.",
+            "tursab_no": "12345",
+            "tursab_type": "A Grubu Seyahat Acentesi",
+            "tax_office": "Kadıköy",
+            "tax_no": "1234567890",
+            "mersis_no": "1234567890123456",
+            "trade_registry_no": "123456-7",
+            "address": "Test Mahallesi, Kadıköy / İstanbul",
+            "phone": "+90 850 123 45 67",
+            "email": "test@vizeatlas.com",
+            "whatsapp": "905321234567",
+            "working_hours": "Hafta içi 09:00 - 18:00",
+            "founded_year": "2020"
+        }
+        
+        r = requests.put(f"{self.base_url}/admin/company", json=test_data, headers=headers, timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        updated = r.json()
+        
+        # Verify response matches input
+        assert updated["legal_name"] == test_data["legal_name"], "legal_name not updated"
+        assert updated["tursab_no"] == test_data["tursab_no"], "tursab_no not updated"
+        assert updated["tax_office"] == test_data["tax_office"], "tax_office not updated"
+        
+        self.log(f"Admin company PUT successful: {updated['legal_name']}")
+
+    def test_admin_company_reflects_in_public_api(self):
+        """Verify PUT /api/admin/company changes are reflected in GET /api/content/site"""
+        # Get public site content
+        r = requests.get(f"{self.base_url}/content/site", timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        data = r.json()
+        
+        company = data.get("company", {})
+        agency_info = data.get("agency_info", {})
+        items = agency_info.get("items", [])
+        
+        # Check that the test values from previous PUT are present
+        assert company.get("legal_name") == "Test Turizm A.Ş.", "Public API doesn't reflect updated legal_name"
+        assert company.get("tursab_no") == "12345", "Public API doesn't reflect updated tursab_no"
+        
+        # Check agency_info items
+        legal_name_item = next((i for i in items if i["label"] == "Ticaret Unvanı"), None)
+        assert legal_name_item is not None, "agency_info missing 'Ticaret Unvanı' item"
+        assert legal_name_item["value"] == "Test Turizm A.Ş.", "agency_info legal_name doesn't match"
+        
+        tursab_item = next((i for i in items if i["label"] == "TÜRSAB Belge No"), None)
+        assert tursab_item is not None, "agency_info missing 'TÜRSAB Belge No' item"
+        assert tursab_item["value"] == "12345", "agency_info tursab_no doesn't match"
+        
+        self.log(f"Public API reflects admin company changes: {len(items)} agency items")
+
+    def test_admin_company_unauthenticated(self):
+        """GET/PUT /api/admin/company without auth returns 401"""
+        # GET without token
+        r = requests.get(f"{self.base_url}/admin/company", timeout=10)
+        assert r.status_code in [401, 403], f"Expected 401/403, got {r.status_code}"
+        
+        # PUT without token
+        r = requests.put(f"{self.base_url}/admin/company", json={"legal_name": "Unauthorized"}, timeout=10)
+        assert r.status_code in [401, 403], f"Expected 401/403, got {r.status_code}"
+        
+        self.log("Unauthenticated access to company endpoints correctly rejected")
+
     # ============================================================
     # RUN ALL TESTS
     # ============================================================
@@ -1623,6 +1854,13 @@ class BackendTester:
         self.test("Admin WhatsApp link - visa_ready", self.test_admin_whatsapp_link_visa_ready)
         self.test("Admin WhatsApp link - no phone 400", self.test_admin_whatsapp_link_no_phone)
         self.test("Admin WhatsApp link - unknown app 404", self.test_admin_whatsapp_link_unknown_application)
+        
+        # Phase 5: Company/Agency Info (TÜRSAB)
+        self.test("Site content has company and agency_info", self.test_site_content_has_company_and_agency)
+        self.test("Admin company GET", self.test_admin_company_get)
+        self.test("Admin company PUT", self.test_admin_company_put)
+        self.test("Admin company changes reflect in public API", self.test_admin_company_reflects_in_public_api)
+        self.test("Admin company unauthenticated access", self.test_admin_company_unauthenticated)
         
         # Summary
         self.log("\n" + "="*60)

@@ -32,10 +32,13 @@ from db import (
     uploads_col,
     visa_types_col,
 )
+from content import BANK_TRANSFER, COMPANY
 from emailer import payment_received_html, send_email, status_change_html, visa_ready_html
 from models import (
     AdminLogin,
     ArticleIn,
+    BankTransferIn,
+    CompanyInfoIn,
     ReviewSummaryIn,
     SendVisaRequest,
     StatusUpdate,
@@ -415,6 +418,43 @@ async def admin_mark_paid(application_id: str, admin=Depends(require_admin)):
         "application": serialize_doc(fresh),
         "email_notification": notification,
     }
+
+
+# ------------------------------------------------------- Acente bilgileri
+@router.get("/admin/company")
+async def admin_get_company(admin=Depends(require_admin)):
+    doc = await settings_col.find_one({"key": "company_info"})
+    return {**COMPANY, **((doc or {}).get("value") or {})}
+
+
+@router.put("/admin/company")
+async def admin_update_company(payload: CompanyInfoIn, admin=Depends(require_admin)):
+    value = {k: v for k, v in payload.model_dump().items() if v not in (None, "")}
+    await settings_col.update_one(
+        {"key": "company_info"},
+        {"$set": {"value": value, "updated_at": datetime.now(timezone.utc)}},
+        upsert=True,
+    )
+    return {**COMPANY, **value}
+
+
+# ------------------------------------------------------- Banka bilgileri
+@router.get("/admin/bank-transfer")
+async def admin_get_bank_transfer(admin=Depends(require_admin)):
+    doc = await settings_col.find_one({"key": "bank_transfer"})
+    return (doc or {}).get("value") or BANK_TRANSFER
+
+
+@router.put("/admin/bank-transfer")
+async def admin_update_bank_transfer(payload: BankTransferIn, admin=Depends(require_admin)):
+    value = payload.model_dump()
+    value["steps"] = [s for s in (value.get("steps") or []) if s.strip()] or BANK_TRANSFER["steps"]
+    await settings_col.update_one(
+        {"key": "bank_transfer"},
+        {"$set": {"value": value, "updated_at": datetime.now(timezone.utc)}},
+        upsert=True,
+    )
+    return value
 
 
 # ------------------------------------------------------- WhatsApp bildirimi

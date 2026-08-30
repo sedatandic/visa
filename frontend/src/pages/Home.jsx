@@ -27,7 +27,7 @@ import { api } from "../lib/api";
 import { COMPANY, IMAGES, setMeta } from "../lib/site";
 import { Button } from "../components/ui/button";
 import { PricingTabs } from "../components/PricingTabs";
-import { ServiceCard, TourCard } from "../components/IconCards";
+import { ServiceCard } from "../components/IconCards";
 import { ReviewSummary, TestimonialCard } from "../components/Testimonials";
 import { SampleVisa } from "../components/SampleVisa";
 import { RouteFlags } from "../components/FlagIcons";
@@ -215,8 +215,8 @@ export default function Home() {
                                         "Vize Uzatma",
                                         "Transit Vize",
                                         "Freelancer Vize",
-                                        "Otel & Tur Paketleri",
-                                        "Havalimanı Transferi",
+                                        "Evrak Kontrolü",
+                                        "Başvuru Takibi",
                                     ].map((t) => (
                                         <span key={t} className="flex items-center gap-8 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-white/85">
                                             {t}
@@ -421,35 +421,15 @@ export default function Home() {
                 <div className="container-page">
                     <div className="max-w-2xl">
                         <span className="eyebrow">Hizmetlerimiz</span>
-                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Dubai'ye varmadan her şey hazır olsun</h2>
+                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Sadece vize, baştan sona uzman desteğiyle</h2>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Vizeden transfere, otelden aktivitelere kadar tüm ihtiyaçlarınızı tek yerden
-                            organize ediyoruz.
+                            Tek işimiz vize: başvuru hazırlığı, evrak kontrolü, ekspres işlem, aile başvurusu ve
+                            uzatma süreçlerinizi biz yürütüyoruz.
                         </p>
                     </div>
                     <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                         {(content?.services || []).map((s) => (
                             <ServiceCard key={s.key} item={s} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* TOURS */}
-            <section className="section" data-testid="landing-tours">
-                <div className="container-page">
-                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                        <div className="max-w-2xl">
-                            <span className="eyebrow">Popüler Dubai Turları</span>
-                            <h2 className="mt-3 text-2xl font-bold sm:text-3xl">En çok tercih edilen deneyimler</h2>
-                        </div>
-                        <Button asChild variant="secondary" className="h-11 border border-border">
-                            <Link to="/hizmetler">Tüm hizmet ve turlar</Link>
-                        </Button>
-                    </div>
-                    <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                        {(content?.tours || []).map((t) => (
-                            <TourCard key={t.key} item={t} />
                         ))}
                     </div>
                 </div>

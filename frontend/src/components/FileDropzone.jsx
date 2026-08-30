@@ -53,7 +53,7 @@ export const FileDropzone = ({
         <div className="space-y-2">
             <div className="flex items-baseline justify-between gap-3">
                 <span className="text-sm font-semibold">{label}</span>
-                <span className="text-xs text-muted-foreground">{hint}</span>
+                {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
             </div>
 
             {value ? (

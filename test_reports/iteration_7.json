@@ -1,0 +1,45 @@
+{
+  "summary": "Completed comprehensive testing of 4 user-reported bug fixes (validation feedback, add-traveler icons, hint removal, mobile card click) and key regressions. All bugs verified as FIXED.",
+  "backend_issues": {
+    "critical_bugs": [],
+    "flaky_endpoints": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "BUG 1: Validation feedback shows specific missing field names in toast (e.g., 'Adınız Soyadınız, E-posta adresi, Telefon numarası')",
+    "BUG 1: Invalid fields have data-invalid='true' attribute (3 fields detected)",
+    "BUG 1: Page auto-scrolls to first invalid field and focuses it",
+    "BUG 1: After filling contact fields, wizard advances to step 2",
+    "BUG 1: Step 2 validation shows specific field names with traveler prefix (e.g., '1. yolcu: Vize türü, Gidiş tarihi, Dönüş tarihi')",
+    "BUG 1: Step 3 validation shows traveler prefix for missing files (e.g., '1. yolcu: Pasaport fotoğrafı, 1. yolcu: Vesikalık fotoğraf')",
+    "BUG 2: 'Yetişkin ekle' button shows Plus + User icons (2 icons)",
+    "BUG 2: 'Çocuk ekle' button shows Plus + Baby icons (2 icons)",
+    "BUG 3: AI passport label row shows only 'Pasaport kimlik sayfası' with NO 'JPG veya PNG' text",
+    "BUG 3: Dropzone itself still shows 'JPG / PNG / PDF · Maks. 10 MB' format hint (correct)",
+    "BUG 4: Mobile (390x844) card click navigates to /basvuru?vize=... on home page",
+    "BUG 4: Desktop (1920x900) card click still works correctly",
+    "BUG 4: Keyboard Enter on card navigates correctly",
+    "BUG 4: Card click works on /vize-tipleri page",
+    "BUG 4: Specific scenario - Çok Girişli tab → visa_60_multi card click navigates to /basvuru?vize=visa_60_multi",
+    "BUG 4: Overlay link (data-testid visa-card-overlay-{id}) covers card body correctly (z-[1])",
+    "BUG 4: Popular ribbon has z-[2] to stay above overlay",
+    "REGRESSION: AI passport OCR autofill works (uploads passport, triggers AI processing, fills traveler fields)",
+    "REGRESSION: Multi-traveler add works (second traveler card appears)",
+    "REGRESSION: Admin login works (admin@vizeatlas.com / Dubai2026!)",
+    "REGRESSION: Step-by-step wizard navigation works (step 1 → step 2 → step 3)",
+    "REGRESSION: Pricing tabs work (4 tabs: Tek Girişli, Çok Girişli, Çocuk Vizesi, Diğer Hizmetler)"
+  ],
+  "test_report_links": [],
+  "action_item_for_main_agent": "",
+  "updated_files": [],
+  "success_percentage": {
+    "frontend": "100%",
+    "backend": "N/A (frontend-only testing)"
+  },
+  "should_call_test_agent_after_fix": "false",
+  "should_main_agent_test_itself": "false"
+}

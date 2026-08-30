@@ -4,7 +4,7 @@ import { ArrowRight, MessageCircle } from "lucide-react";
 import { api } from "../lib/api";
 import { COMPANY, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
-import { ServiceCard, TourCard } from "../components/IconCards";
+import { ServiceCard } from "../components/IconCards";
 import { Button } from "../components/ui/button";
 
 export default function Services() {
@@ -12,8 +12,8 @@ export default function Services() {
 
     useEffect(() => {
         setMeta(
-            "Hizmetlerimiz ve Dubai Turları | VizeAtlas Dubai",
-            "Dubai vizesi, kişiye özel tur paketleri, otel rezervasyonu, havalimanı transferi, şehir turları ve aktivite seçenekleri."
+            "Vize Hizmetlerimiz | VizeAtlas Dubai",
+            "Dubai vize başvurusu, aile başvurusu, evrak kontrolü, ekspres vize, vize uzatma ve başvuru takibi hizmetleri."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
     }, []);
@@ -22,8 +22,8 @@ export default function Services() {
         <div data-testid="services-page">
             <PageHeader
                 eyebrow="Hizmetlerimiz"
-                title="Dubai'de ihtiyacınız olan her şey tek yerden"
-                description="Vize başvurunuzun yanı sıra konaklama, transfer, tur ve aktivite organizasyonlarını da sizin için planlıyoruz. Siz sadece tatilinizin tadını çıkarın."
+                title="Tek işimiz vize; baştan sona yanınızdayız"
+                description="Başvuru hazırlığından evrak kontrolüne, ekspres işlemden vize uzatmaya kadar tüm süreç uzman danışmanlarımız tarafından yürütülür."
             />
 
             <section className="section">
@@ -34,32 +34,22 @@ export default function Services() {
                         ))}
                     </div>
 
-                    <div className="mt-14">
-                        <span className="eyebrow">Popüler Turlar</span>
-                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">En çok tercih edilen deneyimler</h2>
-                        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                            {(content?.tours || []).map((t) => (
-                                <TourCard key={t.key} item={t} />
-                            ))}
-                        </div>
-                    </div>
-
                     <div className="mt-12 flex flex-col items-start gap-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-7 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h2 className="font-heading text-xl font-bold">Programınızı birlikte kurgulayalım</h2>
+                            <h2 className="font-heading text-xl font-bold">Hangi vize size uygun, birlikte belirleyelim</h2>
                             <p className="mt-1.5 text-sm text-muted-foreground">
-                                Tur, transfer ve aktivite fiyatları kişi sayısına ve tarihe göre değişir.
-                                WhatsApp'tan yazın, size özel teklif hazırlayalım.
+                                Seyahat tarihiniz ve kalış sürenize göre en uygun vize tipini ücretsiz
+                                değerlendirelim. WhatsApp'tan yazın, danışmanınız hemen dönüş yapsın.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-3">
                             <Button asChild variant="secondary" className="h-11 border border-border">
-                                <a href={`https://wa.me/${COMPANY.whatsapp}`} target="_blank" rel="noreferrer">
+                                <a href={`https://wa.me/${COMPANY.whatsapp}`} target="_blank" rel="noreferrer" data-testid="services-whatsapp-button">
                                     <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
                                 </a>
                             </Button>
                             <Button asChild className="h-11">
-                                <Link to="/basvuru">
+                                <Link to="/basvuru" data-testid="services-apply-button">
                                     Vize başvurusu <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>

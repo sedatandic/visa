@@ -50,7 +50,7 @@
         --status-info: 206 72% 27%;
         --status-danger: 352 78% 38%;
 
-        --font-heading: "Figtree", "Segoe UI", Roboto, sans-serif;
+        --font-heading: "Montserrat", "Segoe UI", Roboto, sans-serif;
         --font-body: "Figtree", "Segoe UI", Roboto, sans-serif;
         --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 
@@ -60,33 +60,6 @@
         --focus-ring: 0 0 0 4px rgba(11, 107, 58, 0.24);
     }
 
-    .dark {
-        --background: 210 24% 7%;
-        --foreground: 0 0% 97%;
-        --card: 210 22% 10%;
-        --card-foreground: 0 0% 97%;
-        --popover: 210 22% 10%;
-        --popover-foreground: 0 0% 97%;
-        --primary: 152 62% 40%;
-        --primary-foreground: 210 24% 7%;
-        --secondary: 210 18% 15%;
-        --secondary-foreground: 0 0% 97%;
-        --muted: 210 18% 15%;
-        --muted-foreground: 214 12% 72%;
-        --accent: 352 66% 52%;
-        --accent-foreground: 210 24% 7%;
-        --destructive: 352 66% 52%;
-        --destructive-foreground: 210 24% 7%;
-        --border: 210 16% 19%;
-        --input: 210 16% 19%;
-        --ring: 152 62% 40%;
-
-        --navy: 210 26% 5%;
-        --sand-surface: 210 18% 13%;
-        --cloud: 210 18% 12%;
-        --gold: 352 66% 54%;
-        --success: 152 62% 42%;
-    }
 }
 
 @layer base {

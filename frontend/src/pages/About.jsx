@@ -1,7 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Award, Globe2, Users } from "lucide-react";
+import { api } from "../lib/api";
 import { IMAGES, setMeta } from "../lib/site";
+import { TursabBadge } from "../components/TursabBadge";
 import { PageHeader } from "../components/SiteLayout";
 import { Button } from "../components/ui/button";
 
@@ -12,6 +14,18 @@ const STATS = [
 ];
 
 export default function About() {
+    const [agency, setAgency] = useState(null);
+    const [company, setCompany] = useState(null);
+
+    useEffect(() => {
+        api.get("/content/site")
+            .then(({ data }) => {
+                setAgency(data.agency_info || null);
+                setCompany(data.company || null);
+            })
+            .catch(() => {});
+    }, []);
+
     useEffect(() => {
         setMeta(
             "Hakkımızda | VizeAtlas Dubai",
@@ -84,6 +98,35 @@ export default function About() {
                             </ul>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <section className="section border-t border-border bg-[hsl(var(--cloud))]" data-testid="about-agency-info">
+                <div className="container-page grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
+                    <div>
+                        <span className="eyebrow">Acente Bilgilerimiz</span>
+                        <h2 className="mt-3 text-2xl font-bold">TÜRSAB üyesi seyahat acentesiyiz</h2>
+                        <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                            {agency?.description ||
+                                "Tüm başvurularınız acente güvencesiyle yürütülür; ticari bilgilerimiz aşağıda açıkça yer alır."}
+                        </p>
+                        <div className="mt-5">
+                            <TursabBadge number={company?.tursab_no} type={company?.tursab_type} />
+                        </div>
+                    </div>
+
+                    <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                        {(agency?.items || []).map((item) => (
+                            <div key={item.label} className="border-b border-border pb-3">
+                                <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    {item.label}
+                                </dt>
+                                <dd className="mt-1 text-sm font-semibold" data-testid={`agency-item-${item.label}`}>
+                                    {item.value}
+                                </dd>
+                            </div>
+                        ))}
+                    </dl>
                 </div>
             </section>
         </div>

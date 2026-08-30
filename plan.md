@@ -3,32 +3,22 @@
 ## 1. Objectives
 - Türkçe, modern, **sade** ve güven veren bir Dubai/UAE vize başvuru sitesi (kopya değil; benzer bilgi mimarisi/UX, özgün marka/renk).
 - Vize tipleri + fiyatlar + genel bilgilendirme + hızlı başvuru akışı.
-- Çekirdek iş akışı: **başvuru oluşturma → dosya yükleme → ödeme → takip kodu**.
+- Çekirdek iş akışı: **başvuru oluşturma → dosya yükleme → ödeme (kart / havale) → takip kodu**.
 - Başvuruları MongoDB’ye kaydetme, admin panelde listeleme/detay/güncelleme.
 - E-posta bildirimleri (başvuru sahibine + admin’e): **API anahtarı yoksa akışı bozmadan “skipped” olarak outbox’a yaz**.
 - Güven ve “insan eliyle tasarlanmış” kurumsal görünüm:
   - **BAE bayrak paleti** (yeşil/kırmızı/siyah/beyaz) — kırmızı vurgu belirgin.
-  - **Tipografi**: **Figtree** (başlık + gövde) + opsiyonel IBM Plex Mono.
-  - **Koyu mod**: sağ üst tema anahtarı, kalıcı (localStorage), admin’de de var.
+  - **Tipografi**: **Montserrat (başlık)** + **Figtree (gövde)** + opsiyonel IBM Plex Mono.
+  - **Koyu mod yok** (tamamen kaldırıldı).
   - **Gerçek görseller**: Burj Khalifa hero, Sheikh Zayed yolu, ofis, pasaport/belge flatlay.
-  - **Müşteri deneyimleri**: 4,9/5 puan özeti + memnuniyet barları + doğrulanmış yorum kartları.
+  - **Müşteri deneyimleri**: 4,9/5 puan özeti + memnuniyet barları + doğrulanmış yorum kartları (DB tabanlı).
   - **Örnek vize**: Kişisel verileri gizlenmiş (blur) + “ÖRNEKTİR/SPECIMEN” filigranlı **BAE e-vize örneği**.
   - **UAE + TR bayrak ikonları**: navbar/footer ve içerik içinde (Türkiye → BAE vurgusu).
+  - **TÜRSAB + acente şeffaflığı**: footer + hakkımızda’da TÜRSAB rozeti ve acente detayları.
+- **Sadece vize hizmeti**: otel/tur/transfer içerikleri kaldırıldı (6 vize hizmeti kaldı).
 - **Phase 3 (tamamlandı):**
   - **Aile Başvurusu:** Tek formda çoklu yolcu ekleme/çıkarma, kişi sayısına göre otomatik fiyat + aile indirimi.
   - **Admin Vize PDF:** Admin panelden onaylı vize PDF yükleme ve tek tıkla müşteriye e-posta ile gönderme.
-- **Phase 5 (tamamlandı):**
-  - **AI Pasaport Okuma (OCR/LLM):** Pasaport görselinden bilgileri okuyup formu otomatik doldurma.
-  - **SEO Blog:** Yazıları ayrı sayfalara çıkarma + admin yönetimi.
-  - **DB içerik yönetimi:** Yorumlar + puan özeti + blog yazıları DB’ye taşındı ve admin’den yönetiliyor.
-  - **WhatsApp bildirimi:** Admin’den tek tıkla wa.me linki ve hazır mesaj oluşturma (harici WhatsApp API yok; bilinçli).
-- **Phase 6 (tamamlandı):**
-  - dubaivizecisi.com incelemesi sonrası eksik içerik/operasyon akışları eklendi.
-  - Havale/EFT ödeme seçeneği + admin onayı.
-  - Yasal sayfalar (iade/sözleşme).
-  - Yeni vize tipleri (Transit/Freelancer).
-  - Promosyon bandı + WhatsApp/E-posta alternatif başvuru.
-  - Dribbble referansına yakın hero kompozisyonu (kolaj + rozet + marquee).
 
 ---
 
@@ -127,34 +117,28 @@
   - `/basvuru`: dinamik yolcu ekle/çıkar, dosya yüklemelerinin doğru yolcuya bağlanması, özet/fiyat güncellemesi.
   - Admin detay: PDF upload UI + “Müşteriye Gönder” aksiyonu.
   - UI iyileştirmeleri (referans siteye yakın, özgün tasarım).
-  - Navbar: link sarmasını engellemek için `whitespace-nowrap`.
 
 **Test / Doğrulama**
 - `testing_agent_v3` (iteration_2.json): Phase 3 spesifik akışlar %100 PASS.
-- Kritik fix: Stripe checkout çoklu yolcuda `visa_type_id` metadata KeyError → düzeltildi (`routes_payments.py`).
 
 ---
 
-### Phase 4 — Marka/Tema Yenileme + Koyu Mod + Sosyal Kanıt (Tamamlandı)
-**Amaç:** Görsel dili güçlendirmek, “AI şablonu” hissini kırmak, BAE bayrak renkleriyle özgün kurumsal kimlik + gece modu + sosyal kanıt.
+### Phase 4 — Marka/Tema Yenileme + Sosyal Kanıt (Tamamlandı; koyu mod kaldırıldı)
+**Amaç:** Görsel dili güçlendirmek, “AI şablonu” hissini kırmak, BAE bayrak renkleriyle özgün kurumsal kimlik + sosyal kanıt.
 
 **Adımlar / Çıktılar**
 - Tema / Tipografi:
   - UAE bayrak paleti (yeşil primary, kırmızı accent/destructive, siyah/beyaz temeller).
   - Token tabanlı renkler: hard-coded renkler temizlendi, CSS var’lara taşındı.
-- Koyu Mod:
-  - `ThemeToggle` eklendi: navbar + admin header.
-  - `html.dark` ile dark tokenlar; localStorage anahtarı: `vizeatlas-theme`.
 - Görseller:
-  - Hero: Burj Khalifa (gündüz).
-  - İkincil: Sheikh Zayed yolu, Burj Al Arab, Dubai gece.
+  - Hero: Burj Khalifa (gündüz) + ikincil görseller.
   - Güven/kurumsal: ofis fotoğrafı.
   - Belgeler: pasaport/belge flatlay.
 - Müşteri Deneyimleri:
   - Home: “Müşteri Deneyimleri” bölümü: 4,9/5, toplam değerlendirme ve bar metrikleri + doğrulanmış yorum kartları.
 
 **Test / Doğrulama**
-- `testing_agent_v3` (iteration_3.json): tema anahtarı, kalıcılık, dark readability, testimonial bölümü, görsel yükleme, mobil görünüm PASS.
+- `testing_agent_v3` (iteration_3.json): okunabilirlik, testimonial bölümü, görsel yükleme, mobil görünüm PASS.
 
 ---
 
@@ -180,16 +164,13 @@
 - WhatsApp Bildirimi (Link tabanlı):
   - Backend: `POST /api/admin/applications/{id}/whatsapp`.
   - Frontend: Admin detay “WhatsApp ile bildir”.
-- Tasarım sadeleştirme:
-  - Figtree, pill butonlar, kırmızı fiyat/şerit.
 
 **Test / Doğrulama**
 - `testing_agent_v3` (iteration_4.json): Backend %96.9, Frontend ana akışlar PASS.
-- Manuel doğrulama: OCR auto-fill PASS.
 
 ---
 
-### Phase 6 — dubaivizecisi.com boşluk kapatma + Havale/EFT + Yasal sayfalar + Dribbble Hero (Tamamlandı)
+### Phase 6 — Rakip boşluk kapatma + Havale/EFT + Yasal sayfalar + Dribbble Hero (Tamamlandı)
 **Amaç:** Rakip sitedeki eksik operasyonel parçaları tamamlamak, ödeme yöntemini genişletmek, yasal şeffaflık eklemek ve hero’yu modern danışmanlık tasarımına yaklaştırmak.
 
 **User Stories (min 5)**
@@ -214,32 +195,58 @@
   - Frontend:
     - `/basvuru` ödeme adımında “Havale/EFT” seçimi + banka bilgileri blok gösterimi.
     - Admin başvuru detayında “Havale ödemesini onayla” butonu.
-- Promosyon + alternatif başvuru:
-  - Home’da otel indirimi promosyon bandı.
-  - “WhatsApp’tan başvur / E-posta ile gönder” bölümü.
 - Dribbble referans hero:
   - Üst üste binen görsel kolajı, 7+ yıl deneyim rozeti, puan rozet kartı.
   - Yumuşak degrade zemin.
   - Kayan hizmet şeridi (marquee).
 
 **Test / Doğrulama**
-- `testing_agent_v3` (iteration_5.json):
-  - Backend: %91.8 (67/73) — kalanlar zaman aşımı/kurulum, kritik bug yok.
-  - Frontend: %100 PASS (yeni UI öğeleri ve responsive doğrulandı).
-- Manuel API doğrulama:
-  - `POST /api/payments/bank-transfer` PASS.
-  - `POST /api/admin/applications/{id}/mark-paid` PASS (paid→reviewing).
-  - `POST /api/admin/applications/{id}/whatsapp` PASS.
+- `testing_agent_v3` (iteration_5.json): Backend %91.8 (zaman aşımı/kurulum kaynaklı), Frontend %100 PASS.
+
+---
+
+### Phase 7 — Ürün sadeleştirme + Tıklanabilir kart fixleri + Admin banka/acente yönetimi + UX düzeltmeleri (Tamamlandı)
+**Amaç:** Sadece vize hizmetine odaklanmak, kritik tıklanabilirlik/validasyon sorunlarını gidermek, gerçek banka ve acente bilgilerini yönetilebilir yapmak.
+
+**Adımlar / Çıktılar**
+- **60 günlük kart tıklanmıyor** bug fix:
+  - `VisaTypeCard` kartlarının tamamı tıklanabilir hale getirildi.
+  - Mobilde “tap” sorununu gidermek için kart üstüne **stretched Link overlay** eklendi.
+  - Klavye erişimi (Enter/Space) korundu.
+- **Sadece vize hizmeti**:
+  - Otel/tur/transfer içerikleri kaldırıldı.
+  - `SERVICES` vize odaklı 6 maddeye indirildi; `TOURS = []`.
+  - Ana sayfa tours bölümü kaldırıldı; Hizmetler sayfası sadeleştirildi.
+  - Promosyon bandı “aile indirimi” olarak güncellendi.
+- **Banka bilgileri admin’den yönetilebilir**:
+  - Admin UI: `/admin/banka`.
+  - Backend: `site_settings.bank_transfer` ile override; public içerik ve havale e-postası/ekranı bu değeri kullanır.
+- **Başvuru adım-1 validasyon iyileştirmesi**:
+  - Eksik alanlar artık isimleriyle toast’ta listelenir.
+  - İlk hatalı alana otomatik kaydırma + odak.
+- **Küçük UI istekleri**:
+  - “+ Yetişkin ekle” ve “+ Çocuk ekle” butonlarına plus + kullanıcı/bebek ikonları.
+  - “Pasaport kimlik sayfası” yanındaki “JPG veya PNG” metni kaldırıldı.
+- **Koyu mod tamamen kaldırıldı**:
+  - ThemeToggle ve theme altyapısı kaldırıldı; `.dark` token blokları silindi.
+- **TÜRSAB + acente detayları**:
+  - Footer + Hakkımızda’da TÜRSAB rozeti (temsili SVG) ve acente bilgileri gösterimi.
+  - Admin UI: `/admin/acente` ile düzenlenebilir.
+- **Font güncellemesi**:
+  - Başlık fontu: **Montserrat**, gövde: **Figtree**.
+
+**Test / Doğrulama**
+- `testing_agent_v3` (iteration_7.json): 4 kullanıcı hatası düzeltmesi %100 PASS.
+- `testing_agent_v3` (iteration_8.json): Koyu mod kaldırma + TÜRSAB/acente + regresyonlar overall %98 PASS.
 
 ---
 
 ## 3. Next Actions
-1. **(Opsiyonel) Resend anahtarını ekle** → canlı e-posta gönderimini E2E doğrula (application_received, bank_transfer_instructions, payment_received, visa_delivered).
-2. **(Opsiyonel) Stripe prod hazırlığı**: canlı anahtarlar + webhook secret + success/cancel URL’leri prod domain.
-3. İçerik onayı:
-   - Blog yazıları (başlık/slug/özet) ve hukuk/uyumluluk kontrolü.
-   - Yorumlar/puan metrikleri (gerçek sayılarla güncelleme).
-   - Banka bilgileri (IBAN/ünvan/banka adı) gerçek bilgilerle değiştirme.
+1. **İçerik onayı ve gerçek veriler**:
+   - Banka bilgileri (IBAN/ünvan/banka adı) gerçek bilgilerle girilsin (`/admin/banka`).
+   - TÜRSAB belge numarası ve ticari bilgiler gerçek değerlerle girilsin (`/admin/acente`).
+2. **(Opsiyonel) Resend anahtarını ekle** → canlı e-posta gönderimini E2E doğrula (application_received, bank_transfer_instructions, payment_received, visa_delivered).
+3. **(Opsiyonel) Stripe prod hazırlığı**: canlı anahtarlar + webhook secret + success/cancel URL’leri prod domain.
 4. Operasyonel güvenlik:
    - Admin şifresi değişimi, env değişkenleri ve erişim kısıtları.
    - Rate limit / basic bot koruması (opsiyonel).
@@ -253,13 +260,13 @@
 - Takip sayfası referans koduyla doğru başvuruyu gösterir ve “ödemeyi tamamla” çalışır.
 - Admin: giriş yapar, başvuruları listeler, detayda dosyaları görür, durum günceller.
 - **Phase 3:** çoklu yolcu (aile) başvurusu + otomatik fiyat/indirim + admin vize PDF yükle/gönder akışları sorunsuz.
-- **Tema/Koyu Mod:** tema anahtarı görünür, dark/light geçişi sorunsuz, kalıcı ve tüm sayfalarda okunabilirlik korunur.
 - **Sosyal kanıt:** müşteri deneyimleri bölümü görünür, veriler backend’den gelir.
 - **Örnek vize:** kişisel verileri gizlenmiş vize örneği görüntülenir.
 - **AI pasaport okuma:** pasaport yüklenince form alanları otomatik dolar, kullanıcı kontrol eder; akış bozulmaz.
 - **SEO blog:** /gelismeler ve /gelismeler/:slug sayfaları meta/canonical/JSON-LD ile çalışır.
 - **WhatsApp bildirimi:** admin tek tıkla wa.me linki ve mesaj üretir; loglanır.
 - **Havale/EFT:** kullanıcı bank transfer seçer, sistem bank bilgilerini ve referansı gösterir; admin “mark-paid” ile ödemeyi onaylar ve başvuru incelemeye geçer.
+- **Banka ve acente yönetimi:** `/admin/banka` ve `/admin/acente` üzerinden girilen bilgiler sitede ve e-posta şablonlarında doğru görünür.
 - `RESEND_API_KEY` yokken hiçbir kritik akış kırılmaz; tüm “atlanan” mailler `email_outbox`’a kaydolur.
 
 ---
@@ -269,17 +276,20 @@
 - Phase 2: Backend + Frontend tamamlandı; E2E test PASS (iteration_1).
 - **Phase 3: TAMAMLANDI**
   - `testing_agent_v3` iteration_2: Phase 3 özellikleri %100 PASS.
-  - Kritik fix: Stripe checkout çoklu yolcuda `visa_type_id` metadata KeyError → düzeltildi.
 - **Phase 4: TAMAMLANDI**
-  - UAE bayrak paleti + koyu mod + sosyal kanıt + gerçek görseller.
-  - `testing_agent_v3` iteration_3: PASS.
+  - UAE bayrak paleti + sosyal kanıt + gerçek görseller.
 - **Phase 5: TAMAMLANDI**
   - AI pasaport okuma, örnek vize görseli, blog/yorum CMS, WhatsApp link tabanlı bildirim.
-  - `testing_agent_v3` iteration_4: Backend %96.9, Frontend PASS.
 - **Phase 6: TAMAMLANDI**
-  - Yeni vize tipleri (Transit/Freelancer), genişletilmiş SSS, yasal sayfalar.
+  - Transit/Freelancer vize tipleri, genişletilmiş SSS, yasal sayfalar.
   - Havale/EFT ödeme akışı + admin onayı.
-  - Promosyon bandı + WhatsApp/E-posta alternatif başvuru.
   - Dribbble benzeri hero (kolaj + rozet + marquee).
-  - `testing_agent_v3` iteration_5: Backend %91.8 (zaman aşımı/kurulum kaynaklı), Frontend %100 PASS.
-- Kalan opsiyonel işler: RESEND_API_KEY ile canlı e-posta doğrulaması, Stripe prod geçişi, içerik/hukuk onayı, gerçek banka bilgileri, operasyonel güvenlik ayarları.
+- **Phase 7: TAMAMLANDI**
+  - 60 günlük kart tıklama bug fix (mobil dahil).
+  - Otel/tur kaldırıldı; yalnızca vize hizmetleri.
+  - Banka bilgileri admin’den yönetiliyor.
+  - Form validasyon UX düzeltmeleri.
+  - Koyu mod kaldırıldı.
+  - TÜRSAB rozeti + acente bilgileri (admin’den yönetilebilir).
+  - Başlık fontu Montserrat, gövde Figtree.
+- Kalan opsiyonel işler: RESEND_API_KEY ile canlı e-posta doğrulaması, Stripe prod geçişi, içerik/hukuk onayı, gerçek banka/acente bilgileri, operasyonel güvenlik ayarları.

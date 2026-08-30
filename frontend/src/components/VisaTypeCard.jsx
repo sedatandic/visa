@@ -1,25 +1,55 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { Check, Clock, Star } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Check, Clock } from "lucide-react";
 import { Button } from "./ui/button";
 import { formatMoney } from "../lib/site";
 
 export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false }) => {
     const isPopular = !!visa.popular;
+    const navigate = useNavigate();
+
+    // Kartin herhangi bir yerine tiklandiginda da secim/basvuru calissin.
+    const handleCardActivate = (e) => {
+        if (e.target.closest("a,button")) return;
+        if (onSelect) onSelect(visa);
+        else navigate(`/basvuru?vize=${visa.id}`);
+    };
+
     return (
         <div
             data-testid={`visa-card-${visa.id}`}
-            className={`relative flex h-full flex-col rounded-2xl border-2 bg-card p-6 pt-8 text-center transition-shadow duration-200 ${
+            role="button"
+            tabIndex={0}
+            aria-label={`${visa.name} için başvuruya başla`}
+            onClick={handleCardActivate}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleCardActivate(e);
+                }
+            }}
+            className={`relative flex h-full cursor-pointer flex-col rounded-2xl border-2 bg-card p-6 pt-8 text-center transition-shadow duration-200 hover:shadow-[var(--shadow-soft)] focus-visible:outline-none ${
                 selected
                     ? "border-primary"
                     : isPopular
                       ? "border-[hsl(var(--brand-red))]"
-                      : "border-border"
+                      : "border-border hover:border-primary/50"
             }`}
             style={{ boxShadow: isPopular || selected ? "var(--shadow-soft)" : "var(--shadow-card)" }}
         >
+            {!onSelect && (
+                <Link
+                    to={`/basvuru?vize=${visa.id}`}
+                    aria-label={`${visa.name} için başvuruya başla`}
+                    className="absolute inset-0 z-[1] rounded-2xl"
+                    data-testid={`visa-card-overlay-${visa.id}`}
+                >
+                    <span className="sr-only">{visa.name} başvurusu</span>
+                </Link>
+            )}
+
             {isPopular && (
-                <span className="absolute -top-3.5 left-1/2 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-[hsl(var(--brand-red))] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-white">
+                <span className="absolute -top-3.5 left-1/2 z-[2] inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-[hsl(var(--brand-red))] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-white">
                     En çok tercih edilen
                 </span>
             )}

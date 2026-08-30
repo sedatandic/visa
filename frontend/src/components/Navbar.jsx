@@ -4,7 +4,6 @@ import { Menu, Phone, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { COMPANY } from "../lib/site";
 import { BrandMark } from "./BrandMark";
-import { ThemeToggle } from "./ThemeToggle";
 import { UaeFlag } from "./FlagIcons";
 
 const LINKS = [
@@ -73,14 +72,12 @@ export const Navbar = () => {
                         <Phone className="h-4 w-4 text-[hsl(var(--brand-red))]" />
                         {COMPANY.phone}
                     </a>
-                    <ThemeToggle />
                     <Button asChild className="h-11 px-5" data-testid="navbar-apply-button">
                         <Link to="/basvuru">Başvuru Yap</Link>
                     </Button>
                 </div>
 
                 <div className="flex items-center gap-2 xl:hidden">
-                    <ThemeToggle className="lg:hidden" />
                     <button
                         type="button"
                         onClick={() => setOpen((v) => !v)}

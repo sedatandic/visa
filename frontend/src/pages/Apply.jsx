@@ -66,19 +66,54 @@ const newTraveler = (type = "adult") => ({
 });
 
 const Field = ({ label, children, error, required, htmlFor }) => (
-    <div className="space-y-2">
+    <div className="space-y-2" data-invalid={error ? "true" : undefined}>
         <Label htmlFor={htmlFor}>
             {label} {required && <span className="text-destructive">*</span>}
         </Label>
         {children}
         {error && (
-            <p className="flex items-start gap-1.5 text-xs font-medium text-destructive">
+            <p className="flex items-start gap-1.5 text-xs font-medium text-destructive" role="alert">
                 <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 {error}
             </p>
         )}
     </div>
 );
+
+const ERROR_LABELS = {
+    full_name: "Adınız Soyadınız",
+    email: "E-posta adresi",
+    phone: "Telefon numarası",
+    first_name: "Ad",
+    last_name: "Soyad",
+    birth_date: "Doğum tarihi",
+    gender: "Cinsiyet",
+    passport_no: "Pasaport numarası",
+    passport_expiry: "Pasaport geçerlilik tarihi",
+    visa_type_id: "Vize türü",
+    birth_country: "Doğum ülkesi",
+    arrival_date: "Gidiş tarihi",
+    departure_date: "Dönüş tarihi",
+    passport: "Pasaport fotoğrafı",
+    photo: "Vesikalık fotoğraf",
+};
+
+/** Hata nesnesinden kullaniciya gosterilecek alan adlarini cikarir. */
+const collectErrorLabels = (errorObj, travelers) => {
+    const labels = [];
+    Object.entries(errorObj || {}).forEach(([key, value]) => {
+        if (typeof value === "string") {
+            labels.push(ERROR_LABELS[key] || key);
+            return;
+        }
+        const index = travelers.findIndex((t) => t.key === key);
+        const prefix = index >= 0 ? `${index + 1}. yolcu: ` : "";
+        Object.keys(value || {}).forEach((field) => {
+            labels.push(`${prefix}${ERROR_LABELS[field] || field}`);
+        });
+    });
+    return labels;
+};
 
 const SummaryRow = ({ label, value, strong }) => (
     <div className="flex items-start justify-between gap-4 border-b border-border py-2.5 last:border-0">
@@ -307,7 +342,21 @@ export default function Apply() {
         }
         setErrors(e);
         if (Object.keys(e).length) {
-            toast.error("Lütfen işaretli alanları kontrol edin.");
+            const labels = collectErrorLabels(e, travelers);
+            toast.error(
+                labels.length
+                    ? `Eksik veya hatalı alanlar: ${labels.slice(0, 4).join(", ")}${labels.length > 4 ? "…" : ""}`
+                    : "Lütfen işaretli alanları kontrol edin."
+            );
+            // ilk hatali alana kaydir ve odakla
+            setTimeout(() => {
+                const el = document.querySelector('[data-invalid="true"]');
+                if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    const focusable = el.querySelector("input, select, textarea, button");
+                    if (focusable) setTimeout(() => focusable.focus({ preventScroll: true }), 350);
+                }
+            }, 50);
             return false;
         }
         return true;
@@ -502,9 +551,11 @@ export default function Apply() {
                                         </h3>
                                         <div className="flex flex-wrap gap-2">
                                             <Button type="button" variant="secondary" className="h-10 border border-border" onClick={() => addTraveler("adult")} data-testid="add-adult-traveler-button">
-                                                <Plus className="mr-1.5 h-4 w-4" /> Yetişkin ekle
+                                                <Plus className="mr-1 h-4 w-4" />
+                                                <User className="mr-1.5 h-4 w-4" /> Yetişkin ekle
                                             </Button>
                                             <Button type="button" variant="secondary" className="h-10 border border-border" onClick={() => addTraveler("child")} data-testid="add-child-traveler-button">
+                                                <Plus className="mr-1 h-4 w-4" />
                                                 <Baby className="mr-1.5 h-4 w-4" /> Çocuk ekle
                                             </Button>
                                         </div>
@@ -565,7 +616,7 @@ export default function Apply() {
                                                         <div className="mt-3">
                                                             <FileDropzone
                                                                 label="Pasaport kimlik sayfası"
-                                                                hint="JPG veya PNG"
+                                                                hint=""
                                                                 docType="passport"
                                                                 value={t.passportFile}
                                                                 onChange={(f) => {

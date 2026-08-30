@@ -9,6 +9,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 
 from content import (
     ADDONS,
+    AGENCY_INFO,
     ARTICLES,
     BANK_TRANSFER,
     COMPANY,
@@ -99,8 +100,27 @@ async def get_site_content():
     article_docs = (
         await articles_col.find({"published": True}).sort("date", -1).limit(20).to_list(20)
     )
+    company_doc = await settings_col.find_one({"key": "company_info"})
+    company = {**COMPANY, **((company_doc or {}).get("value") or {})}
+    agency_info = {
+        **AGENCY_INFO,
+        "items": [
+            {"label": "Ticaret Unvanı", "value": company.get("legal_name", "")},
+            {"label": "TÜRSAB Belge No", "value": company.get("tursab_no", "")},
+            {"label": "Acente Türü", "value": company.get("tursab_type", "")},
+            {
+                "label": "Vergi Dairesi / No",
+                "value": f"{company.get('tax_office', '')} / {company.get('tax_no', '')}".strip(" /"),
+            },
+            {"label": "MERSİS No", "value": company.get("mersis_no", "")},
+            {"label": "Ticaret Sicil No", "value": company.get("trade_registry_no", "")},
+            {"label": "Adres", "value": company.get("address", "")},
+            {"label": "Kuruluş", "value": company.get("founded_year", "")},
+        ],
+    }
+    agency_info["items"] = [i for i in agency_info["items"] if i["value"]]
     return {
-        "company": COMPANY,
+        "company": company,
         "visa_categories": VISA_CATEGORIES,
         "addons": list(ADDONS.values()),
         "family_discount_tiers": [{"min": m, "rate": r} for m, r in FAMILY_DISCOUNT_TIERS],
@@ -120,7 +140,9 @@ async def get_site_content():
         "important_notice": IMPORTANT_NOTICE,
         "status_labels": STATUS_LABELS,
         "promo": PROMO,
-        "bank_transfer": {k: v for k, v in BANK_TRANSFER.items()},
+        "agency_info": agency_info,
+        "bank_transfer": ((await settings_col.find_one({"key": "bank_transfer"})) or {}).get("value")
+        or BANK_TRANSFER,
     }
 
 
