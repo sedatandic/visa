@@ -4,6 +4,7 @@ import { Menu, Phone, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { COMPANY } from "../lib/site";
 import { BrandMark } from "./BrandMark";
+import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
     { to: "/vize-tipleri", label: "Hizmet Bedelleri" },
@@ -64,26 +65,30 @@ export const Navbar = () => {
                 <div className="hidden items-center gap-3 lg:flex">
                     <a
                         href={COMPANY.phoneHref}
-                        className="hidden items-center gap-2 text-sm font-semibold text-foreground/80 transition-colors hover:text-primary 2xl:flex"
+                        className="hidden items-center gap-2 whitespace-nowrap text-sm font-semibold text-foreground/80 transition-colors hover:text-primary 2xl:flex"
                         data-testid="navbar-phone-link"
                     >
-                        <Phone className="h-4 w-4" />
+                        <Phone className="h-4 w-4 text-[hsl(var(--brand-red))]" />
                         {COMPANY.phone}
                     </a>
+                    <ThemeToggle />
                     <Button asChild className="h-11 px-5" data-testid="navbar-apply-button">
                         <Link to="/basvuru">Başvuru Yap</Link>
                     </Button>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={() => setOpen((v) => !v)}
-                    className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card text-foreground xl:hidden"
-                    aria-label="Menüyü aç/kapat"
-                    data-testid="mobile-menu-toggle"
-                >
-                    {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </button>
+                <div className="flex items-center gap-2 xl:hidden">
+                    <ThemeToggle className="lg:hidden" />
+                    <button
+                        type="button"
+                        onClick={() => setOpen((v) => !v)}
+                        className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card text-foreground"
+                        aria-label="Menüyü aç/kapat"
+                        data-testid="mobile-menu-toggle"
+                    >
+                        {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </button>
+                </div>
             </div>
 
             {open && (

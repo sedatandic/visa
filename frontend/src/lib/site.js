@@ -1,12 +1,18 @@
 export const IMAGES = {
     heroSkyline:
-        "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1400&q=75",
+        "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1400&q=75",
+    dubaiHighway:
+        "https://images.unsplash.com/photo-1656994865204-9646ebddd2cb?auto=format&fit=crop&w=1100&q=75",
     burjAlArabAerial:
         "https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=900&q=75",
     burjAlArabBeach:
         "https://images.unsplash.com/photo-1546412414-e1885259563a?auto=format&fit=crop&w=900&q=75",
     dubaiNight:
         "https://images.unsplash.com/photo-1526495124232-a04e1849168c?auto=format&fit=crop&w=900&q=75",
+    office:
+        "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1100&q=75",
+    passportDocs:
+        "https://images.unsplash.com/photo-1491317079341-38313806b657?auto=format&fit=crop&w=1000&q=75",
     travelFlatlay:
         "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1000&q=75",
     plane:

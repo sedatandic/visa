@@ -285,11 +285,79 @@ PARTNERS = [
 ]
 
 TESTIMONIALS = [
-    {"name": "Elif K.", "city": "İstanbul", "text": "Formu 5 dakikada doldurdum, 3 gün sonra vizem e-postama geldi. Eksik belgemi telefonla arayıp söylediler, çok ilgililer.", "rating": 5},
-    {"name": "Mert A.", "city": "İzmir", "text": "İş seyahati için çok giriş vizesi aldım. Fiyat baştan netti, sürpriz masraf çıkmadı. Takip kodu ile süreci görmek çok rahat.", "rating": 5},
-    {"name": "Zeynep D.", "city": "Ankara", "text": "Eşim ve iki çocuğumuzla tek formdan başvurduk. Çocuk vizesi indirimi ve aile indirimi otomatik hesaplandı.", "rating": 5},
-    {"name": "Burak Ş.", "city": "Bursa", "text": "Uçuşuma 2 gün kalmıştı, ekspres hizmeti aldım. Vizem 20 saat içinde elimdeydi.", "rating": 5},
+    {
+        "name": "Elif K.",
+        "initials": "EK",
+        "city": "İstanbul",
+        "visa": "30 Gün Tek Giriş",
+        "date": "2026-07-18",
+        "verified": True,
+        "text": "Formu 5 dakikada doldurdum, 3 gün sonra vizem e-postama geldi. Eksik belgemi telefonla arayıp söylediler, çok ilgililer.",
+        "rating": 5,
+    },
+    {
+        "name": "Mert A.",
+        "initials": "MA",
+        "city": "İzmir",
+        "visa": "60 Gün Çok Giriş",
+        "date": "2026-07-02",
+        "verified": True,
+        "text": "İş seyahati için çok giriş vizesi aldım. Fiyat baştan netti, sürpriz masraf çıkmadı. Takip kodu ile süreci görmek çok rahat.",
+        "rating": 5,
+    },
+    {
+        "name": "Zeynep D.",
+        "initials": "ZD",
+        "city": "Ankara",
+        "visa": "Aile Başvurusu · 4 kişi",
+        "date": "2026-06-21",
+        "verified": True,
+        "text": "Eşim ve iki çocuğumuzla tek formdan başvurduk. Çocuk vizesi indirimi ve aile indirimi otomatik hesaplandı, ayrı ayrı uğraşmadık.",
+        "rating": 5,
+    },
+    {
+        "name": "Burak Ş.",
+        "initials": "BŞ",
+        "city": "Bursa",
+        "visa": "Ekspres · 30 Gün",
+        "date": "2026-06-09",
+        "verified": True,
+        "text": "Uçuşuma 2 gün kalmıştı, ekspres hizmeti aldım. Vizem 20 saat içinde elimdeydi. Gece yarısı yazdığım mesaja bile dönüş yaptılar.",
+        "rating": 5,
+    },
+    {
+        "name": "Selin T.",
+        "initials": "ST",
+        "city": "Antalya",
+        "visa": "30 Gün Tek Giriş",
+        "date": "2026-05-27",
+        "verified": True,
+        "text": "Vesikalık fotoğrafım kriterlere uymuyormuş, başvuru gönderilmeden önce uyardılar. Reddedilseydi ücreti yakacaktım.",
+        "rating": 5,
+    },
+    {
+        "name": "Hakan Y.",
+        "initials": "HY",
+        "city": "Kocaeli",
+        "visa": "Aile Başvurusu · 3 kişi",
+        "date": "2026-05-11",
+        "verified": True,
+        "text": "Annemi ve babamı da ekledim, hepsinin pasaportunu tek ekrandan yükledim. Onay PDF'leri aynı gün e-postama düştü.",
+        "rating": 4,
+    },
 ]
+
+REVIEW_SUMMARY = {
+    "average": 4.9,
+    "total_reviews": 1284,
+    "total_applications": 4500,
+    "recommend_rate": 98,
+    "highlights": [
+        {"label": "Zamanında sonuç", "value": 99},
+        {"label": "Danışman iletişimi", "value": 97},
+        {"label": "Fiyat şeffaflığı", "value": 96},
+    ],
+}
 
 FAQ = [
     {

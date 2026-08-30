@@ -1,34 +1,22 @@
 [
   {
-    "content": "Phase 3: Backend - çoklu yolcu (aile) veri modeli + otomatik fiyat hesabı (ek hizmetler + aile indirimi)",
+    "content": "Koyu mod: tema context + navbar toggle + dark token kontrolü",
+    "status": "completed"
+  },
+  {
+    "content": "Görselleri yenile (Dubai + ofis/belge fotoğrafları)",
+    "status": "completed"
+  },
+  {
+    "content": "Ana sayfaya puan özeti + zenginleştirilmiş müşteri yorumları",
+    "status": "completed"
+  },
+  {
+    "content": "Kırmızı vurguyu artır (hero, eyebrow, rozetler, yıldızlar)",
+    "status": "completed"
+  },
+  {
+    "content": "Koyu modda diğer sayfaları (başvuru, admin, mobil) doğrula",
     "status": "in_progress"
-  },
-  {
-    "content": "Phase 3: Backend - vize sonuç PDF yükleme + tek tıkla müşteriye gönderme",
-    "status": "pending"
-  },
-  {
-    "content": "Phase 3: Backend - yeni vize kategorileri (tek/çok giriş, çocuk, uzatma) + ekspres & sigorta",
-    "status": "pending"
-  },
-  {
-    "content": "Phase 3: Frontend - Ana sayfa yeniden yapılandırma (sekmeli fiyat, evrak kartları, hizmetler, turlar, partnerler, blog, SEO metni)",
-    "status": "pending"
-  },
-  {
-    "content": "Phase 3: Frontend - Başvuru formu: çoklu yolcu + ek hizmetler + ek evraklar + fiyat dökümü",
-    "status": "pending"
-  },
-  {
-    "content": "Phase 3: Frontend - Takip sayfasında vize PDF indirme + yolcu listesi",
-    "status": "pending"
-  },
-  {
-    "content": "Phase 3: Frontend - Admin detay: yolcular, fiyat dökümü, vize PDF yükle & gönder",
-    "status": "pending"
-  },
-  {
-    "content": "Phase 3: End to End Testing using Testing Agent",
-    "status": "pending"
   }
 ]

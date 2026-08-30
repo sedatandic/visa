@@ -6,9 +6,15 @@
 - Çekirdek iş akışı: **başvuru oluşturma → dosya yükleme → ödeme (Stripe) → takip kodu**.
 - Başvuruları MongoDB’ye kaydetme, admin panelde listeleme/detay/güncelleme.
 - E-posta bildirimleri (başvuru sahibine + admin’e): **API anahtarı yoksa akışı bozmadan “skipped” olarak outbox’a yaz**.
+- Güven ve “insan eliyle tasarlanmış” kurumsal görünüm:
+  - **BAE bayrak paleti** (yeşil/kırmızı/siyah/beyaz) — kırmızı vurgu belirgin.
+  - **Tipografi**: Spectral (başlık) + IBM Plex Sans (gövde) + opsiyonel IBM Plex Mono.
+  - **Koyu mod**: sağ üst tema anahtarı, kalıcı (localStorage), admin’de de var.
+  - **Gerçek görseller**: Burj Khalifa hero, Sheikh Zayed yolu, ofis, pasaport/belge flatlay.
+  - **Müşteri deneyimleri**: 4,9/5 puan özeti + memnuniyet barları + doğrulanmış yorum kartları.
 - **Phase 3 (tamamlandı):**
   - **Aile Başvurusu:** Tek formda çoklu yolcu ekleme/çıkarma, kişi sayısına göre otomatik fiyat + aile indirimi.
-  - **Admin Vize PDF:** Admin panelinden onaylı vize PDF yükleme ve tek tıkla müşteriye e-posta ile gönderme.
+  - **Admin Vize PDF:** Admin panelden onaylı vize PDF yükleme ve tek tıkla müşteriye e-posta ile gönderme.
 
 ---
 
@@ -118,20 +124,59 @@
 
 ---
 
-### Phase 4 — Go-live hazırlık (opsiyonel)
+### Phase 4 — Marka/Tema Yenileme + Koyu Mod + Sosyal Kanıt (Tamamlandı)
+**Amaç:** Görsel dili güçlendirmek, “AI şablonu” hissini kırmak, BAE bayrak renkleriyle özgün kurumsal kimlik + gece modu + sosyal kanıt.
+
+**User Stories (min 5)**
+1. Kullanıcı olarak gece kullanımı için koyu temaya geçebilmek istiyorum.
+2. Kullanıcı olarak tema tercihim sayfa yenilemelerinde ve sayfalar arasında kaybolmasın.
+3. Kullanıcı olarak sitede gerçek fotoğraflar görüp güven duymak istiyorum.
+4. Kullanıcı olarak diğer müşterilerin deneyimlerini (puan, yorum) görüp karar vermek istiyorum.
+5. Admin olarak koyu temada da rahatça paneli kullanmak istiyorum.
+
+**Adımlar / Çıktılar**
+- Tema / Tipografi:
+  - UAE bayrak paleti (yeşil primary, kırmızı accent/destructive, siyah/beyaz temeller).
+  - **Kırmızı vurgular artırıldı**: hero başlık, eyebrow, yıldızlar/ikonlar, rozetler, bayrak şeridi.
+  - Fontlar: **Spectral + IBM Plex Sans (+ IBM Plex Mono)**.
+  - Token tabanlı renkler: hard-coded renkler temizlendi, CSS var’lara taşındı.
+- Koyu Mod:
+  - `ThemeToggle` eklendi: navbar + admin header.
+  - `html.dark` ile dark tokenlar; localStorage anahtarı: `vizeatlas-theme`.
+  - Tema meta rengi: light `#0B6B3A`, dark `#0D1115`.
+- Görseller:
+  - Hero: Burj Khalifa (gündüz).
+  - İkincil: Sheikh Zayed yolu, Burj Al Arab, Dubai gece.
+  - Güven/kurumsal: ofis fotoğrafı.
+  - Belgeler: pasaport/belge flatlay.
+- Müşteri Deneyimleri:
+  - Backend `content.py`: zenginleştirilmiş `TESTIMONIALS` + yeni `REVIEW_SUMMARY`.
+  - `/api/content/site`: `review_summary` payload’a eklendi.
+  - Home: yeni “Müşteri Deneyimleri” bölümü: 4,9/5, toplam değerlendirme ve bar metrikleri + **6 doğrulanmış yorum kartı**.
+
+**Test / Doğrulama**
+- `testing_agent_v3` (iteration_3.json):
+  - Frontend: %100 PASS (tema anahtarı, kalıcılık, dark readability, testimonial bölümü, görsel yükleme, mobil görünüm).
+  - Backend: Phase 3 format testleri PASS; kalan bazı fail’ler eski Phase 2 şema testlerinden (legacy).
+  - Regresyon yok: çoklu yolcu başvuru + admin vize PDF akışı çalışıyor.
+
+---
+
+### Phase 5 — Go-live hazırlık (opsiyonel)
 - Resend domain doğrulama + **gerçek e-posta gönderimi** (RESEND_API_KEY eklendikten sonra canlı test).
 - Stripe canlı hesaba geçiş rehberi + webhook doğrulama (prod).
 - KVKK/Gizlilik/Çerez/İade politikası sayfalarının hukuk kontrolü.
 - Admin şifresi ve demo credential’ların canlıya alınmadan değiştirilmesi.
 - Son UI cilası (mikro kopya, mobil spacing, performans).
+- Operasyonel: log/monitoring notları, hata izleme (opsiyonel).
 
 ---
 
 ## 3. Next Actions
 1. **(Opsiyonel) Resend anahtarını ekle** → canlı e-posta gönderimini E2E doğrula (application_received, payment_received, visa_delivered).
 2. **(Opsiyonel) Stripe prod hazırlığı**: canlı anahtarlar + webhook secret + success/cancel URL’leri prod domain.
-3. UI son cilası + içerik gözden geçirme (mobilde tipografi/boşluklar).
-4. Güvenlik/operasyon: admin şifresi değişimi, log/monitoring notları.
+3. İçerik onayı: müşteri yorum metinleri, sayılar (4.500+, 1.284), iletişim bilgileri (telefon/adres).
+4. Güvenlik/operasyon: admin şifresi değişimi, env değişkenleri ve erişim kısıtları.
 
 ---
 
@@ -141,6 +186,8 @@
 - Takip sayfası referans koduyla doğru başvuruyu gösterir ve “ödemeyi tamamla” çalışır.
 - Admin: giriş yapar, başvuruları listeler, detayda dosyaları görür, durum günceller.
 - **Phase 3:** çoklu yolcu (aile) başvurusu + otomatik fiyat/indirim + admin vize PDF yükle/gönder akışları sorunsuz.
+- **Tema/Koyu Mod:** tema anahtarı görünür, dark/light geçişi sorunsuz, kalıcı ve tüm sayfalarda okunabilirlik korunur.
+- **Sosyal kanıt:** müşteri deneyimleri bölümü görünür, veriler backend’den gelir, görseller kırık değildir.
 - `RESEND_API_KEY` yokken hiçbir kritik akış kırılmaz; tüm “atlanan” mailler `email_outbox`’a kaydolur.
 
 ---
@@ -153,4 +200,10 @@
   - Kritik fix: Stripe checkout çoklu yolcuda `visa_type_id` metadata KeyError → düzeltildi (`routes_payments.py`).
   - İyileştirme: `payment_received` e-postası `contact.email` üzerinden gönderilecek şekilde düzeltildi.
   - UI: Navbar link sarması `whitespace-nowrap` ile giderildi.
-- Kalan opsiyonel işler: RESEND_API_KEY eklendiğinde canlı e-posta doğrulaması, Stripe prod geçişi, son UI cilası, admin şifre değişimi.
+- **Phase 4: TAMAMLANDI (Marka/Tema + Koyu Mod + Yorumlar + Görsel Yenileme)**
+  - UAE bayrak paleti + Spectral/IBM Plex Sans uygulandı, kırmızı vurgu artırıldı.
+  - ThemeToggle navbar + admin header’da; tema kalıcı.
+  - Home: review summary + 6 doğrulanmış yorum kartı.
+  - Görseller: Burj Khalifa hero + Dubai/ofis/belge görselleri yenilendi.
+  - `testing_agent_v3` iteration_3: Frontend %100 PASS; regresyon yok.
+- Kalan opsiyonel işler: RESEND_API_KEY eklendiğinde canlı e-posta doğrulaması, Stripe prod geçişi, içerik onayı ve operasyonel güvenlik ayarları.

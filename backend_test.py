@@ -84,9 +84,35 @@ class BackendTester:
         r = requests.get(f"{self.base_url}/content/site", timeout=10)
         assert r.status_code == 200, f"Expected 200, got {r.status_code}"
         data = r.json()
-        required = ["company", "process_steps", "why_us", "faq", "required_documents", "photo_rules", "testimonials", "status_labels"]
+        required = ["company", "process_steps", "why_us", "faq", "required_documents", "photo_rules", "testimonials", "review_summary", "status_labels"]
         for key in required:
             assert key in data, f"Missing {key} in site content"
+        
+        # Verify review_summary structure
+        review_summary = data.get("review_summary")
+        assert review_summary is not None, "review_summary is None"
+        assert "average" in review_summary, "Missing 'average' in review_summary"
+        assert "total_reviews" in review_summary, "Missing 'total_reviews' in review_summary"
+        assert "total_applications" in review_summary, "Missing 'total_applications' in review_summary"
+        assert "highlights" in review_summary, "Missing 'highlights' in review_summary"
+        assert isinstance(review_summary["highlights"], list), "highlights should be a list"
+        self.log(f"Review summary: {review_summary['average']} avg, {review_summary['total_reviews']} reviews")
+        
+        # Verify testimonials structure
+        testimonials = data.get("testimonials")
+        assert testimonials is not None, "testimonials is None"
+        assert isinstance(testimonials, list), "testimonials should be a list"
+        assert len(testimonials) >= 6, f"Expected at least 6 testimonials, got {len(testimonials)}"
+        for t in testimonials[:3]:  # Check first 3
+            assert "name" in t, "Testimonial missing 'name'"
+            assert "initials" in t, "Testimonial missing 'initials'"
+            assert "city" in t, "Testimonial missing 'city'"
+            assert "visa" in t, "Testimonial missing 'visa'"
+            assert "date" in t, "Testimonial missing 'date'"
+            assert "verified" in t, "Testimonial missing 'verified'"
+            assert "rating" in t, "Testimonial missing 'rating'"
+            assert "text" in t, "Testimonial missing 'text'"
+        self.log(f"Testimonials: {len(testimonials)} testimonials found")
         self.log("Site content loaded successfully")
 
     def test_upload_valid_image(self):

@@ -3,6 +3,7 @@ import { Link, NavLink, Navigate, useNavigate } from "react-router-dom";
 import { LayoutDashboard, LogOut, Mail, MessageSquare, Tag } from "lucide-react";
 import { Button } from "./ui/button";
 import { BrandMark } from "./BrandMark";
+import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
     { to: "/admin", label: "Başvurular", icon: LayoutDashboard, end: true },
@@ -36,6 +37,7 @@ export const AdminLayout = ({ children, title, description }) => {
                     </Link>
                     <div className="flex items-center gap-3">
                         <span className="hidden text-sm text-muted-foreground sm:inline">{email}</span>
+                        <ThemeToggle className="h-10 w-10" />
                         <Button variant="secondary" className="h-10 border border-border" onClick={logout} data-testid="admin-logout-button">
                             <LogOut className="mr-2 h-4 w-4" /> Çıkış
                         </Button>

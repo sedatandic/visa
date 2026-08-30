@@ -26,6 +26,7 @@ import { IMAGES, setMeta } from "../lib/site";
 import { Button } from "../components/ui/button";
 import { PricingTabs } from "../components/PricingTabs";
 import { ServiceCard, TourCard } from "../components/IconCards";
+import { ReviewSummary, TestimonialCard } from "../components/Testimonials";
 import {
     Accordion,
     AccordionContent,
@@ -66,8 +67,13 @@ export default function Home() {
                         <h1 className="mt-5 text-4xl font-bold leading-[1.08] sm:text-5xl lg:text-[54px]">
                             Dubai Vize Başvurusu
                             <br />
-                            <span className="text-primary">ve Danışmanlığı</span>
+                            <span className="text-[hsl(var(--brand-red))]">ve Danışmanlığı</span>
                         </h1>
+                        <div className="mt-5 flex items-center gap-1.5" aria-hidden="true">
+                            <span className="h-1 w-10 rounded-full bg-[hsl(var(--brand-red))]" />
+                            <span className="h-1 w-6 rounded-full bg-[hsl(var(--brand-green))]" />
+                            <span className="h-1 w-3 rounded-full bg-foreground/70" />
+                        </div>
                         <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
                             Tek formda tüm aileniz için başvuru yapın. Pasaport ve fotoğraflarınızı yükleyin,
                             belgeleri danışmanlarımız kontrol etsin. Onaylanan vizeniz PDF olarak
@@ -80,20 +86,30 @@ export default function Home() {
                                     Başvuru Yap <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
-                            <Button asChild variant="secondary" className="h-12 border border-border px-7 text-base" data-testid="hero-pricing-button">
+                            <Button asChild variant="secondary" className="h-12 border border-[hsl(var(--brand-red)/0.35)] bg-[hsl(var(--brand-red)/0.06)] px-7 text-base text-[hsl(var(--brand-red))] hover:bg-[hsl(var(--brand-red)/0.12)]" data-testid="hero-pricing-button">
                                 <Link to="/vize-tipleri">Hizmet Bedellerini Gör</Link>
                             </Button>
                         </div>
 
                         <div className="mt-9 grid gap-4 sm:grid-cols-3">
                             {[
-                                { icon: Users, title: "Aile başvurusu", detail: "Tek formda çoklu yolcu" },
-                                { icon: BadgeCheck, title: "Evrak kontrolü", detail: "Başvuru öncesi ücretsiz" },
-                                { icon: Clock, title: "Ortalama 3 gün", detail: "Ekspreste 24 saat" },
-                            ].map(({ icon: Icon, title, detail }) => (
+                                { icon: Users, title: "Aile başvurusu", detail: "Tek formda çoklu yolcu", tone: "red" },
+                                { icon: BadgeCheck, title: "Evrak kontrolü", detail: "Başvuru öncesi ücretsiz", tone: "green" },
+                                { icon: Clock, title: "Ortalama 3 gün", detail: "Ekspreste 24 saat", tone: "red" },
+                            ].map(({ icon: Icon, title, detail, tone }) => (
                                 <div key={title} className="flex items-start gap-2.5">
-                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                                        <Icon className="h-4 w-4 text-primary" />
+                                    <span
+                                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                                            tone === "red"
+                                                ? "bg-[hsl(var(--brand-red)/0.10)]"
+                                                : "bg-primary/10"
+                                        }`}
+                                    >
+                                        <Icon
+                                            className={`h-4 w-4 ${
+                                                tone === "red" ? "text-[hsl(var(--brand-red))]" : "text-primary"
+                                            }`}
+                                        />
                                     </span>
                                     <div>
                                         <p className="text-sm font-semibold leading-tight">{title}</p>
@@ -123,14 +139,16 @@ export default function Home() {
                                 <img src={IMAGES.burjAlArabAerial} alt="Burj Al Arab ve Jumeirah kıyısı" className="h-[130px] w-full object-cover" loading="lazy" />
                             </div>
                             <div className="overflow-hidden rounded-xl border border-border">
-                                <img src={IMAGES.dubaiNight} alt="Dubai gece görünümü" className="h-[130px] w-full object-cover" loading="lazy" />
+                                <img src={IMAGES.dubaiHighway} alt="Sheikh Zayed Yolu ve Dubai gökdelenleri" className="h-[130px] w-full object-cover" loading="lazy" />
                             </div>
                         </div>
                         <div
-                            className="absolute -bottom-6 left-4 right-4 rounded-xl border border-border bg-card p-4 sm:left-6 sm:right-auto sm:w-[280px]"
+                            className="absolute -bottom-6 left-4 right-4 overflow-hidden rounded-xl border border-border bg-card p-4 sm:left-6 sm:right-auto sm:w-[280px]"
                             style={{ boxShadow: "var(--shadow-soft)" }}
+                            data-testid="hero-rating-card"
                         >
-                            <div className="flex items-center gap-1 text-[hsl(var(--gold))]">
+                            <span className="absolute left-0 top-0 h-full w-1 bg-[hsl(var(--brand-red))]" aria-hidden="true" />
+                            <div className="flex items-center gap-1 text-[hsl(var(--brand-red))]">
                                 {[0, 1, 2, 3, 4].map((i) => (
                                     <Star key={i} className="h-4 w-4 fill-current" />
                                 ))}
@@ -184,7 +202,16 @@ export default function Home() {
                             kopyalarını yüklemeniz yeterli.
                         </p>
                     </div>
-                    <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-9 grid items-start gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+                        <div className="overflow-hidden rounded-2xl border border-border lg:sticky lg:top-28" style={{ boxShadow: "var(--shadow-card)" }}>
+                            <img
+                                src={IMAGES.passportDocs}
+                                alt="Pasaport ve seyahat belgeleri"
+                                className="h-[280px] w-full object-cover"
+                                loading="lazy"
+                            />
+                        </div>
+                        <div className="grid gap-5 sm:grid-cols-2">
                         {(content?.required_documents || []).map((d) => {
                             const Icon = DOC_ICONS[d.key] || FileText;
                             return (
@@ -208,6 +235,7 @@ export default function Home() {
                                 </div>
                             );
                         })}
+                        </div>
                     </div>
                     <Button asChild variant="secondary" className="mt-8 h-11 border border-border">
                         <Link to="/gerekli-belgeler">
@@ -303,30 +331,38 @@ export default function Home() {
                             bir durum varsa başvuruyu göndermeden önce sizi bilgilendiririz.
                         </p>
                         <div className="mt-6 overflow-hidden rounded-2xl border border-border" style={{ boxShadow: "var(--shadow-card)" }}>
-                            <img src={IMAGES.burjAlArabBeach} alt="Dubai Jumeirah plajı ve Burj Al Arab" className="h-[220px] w-full object-cover" loading="lazy" />
+                            <img src={IMAGES.office} alt="VizeAtlas danışmanlık ofisi" className="h-[220px] w-full object-cover" loading="lazy" />
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* TESTIMONIALS */}
-            <section className="section">
+            <section className="section" data-testid="landing-testimonials">
                 <div className="container-page">
-                    <span className="eyebrow">Müşteri Deneyimleri</span>
-                    <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Misafirlerimiz ne diyor?</h2>
-                    <div className="mt-9 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                        <div className="max-w-2xl">
+                            <span className="eyebrow">Müşteri Deneyimleri</span>
+                            <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
+                                Başvuru sahiplerimiz ne diyor?
+                            </h2>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                Aşağıdaki yorumlar, vizesi teslim edilen başvuru sahiplerine gönderilen
+                                değerlendirme anketinden alınmıştır.
+                            </p>
+                        </div>
+                        <Button asChild variant="secondary" className="h-11 border border-border">
+                            <Link to="/basvuru">Siz de başvurun</Link>
+                        </Button>
+                    </div>
+
+                    <div className="mt-8">
+                        <ReviewSummary summary={content?.review_summary} />
+                    </div>
+
+                    <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {(content?.testimonials || []).map((t) => (
-                            <div key={t.name} className="flex h-full flex-col rounded-xl border border-border bg-card p-5">
-                                <Quote className="h-6 w-6 text-primary/40" />
-                                <p className="mt-3 flex-1 text-sm leading-6">{t.text}</p>
-                                <div className="mt-4 flex items-center gap-1 text-[hsl(var(--gold))]">
-                                    {Array.from({ length: t.rating }).map((_, i) => (
-                                        <Star key={i} className="h-3.5 w-3.5 fill-current" />
-                                    ))}
-                                </div>
-                                <p className="mt-2 text-sm font-semibold">{t.name}</p>
-                                <p className="text-xs text-muted-foreground">{t.city}</p>
-                            </div>
+                            <TestimonialCard key={t.name} item={t} />
                         ))}
                     </div>
 

@@ -141,7 +141,7 @@
         box-shadow: var(--shadow-soft);
     }
     .eyebrow {
-        @apply inline-flex items-center gap-2 rounded-md border-l-2 border-l-[hsl(var(--brand-red))] bg-[hsl(var(--brand-green)/0.08)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[hsl(var(--brand-green))];
+        @apply inline-flex items-center gap-2 rounded-md border-l-[3px] border-l-[hsl(var(--brand-green))] bg-[hsl(var(--brand-red)/0.08)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[hsl(var(--brand-red))];
     }
     .font-mono-code {
         font-family: var(--font-mono);
