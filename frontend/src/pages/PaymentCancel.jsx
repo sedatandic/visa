@@ -16,8 +16,8 @@ export default function PaymentCancel() {
         <section className="section" data-testid="payment-cancel-page">
             <div className="container-page max-w-2xl">
                 <div className="card-surface p-8 text-center sm:p-10">
-                    <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(245,158,11,0.18)]">
-                        <XCircle className="h-9 w-9 text-[#7A4B00]" />
+                    <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[hsl(var(--status-warning)/0.15)]">
+                        <XCircle className="h-9 w-9 text-[hsl(var(--status-warning))]" />
                     </span>
                     <h1 className="mt-6 text-2xl font-bold sm:text-3xl">Ödeme tamamlanmadı</h1>
                     <p className="mt-3 text-sm leading-6 text-muted-foreground">

@@ -138,12 +138,12 @@ export default function Track() {
                                 </div>
 
                                 {visaFile?.file_id && (
-                                    <div className="mt-6 flex flex-col gap-3 rounded-xl border border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.08)] p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="visa-download-box">
+                                    <div className="mt-6 flex flex-col gap-3 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.08)] p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="visa-download-box">
                                         <div className="flex items-start gap-2.5">
-                                            <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-[#14532D]" />
+                                            <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--brand-green))]" />
                                             <div>
-                                                <p className="text-sm font-semibold text-[#14532D]">Vizeniz hazır!</p>
-                                                <p className="text-xs text-[#14532D]/80">{visaFile.filename}</p>
+                                                <p className="text-sm font-semibold text-[hsl(var(--brand-green))]">Vizeniz hazır!</p>
+                                                <p className="text-xs text-[hsl(var(--brand-green))]/80">{visaFile.filename}</p>
                                             </div>
                                         </div>
                                         <Button asChild className="h-11 shrink-0" data-testid="tracking-download-visa-button">
@@ -155,8 +155,8 @@ export default function Track() {
                                 )}
 
                                 {result.payment?.status !== "paid" && (
-                                    <div className="mt-6 flex flex-col gap-3 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-5 sm:flex-row sm:items-center sm:justify-between">
-                                        <p className="text-sm font-medium text-[#7A4B00]">
+                                    <div className="mt-6 flex flex-col gap-3 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-5 sm:flex-row sm:items-center sm:justify-between">
+                                        <p className="text-sm font-medium text-[hsl(var(--status-warning))]">
                                             Ödemeniz tamamlanmadı. Başvurunuz ödeme alındıktan sonra işleme alınır.
                                         </p>
                                         <Button onClick={payNow} disabled={paying} className="h-11 shrink-0" data-testid="tracking-pay-button">

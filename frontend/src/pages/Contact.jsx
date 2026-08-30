@@ -97,7 +97,7 @@ export default function Contact() {
                             )}
                         </Button>
                         {sent && (
-                            <p className="mt-4 rounded-lg border border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.1)] p-3 text-sm font-medium text-[#14532D]" data-testid="contact-success-message">
+                            <p className="mt-4 rounded-lg border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.09)] p-3 text-sm font-medium text-[hsl(var(--brand-green))]" data-testid="contact-success-message">
                                 Mesajınız alındı. En kısa sürede size dönüş yapacağız.
                             </p>
                         )}

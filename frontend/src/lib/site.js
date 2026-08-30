@@ -14,12 +14,12 @@ export const IMAGES = {
 };
 
 export const STATUS_META = {
-    submitted: { label: "Başvuru Alındı", className: "bg-[rgba(14,165,164,0.14)] text-[#0B5F5E] border-[rgba(14,165,164,0.3)]" },
-    payment_pending: { label: "Ödeme Bekleniyor", className: "bg-[rgba(245,158,11,0.18)] text-[#7A4B00] border-[rgba(245,158,11,0.35)]" },
-    documents_pending: { label: "Belge Bekleniyor", className: "bg-[rgba(245,158,11,0.18)] text-[#7A4B00] border-[rgba(245,158,11,0.35)]" },
-    reviewing: { label: "İnceleniyor", className: "bg-[rgba(14,165,164,0.16)] text-[#0B5F5E] border-[rgba(14,165,164,0.35)]" },
-    approved: { label: "Onaylandı", className: "bg-[rgba(22,163,74,0.16)] text-[#14532D] border-[rgba(22,163,74,0.35)]" },
-    rejected: { label: "Reddedildi", className: "bg-[rgba(220,38,38,0.14)] text-[#7F1D1D] border-[rgba(220,38,38,0.3)]" },
+    submitted: { label: "Başvuru Alındı", className: "bg-[hsl(var(--status-info)/0.12)] text-[hsl(var(--status-info))] border-[hsl(var(--status-info)/0.30)]" },
+    payment_pending: { label: "Ödeme Bekleniyor", className: "bg-[hsl(var(--status-warning)/0.15)] text-[hsl(var(--status-warning))] border-[hsl(var(--status-warning)/0.35)]" },
+    documents_pending: { label: "Belge Bekleniyor", className: "bg-[hsl(var(--status-warning)/0.15)] text-[hsl(var(--status-warning))] border-[hsl(var(--status-warning)/0.35)]" },
+    reviewing: { label: "İnceleniyor", className: "bg-[hsl(var(--status-info)/0.14)] text-[hsl(var(--status-info))] border-[hsl(var(--status-info)/0.35)]" },
+    approved: { label: "Onaylandı", className: "bg-[hsl(var(--brand-green)/0.13)] text-[hsl(var(--brand-green))] border-[hsl(var(--brand-green)/0.35)]" },
+    rejected: { label: "Reddedildi", className: "bg-[hsl(var(--brand-red)/0.11)] text-[hsl(var(--brand-red))] border-[hsl(var(--brand-red)/0.30)]" },
     cancelled: { label: "İptal Edildi", className: "bg-muted text-foreground border-border" },
 };
 

@@ -505,9 +505,9 @@ export default function Apply() {
                                         })}
                                     </div>
 
-                                    <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-4">
-                                        <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#7A4B00]" />
-                                        <p className="text-sm leading-6 text-[#7A4B00]">
+                                    <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-4">
+                                        <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[hsl(var(--status-warning))]" />
+                                        <p className="text-sm leading-6 text-[hsl(var(--status-warning))]">
                                             18 yaşından küçük çocuklar bireysel olarak başvuru yapamaz. Çocukları
                                             mutlaka ebeveyn ile aynı başvuruya ekleyin.
                                         </p>
@@ -607,9 +607,9 @@ export default function Apply() {
                                     </div>
 
                                     {urgentTrip && (
-                                        <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.12)] p-4" data-testid="urgent-trip-warning">
-                                            <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#7A4B00]" />
-                                            <p className="text-sm leading-6 text-[#7A4B00]">
+                                        <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.11)] p-4" data-testid="urgent-trip-warning">
+                                            <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[hsl(var(--status-warning))]" />
+                                            <p className="text-sm leading-6 text-[hsl(var(--status-warning))]">
                                                 <strong>Seyahat tarihinize 72 saatten az kaldı!</strong> Başvurunuzun
                                                 zamanında sonuçlanması için ekspres vize hizmetini seçmenizi öneririz.
                                             </p>
@@ -710,7 +710,7 @@ export default function Apply() {
                                         </div>
                                     </div>
 
-                                    <div className="mt-7 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-4 text-sm leading-6 text-[#7A4B00]">
+                                    <div className="mt-7 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-4 text-sm leading-6 text-[hsl(var(--status-warning))]">
                                         Fotoğraflarınız beyaz fonda, son 6 ay içinde çekilmiş, gözlüksüz ve şapkasız
                                         olmalıdır. Uygun olmayan fotoğraf en sık ret sebebidir.
                                     </div>
@@ -727,12 +727,12 @@ export default function Apply() {
                                     </p>
 
                                     {created && (
-                                        <div className="mt-5 rounded-xl border border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.08)] p-4" data-testid="application-created-banner">
-                                            <p className="text-sm font-semibold text-[#14532D]">
+                                        <div className="mt-5 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.08)] p-4" data-testid="application-created-banner">
+                                            <p className="text-sm font-semibold text-[hsl(var(--brand-green))]">
                                                 Başvurunuz kaydedildi. Takip kodunuz:{" "}
                                                 <span className="font-heading tracking-wider" data-testid="created-reference-code">{created.reference_code}</span>
                                             </p>
-                                            <p className="mt-1 text-xs text-[#14532D]/80">
+                                            <p className="mt-1 text-xs text-[hsl(var(--brand-green))]/80">
                                                 Ödemeniz tamamlanmadığı sürece başvurunuz işleme alınmaz. Bu kodu saklayın.
                                             </p>
                                         </div>

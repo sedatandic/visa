@@ -40,7 +40,7 @@ export default function Documents() {
                                             <span
                                                 className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
                                                     d.required
-                                                        ? "border-[rgba(220,38,38,0.3)] bg-[rgba(220,38,38,0.1)] text-[#7F1D1D]"
+                                                        ? "border-[hsl(var(--brand-red)/0.30)] bg-[hsl(var(--brand-red)/0.08)] text-[hsl(var(--brand-red))]"
                                                         : "border-border bg-muted text-muted-foreground"
                                                 }`}
                                             >
@@ -53,16 +53,16 @@ export default function Documents() {
                             ))}
                         </ul>
 
-                        <div className="mt-8 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-6">
+                        <div className="mt-8 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-6">
                             <div className="flex items-center gap-2.5">
-                                <AlertTriangle className="h-5 w-5 text-[#7A4B00]" />
-                                <h2 className="font-heading text-base font-bold text-[#7A4B00]">
+                                <AlertTriangle className="h-5 w-5 text-[hsl(var(--status-warning))]" />
+                                <h2 className="font-heading text-base font-bold text-[hsl(var(--status-warning))]">
                                     En sık yaşanan ret sebebi: uygun olmayan fotoğraf
                                 </h2>
                             </div>
                             <ul className="mt-4 space-y-2.5">
                                 {(content?.photo_rules || []).map((r) => (
-                                    <li key={r} className="flex items-start gap-2 text-sm leading-6 text-[#7A4B00]">
+                                    <li key={r} className="flex items-start gap-2 text-sm leading-6 text-[hsl(var(--status-warning))]">
                                         <Camera className="mt-1 h-3.5 w-3.5 shrink-0" />
                                         {r}
                                     </li>

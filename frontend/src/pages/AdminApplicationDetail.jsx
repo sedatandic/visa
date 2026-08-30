@@ -394,14 +394,14 @@ export default function AdminApplicationDetail() {
                             />
 
                             {visa?.file_id ? (
-                                <div className="mt-5 rounded-xl border border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.07)] p-4" data-testid="visa-document-uploaded">
-                                    <p className="text-sm font-semibold text-[#14532D]">{visa.filename}</p>
-                                    <p className="mt-0.5 text-xs text-[#14532D]/80">
+                                <div className="mt-5 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.07)] p-4" data-testid="visa-document-uploaded">
+                                    <p className="text-sm font-semibold text-[hsl(var(--brand-green))]">{visa.filename}</p>
+                                    <p className="mt-0.5 text-xs text-[hsl(var(--brand-green))]/80">
                                         Yüklendi: {formatDateTime(visa.uploaded_at)}
                                         {visa.sent_at ? ` · Gönderildi: ${formatDateTime(visa.sent_at)}` : " · Henüz gönderilmedi"}
                                     </p>
                                     {visa.send_status && (
-                                        <p className="mt-1 text-xs font-semibold text-[#14532D]">
+                                        <p className="mt-1 text-xs font-semibold text-[hsl(var(--brand-green))]">
                                             E-posta durumu: {visa.send_status === "sent" ? "Gönderildi" : visa.send_status === "skipped" ? "Atlandı (anahtar yok)" : "Hata"}
                                         </p>
                                     )}

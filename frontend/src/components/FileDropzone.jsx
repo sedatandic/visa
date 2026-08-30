@@ -58,7 +58,7 @@ export const FileDropzone = ({
 
             {value ? (
                 <div
-                    className="flex items-center gap-4 rounded-xl border border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.06)] p-4"
+                    className="flex items-center gap-4 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.06)] p-4"
                     data-testid={`${testId}-uploaded`}
                 >
                     {isImage && preview ? (
@@ -79,7 +79,7 @@ export const FileDropzone = ({
                         </span>
                     )}
                     <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 text-sm font-semibold text-[#14532D]">
+                        <div className="flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--brand-green))]">
                             <CheckCircle2 className="h-4 w-4" /> Yüklendi
                         </div>
                         <p className="truncate text-xs text-muted-foreground">{value.original_filename}</p>

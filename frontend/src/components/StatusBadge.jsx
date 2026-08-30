@@ -23,8 +23,8 @@ export const PaymentBadge = ({ status, testId = "payment-status-badge" }) => {
             data-testid={testId}
             className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
                 paid
-                    ? "border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.16)] text-[#14532D]"
-                    : "border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.18)] text-[#7A4B00]"
+                    ? "border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.13)] text-[hsl(var(--brand-green))]"
+                    : "border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.15)] text-[hsl(var(--status-warning))]"
             }`}
         >
             {paid ? "Ödendi" : "Ödeme Bekliyor"}

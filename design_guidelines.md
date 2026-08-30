@@ -1,184 +1,311 @@
 {
   "brand": {
-    "name_options": [
-      {
-        "name": "Dubai Vize Merkezi",
-        "rationale": "Açık, arama niyetine uygun, güven veren; jenerik ama güçlü."
-      },
-      {
-        "name": "VizeAtlas Dubai",
-        "rationale": "Daha özgün marka hissi; ‘atlas’ güven + rehberlik çağrışımı yapar."
-      },
-      {
-        "name": "Dubai Vize Ofisi",
-        "rationale": "Resmî tonda; ‘ofis’ kelimesi güveni artırır."
-      }
-    ],
-    "recommended_name": "VizeAtlas Dubai",
-    "wordmark_logo_concept": {
-      "concept": "Tipografik wordmark + küçük ‘kapı/kemer’ (Dubai arch) simgesi",
-      "details": [
-        "Sembol: minimal kemer formu (tek çizgi), içinde küçük bir ‘check’ negatif alan.",
-        "Renk: Navy (metin) + Teal (vurgu noktası).",
-        "Kullanım: Navbar sol; favicon için sadece kemer+check."
-      ]
-    },
+    "product": "VizeAtlas Dubai",
+    "positioning": "Türkiye’den Dubai/BAE’ye seyahat edenler için hızlı, şeffaf ve kurumsal vize başvurusu.",
     "brand_attributes": [
-      "Güven veren",
-      "Resmî ama sıcak",
-      "Hızlı ve net",
-      "Mobilde kolay",
-      "Şeffaf fiyat/akış"
-    ]
-  },
-
-  "design_personality": {
-    "style_fusion": [
-      "Swiss grid + editorial spacing (net hiyerarşi)",
-      "Soft ‘sand’ surfaces (seyahat hissi) + teal aksan (güven/teknoloji)",
-      "Bento-card düzeni (fiyatlar/özellikler) + sade devlet-formu ciddiyeti (başvuru sihirbazı)"
+      "Kurumsal güven",
+      "Editoryal netlik (jenerik SaaS değil)",
+      "Şeffaf fiyat",
+      "Hızlı işlem",
+      "Mobilde kolay"
     ],
-    "do_not_copy": [
-      "dubaivizeal.com ile aynı renkler, aynı ikon seti, aynı hero kompozisyonu kullanılmayacak",
-      "Aynı kart şekilleri/gradient dili birebir taklit edilmeyecek",
-      "Metinler tamamen özgün ve Türkçe yazılacak"
-    ]
+    "visual_direction": {
+      "style_fusion": [
+        "Swiss grid (net hiyerarşi) + editorial tipografi (karakterli başlıklar)",
+        "UAE bayrak renkleriyle ‘kurumsal’ renk blokları (gradient değil) + ince çizgisel ayırıcılar",
+        "Form/dash alanlarında ‘government-like’ ciddiyet: düşük radius, yüksek kontrast, belirgin focus"
+      ],
+      "anti_patterns": [
+        "Mor/mavi SaaS gradient hero",
+        "Aşırı yuvarlak köşeler (pill UI)",
+        "Emoji ikonlar",
+        "Kart içi gradientler",
+        "Her yerde aynı teal aksan (mevcut tema tamamen değişecek)"
+      ]
+    }
   },
 
   "typography": {
-    "google_fonts": {
+    "font_pairing": {
       "heading": {
-        "family": "Space Grotesk",
+        "family": "Spectral",
+        "fallback": "Georgia, serif",
         "weights": [400, 500, 600, 700]
       },
       "body": {
-        "family": "Work Sans",
+        "family": "IBM Plex Sans",
+        "fallback": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        "weights": [400, 500, 600, 700]
+      },
+      "ui_mono_optional": {
+        "family": "IBM Plex Mono",
         "weights": [400, 500, 600]
+      },
+      "rationale": "Spectral (serif) başlıklarda ‘insan eliyle’ editoryal güven verir; IBM Plex Sans form/admin gibi yoğun UI alanlarında okunaklı ve kurumsal. Poppins-benzeri jenerik hissi kırar."
+    },
+    "font_loading": {
+      "file": "/app/frontend/public/index.html",
+      "replace_google_fonts_link_with": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:wght@400;500;600;700&display=swap"
+    },
+    "css_vars": {
+      "file": "/app/frontend/src/index.css",
+      "set": {
+        "--font-heading": "\"Spectral\", Georgia, serif",
+        "--font-body": "\"IBM Plex Sans\", Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        "--font-mono": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
       }
     },
-    "tailwind_usage": {
-      "headings": "font-[var(--font-heading)]",
-      "body": "font-[var(--font-body)]"
-    },
-    "type_scale": {
+    "type_scale_tailwind": {
       "h1": "text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-[-0.02em]",
       "h2": "text-base md:text-lg leading-[1.35] text-muted-foreground",
       "section_title": "text-2xl sm:text-3xl font-semibold tracking-[-0.015em]",
       "body": "text-sm sm:text-base leading-7",
       "small": "text-xs sm:text-sm"
-    }
+    },
+    "usage_rules": [
+      "H1/H2/H3 ve .font-heading: Spectral",
+      "Body, form label, tablo metni: IBM Plex Sans",
+      "Takip kodu, başvuru kodu, admin ID gibi alanlar: IBM Plex Mono (opsiyonel)"
+    ]
   },
 
   "color_system": {
-    "notes": [
-      "Tema: açık (light) — güven + okunabilirlik.",
-      "Aksan rengi teal; kum (sand) yüzeyler; navy başlıklar.",
-      "Gradient sadece hero arka planında dekoratif overlay olarak (viewport < %20)."
+    "constraints": [
+      "UAE bayrak renklerinden türetilmiş 4 renk birlikte kullanılacak: yeşil, kırmızı (ham #FF0000 YASAK), beyaz, siyah.",
+      "Kırmızı/yeşil birlikte kullanıldığında durumlar sadece renkle anlatılmayacak: ikon + metin şart.",
+      "WCAG AA kontrast hedefi (özellikle buton, badge, link).",
+      "Gradient sadece dekoratif overlay; viewport’un %20’sini geçmeyecek; küçük elementlerde gradient yok."
     ],
     "palette_hex": {
-      "navy_ink": "#0B1F33",
-      "navy_ink_2": "#102A43",
-      "teal_primary": "#0EA5A4",
-      "teal_hover": "#0B8E8D",
-      "sand_bg": "#FBF7F0",
-      "sand_surface": "#F4EBDD",
-      "cloud": "#F6F8FB",
-      "border": "#D9E2EC",
-      "text": "#0B1F33",
-      "muted_text": "#52606D",
-      "success": "#16A34A",
-      "warning": "#F59E0B",
-      "danger": "#DC2626"
+      "uae_green": "#0B6B3A",
+      "uae_green_2": "#0F7A43",
+      "uae_red": "#B11226",
+      "uae_red_2": "#8F0F1F",
+      "uae_black": "#0B0F14",
+      "uae_white": "#FFFFFF",
+
+      "paper": "#FBFBFA",
+      "ink": "#0B0F14",
+      "ink_muted": "#3B4652",
+      "border": "#D7DDE3",
+      "surface": "#FFFFFF",
+      "surface_2": "#F3F5F7",
+
+      "success": "#0B6B3A",
+      "warning": "#B7791F",
+      "info": "#0F4C81",
+      "danger": "#B11226"
     },
+
     "css_tokens_to_set_in_index_css": {
+      "file": "/app/frontend/src/index.css",
       "light": {
-        "--background": "36 56% 97%",
-        "--foreground": "210 45% 12%",
+        "--background": "40 20% 98%",
+        "--foreground": "210 22% 6%",
+
         "--card": "0 0% 100%",
-        "--card-foreground": "210 45% 12%",
+        "--card-foreground": "210 22% 6%",
+
         "--popover": "0 0% 100%",
-        "--popover-foreground": "210 45% 12%",
-        "--primary": "181 84% 35%",
+        "--popover-foreground": "210 22% 6%",
+
+        "--primary": "152 82% 23%",
         "--primary-foreground": "0 0% 100%",
-        "--secondary": "36 45% 92%",
-        "--secondary-foreground": "210 45% 12%",
+
+        "--secondary": "210 20% 96%",
+        "--secondary-foreground": "210 22% 10%",
+
         "--muted": "210 20% 96%",
-        "--muted-foreground": "210 14% 36%",
-        "--accent": "181 84% 35%",
+        "--muted-foreground": "215 16% 28%",
+
+        "--accent": "352 78% 38%",
         "--accent-foreground": "0 0% 100%",
-        "--destructive": "0 84% 55%",
+
+        "--destructive": "352 78% 38%",
         "--destructive-foreground": "0 0% 100%",
-        "--border": "210 22% 86%",
-        "--input": "210 22% 86%",
-        "--ring": "181 84% 35%",
-        "--radius": "0.75rem"
+
+        "--border": "214 18% 86%",
+        "--input": "214 18% 86%",
+        "--ring": "152 82% 23%",
+
+        "--radius": "0.625rem",
+
+        "--sidebar": "0 0% 100%",
+        "--sidebar-foreground": "210 22% 6%",
+        "--sidebar-border": "214 18% 86%",
+        "--sidebar-accent": "210 20% 96%",
+        "--sidebar-accent-foreground": "210 22% 10%",
+        "--sidebar-ring": "152 82% 23%",
+
+        "--chart-1": "152 82% 23%",
+        "--chart-2": "352 78% 38%",
+        "--chart-3": "210 22% 6%",
+        "--chart-4": "210 20% 60%",
+        "--chart-5": "210 20% 80%"
+      },
+      "dark": {
+        "--background": "210 22% 6%",
+        "--foreground": "0 0% 98%",
+
+        "--card": "210 22% 9%",
+        "--card-foreground": "0 0% 98%",
+
+        "--popover": "210 22% 9%",
+        "--popover-foreground": "0 0% 98%",
+
+        "--primary": "152 70% 40%",
+        "--primary-foreground": "210 22% 6%",
+
+        "--secondary": "210 18% 14%",
+        "--secondary-foreground": "0 0% 98%",
+
+        "--muted": "210 18% 14%",
+        "--muted-foreground": "215 14% 70%",
+
+        "--accent": "352 70% 52%",
+        "--accent-foreground": "210 22% 6%",
+
+        "--destructive": "352 70% 52%",
+        "--destructive-foreground": "210 22% 6%",
+
+        "--border": "210 18% 18%",
+        "--input": "210 18% 18%",
+        "--ring": "152 70% 40%",
+
+        "--radius": "0.625rem",
+
+        "--sidebar": "210 22% 8%",
+        "--sidebar-foreground": "0 0% 98%",
+        "--sidebar-border": "210 18% 18%",
+        "--sidebar-accent": "210 18% 14%",
+        "--sidebar-accent-foreground": "0 0% 98%",
+        "--sidebar-ring": "152 70% 40%",
+
+        "--chart-1": "152 70% 40%",
+        "--chart-2": "352 70% 52%",
+        "--chart-3": "0 0% 98%",
+        "--chart-4": "210 18% 55%",
+        "--chart-5": "210 18% 30%"
       },
       "additional_custom_props": {
-        "--font-heading": "Space Grotesk",
-        "--font-body": "Work Sans",
-        "--shadow-soft": "0 10px 30px rgba(11,31,51,0.08)",
-        "--shadow-card": "0 8px 20px rgba(11,31,51,0.06)",
-        "--shadow-float": "0 18px 50px rgba(11,31,51,0.14)",
-        "--focus-ring": "0 0 0 4px rgba(14,165,164,0.22)",
-        "--noise-opacity": "0.06"
+        "--shadow-soft": "0 10px 30px rgba(11, 15, 20, 0.10)",
+        "--shadow-card": "0 8px 20px rgba(11, 15, 20, 0.08)",
+        "--shadow-float": "0 18px 50px rgba(11, 15, 20, 0.18)",
+        "--focus-ring": "0 0 0 4px rgba(11, 107, 58, 0.22)",
+        "--noise-opacity": "0.05",
+
+        "--brand-green": "152 82% 23%",
+        "--brand-red": "352 78% 38%",
+        "--brand-black": "210 22% 6%",
+        "--brand-white": "0 0% 100%",
+
+        "--status-success": "152 82% 23%",
+        "--status-warning": "38 70% 42%",
+        "--status-info": "206 78% 28%",
+        "--status-danger": "352 78% 38%"
       }
     },
+
+    "where_to_use_colors": {
+      "primary_green": [
+        "Ana CTA butonları (Başvuru Yap, Ödemeyi Tamamla)",
+        "Wizard stepper aktif adım çizgisi/ring",
+        "Admin KPI kartlarında ‘pozitif’ metrik vurgusu"
+      ],
+      "accent_red": [
+        "İkincil vurgu (örn. ‘Hızlı Sonuç’, ‘Sınırlı süre’ gibi küçük highlight)",
+        "Destructive aksiyonlar (Sil/İptal)",
+        "Hata durumları (Alert/Banner)"
+      ],
+      "black_white": [
+        "Metin ve yüzeylerin ana kontrastı",
+        "Navbar/footer yapısal çizgiler",
+        "Admin tablo başlıkları"
+      ],
+      "avoid": [
+        "Kırmızı ve yeşili aynı komponent içinde sadece renk farkıyla ayırmak",
+        "Kırmızı metni beyaz zeminde küçük puntoda kullanmak (kontrast düşebilir)"
+      ]
+    },
+
     "allowed_gradients": {
-      "hero_overlay": "radial-gradient(900px circle at 20% 10%, rgba(14,165,164,0.14), transparent 55%), radial-gradient(700px circle at 80% 0%, rgba(245,158,11,0.10), transparent 60%)",
-      "restriction": "Gradient alanı viewport’un %20’sini geçmeyecek; kartların içinde gradient yok."
+      "restriction": "Gradient alanı viewport’un %20’sini geçmeyecek; kartların içinde gradient yok; küçük UI elementlerinde gradient yok.",
+      "hero_overlay": "radial-gradient(900px circle at 18% 10%, rgba(11, 107, 58, 0.14), transparent 55%), radial-gradient(700px circle at 82% 0%, rgba(177, 18, 38, 0.10), transparent 60%)"
+    },
+
+    "selection_and_noise": {
+      "selection": "::selection { background-color: hsl(var(--brand-green) / 0.18); color: hsl(var(--foreground)); }",
+      "noise_overlay": "Mevcut .noise-overlay kullanılabilir; opacity --noise-opacity ile kontrol edilecek."
     }
   },
 
   "layout_and_grid": {
     "container": "max-w-6xl mx-auto px-4 sm:px-6",
-    "section_spacing": "py-12 sm:py-16",
+    "section_spacing": "py-14 sm:py-20",
     "grid_rules": [
-      "Landing: 12 kolon mantığı; mobilde tek kolon, md’de 2 kolon, lg’de 3-4 kolon.",
-      "Fiyat kartları: md:grid-cols-2 lg:grid-cols-3; ‘En Popüler’ kartı 1. sırada ve hafif vurgulu.",
-      "Admin: geniş tablo için horizontal scroll + sticky header."
+      "Landing: mobil tek kolon; md: 2 kolon; lg: 12 kolon mantığıyla 7/5 veya 8/4 split.",
+      "Fiyatlar: md:grid-cols-2 lg:grid-cols-3; ‘En Popüler’ kartı ring ile vurgula (gradient değil).",
+      "Form wizard: sol içerik + sağ sticky özet (lg+); mobilde özet accordion/collapsible.",
+      "Admin: md+ tablo; mobilde card-list; tablo header sticky + yatay scroll."
     ],
     "radius_and_surfaces": {
-      "card_radius": "rounded-xl",
-      "button_radius": "rounded-lg",
-      "input_radius": "rounded-lg",
-      "surface_backgrounds": [
-        "Sayfa arka planı: sand_bg",
-        "Kartlar: beyaz",
-        "İkincil bloklar: cloud veya sand_surface"
+      "radius": {
+        "global": "--radius: 0.625rem",
+        "cards": "rounded-xl",
+        "buttons": "rounded-lg",
+        "inputs": "rounded-lg"
+      },
+      "surface_priority": [
+        "Okuma alanları: solid (paper/surface)",
+        "Vurgu alanları: border + ince renk şeridi (sol border)"
       ]
     }
   },
 
   "components": {
     "component_path": {
-      "button": "/app/frontend/src/components/ui/button.jsx",
-      "card": "/app/frontend/src/components/ui/card.jsx",
-      "badge": "/app/frontend/src/components/ui/badge.jsx",
       "accordion": "/app/frontend/src/components/ui/accordion.jsx",
-      "tabs": "/app/frontend/src/components/ui/tabs.jsx",
-      "progress": "/app/frontend/src/components/ui/progress.jsx",
+      "alert": "/app/frontend/src/components/ui/alert.jsx",
+      "badge": "/app/frontend/src/components/ui/badge.jsx",
+      "breadcrumb": "/app/frontend/src/components/ui/breadcrumb.jsx",
+      "button": "/app/frontend/src/components/ui/button.jsx",
+      "calendar": "/app/frontend/src/components/ui/calendar.jsx",
+      "card": "/app/frontend/src/components/ui/card.jsx",
+      "checkbox": "/app/frontend/src/components/ui/checkbox.jsx",
+      "dialog": "/app/frontend/src/components/ui/dialog.jsx",
+      "drawer": "/app/frontend/src/components/ui/drawer.jsx",
+      "dropdown_menu": "/app/frontend/src/components/ui/dropdown-menu.jsx",
+      "form": "/app/frontend/src/components/ui/form.jsx",
       "input": "/app/frontend/src/components/ui/input.jsx",
       "label": "/app/frontend/src/components/ui/label.jsx",
-      "textarea": "/app/frontend/src/components/ui/textarea.jsx",
+      "pagination": "/app/frontend/src/components/ui/pagination.jsx",
+      "progress": "/app/frontend/src/components/ui/progress.jsx",
+      "scroll_area": "/app/frontend/src/components/ui/scroll-area.jsx",
       "select": "/app/frontend/src/components/ui/select.jsx",
-      "checkbox": "/app/frontend/src/components/ui/checkbox.jsx",
-      "radio_group": "/app/frontend/src/components/ui/radio-group.jsx",
-      "dialog": "/app/frontend/src/components/ui/dialog.jsx",
+      "separator": "/app/frontend/src/components/ui/separator.jsx",
       "sheet": "/app/frontend/src/components/ui/sheet.jsx",
+      "sonner": "/app/frontend/src/components/ui/sonner.jsx",
       "table": "/app/frontend/src/components/ui/table.jsx",
-      "calendar": "/app/frontend/src/components/ui/calendar.jsx",
-      "sonner_toast": "/app/frontend/src/components/ui/sonner.jsx"
+      "tabs": "/app/frontend/src/components/ui/tabs.jsx",
+      "textarea": "/app/frontend/src/components/ui/textarea.jsx",
+      "tooltip": "/app/frontend/src/components/ui/tooltip.jsx"
     },
+
     "button_system": {
+      "tokens": {
+        "radius": "var(--radius)",
+        "shadow": "0 10px 22px rgba(11, 15, 20, 0.10)",
+        "motion": "transition-colors transition-shadow duration-150"
+      },
       "variants": {
         "primary": {
           "use": "Başvuru Yap / Ödemeyi Tamamla / Kaydet",
-          "classes": "bg-primary text-primary-foreground hover:bg-[color:var(--teal-hover)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]",
-          "motion": "hover:translate-y-[-1px] active:translate-y-0 active:scale-[0.99]"
+          "classes": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-soft)]",
+          "micro_interaction": "hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.99] (transform sadece ilgili elementte)"
         },
         "secondary": {
           "use": "Fiyatları Gör / Belgeleri İncele",
-          "classes": "bg-secondary text-secondary-foreground hover:bg-[hsl(var(--secondary))]/80 border border-border"
+          "classes": "bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80"
         },
         "ghost": {
           "use": "Navbar linkleri / küçük aksiyonlar",
@@ -197,242 +324,147 @@
       "data_testid_examples": [
         "data-testid=\"hero-apply-now-button\"",
         "data-testid=\"pricing-select-plan-button\"",
-        "data-testid=\"wizard-next-step-button\""
+        "data-testid=\"wizard-next-step-button\"",
+        "data-testid=\"admin-save-status-button\""
       ]
     },
-    "cards": {
-      "base": "bg-card border border-border rounded-xl shadow-[var(--shadow-card)]",
-      "hover": "hover:shadow-[var(--shadow-soft)] hover:border-[hsl(var(--ring))]/40",
-      "pricing_card": {
-        "structure": [
-          "Başlık + kısa açıklama",
-          "Fiyat (₺) + ‘KDV dahil’ etiketi",
-          "Özellik listesi (lucide Check)",
-          "CTA: Planı Seç"
-        ],
-        "popular_state": "ring-2 ring-[hsl(var(--ring))] bg-white"
-      }
-    },
-    "wizard_stepper": {
-      "pattern": "Üstte yatay stepper (mobilde scrollable) + Progress bar",
-      "steps": [
-        "Kişisel Bilgiler",
-        "Seyahat Bilgileri",
-        "Belgeler",
-        "Özet",
-        "Ödeme"
-      ],
-      "components": ["progress", "tabs (opsiyonel)", "card"],
-      "microcopy": {
-        "helper": "Bilgileriniz yalnızca başvurunuz için kullanılır.",
-        "upload_hint": "JPG/PNG/PDF • Maks. 10MB"
-      },
-      "data_testid": [
-        "wizard-stepper",
-        "wizard-personal-info-form",
-        "wizard-document-upload-dropzone",
-        "wizard-summary-section"
-      ]
-    },
-    "file_upload_dropzone": {
-      "visual": "Kesik çizgili border + ikon + sürükle-bırak metni + küçük açıklama",
-      "states": {
-        "idle": "border-dashed border-border bg-white",
-        "drag_over": "border-[hsl(var(--ring))] bg-[hsl(var(--ring))]/5",
-        "uploading": "progress + ‘Yükleniyor…’",
-        "success": "Badge: Yüklendi",
-        "error": "Alert destructive"
-      },
-      "preview": "Yüklenen pasaport/biometrik için küçük thumbnail + ‘Değiştir’",
-      "data_testid": [
-        "passport-upload-input",
-        "biometric-photo-upload-input",
-        "uploaded-passport-preview"
-      ]
-    },
-    "faq": {
-      "component": "accordion",
-      "rules": [
-        "Soru başlıkları kısa ve net",
-        "Cevaplar 2-5 satır; gerekirse ‘Detaylı bilgi’ linki"
-      ],
-      "data_testid": ["faq-accordion"]
-    },
+
     "status_badges": {
       "component": "badge",
+      "rule": "Durumlar sadece renkle değil: ikon + metin. (lucide: CheckCircle, Clock, AlertTriangle, XCircle)",
       "mapping": {
-        "Taslak": "bg-muted text-foreground",
-        "Belgeler Bekleniyor": "bg-[rgba(245,158,11,0.18)] text-[color:#7A4B00]",
-        "İncelemede": "bg-[rgba(14,165,164,0.16)] text-[color:#0B5F5E]",
-        "Onaylandı": "bg-[rgba(22,163,74,0.16)] text-[color:#14532D]",
-        "Reddedildi": "bg-[rgba(220,38,38,0.14)] text-[color:#7F1D1D]"
+        "Taslak": "bg-muted text-foreground border border-border",
+        "Belgeler Bekleniyor": "bg-[hsl(var(--status-warning))/0.16] text-[hsl(var(--foreground))] border border-[hsl(var(--status-warning))/0.25]",
+        "İncelemede": "bg-[hsl(var(--status-info))/0.14] text-[hsl(var(--foreground))] border border-[hsl(var(--status-info))/0.25]",
+        "Onaylandı": "bg-[hsl(var(--status-success))/0.14] text-[hsl(var(--foreground))] border border-[hsl(var(--status-success))/0.25]",
+        "Reddedildi": "bg-[hsl(var(--status-danger))/0.14] text-[hsl(var(--foreground))] border border-[hsl(var(--status-danger))/0.25]"
       },
-      "data_testid": ["application-status-badge"]
+      "data_testid": "application-status-badge"
     },
-    "admin_table": {
-      "component": "table",
-      "features": [
-        "Üstte KPI kartları (Bugün Başvuru, Ödeme Bekleyen, İncelemede, Onaylanan)",
-        "Filtreler: Durum, Ödeme, Tarih",
-        "Arama: takip kodu / ad soyad",
-        "Satır aksiyonları: Detay, Durum Güncelle"
-      ],
-      "responsive": "Mobilde Card-list görünümü (table yerine) önerilir; md+ tablo",
+
+    "forms_and_wizard": {
+      "wizard_stepper": {
+        "pattern": "Üstte yatay stepper (mobilde yatay scroll) + Progress bar; adım başlıkları kısa.",
+        "components": ["progress", "card", "separator"],
+        "microcopy": {
+          "helper": "Bilgileriniz yalnızca başvurunuz için kullanılır.",
+          "upload_hint": "JPG/PNG/PDF • Maks. 10MB"
+        },
+        "data_testid": [
+          "wizard-stepper",
+          "wizard-personal-info-form",
+          "wizard-document-upload-dropzone",
+          "wizard-summary-section"
+        ]
+      },
+      "dropzone": {
+        "visual": "Kesik çizgili border + ikon + sürükle-bırak metni; hover’da border primary.",
+        "states": {
+          "idle": "border-dashed border-border bg-card",
+          "drag_over": "border-[hsl(var(--ring))] bg-[hsl(var(--ring))]/5",
+          "uploading": "progress + ‘Yükleniyor…’",
+          "success": "Badge: Yüklendi (success)",
+          "error": "Alert destructive"
+        },
+        "data_testid": [
+          "passport-upload-input",
+          "biometric-photo-upload-input",
+          "uploaded-passport-preview"
+        ]
+      }
+    },
+
+    "admin_panel": {
+      "kpi_cards": "Card + sol border accent (success/info/warning/danger) — gradient yok.",
+      "filters": "Select + Input; her biri data-testid ile.",
+      "table": "Table + sticky header + zebra (bg-muted/40) + row hover (bg-muted/60).",
       "data_testid": [
         "admin-applications-search-input",
         "admin-status-filter-select",
-        "admin-applications-table"
+        "admin-applications-table",
+        "admin-kpi-cards"
       ]
-    },
-    "whatsapp_fab": {
-      "visual": "Sağ altta yuvarlak buton + tooltip",
-      "classes": "fixed bottom-5 right-5 z-50 h-12 w-12 rounded-full shadow-[var(--shadow-float)] bg-[#25D366] text-white hover:brightness-95",
-      "data_testid": "whatsapp-floating-button"
     }
   },
 
   "motion_and_microinteractions": {
     "principles": [
-      "Hızlı ve güven veren: 120–180ms hover, 180–240ms modal/step geçişleri.",
-      "Sadece gerekli yerlerde animasyon: CTA, kart hover, step geçişi.",
-      "Reduced motion desteği: prefers-reduced-motion ile animasyonları azalt."
+      "Hover: 120–180ms (transition-colors/opacity/shadow).",
+      "Modal/Drawer: 180–240ms.",
+      "Reduced motion: App.css zaten reduce-motion içeriyor; yeni animasyonlar buna saygılı olmalı."
     ],
-    "recommended_library": {
+    "library": {
       "name": "framer-motion",
       "install": "npm i framer-motion",
       "usage": [
-        "Hero CTA giriş animasyonu (opacity + y)",
-        "Wizard step geçişlerinde crossfade",
-        "Pricing kartlarında hover lift"
+        "Hero CTA ve trust rozetlerinde hafif giriş (opacity + y).",
+        "Wizard adım geçişlerinde crossfade.",
+        "Admin KPI kartlarında stagger (çok hafif)."
       ]
     },
-    "no_universal_transition": "transition-all kullanma; sadece transition-colors, transition-shadow, transition-opacity gibi."
+    "no_universal_transition": "transition-all kullanma; sadece transition-colors, transition-shadow, transition-opacity."
   },
 
   "imagery": {
-    "image_urls": {
-      "hero": [
-        {
-          "category": "hero",
-          "description": "Dubai skyline / Burj Khalifa geniş kadraj (golden hour). Unsplash/Pexels üzerinden seçilecek; tool erişimi başarısız olduğu için manuel ekleme gerekli.",
-          "url": "MANUAL_REQUIRED"
-        }
-      ],
-      "supporting": [
-        {
-          "category": "supporting",
-          "description": "Pasaport + uçuş/seyahat flatlay (form sayfası yan görsel).",
-          "url": "MANUAL_REQUIRED"
-        },
-        {
-          "category": "texture",
-          "description": "Çok hafif kum/noise dokusu (arka plan overlay).",
-          "url": "MANUAL_REQUIRED"
-        }
-      ]
-    },
+    "image_urls": [
+      {
+        "category": "hero",
+        "description": "Dubai skyline / geniş kadraj (hero sağ görsel kartı veya masked image).",
+        "url": "https://images.unsplash.com/photo-1656994865204-9646ebddd2cb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwxfHxEdWJhaSUyMHNreWxpbmUlMjBnb2xkZW4lMjBob3VyJTIwZWRpdG9yaWFsfGVufDB8fHxncmVlbnwxNzg4MTE4Mzg3fDA&ixlib=rb-4.1.0&q=85"
+      },
+      {
+        "category": "supporting",
+        "description": "Başvuru/form sayfası yan görseli için ‘documents flatlay’ (stok SaaS değil, gerçek foto).",
+        "url": "https://images.unsplash.com/photo-1491317079341-38313806b657?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2ODh8MHwxfHNlYXJjaHwxfHxwYXNzcG9ydCUyMGFwcGxpY2F0aW9uJTIwZG9jdW1lbnRzJTIwZmxhdGxheXxlbnwwfHx8d2hpdGV8MTc4ODExODM5NXww&ixlib=rb-4.1.0&q=85"
+      },
+      {
+        "category": "supporting",
+        "description": "Blog/makaleler kapak görseli için minimal çalışma masası flatlay.",
+        "url": "https://images.unsplash.com/photo-1617175093778-8517ba3e14d9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2ODh8MHwxfHNlYXJjaHwyfHxwYXNzcG9ydCUyMGFwcGxpY2F0aW9uJTIwZG9jdW1lbnRzJTIwZmxhdGxheXxlbnwwfHx8d2hpdGV8MTc4ODExODM5NXww&ixlib=rb-4.1.0&q=85"
+      }
+    ],
     "direction": [
-      "Fotoğraflar: gerçek, yüksek çözünürlük, aşırı doygun değil.",
-      "Hero’da fotoğrafı tam ekran basma; sağda görsel kartı veya masked image (rounded-2xl) kullan.",
-      "Okunabilirlik için fotoğraf üstüne koyu overlay değil; bunun yerine fotoğrafı kart içinde kullan."
+      "Fotoğraflar: gerçek, yüksek çözünürlük, düşük doygunluk; aşırı HDR yok.",
+      "Hero’da tam ekran foto + koyu overlay yapma; bunun yerine görseli kart içinde kullan.",
+      "Admin’de fotoğraf minimum; doküman preview dialog ile."
     ]
   },
 
-  "page_blueprints": {
-    "/": {
-      "sections": [
-        "Navbar (logo + Fiyatlar/Belgeler/SSS/Takip/İletişim + Başvuru Yap CTA)",
-        "Hero: Başlık + alt metin + 2 CTA (Başvuru Yap / Fiyatları Gör) + güven rozetleri",
-        "Hızlı Fiyat Teaser (3 kart)",
-        "4 Adımda Süreç (strip)",
-        "Neden Biz? (ikonlu 3-4 madde)",
-        "Müşteri Yorumları (carousel)",
-        "SSS teaser (3 soru) + ‘Tümünü Gör’",
-        "CTA band (sand_surface) + WhatsApp",
-        "Footer (resmî linkler, iletişim, KVKK)"
-      ],
-      "data_testid": ["landing-hero", "landing-pricing-teaser", "landing-how-it-works"]
-    },
-    "/vize-tipleri": {
-      "sections": [
-        "Sayfa başlığı + kısa açıklama",
-        "Fiyat karşılaştırma kartları (14/30/60 gün; tek/çok giriş)",
-        "Dahil olanlar / hariç olanlar",
-        "CTA: Başvuruya Başla"
-      ],
-      "data_testid": ["visa-types-pricing-grid"]
-    },
-    "/gerekli-belgeler": {
-      "sections": [
-        "Checklist (checkbox listesi) + indirme linkleri (örnek dilekçe vs.)",
-        "Uyarı kutuları (fotoğraf kriterleri)",
-        "CTA: Belgeleri Yükleyerek Başla"
-      ],
-      "data_testid": ["required-documents-checklist"]
-    },
-    "/sss": {
-      "sections": ["Accordion SSS", "Alt CTA"],
-      "data_testid": ["faq-page"]
-    },
-    "/basvuru": {
-      "sections": [
-        "Wizard stepper + progress",
-        "Step 1: kişisel bilgiler",
-        "Step 2: seyahat bilgileri (calendar ile tarih seçimi)",
-        "Step 3: belge yükleme (dropzone + preview)",
-        "Step 4: özet (kartlar halinde)",
-        "Step 5: ödeme (Stripe redirect)"
-      ],
-      "data_testid": ["application-wizard"]
-    },
-    "/takip": {
-      "sections": [
-        "Takip kodu input + sorgula",
-        "Durum timeline (badge + tarih)",
-        "Ödeme bekliyorsa: ‘Ödemeyi Tamamla’"
-      ],
-      "data_testid": ["tracking-lookup-form", "tracking-status-timeline"]
-    },
-    "/admin/giris": {
-      "sections": ["Login card (email/şifre)", "Güvenlik notu"],
-      "data_testid": ["admin-login-form"]
-    },
-    "/admin": {
-      "sections": [
-        "KPI stat cards",
-        "Filtre bar + arama",
-        "Başvurular tablosu",
-        "Pagination"
-      ],
-      "data_testid": ["admin-dashboard"]
-    },
-    "/admin/basvuru/:id": {
-      "sections": [
-        "Başvuru özeti (sol)",
-        "Belgeler görüntüleyici (sağ) (dialog ile büyüt)",
-        "Durum güncelle (select + kaydet)"
-      ],
-      "data_testid": ["admin-application-detail"]
-    }
-  },
-
-  "accessibility_and_trust": {
-    "rules": [
-      "Formlarda label zorunlu; placeholder label yerine geçmez.",
-      "Focus ring görünür olmalı (custom --focus-ring).",
-      "Butonlar min h-44px tap target (h-11).",
-      "Fiyatlarda ‘KDV dahil’ ve ‘Hizmet bedeli’ gibi şeffaf mikro metin.",
-      "Footer’da KVKK/Aydınlatma metni linkleri."
+  "implementation_plan": {
+    "files_to_change": [
+      {
+        "path": "/app/frontend/public/index.html",
+        "change": "Google Fonts linkini Spectral + IBM Plex Sans (+ opsiyonel Plex Mono) ile değiştir."
+      },
+      {
+        "path": "/app/frontend/src/index.css",
+        "change": "Mevcut teal/sand tokenlarını UAE türevi tokenlarla değiştir; .dark bloğu ekle; ::selection ve --focus-ring güncelle; --radius düşür (0.625rem)."
+      },
+      {
+        "path": "/app/frontend/tailwind.config.js",
+        "change": "Gerekirse sidebar/chart tokenları için renk mapping zaten var; ek tokenlar (status-*) kullanılacaksa Tailwind’e eklemek yerine CSS var + arbitrary value kullan."
+      },
+      {
+        "path": "/app/frontend/src/App.css",
+        "change": "Merkezleme yok; reduce-motion bloğu kalsın. Ek global stil ekleme (tema index.css’te)."
+      }
+    ],
+    "notes": [
+      "Mevcut fonksiyonellik bozulmamalı: sadece token/font/sınıf düzeyi değişiklik.",
+      "Tüm interaktif ve kritik bilgi elementlerine data-testid ekle (kebab-case).",
+      "Kırmızı/yeşil durumlar: ikon + metin + badge; sadece renk ile ayrım yok."
     ]
   },
 
   "instructions_to_main_agent": [
-    "App.css içindeki CRA demo stillerini kaldır; global hizalamayı merkezleme.",
-    "index.css :root tokenlarını bu guideline’daki light tokenlarla değiştir; dark mode şart değil.",
-    "Google Fonts’u index.html’e ekle ve body fontunu Work Sans yap; headinglerde Space Grotesk kullan.",
-    "Tüm buton/input/link/filtre/CTA’lara data-testid ekle (kebab-case).",
-    "Wizard ve admin için shadcn/ui bileşenlerini kullan; HTML dropdown/calendar kullanma.",
-    "Gradient sadece hero dekoratif overlay; kartlarda solid yüzey."
+    "Mevcut turkuaz/teal + krem temayı tamamen kaldır: index.css :root tokenlarını bu dosyadaki light/dark ile değiştir.",
+    "index.html font linkini Spectral + IBM Plex Sans (+ Plex Mono) ile değiştir; index.css’te --font-heading/--font-body güncelle.",
+    "UAE renklerini ‘karışık’ kullan: primary=yeşil, accent/destructive=koyu kırmızı, metin=near-black, yüzey=beyaz; küçük vurgu şeritleri/ayırıcılar ile siyah-beyaz dengesi kur.",
+    "Gradient sadece hero dekoratif overlay (max %20 viewport). Kartlarda ve footer’da gradient yok.",
+    "Aşırı yuvarlak köşeleri azalt: --radius 0.625rem; buton/input rounded-lg, kart rounded-xl.",
+    "Status renkleri (success/warning/info/danger) için CSS var kullan; badge + ikon + metin ile göster.",
+    "Tüm butonlar, linkler, inputlar, selectler, tab trigger’lar, wizard next/back, ödeme CTA, admin filtreleri ve tablo satır aksiyonlarına data-testid ekle (kebab-case).",
+    "Shadcn UI dışı HTML dropdown/calendar/toast kullanma; mevcut /components/ui bileşenlerini kullan."
   ]
 }
 

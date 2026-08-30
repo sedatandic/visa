@@ -67,9 +67,9 @@ export default function VisaTypes() {
                         </div>
                     </div>
 
-                    <div className="mt-8 flex items-start gap-3 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-5">
-                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#7A4B00]" />
-                        <p className="text-sm leading-6 text-[#7A4B00]">
+                    <div className="mt-8 flex items-start gap-3 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-5">
+                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--status-warning))]" />
+                        <p className="text-sm leading-6 text-[hsl(var(--status-warning))]">
                             Vize ücretleri ve işlem süreleri yetkili merciler tarafından güncellenebilir.
                             Başvurunuzu oluşturmadan önce seçtiğiniz vize tiplerinin fiyatları özet ekranında
                             tekrar gösterilir.

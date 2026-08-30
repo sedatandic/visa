@@ -32,10 +32,11 @@ export const Navbar = () => {
     return (
         <header
             className={`sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur transition-shadow duration-200 ${
-                scrolled ? "border-border shadow-[0_4px_18px_rgba(11,31,51,0.06)]" : "border-transparent"
+                scrolled ? "border-border shadow-[0_4px_18px_rgba(11,15,20,0.07)]" : "border-transparent"
             }`}
             data-testid="site-navbar"
         >
+            <div className="flag-strip" aria-hidden="true" />
             <div className="container-page flex h-[72px] items-center justify-between gap-4">
                 <Link to="/" className="flex items-center gap-2.5" data-testid="navbar-logo-link">
                     <BrandMark />

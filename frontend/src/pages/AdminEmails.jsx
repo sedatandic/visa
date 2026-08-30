@@ -6,8 +6,8 @@ import { formatDateTime } from "../lib/site";
 import { AdminLayout } from "../components/AdminLayout";
 
 const STATUS_UI = {
-    sent: { label: "Gönderildi", icon: CheckCircle2, className: "text-[#14532D]" },
-    skipped: { label: "Atlandı", icon: AlertTriangle, className: "text-[#7A4B00]" },
+    sent: { label: "Gönderildi", icon: CheckCircle2, className: "text-[hsl(var(--brand-green))]" },
+    skipped: { label: "Atlandı", icon: AlertTriangle, className: "text-[hsl(var(--status-warning))]" },
     error: { label: "Hata", icon: XCircle, className: "text-destructive" },
 };
 
@@ -33,9 +33,9 @@ export default function AdminEmails() {
         >
             <div data-testid="admin-emails-page">
                 {!configured && (
-                    <div className="mb-6 flex items-start gap-3 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-5" data-testid="email-not-configured-warning">
-                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#7A4B00]" />
-                        <div className="text-sm leading-6 text-[#7A4B00]">
+                    <div className="mb-6 flex items-start gap-3 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-5" data-testid="email-not-configured-warning">
+                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--status-warning))]" />
+                        <div className="text-sm leading-6 text-[hsl(var(--status-warning))]">
                             <p className="font-semibold">E-posta servisi henüz bağlanmadı</p>
                             <p className="mt-1">
                                 Bildirimler gönderilmiyor, yalnızca kaydediliyor. Resend hesabınızdan

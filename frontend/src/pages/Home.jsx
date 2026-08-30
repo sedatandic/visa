@@ -159,14 +159,14 @@ export default function Home() {
                     </div>
 
                     {/* IMPORTANT NOTICE */}
-                    <div className="mt-12 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-6" data-testid="important-notice">
+                    <div className="mt-12 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-6" data-testid="important-notice">
                         <div className="flex items-center gap-2.5">
-                            <AlertTriangle className="h-5 w-5 text-[#7A4B00]" />
-                            <h3 className="font-heading text-base font-bold text-[#7A4B00]">Önemli Uyarı</h3>
+                            <AlertTriangle className="h-5 w-5 text-[hsl(var(--status-warning))]" />
+                            <h3 className="font-heading text-base font-bold text-[hsl(var(--status-warning))]">Önemli Uyarı</h3>
                         </div>
                         <ul className="mt-3 space-y-2.5">
                             {(content?.important_notice || []).map((n) => (
-                                <li key={n} className="text-sm leading-6 text-[#7A4B00]">• {n}</li>
+                                <li key={n} className="text-sm leading-6 text-[hsl(var(--status-warning))]">• {n}</li>
                             ))}
                         </ul>
                     </div>
@@ -196,7 +196,7 @@ export default function Home() {
                                         <span
                                             className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
                                                 d.required
-                                                    ? "border-[rgba(220,38,38,0.3)] bg-[rgba(220,38,38,0.1)] text-[#7F1D1D]"
+                                                    ? "border-[hsl(var(--brand-red)/0.30)] bg-[hsl(var(--brand-red)/0.08)] text-[hsl(var(--brand-red))]"
                                                     : "border-border bg-muted text-muted-foreground"
                                             }`}
                                         >

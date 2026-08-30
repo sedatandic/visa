@@ -74,8 +74,8 @@ export default function PaymentSuccess() {
 
                     {state === "paid" && (
                         <div data-testid="payment-paid-state">
-                            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(22,163,74,0.14)]">
-                                <CheckCircle2 className="h-9 w-9 text-[#14532D]" />
+                            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[hsl(var(--brand-green)/0.12)]">
+                                <CheckCircle2 className="h-9 w-9 text-[hsl(var(--brand-green))]" />
                             </span>
                             <h1 className="mt-6 text-2xl font-bold sm:text-3xl">Ödemeniz alındı</h1>
                             <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -114,8 +114,8 @@ export default function PaymentSuccess() {
 
                     {state === "pending" && (
                         <div data-testid="payment-pending-state">
-                            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(245,158,11,0.18)]">
-                                <AlertTriangle className="h-9 w-9 text-[#7A4B00]" />
+                            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[hsl(var(--status-warning)/0.15)]">
+                                <AlertTriangle className="h-9 w-9 text-[hsl(var(--status-warning))]" />
                             </span>
                             <h1 className="mt-6 text-2xl font-bold">Ödeme henüz doğrulanamadı</h1>
                             <p className="mt-3 text-sm leading-6 text-muted-foreground">
