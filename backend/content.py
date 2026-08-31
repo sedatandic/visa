@@ -270,14 +270,14 @@ REQUIRED_DOCUMENTS = [
     {
         "key": "ticket",
         "title": "Dönüş Uçak Bileti",
-        "detail": "Dubai'den dönüş uçuşunuzun ad-soyad içeren rezervasyon belgesi. Henüz bilet almadıysanız tahmini tarihleri yazmanız yeterlidir.",
-        "required": False,
+        "detail": "Dubai'den dönüş uçuşunuzun ad-soyad içeren bilet veya rezervasyon belgesi. Bileti henüz almadıysanız opsiyon/rezervasyon belgesi yüklemeniz yeterlidir.",
+        "required": True,
     },
     {
         "key": "hotel",
         "title": "Otel Rezervasyonu",
-        "detail": "Seyahat sürenizi kapsayacak şekilde otel, Airbnb veya konaklama rezervasyon belgesi.",
-        "required": False,
+        "detail": "Seyahat sürenizi kapsayacak şekilde otel, Airbnb veya konaklama rezervasyon belgesi. Yakınınızda kalacaksanız adres ve davet bilgisi yeterlidir.",
+        "required": True,
     },
     {
         "key": "other",

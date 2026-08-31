@@ -769,6 +769,28 @@ class BackendTester:
         assert promo["title"] == expected_promo, f"Promo title mismatch: expected '{expected_promo}', got '{promo['title']}'"
         self.log(f"Promo: '{promo['title']}' (correctly updated)")
 
+    def test_site_content_required_documents_ticket_hotel(self):
+        """GET /api/content/site - verify ticket and hotel are required=true"""
+        r = requests.get(f"{self.base_url}/content/site", timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        data = r.json()
+        
+        required_docs = data.get("required_documents")
+        assert required_docs is not None, "required_documents is None"
+        assert isinstance(required_docs, list), "required_documents should be a list"
+        
+        # Find ticket and hotel documents
+        ticket_doc = next((d for d in required_docs if d.get("key") == "ticket"), None)
+        hotel_doc = next((d for d in required_docs if d.get("key") == "hotel"), None)
+        
+        assert ticket_doc is not None, "ticket document not found in required_documents"
+        assert hotel_doc is not None, "hotel document not found in required_documents"
+        
+        assert ticket_doc.get("required") is True, f"ticket should be required=true, got {ticket_doc.get('required')}"
+        assert hotel_doc.get("required") is True, f"hotel should be required=true, got {hotel_doc.get('required')}"
+        
+        self.log(f"Required documents: ticket and hotel are both required=true")
+
     def test_admin_update_visa_type(self):
         """PATCH /api/admin/visa-types/{id}"""
         assert self.admin_token, "Need admin token"
@@ -1742,6 +1764,453 @@ class BackendTester:
         
         self.log("Unauthenticated access to company endpoints correctly rejected")
 
+
+    # ============================================================
+    # VISA GUIDE SEO FEATURE TESTS
+    # ============================================================
+
+    def test_visa_guides_list(self):
+        """GET /api/visa-guides returns 200 with 9 items and correct schema"""
+        r = requests.get(f"{self.base_url}/visa-guides", timeout=10)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        data = r.json()
+        
+        assert "items" in data, "Response missing 'items' key"
+        items = data["items"]
+        assert len(items) == 9, f"Expected 9 items, got {len(items)}"
+        
+        # Check schema for first item
+        required_fields = ['slug', 'path', 'visa_type_id', 'title', 'price', 'summary', 'seo_description']
+        first_item = items[0]
+        for field in required_fields:
+            assert field in first_item, f"Missing field '{field}' in visa-guides item"
+        
+        self.log(f"Visa guides list: {len(items)} items with correct schema")
+
+    def test_visa_guide_details_all(self):
+        """GET /api/visa-guides/{slug} returns 200 for all 9 slugs with correct payload"""
+        slugs = [
+            "30-gun-tek-giris",
+            "60-gun-tek-giris",
+            "30-gun-cok-giris",
+            "60-gun-cok-giris",
+            "30-gun-cocuk-vizesi",
+            "60-gun-cocuk-vizesi",
+            "30-gun-vize-uzatma",
+            "transit-vize",
+            "2-yillik-freelancer-vizesi"
+        ]
+        
+        for slug in slugs:
+            r = requests.get(f"{self.base_url}/visa-guides/{slug}", timeout=10)
+            assert r.status_code == 200, f"Expected 200 for {slug}, got {r.status_code}"
+            data = r.json()
+            
+            # Check required top-level fields
+            required_fields = ['visa', 'h1', 'seo_title', 'seo_description', 'intro', 'who_for', 
+                              'highlights', 'tips', 'faqs', 'documents', 'photo_rules', 
+                              'process_steps', 'related']
+            for field in required_fields:
+                assert field in data, f"Missing field '{field}' in visa-guide {slug}"
+            
+            # Check visa object
+            visa = data.get('visa', {})
+            visa_fields = ['id', 'slug', 'price', 'duration_days', 'entry_label', 'applicant_type']
+            for field in visa_fields:
+                assert field in visa, f"Missing visa field '{field}' in {slug}"
+            
+            # Check related guides (max 3)
+            related = data.get('related', [])
+            assert len(related) <= 3, f"Expected max 3 related guides for {slug}, got {len(related)}"
+        
+        self.log(f"All {len(slugs)} visa guide detail endpoints working correctly")
+
+    def test_visa_guide_404(self):
+        """GET /api/visa-guides/invalid-slug returns 404"""
+        r = requests.get(f"{self.base_url}/visa-guides/olmayan-slug-12345", timeout=10)
+        assert r.status_code == 404, f"Expected 404, got {r.status_code}"
+        self.log("Invalid slug correctly returns 404")
+
+    def test_visa_guide_document_differences(self):
+        """Verify slug-specific document differences"""
+        # Transit visa should have 'onward' document
+        r = requests.get(f"{self.base_url}/visa-guides/transit-vize", timeout=10)
+        assert r.status_code == 200
+        data = r.json()
+        docs = data.get('documents', [])
+        doc_keys = [d.get('key') for d in docs]
+        assert 'onward' in doc_keys, "transit-vize missing 'onward' document"
+        
+        # Extension visa should have 'current_visa' document
+        r = requests.get(f"{self.base_url}/visa-guides/30-gun-vize-uzatma", timeout=10)
+        assert r.status_code == 200
+        data = r.json()
+        docs = data.get('documents', [])
+        doc_keys = [d.get('key') for d in docs]
+        assert 'current_visa' in doc_keys, "30-gun-vize-uzatma missing 'current_visa' document"
+        
+        # Freelancer visa should have 'cv' document
+        r = requests.get(f"{self.base_url}/visa-guides/2-yillik-freelancer-vizesi", timeout=10)
+        assert r.status_code == 200
+        data = r.json()
+        docs = data.get('documents', [])
+        doc_keys = [d.get('key') for d in docs]
+        assert 'cv' in doc_keys, "2-yillik-freelancer-vizesi missing 'cv' document"
+        
+        # Child visas should have 'consent' document
+        r = requests.get(f"{self.base_url}/visa-guides/30-gun-cocuk-vizesi", timeout=10)
+        assert r.status_code == 200
+        data = r.json()
+        docs = data.get('documents', [])
+        doc_keys = [d.get('key') for d in docs]
+        assert 'consent' in doc_keys, "30-gun-cocuk-vizesi missing 'consent' document"
+        
+        self.log("All slug-specific document differences verified")
+
+    def test_admin_price_override_in_guides(self):
+        """Admin price update reflects in visa-guides endpoints"""
+        # Get current price
+        r = requests.get(f"{self.base_url}/visa-guides/30-gun-tek-giris", timeout=10)
+        assert r.status_code == 200
+        original_price = r.json().get('visa', {}).get('price')
+        
+        # Update price via admin
+        new_price = 2500
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        r = requests.patch(
+            f"{self.base_url}/admin/visa-types/visa_30_single",
+            json={"price": new_price},
+            headers=headers,
+            timeout=10
+        )
+        assert r.status_code == 200, f"Admin price update failed: {r.status_code}"
+        
+        # Verify in visa-guides list
+        r = requests.get(f"{self.base_url}/visa-guides", timeout=10)
+        assert r.status_code == 200
+        items = r.json().get('items', [])
+        item = next((i for i in items if i.get('slug') == '30-gun-tek-giris'), None)
+        assert item is not None, "30-gun-tek-giris not found in visa-guides list"
+        assert item.get('price') == new_price, f"List price not updated: expected {new_price}, got {item.get('price')}"
+        
+        # Verify in visa-guide detail
+        r = requests.get(f"{self.base_url}/visa-guides/30-gun-tek-giris", timeout=10)
+        assert r.status_code == 200
+        updated_price = r.json().get('visa', {}).get('price')
+        assert updated_price == new_price, f"Detail price not updated: expected {new_price}, got {updated_price}"
+        
+        # Restore original price
+        r = requests.patch(
+            f"{self.base_url}/admin/visa-types/visa_30_single",
+            json={"price": original_price},
+            headers=headers,
+            timeout=10
+        )
+        assert r.status_code == 200, "Failed to restore original price"
+        
+        self.log(f"Admin price override verified (updated to {new_price}, restored to {original_price})")
+
+
+    def test_application_missing_ticket_file(self):
+        """POST /api/applications - missing ticket_file_id returns 400 with Turkish error"""
+        png_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        files1 = {"file": ("p.png", io.BytesIO(png_data), "image/png")}
+        r1 = requests.post(f"{self.base_url}/uploads", files=files1, data={"doc_type": "passport"}, timeout=15)
+        passport_id = r1.json()["file_id"]
+        files2 = {"file": ("ph.png", io.BytesIO(png_data), "image/png")}
+        r2 = requests.post(f"{self.base_url}/uploads", files=files2, data={"doc_type": "photo"}, timeout=15)
+        photo_id = r2.json()["file_id"]
+        files3 = {"file": ("hotel.png", io.BytesIO(png_data), "image/png")}
+        r3 = requests.post(f"{self.base_url}/uploads", files=files3, data={"doc_type": "hotel"}, timeout=15)
+        hotel_id = r3.json()["file_id"]
+        
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
+        payload = {
+            "contact": {
+                "full_name": "Test Missing Ticket",
+                "email": f"test_missing_ticket_{datetime.now().timestamp()}@test.com",
+                "phone": "+905551234567",
+                "address_city": "Istanbul"
+            },
+            "travelers": [{
+                "first_name": "TEST",
+                "last_name": "USER",
+                "birth_date": "1990-01-01",
+                "gender": "male",
+                "applicant_type": "adult",
+                "nationality": "TR",
+                "passport_no": "U11111111",
+                "passport_expiry": "2028-12-31",
+                "visa_type_id": "visa_30_single",
+                "passport_file_id": passport_id,
+                "photo_file_id": photo_id
+            }],
+            "travel": {
+                "arrival_date": tomorrow,
+                "departure_date": return_date,
+                "purpose": "tourism",
+                "birth_country": "TR"
+            },
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {
+                "ticket_file_id": None,  # Missing ticket
+                "hotel_file_id": hotel_id,
+                "other_file_ids": []
+            },
+            "kvkk_accepted": True
+        }
+        
+        r = requests.post(f"{self.base_url}/applications", json=payload, timeout=15)
+        assert r.status_code == 400, f"Expected 400 for missing ticket, got {r.status_code}"
+        error_text = r.text.lower()
+        assert "ucak" in error_text or "bilet" in error_text or "ticket" in error_text, f"Expected Turkish error about ticket, got: {r.text}"
+        self.log(f"Missing ticket correctly rejected with Turkish error: {r.text}")
+
+    def test_application_missing_hotel_file(self):
+        """POST /api/applications - missing hotel_file_id returns 400"""
+        png_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        files1 = {"file": ("p.png", io.BytesIO(png_data), "image/png")}
+        r1 = requests.post(f"{self.base_url}/uploads", files=files1, data={"doc_type": "passport"}, timeout=15)
+        passport_id = r1.json()["file_id"]
+        files2 = {"file": ("ph.png", io.BytesIO(png_data), "image/png")}
+        r2 = requests.post(f"{self.base_url}/uploads", files=files2, data={"doc_type": "photo"}, timeout=15)
+        photo_id = r2.json()["file_id"]
+        files3 = {"file": ("ticket.png", io.BytesIO(png_data), "image/png")}
+        r3 = requests.post(f"{self.base_url}/uploads", files=files3, data={"doc_type": "ticket"}, timeout=15)
+        ticket_id = r3.json()["file_id"]
+        
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
+        payload = {
+            "contact": {
+                "full_name": "Test Missing Hotel",
+                "email": f"test_missing_hotel_{datetime.now().timestamp()}@test.com",
+                "phone": "+905551234567",
+                "address_city": "Istanbul"
+            },
+            "travelers": [{
+                "first_name": "TEST",
+                "last_name": "USER",
+                "birth_date": "1990-01-01",
+                "gender": "male",
+                "applicant_type": "adult",
+                "nationality": "TR",
+                "passport_no": "U22222222",
+                "passport_expiry": "2028-12-31",
+                "visa_type_id": "visa_30_single",
+                "passport_file_id": passport_id,
+                "photo_file_id": photo_id
+            }],
+            "travel": {
+                "arrival_date": tomorrow,
+                "departure_date": return_date,
+                "purpose": "tourism",
+                "birth_country": "TR"
+            },
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {
+                "ticket_file_id": ticket_id,
+                "hotel_file_id": None,  # Missing hotel
+                "other_file_ids": []
+            },
+            "kvkk_accepted": True
+        }
+        
+        r = requests.post(f"{self.base_url}/applications", json=payload, timeout=15)
+        assert r.status_code == 400, f"Expected 400 for missing hotel, got {r.status_code}"
+        error_text = r.text.lower()
+        assert "otel" in error_text or "konaklama" in error_text or "hotel" in error_text, f"Expected Turkish error about hotel, got: {r.text}"
+        self.log(f"Missing hotel correctly rejected with Turkish error: {r.text}")
+
+    def test_application_invalid_ticket_file_id(self):
+        """POST /api/applications - invalid ticket_file_id returns 400"""
+        png_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        files1 = {"file": ("p.png", io.BytesIO(png_data), "image/png")}
+        r1 = requests.post(f"{self.base_url}/uploads", files=files1, data={"doc_type": "passport"}, timeout=15)
+        passport_id = r1.json()["file_id"]
+        files2 = {"file": ("ph.png", io.BytesIO(png_data), "image/png")}
+        r2 = requests.post(f"{self.base_url}/uploads", files=files2, data={"doc_type": "photo"}, timeout=15)
+        photo_id = r2.json()["file_id"]
+        files3 = {"file": ("hotel.png", io.BytesIO(png_data), "image/png")}
+        r3 = requests.post(f"{self.base_url}/uploads", files=files3, data={"doc_type": "hotel"}, timeout=15)
+        hotel_id = r3.json()["file_id"]
+        
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
+        payload = {
+            "contact": {
+                "full_name": "Test Invalid Ticket",
+                "email": f"test_invalid_ticket_{datetime.now().timestamp()}@test.com",
+                "phone": "+905551234567",
+                "address_city": "Istanbul"
+            },
+            "travelers": [{
+                "first_name": "TEST",
+                "last_name": "USER",
+                "birth_date": "1990-01-01",
+                "gender": "male",
+                "applicant_type": "adult",
+                "nationality": "TR",
+                "passport_no": "U33333333",
+                "passport_expiry": "2028-12-31",
+                "visa_type_id": "visa_30_single",
+                "passport_file_id": passport_id,
+                "photo_file_id": photo_id
+            }],
+            "travel": {
+                "arrival_date": tomorrow,
+                "departure_date": return_date,
+                "purpose": "tourism",
+                "birth_country": "TR"
+            },
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {
+                "ticket_file_id": "invalid-ticket-file-id-12345",  # Invalid ticket file_id
+                "hotel_file_id": hotel_id,
+                "other_file_ids": []
+            },
+            "kvkk_accepted": True
+        }
+        
+        r = requests.post(f"{self.base_url}/applications", json=payload, timeout=15)
+        assert r.status_code == 400, f"Expected 400 for invalid ticket file_id, got {r.status_code}"
+        self.log(f"Invalid ticket file_id correctly rejected: {r.text}")
+
+    def test_application_invalid_hotel_file_id(self):
+        """POST /api/applications - invalid hotel_file_id returns 400"""
+        png_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        files1 = {"file": ("p.png", io.BytesIO(png_data), "image/png")}
+        r1 = requests.post(f"{self.base_url}/uploads", files=files1, data={"doc_type": "passport"}, timeout=15)
+        passport_id = r1.json()["file_id"]
+        files2 = {"file": ("ph.png", io.BytesIO(png_data), "image/png")}
+        r2 = requests.post(f"{self.base_url}/uploads", files=files2, data={"doc_type": "photo"}, timeout=15)
+        photo_id = r2.json()["file_id"]
+        files3 = {"file": ("ticket.png", io.BytesIO(png_data), "image/png")}
+        r3 = requests.post(f"{self.base_url}/uploads", files=files3, data={"doc_type": "ticket"}, timeout=15)
+        ticket_id = r3.json()["file_id"]
+        
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
+        payload = {
+            "contact": {
+                "full_name": "Test Invalid Hotel",
+                "email": f"test_invalid_hotel_{datetime.now().timestamp()}@test.com",
+                "phone": "+905551234567",
+                "address_city": "Istanbul"
+            },
+            "travelers": [{
+                "first_name": "TEST",
+                "last_name": "USER",
+                "birth_date": "1990-01-01",
+                "gender": "male",
+                "applicant_type": "adult",
+                "nationality": "TR",
+                "passport_no": "U44444444",
+                "passport_expiry": "2028-12-31",
+                "visa_type_id": "visa_30_single",
+                "passport_file_id": passport_id,
+                "photo_file_id": photo_id
+            }],
+            "travel": {
+                "arrival_date": tomorrow,
+                "departure_date": return_date,
+                "purpose": "tourism",
+                "birth_country": "TR"
+            },
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {
+                "ticket_file_id": ticket_id,
+                "hotel_file_id": "invalid-hotel-file-id-67890",  # Invalid hotel file_id
+                "other_file_ids": []
+            },
+            "kvkk_accepted": True
+        }
+        
+        r = requests.post(f"{self.base_url}/applications", json=payload, timeout=15)
+        assert r.status_code == 400, f"Expected 400 for invalid hotel file_id, got {r.status_code}"
+        self.log(f"Invalid hotel file_id correctly rejected: {r.text}")
+
+    def test_application_with_all_four_documents(self):
+        """POST /api/applications - valid with passport+photo+ticket+hotel returns 200 and saves extra_documents"""
+        png_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        
+        # Upload all 4 documents
+        files1 = {"file": ("passport.png", io.BytesIO(png_data), "image/png")}
+        r1 = requests.post(f"{self.base_url}/uploads", files=files1, data={"doc_type": "passport"}, timeout=15)
+        passport_id = r1.json()["file_id"]
+        
+        files2 = {"file": ("photo.png", io.BytesIO(png_data), "image/png")}
+        r2 = requests.post(f"{self.base_url}/uploads", files=files2, data={"doc_type": "photo"}, timeout=15)
+        photo_id = r2.json()["file_id"]
+        
+        files3 = {"file": ("ticket.png", io.BytesIO(png_data), "image/png")}
+        r3 = requests.post(f"{self.base_url}/uploads", files=files3, data={"doc_type": "ticket"}, timeout=15)
+        ticket_id = r3.json()["file_id"]
+        
+        files4 = {"file": ("hotel.png", io.BytesIO(png_data), "image/png")}
+        r4 = requests.post(f"{self.base_url}/uploads", files=files4, data={"doc_type": "hotel"}, timeout=15)
+        hotel_id = r4.json()["file_id"]
+        
+        tomorrow = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
+        
+        payload = {
+            "contact": {
+                "full_name": "Test All Four Docs",
+                "email": f"test_all_four_{datetime.now().timestamp()}@test.com",
+                "phone": "+905551234567",
+                "address_city": "Istanbul"
+            },
+            "travelers": [{
+                "first_name": "TEST",
+                "last_name": "ALLFOUR",
+                "birth_date": "1990-01-01",
+                "gender": "male",
+                "applicant_type": "adult",
+                "nationality": "TR",
+                "passport_no": "U55555555",
+                "passport_expiry": "2028-12-31",
+                "visa_type_id": "visa_30_single",
+                "passport_file_id": passport_id,
+                "photo_file_id": photo_id
+            }],
+            "travel": {
+                "arrival_date": tomorrow,
+                "departure_date": return_date,
+                "purpose": "tourism",
+                "birth_country": "TR"
+            },
+            "addons": {"express": False, "insurance": False},
+            "extra_documents": {
+                "ticket_file_id": ticket_id,
+                "hotel_file_id": hotel_id,
+                "other_file_ids": []
+            },
+            "kvkk_accepted": True
+        }
+        
+        r = requests.post(f"{self.base_url}/applications", json=payload, timeout=15)
+        assert r.status_code == 200, f"Expected 200 with all 4 documents, got {r.status_code}: {r.text}"
+        result = r.json()
+        assert "id" in result, "Missing application id"
+        assert "reference_code" in result, "Missing reference_code"
+        assert result["reference_code"].startswith("DV-"), f"Invalid reference code format: {result['reference_code']}"
+        
+        # Verify extra_documents are saved
+        assert "extra_documents" in result, "Missing extra_documents in response"
+        extra_docs = result["extra_documents"]
+        assert extra_docs["ticket_file_id"] == ticket_id, f"ticket_file_id not saved correctly"
+        assert extra_docs["hotel_file_id"] == hotel_id, f"hotel_file_id not saved correctly"
+        
+        self.test_all_four_docs_app_id = result["id"]
+        self.test_all_four_docs_reference = result["reference_code"]
+        self.log(f"Application with all 4 documents created: {result['reference_code']}, extra_documents saved correctly")
+
     # ============================================================
     # RUN ALL TESTS
     # ============================================================
@@ -1756,6 +2225,7 @@ class BackendTester:
         self.test("Health check", self.test_health)
         self.test("Get visa types", self.test_visa_types)
         self.test("Get site content", self.test_site_content)
+        self.test("Site content - ticket and hotel required=true", self.test_site_content_required_documents_ticket_hotel)
         
         # File uploads
         self.test("Upload valid passport image", self.test_upload_valid_image)
@@ -1766,6 +2236,11 @@ class BackendTester:
         # Applications
         self.test("Create application (valid)", self.test_create_application_valid)
         self.test("Create application (invalid)", self.test_create_application_invalid)
+        self.test("Application - missing ticket_file_id returns 400", self.test_application_missing_ticket_file)
+        self.test("Application - missing hotel_file_id returns 400", self.test_application_missing_hotel_file)
+        self.test("Application - invalid ticket_file_id returns 400", self.test_application_invalid_ticket_file_id)
+        self.test("Application - invalid hotel_file_id returns 400", self.test_application_invalid_hotel_file_id)
+        self.test("Application - all 4 documents valid returns 200", self.test_application_with_all_four_documents)
         self.test("Track application (correct)", self.test_track_application_correct)
         self.test("Track application (wrong surname)", self.test_track_application_wrong_surname)
         self.test("Track application (unknown code)", self.test_track_application_unknown_code)
@@ -1861,6 +2336,13 @@ class BackendTester:
         self.test("Admin company PUT", self.test_admin_company_put)
         self.test("Admin company changes reflect in public API", self.test_admin_company_reflects_in_public_api)
         self.test("Admin company unauthenticated access", self.test_admin_company_unauthenticated)
+        
+        # Phase 6: Visa Guide SEO Feature
+        self.test("Visa guides list - 9 items with schema", self.test_visa_guides_list)
+        self.test("Visa guide detail - all 9 slugs", self.test_visa_guide_details_all)
+        self.test("Visa guide 404 - invalid slug", self.test_visa_guide_404)
+        self.test("Visa guide documents - slug-specific", self.test_visa_guide_document_differences)
+        self.test("Admin price override reflects in guides", self.test_admin_price_override_in_guides)
         
         # Summary
         self.log("\n" + "="*60)

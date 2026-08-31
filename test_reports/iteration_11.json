@@ -1,0 +1,41 @@
+{
+  "summary": "Iteration 11: Tested mandatory ticket & hotel documents + visa card click behavior changes. Backend validation working correctly with Turkish error messages. Frontend card click behavior correctly implemented on homepage and /vize-tipleri pages.",
+  "backend_issues": {
+    "critical_bugs": [],
+    "flaky_endpoints": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "Backend: GET /api/content/site - ticket and hotel marked as required=true",
+    "Backend: POST /api/applications without ticket_file_id returns 400 with Turkish error",
+    "Backend: POST /api/applications without hotel_file_id returns 400 with Turkish error",
+    "Backend: POST /api/applications with invalid ticket_file_id returns 400",
+    "Backend: POST /api/applications with invalid hotel_file_id returns 400",
+    "Backend: POST /api/applications with all 4 documents (passport+photo+ticket+hotel) returns 200 and saves extra_documents",
+    "Backend regression: /api/visa-types returns 200",
+    "Backend regression: /api/visa-guides returns 200",
+    "Backend regression: /api/pricing/quote returns 200",
+    "Backend regression: /api/applications/track returns 200",
+    "Frontend: Homepage loads without console errors",
+    "Frontend: Homepage visa card body click does NOT navigate (URL unchanged)",
+    "Frontend: Homepage 'Başvuruya başla' button navigates to /basvuru?vize=visa_30_single",
+    "Frontend: /vize-tipleri page loads without errors",
+    "Frontend: /vize-tipleri visa card body click does NOT navigate",
+    "Frontend: /vize-tipleri 'Detaylı rehberi oku' link navigates to visa guide page",
+    "Frontend: /takip page loads without errors",
+    "Frontend: /dubai-vizesi/30-gun-tek-giris page loads successfully"
+  ],
+  "test_report_links": ["/app/backend_test.py"],
+  "success_percentage": {
+    "backend": "100% (6/6 new tests passed)",
+    "frontend": "100% (8/8 tests passed)"
+  },
+  "updated_files": ["/app/backend_test.py"],
+  "action_item_for_main_agent": "",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": false
+}

@@ -54,6 +54,7 @@ from emailer import (
 from models import ApplicationCreate, ContactCreate, QuoteRequest
 from passport_ai import read_passport
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
+from visa_guides import build_guide, guide_index
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -91,6 +92,42 @@ async def get_visa_types():
     if not docs:
         return VISA_TYPES
     return serialize_doc(docs)
+
+
+@router.get("/visa-guides")
+async def list_visa_guides():
+    """Vize rehberi (SEO) sayfalarinin listesi. Fiyatlar DB'den guncellenir."""
+    docs = await visa_types_col.find({"active": True}).to_list(100)
+    by_slug = {d.get("slug"): d for d in docs}
+    items = []
+    for item in guide_index():
+        doc = by_slug.get(item["slug"])
+        if docs and not doc:
+            continue  # admin tarafindan pasife alinmis
+        if doc:
+            item = {
+                **item,
+                "name": doc.get("name", item["name"]),
+                "price": doc.get("price", item["price"]),
+                "currency": doc.get("currency", item["currency"]),
+                "processing_days": doc.get("processing_days", item["processing_days"]),
+                "summary": doc.get("description", item["summary"]),
+            }
+        items.append(item)
+    return {"items": items}
+
+
+@router.get("/visa-guides/{slug}")
+async def get_visa_guide(slug: str):
+    doc = await visa_types_col.find_one({"slug": slug})
+    if doc is not None and doc.get("active") is False:
+        raise HTTPException(404, "Vize rehberi bulunamadi.")
+    visa_override = serialize_doc(doc) if doc else None
+    guide_override = (visa_override or {}).pop("guide", None) if visa_override else None
+    guide = build_guide(slug, visa_override=visa_override, guide_override=guide_override)
+    if not guide:
+        raise HTTPException(404, "Vize rehberi bulunamadi.")
+    return guide
 
 
 @router.get("/content/site")
@@ -310,6 +347,16 @@ async def get_file(file_id: str, download: int = 0):
 # ----------------------------------------------------------- applications
 @router.post("/applications")
 async def create_application(payload: ApplicationCreate):
+    extra = payload.extra_documents
+    if not extra.ticket_file_id:
+        raise HTTPException(400, "Donus ucak bileti veya rezervasyon belgesi zorunludur.")
+    if not extra.hotel_file_id:
+        raise HTTPException(400, "Otel/konaklama rezervasyon belgesi zorunludur.")
+    for fid in (extra.ticket_file_id, extra.hotel_file_id):
+        exists = await uploads_col.find_one({"id": fid, "is_deleted": False})
+        if not exists:
+            raise HTTPException(400, "Yuklenen belgeler bulunamadi. Lutfen belgeleri tekrar yukleyin.")
+
     travelers = []
     prices = []
     for t in payload.travelers:

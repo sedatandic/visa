@@ -1,34 +1,37 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Check, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Check, Clock } from "lucide-react";
 import { Button } from "./ui/button";
 import { formatMoney } from "../lib/site";
 
 export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false }) => {
     const isPopular = !!visa.popular;
-    const navigate = useNavigate();
 
-    // Kartin herhangi bir yerine tiklandiginda da secim/basvuru calissin.
-    const handleCardActivate = (e) => {
-        if (e.target.closest("a,button")) return;
-        if (onSelect) onSelect(visa);
-        else navigate(`/basvuru?vize=${visa.id}`);
-    };
+    // Kart yalnizca secim modunda (basvuru formu) tiklanabilir; bilgilendirme
+    // sayfalarinda kullanicinin istemeden forma yonlendirilmesini engellemek icin
+    // yalnizca "Basvuruya basla" butonu yonlendirir.
+    const clickable = !!onSelect;
 
     return (
         <div
             data-testid={`visa-card-${visa.id}`}
-            role="button"
-            tabIndex={0}
-            aria-label={`${visa.name} için başvuruya başla`}
-            onClick={handleCardActivate}
-            onKeyDown={(e) => {
+            role={clickable ? "button" : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            aria-label={clickable ? `${visa.name} vizesini seç` : undefined}
+            onClick={clickable ? (e) => {
+                if (e.target.closest("a,button")) return;
+                onSelect(visa);
+            } : undefined}
+            onKeyDown={clickable ? (e) => {
                 if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    handleCardActivate(e);
+                    if (e.target.closest("a,button")) return;
+                    onSelect(visa);
                 }
-            }}
-            className={`relative flex h-full cursor-pointer flex-col rounded-2xl border-2 bg-card p-6 pt-8 text-center transition-shadow duration-200 hover:shadow-[var(--shadow-soft)] focus-visible:outline-none ${
+            } : undefined}
+            className={`relative flex h-full flex-col rounded-2xl border-2 bg-card p-6 pt-8 text-center transition-shadow duration-200 hover:shadow-[var(--shadow-soft)] focus-visible:outline-none ${
+                clickable ? "cursor-pointer" : ""
+            } ${
                 selected
                     ? "border-primary"
                     : isPopular
@@ -37,16 +40,6 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
             }`}
             style={{ boxShadow: isPopular || selected ? "var(--shadow-soft)" : "var(--shadow-card)" }}
         >
-            {!onSelect && (
-                <Link
-                    to={`/basvuru?vize=${visa.id}`}
-                    aria-label={`${visa.name} için başvuruya başla`}
-                    className="absolute inset-0 z-[1] rounded-2xl"
-                    data-testid={`visa-card-overlay-${visa.id}`}
-                >
-                    <span className="sr-only">{visa.name} başvurusu</span>
-                </Link>
-            )}
 
             {isPopular && (
                 <span className="absolute -top-3.5 left-1/2 z-[2] inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-[hsl(var(--brand-red))] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-white">
@@ -101,9 +94,20 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                         {selected ? "Seçildi" : "Bu vizeyi seç"}
                     </Button>
                 ) : (
-                    <Button asChild className="h-12 w-full text-base" data-testid={`apply-visa-${visa.id}`}>
-                        <Link to={`/basvuru?vize=${visa.id}`}>Başvuruya başla</Link>
-                    </Button>
+                    <>
+                        <Button asChild className="h-12 w-full text-base" data-testid={`apply-visa-${visa.id}`}>
+                            <Link to={`/basvuru?vize=${visa.id}`}>Başvuruya başla</Link>
+                        </Button>
+                        {visa.slug && (
+                            <Link
+                                to={`/dubai-vizesi/${visa.slug}`}
+                                className="relative z-[2] mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold text-primary underline-offset-4 transition-colors duration-150 hover:text-[hsl(var(--brand-red))] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                                data-testid={`guide-link-${visa.id}`}
+                            >
+                                Detaylı rehberi oku <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                        )}
+                    </>
                 )}
             </div>
         </div>

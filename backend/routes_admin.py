@@ -676,7 +676,7 @@ async def admin_visa_types(admin=Depends(require_admin)):
 
 @router.patch("/admin/visa-types/{visa_type_id}")
 async def admin_update_visa_type(visa_type_id: str, payload: dict, admin=Depends(require_admin)):
-    allowed = {"price", "processing_days", "active", "popular", "description", "name"}
+    allowed = {"price", "processing_days", "active", "popular", "description", "name", "guide"}
     update = {k: v for k, v in payload.items() if k in allowed}
     if not update:
         raise HTTPException(400, "Guncellenecek gecerli alan yok.")

@@ -96,6 +96,8 @@ const ERROR_LABELS = {
     departure_date: "Dönüş tarihi",
     passport: "Pasaport fotoğrafı",
     photo: "Vesikalık fotoğraf",
+    ticket: "Dönüş uçak bileti",
+    hotel: "Otel rezervasyonu",
 };
 
 /** Hata nesnesinden kullaniciya gosterilecek alan adlarini cikarir. */
@@ -339,6 +341,8 @@ export default function Apply() {
                 if (!t.photoFile) te.photo = "Vesikalık fotoğraf zorunlu.";
                 if (Object.keys(te).length) e[t.key] = { ...(e[t.key] || {}), ...te };
             });
+            if (!extraDocs.ticket) e.ticket = "Dönüş uçak bileti veya rezervasyon belgesi zorunlu.";
+            if (!extraDocs.hotel) e.hotel = "Otel/konaklama rezervasyon belgesi zorunlu.";
         }
         setErrors(e);
         if (Object.keys(e).length) {
@@ -360,7 +364,7 @@ export default function Apply() {
             return false;
         }
         return true;
-    }, [step, contact, travelers, travel]);
+    }, [step, contact, travelers, travel, extraDocs]);
 
     const next = () => {
         if (!validateStep()) return;
@@ -824,8 +828,9 @@ export default function Apply() {
                                 <div data-testid="wizard-document-upload-dropzone">
                                     <h2 className="font-heading text-xl font-bold">3. Evrak yükleme</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        Her yolcu için pasaport ve vesikalık fotoğraf zorunludur. Belgeleriniz şifreli
-                                        olarak saklanır ve yalnızca başvurunuz için kullanılır.
+                                        Her yolcu için pasaport ve vesikalık fotoğraf, başvurunun tamamı için uçak
+                                        bileti ve otel rezervasyonu zorunludur. Belgeleriniz şifreli olarak saklanır
+                                        ve yalnızca başvurunuz için kullanılır.
                                     </p>
 
                                     <div className="mt-6 space-y-7">
@@ -901,10 +906,28 @@ export default function Apply() {
                                         })}
 
                                         <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
-                                            <p className="font-heading text-sm font-bold">Opsiyonel belgeler (tüm başvuru için)</p>
+                                            <p className="font-heading text-sm font-bold">Seyahat belgeleri (tüm başvuru için)</p>
+                                            <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                                                Uçak bileti ve otel rezervasyonu başvurunuz için zorunludur. Henüz
+                                                kesinleşmediyse rezervasyon (opsiyon) belgesi yüklemeniz yeterlidir.
+                                            </p>
                                             <div className="mt-5 grid gap-6 md:grid-cols-3">
-                                                <FileDropzone label="Dönüş Uçak Bileti" hint="Opsiyonel" docType="ticket" value={extraDocs.ticket} onChange={(f) => setExtraDocs((s) => ({ ...s, ticket: f }))} testId="ticket-upload-input" />
-                                                <FileDropzone label="Otel Rezervasyonu" hint="Opsiyonel" docType="hotel" value={extraDocs.hotel} onChange={(f) => setExtraDocs((s) => ({ ...s, hotel: f }))} testId="hotel-upload-input" />
+                                                <div>
+                                                    <FileDropzone label="Dönüş Uçak Bileti" hint="Zorunlu" docType="ticket" value={extraDocs.ticket} onChange={(f) => setExtraDocs((s) => ({ ...s, ticket: f }))} testId="ticket-upload-input" />
+                                                    {errors.ticket && (
+                                                        <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive" data-testid="ticket-upload-error">
+                                                            <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {errors.ticket}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <FileDropzone label="Otel Rezervasyonu" hint="Zorunlu" docType="hotel" value={extraDocs.hotel} onChange={(f) => setExtraDocs((s) => ({ ...s, hotel: f }))} testId="hotel-upload-input" />
+                                                    {errors.hotel && (
+                                                        <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive" data-testid="hotel-upload-error">
+                                                            <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {errors.hotel}
+                                                        </p>
+                                                    )}
+                                                </div>
                                                 <FileDropzone label="Diğer Evrak" hint="Opsiyonel" docType="other" value={extraDocs.other} onChange={(f) => setExtraDocs((s) => ({ ...s, other: f }))} testId="other-upload-input" />
                                             </div>
                                         </div>

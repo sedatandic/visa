@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRight, Check, X } from "lucide-react";
 import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { PricingTabs } from "../components/PricingTabs";
+import { VisaGuideLinks } from "../components/VisaGuideLinks";
 import { Button } from "../components/ui/button";
 
 const INCLUDED = [
@@ -41,6 +42,18 @@ export default function VisaTypes() {
             <section className="section">
                 <div className="container-page">
                     <PricingTabs />
+
+                    <div className="mt-14" data-testid="visa-guides-index">
+                        <span className="eyebrow">Vize Rehberleri</span>
+                        <h2 className="mt-3 text-2xl font-bold">Her vize tipi için detaylı rehber</h2>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                            Hangi vizenin size uygun olduğundan emin değilseniz, ilgili rehberde şartları,
+                            gerekli belgeleri, süreci ve sıkça sorulan soruları bulabilirsiniz.
+                        </p>
+                        <div className="mt-6">
+                            <VisaGuideLinks />
+                        </div>
+                    </div>
 
                     <div className="mt-14 grid gap-6 md:grid-cols-2">
                         <div className="card-surface p-6">

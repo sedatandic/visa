@@ -32,6 +32,7 @@ import { ReviewSummary, TestimonialCard } from "../components/Testimonials";
 import { SampleVisa } from "../components/SampleVisa";
 import { RouteFlags } from "../components/FlagIcons";
 import { AuthorityStrip } from "../components/AuthorityStrip";
+import { VisaGuideLinks } from "../components/VisaGuideLinks";
 import {
     Accordion,
     AccordionContent,
@@ -248,6 +249,17 @@ export default function Home() {
                     </div>
                     <div className="mt-8">
                         <PricingTabs />
+                    </div>
+
+                    <div className="mt-12" data-testid="home-visa-guides">
+                        <h3 className="font-heading text-xl font-bold">Vize tipine göre detaylı rehberler</h3>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                            Şartlar, gerekli belgeler, süreç ve sıkça sorulan sorular; her vize tipi için
+                            ayrı ayrı anlatıldı.
+                        </p>
+                        <div className="mt-6">
+                            <VisaGuideLinks limit={6} />
+                        </div>
                     </div>
 
                     {/* IMPORTANT NOTICE */}

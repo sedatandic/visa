@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /odeme/
+
+Sitemap: https://visa-application-ae.preview.emergentagent.com/sitemap.xml
