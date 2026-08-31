@@ -332,6 +332,64 @@ export default function Apply() {
         [storeProducts]
     );
 
+    // eSIM / sigorta gecerliligi seyahatin giris tarihinde baslar
+    const travelDatesReady = Boolean(travel.arrival_date);
+    const tripDays = useMemo(() => {
+        if (!travel.arrival_date || !travel.departure_date) return null;
+        const start = new Date(travel.arrival_date);
+        const end = new Date(travel.departure_date);
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
+        return Math.round((end - start) / 86400000) + 1;
+    }, [travel.arrival_date, travel.departure_date]);
+
+    const productWindow = (product) => {
+        if (!travel.arrival_date) return null;
+        const start = new Date(travel.arrival_date);
+        if (Number.isNaN(start.getTime())) return null;
+        const days = Number(product.validity_days) || 0;
+        const end = days > 0 ? new Date(start.getTime() + (days - 1) * 86400000) : null;
+        return {
+            startLabel: formatDate(start),
+            endLabel: end ? formatDate(end) : null,
+            shortOfTrip: Boolean(tripDays && days > 0 && tripDays > days),
+            days,
+        };
+    };
+
+    const DateWindowNote = ({ product, testId }) => {
+        const win = productWindow(product);
+        if (!win) return null;
+        return (
+            <div className="mt-2 space-y-1" data-testid={testId}>
+                <p className="flex items-start gap-1.5 text-xs font-medium text-muted-foreground">
+                    <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span>
+                        {win.startLabel} tarihinde başlar
+                        {win.endLabel ? ` · ${win.endLabel} tarihine kadar geçerli` : ""}
+                    </span>
+                </p>
+                {win.shortOfTrip && (
+                    <p className="text-xs font-semibold text-[hsl(var(--status-warning))]">
+                        Seyahatiniz {tripDays} gün; bu paket {win.days} gün geçerli. Daha uzun süreli bir paket seçmenizi öneririz.
+                    </p>
+                )}
+            </div>
+        );
+    };
+
+    const TravelDatesRequiredNote = ({ testId }) => (
+        <div
+            className="mt-4 flex items-start gap-2.5 rounded-xl border border-dashed border-primary/40 bg-primary/[0.04] p-4"
+            data-testid={testId}
+        >
+            <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <p className="text-sm leading-6 text-muted-foreground">
+                Ürünlerin geçerlilik tarihi seyahatinize göre ayarlanır. Devam etmek için yukarıdan
+                <strong className="text-foreground"> giriş (gidiş) tarihinizi</strong> seçin.
+            </p>
+        </div>
+    );
+
     const storeItems = useMemo(() => {
         const items = [];
         if (insurancePick) {
@@ -344,6 +402,10 @@ export default function Apply() {
     }, [insurancePick, esimQty, travelerCount]);
 
     const toggleEsim = (product) => {
+        if (!travelDatesReady) {
+            toast.error("Önce giriş (gidiş) tarihinizi seçin; eSIM paketiniz bu tarihte başlatılır.");
+            return;
+        }
         setEsimQty((prev) => {
             const next = { ...prev };
             if (next[product.id]) {
@@ -367,14 +429,20 @@ export default function Apply() {
         });
     };
 
-    const quoteKey = JSON.stringify([selectedVisaIds, addons, storeItems]);
+    const quoteKey = JSON.stringify([selectedVisaIds, addons, storeItems, travel.arrival_date, travel.departure_date]);
     useEffect(() => {
         if (selectedVisaIds.length !== travelers.length || selectedVisaIds.length === 0) {
             setQuote(null);
             return;
         }
         let cancelled = false;
-        api.post("/pricing/quote", { visa_type_ids: selectedVisaIds, addons, store_items: storeItems })
+        api.post("/pricing/quote", {
+            visa_type_ids: selectedVisaIds,
+            addons,
+            store_items: storeItems,
+            arrival_date: travel.arrival_date || null,
+            departure_date: travel.departure_date || null,
+        })
             .then(({ data }) => {
                 if (!cancelled) setQuote(data);
             })
@@ -1058,8 +1126,10 @@ export default function Apply() {
                                             </div>
                                             <p className="mt-1.5 text-sm text-muted-foreground">
                                                 BAE'de sağlık masrafları yüksektir. Poliçe bedeli yolcu başına hesaplanır
-                                                ({travelerCount} yolcu). Poliçeniz ödeme sonrası PDF olarak e-postanıza gelir.
+                                                ({travelerCount} yolcu) ve poliçeniz <strong className="text-foreground">seyahatinizin
+                                                giriş tarihinde</strong> başlatılır. Poliçeniz ödeme sonrası PDF olarak e-postanıza gelir.
                                             </p>
+                                            {!travelDatesReady && <TravelDatesRequiredNote testId="insurance-dates-required" />}
                                             <div className="mt-4 grid gap-4 md:grid-cols-2">
                                                 {insuranceProducts.map((p) => {
                                                     const selected = insurancePick === p.id;
@@ -1068,8 +1138,9 @@ export default function Apply() {
                                                             type="button"
                                                             key={p.id}
                                                             aria-pressed={selected}
+                                                            disabled={!travelDatesReady}
                                                             onClick={() => setInsurancePick(selected ? null : p.id)}
-                                                            className={`rounded-xl border p-5 text-left transition-colors duration-200 hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                                                            className={`rounded-xl border p-5 text-left transition-colors duration-200 hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${
                                                                 selected ? "border-primary bg-primary/5" : "border-border bg-card"
                                                             }`}
                                                             data-testid={`insurance-option-${p.id}`}
@@ -1088,6 +1159,7 @@ export default function Apply() {
                                                                 )}
                                                             </div>
                                                             <p className="mt-2 text-sm leading-6 text-muted-foreground">{p.summary}</p>
+                                                            <DateWindowNote product={p} testId={`insurance-dates-${p.id}`} />
                                                             <p className="mt-3 font-heading text-sm font-bold text-primary">
                                                                 + {formatMoney(p.price, p.currency)} / kişi
                                                             </p>
@@ -1097,7 +1169,9 @@ export default function Apply() {
                                             </div>
                                             {insurancePick && (
                                                 <p className="mt-3 text-sm text-muted-foreground" data-testid="insurance-selected-note">
-                                                    {travelerCount} yolcu için poliçe eklendi. Toplam sepetinizde otomatik hesaplanır.
+                                                    {travelerCount} yolcu için poliçe eklendi
+                                                    {travel.arrival_date ? ` · ${formatDate(travel.arrival_date)} tarihinde başlar` : ""}.
+                                                    Toplam sepetinizde otomatik hesaplanır.
                                                 </p>
                                             )}
                                         </div>
@@ -1111,10 +1185,12 @@ export default function Apply() {
                                                 <h3 className="font-heading text-base font-bold">Dubai eSIM (internet paketi)</h3>
                                             </div>
                                             <p className="mt-1.5 text-sm text-muted-foreground">
-                                                Dubai'ye indiğiniz anda internetiniz hazır olsun. Adet, yolcu sayınıza göre
-                                                otomatik seçilir; dilediğiniz gibi değiştirebilirsiniz. QR kodunuz ödeme
-                                                sonrası e-postanıza gelir.
+                                                Dubai'ye indiğiniz anda internetiniz hazır olsun. Paketiniz
+                                                <strong className="text-foreground"> giriş tarihinizde</strong> başlar; adet, yolcu
+                                                sayınıza göre otomatik seçilir ve dilediğiniz gibi değiştirebilirsiniz. QR kodunuz
+                                                ödeme sonrası e-postanıza gelir.
                                             </p>
+                                            {!travelDatesReady && <TravelDatesRequiredNote testId="esim-dates-required" />}
                                             <div className="mt-4 space-y-4">
                                                 {esimProducts.map((p) => {
                                                     const qty = esimQty[p.id] || 0;
@@ -1130,6 +1206,7 @@ export default function Apply() {
                                                             <div className="flex flex-wrap items-start gap-4">
                                                                 <Switch
                                                                     checked={selected}
+                                                                    disabled={!travelDatesReady}
                                                                     onCheckedChange={() => toggleEsim(p)}
                                                                     className="mt-1"
                                                                     data-testid={`esim-switch-${p.id}`}
@@ -1144,6 +1221,7 @@ export default function Apply() {
                                                                         )}
                                                                     </div>
                                                                     <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{p.summary}</p>
+                                                                    <DateWindowNote product={p} testId={`esim-dates-${p.id}`} />
                                                                     <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-primary">
                                                                         <Signal className="h-4 w-4" aria-hidden="true" />
                                                                         + {formatMoney(p.price, p.currency)} / adet
@@ -1390,7 +1468,11 @@ export default function Apply() {
                                                     {(quote.store_items || []).map((s) => (
                                                         <SummaryRow
                                                             key={s.product_id}
-                                                            label={`${s.name} x${s.quantity}`}
+                                                            label={`${s.name} x${s.quantity}${
+                                                                s.starts_on
+                                                                    ? ` · ${formatDate(s.starts_on)}${s.ends_on ? ` – ${formatDate(s.ends_on)}` : ""}`
+                                                                    : ""
+                                                            }`}
                                                             value={formatMoney(s.total, quote.currency)}
                                                         />
                                                     ))}
@@ -1559,8 +1641,16 @@ export default function Apply() {
                                             </div>
                                         ))}
                                         {(quote.store_items || []).map((s) => (
-                                            <div key={s.product_id} className="flex justify-between" data-testid={`summary-store-line-${s.product_id}`}>
-                                                <span className="text-muted-foreground">{s.name} x{s.quantity}</span>
+                                            <div key={s.product_id} className="flex justify-between gap-3" data-testid={`summary-store-line-${s.product_id}`}>
+                                                <span className="text-muted-foreground">
+                                                    {s.name} x{s.quantity}
+                                                    {s.starts_on && (
+                                                        <span className="block text-xs">
+                                                            {formatDate(s.starts_on)}
+                                                            {s.ends_on ? ` – ${formatDate(s.ends_on)}` : " itibaren"}
+                                                        </span>
+                                                    )}
+                                                </span>
                                                 <span className="font-semibold">{formatMoney(s.total, quote.currency)}</span>
                                             </div>
                                         ))}

@@ -407,7 +407,11 @@ export default function AdminApplicationDetail() {
                                     {(pricing.store_items || []).map((s) => (
                                         <Row
                                             key={s.product_id}
-                                            label={`${s.name} x${s.quantity}${s.kind_label ? ` · ${s.kind_label}` : ""}`}
+                                            label={`${s.name} x${s.quantity}${s.kind_label ? ` · ${s.kind_label}` : ""}${
+                                                s.starts_on
+                                                    ? ` · ${formatDate(s.starts_on)}${s.ends_on ? ` – ${formatDate(s.ends_on)}` : ""}`
+                                                    : ""
+                                            }`}
                                             value={formatMoney(s.total, pricing.currency)}
                                         />
                                     ))}

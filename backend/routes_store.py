@@ -12,7 +12,7 @@ import os
 import secrets
 import string
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
@@ -207,12 +207,17 @@ async def create_order(payload: OrderCreateIn):
     catalog = {p["id"]: p for p in await product_list()}
     lines = []
     total = 0.0
+    try:
+        trip_start = date.fromisoformat((payload.travel_start or "").strip()[:10])
+    except Exception:
+        trip_start = None
     for item in payload.items:
         product = catalog.get(item.product_id)
         if not product:
             raise HTTPException(400, "Secilen urun bulunamadi veya satista degil.")
         line_total = round(float(product["price"]) * item.quantity, 2)
         total += line_total
+        validity_days = int(product.get("validity_days") or 0)
         lines.append(
             {
                 "product_id": product["id"],
@@ -222,6 +227,13 @@ async def create_order(payload: OrderCreateIn):
                 "unit_price": float(product["price"]),
                 "unit_price_usd": float(product.get("price_usd") or 0),
                 "total": line_total,
+                "validity_days": validity_days,
+                "starts_on": trip_start.isoformat() if trip_start else None,
+                "ends_on": (
+                    (trip_start + timedelta(days=validity_days - 1)).isoformat()
+                    if trip_start and validity_days > 0
+                    else None
+                ),
             }
         )
 
@@ -293,6 +305,9 @@ async def create_application_order(app_doc: dict, lines: list) -> dict:
             "unit_price": float(line.get("unit_price") or 0),
             "unit_price_usd": float(line.get("unit_price_usd") or 0),
             "total": float(line.get("total") or 0),
+            "validity_days": line.get("validity_days"),
+            "starts_on": line.get("starts_on"),
+            "ends_on": line.get("ends_on"),
         }
         for line in lines
     ]
@@ -307,7 +322,11 @@ async def create_application_order(app_doc: dict, lines: list) -> dict:
         },
         "travel_start": travel.get("arrival_date"),
         "travel_end": travel.get("departure_date"),
-        "note": f"Vize basvurusu ile birlikte alindi ({app_doc.get('reference_code')}).",
+        "note": (
+            f"Vize basvurusu ile birlikte alindi ({app_doc.get('reference_code')}). "
+            f"Seyahat: {travel.get('arrival_date') or '-'} / {travel.get('departure_date') or '-'}. "
+            "Urunler giris tarihinde baslatilacak."
+        ),
         "source": "visa_application",
         "application_id": app_doc.get("id"),
         "application_reference": app_doc.get("reference_code"),

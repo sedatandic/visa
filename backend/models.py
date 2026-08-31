@@ -84,6 +84,9 @@ class QuoteRequest(BaseModel):
     visa_type_ids: List[str] = Field(..., min_length=1, max_length=10)
     addons: AddonsIn = Field(default_factory=AddonsIn)
     store_items: List[StoreItemIn] = Field(default_factory=list, max_length=6)
+    # eSIM / sigorta gecerlilik tarihleri seyahat tarihlerine gore hesaplanir
+    arrival_date: Optional[str] = Field(default=None, max_length=20)
+    departure_date: Optional[str] = Field(default=None, max_length=20)
 
 
 class CheckoutRequest(BaseModel):

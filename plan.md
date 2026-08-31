@@ -267,6 +267,11 @@
   - Frontend: `Apply.jsx` adım 2'de sigorta planı (yolcu başına, tek seçim) + tüm eSIM paketleri (adet stepper, varsayılan yolcu sayısı); özet satırları + canlı FX toplam. AdminOrders'da 'Vize başvurusu ile alındı' etiketi; AdminApplicationDetail fiyat dökümünde store satırları + bağlı sipariş kodu.
   - Test: iteration_15.json backend 51/52 (kritik yok) + kendi E2E scriptim: başvuru + bağlı sipariş + havale + admin mark-paid senkronu **PASS**.
 
+### Phase 18 — Ek Ürün Geçerlilik Tarihlerinin Seyahat Tarihine Bağlanması — **COMPLETED (2026-08-31)**
+- Backend: `resolve_store_lines(items, arrival_date, departure_date)` → her satırda `validity_days`, `starts_on`, `ends_on`, `trip_days`, `covers_trip`. `QuoteRequest`e `arrival_date/departure_date` eklendi; `/applications` seyahat tarihlerini kullanıyor. Bağlı sipariş ve standalone mağaza siparişi item'larına da `starts_on/ends_on` yazılıyor. E-postalarda tarih aralığı görünüyor.
+- Frontend: `Apply.jsx` — giriş tarihi girilmeden eSIM/sigorta seçimi kapalı (bilgilendirme notu), her kartta "10 Ekim 2026 tarihinde başlar · 24 Ekim 2026 tarihine kadar geçerli" bilgisi, seyahat süresi paketten uzunsa uyarı; özet satırlarında tarih aralığı. AdminOrders ve AdminApplicationDetail'de tarih aralığı gösterimi.
+- Test: canlı UI doğrulaması (screenshot) + E2E script: başvuru/sipariş/mağaza satırlarında tarihler **PASS**.
+
 Test:
 - `testing_agent_v3` iteration_13.json — backend **46/46 PASS**, frontend **%100 PASS**.
 - `testing_agent_v3` iteration_14.json — backend **38/40 (kritik yok)**, frontend **%100**; kalan 2 senaryo manuel doğrulandı.

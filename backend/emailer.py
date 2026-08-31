@@ -134,7 +134,11 @@ def _pricing_block(app_doc: dict) -> str:
     for a in p.get("addons") or []:
         lines.append(_row(f"{a['name']} x{a['quantity']}", money(a["total"], p.get("currency", "TRY"))))
     for s in p.get("store_items") or []:
-        lines.append(_row(f"{s['name']} x{s['quantity']}", money(s["total"], p.get("currency", "TRY"))))
+        label = f"{s['name']} x{s['quantity']}"
+        if s.get("starts_on"):
+            label += f" ({_tr_date(s['starts_on'])}"
+            label += f" - {_tr_date(s['ends_on'])})" if s.get("ends_on") else " itibaren)"
+        lines.append(_row(label, money(s["total"], p.get("currency", "TRY"))))
     lines.append(_row("<strong>Toplam</strong>", "<strong>" + money(p.get("total", 0), p.get("currency", "TRY")) + "</strong>"))
     return "".join(lines)
 
@@ -404,12 +408,35 @@ def draft_reminder_html(draft: dict, resume_url: str = "") -> str:
     return _wrap("Basvurunuz yarim kaldi", body)
 
 
+def _tr_date(value: str | None) -> str:
+    """ISO tarihi gg.aa.yyyy formatina cevirir."""
+    raw = (value or "").strip()[:10]
+    try:
+        d = datetime.strptime(raw, "%Y-%m-%d")
+        return d.strftime("%d.%m.%Y")
+    except Exception:
+        return raw
+
+
+def _date_range_note(item: dict) -> str:
+    """Urunun gecerlilik tarih araligi (seyahat tarihine gore)."""
+    starts = item.get("starts_on")
+    ends = item.get("ends_on")
+    if not starts:
+        return ""
+    text = f"{_tr_date(starts)} tarihinde baslar"
+    if ends:
+        text += f" · {_tr_date(ends)} tarihine kadar gecerli"
+    return f'<div style="font-size:12px;color:#52606D;margin-top:2px;">{text}</div>'
+
+
 def _order_items_rows(order: dict) -> str:
     rows = []
     for item in order.get("items") or []:
         rows.append(
             f'<tr><td style="padding:8px 0;font-size:13px;color:#0B1F33;">{item.get("name","")}'
-            f' <span style="color:#52606D;">x{item.get("quantity",1)}</span></td>'
+            f' <span style="color:#52606D;">x{item.get("quantity",1)}</span>'
+            f'{_date_range_note(item)}</td>'
             f'<td style="padding:8px 0;font-size:13px;text-align:right;color:#0B1F33;">'
             f'{item.get("total",0):,.0f} TL</td></tr>'
         )

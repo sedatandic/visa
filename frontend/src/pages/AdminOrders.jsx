@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Loader2, PackageCheck, RefreshCw, Send, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
-import { formatDateTime, formatMoney } from "../lib/site";
+import { formatDate, formatDateTime, formatMoney } from "../lib/site";
 import { AdminLayout } from "../components/AdminLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { Button } from "../components/ui/button";
@@ -96,6 +96,19 @@ const OrderRow = ({ order, onUpdate }) => {
                         {formatDateTime(order.created_at)} ·{" "}
                         {(order.items || []).map((i) => `${i.name} x${i.quantity}`).join(", ")}
                     </p>
+                    {(order.items || []).some((i) => i.starts_on) && (
+                        <div className="mt-2 space-y-1" data-testid={`order-item-dates-${order.reference_code}`}>
+                            {(order.items || [])
+                                .filter((i) => i.starts_on)
+                                .map((i) => (
+                                    <p key={i.product_id} className="text-xs text-muted-foreground">
+                                        <span className="font-semibold text-foreground">{i.name}</span>:{" "}
+                                        {formatDate(i.starts_on)}
+                                        {i.ends_on ? ` – ${formatDate(i.ends_on)}` : " itibaren"} tarihinde başlatılacak
+                                    </p>
+                                ))}
+                        </div>
+                    )}
                     {order.note && (
                         <p className="mt-2 rounded-lg bg-[hsl(var(--cloud))] p-3 text-xs leading-5">
                             Müşteri notu: {order.note}

@@ -4,7 +4,7 @@ import re
 import secrets
 import string
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 
@@ -239,13 +239,34 @@ async def get_article(slug: str):
     return {"article": article, "related": serialize_doc(related)}
 
 
-async def resolve_store_lines(items) -> list:
-    """Basvuru icinde secilen eSIM / sigorta urunlerini magaza katalogundan fiyatlar."""
+def _parse_iso_date(value: str | None):
+    try:
+        return date.fromisoformat((value or "").strip()[:10])
+    except Exception:
+        return None
+
+
+def trip_day_count(arrival: str | None, departure: str | None) -> int | None:
+    """Seyahat suresi (gun). Giris ve donus gunleri dahil."""
+    start = _parse_iso_date(arrival)
+    end = _parse_iso_date(departure)
+    if not start or not end or end < start:
+        return None
+    return (end - start).days + 1
+
+
+async def resolve_store_lines(items, arrival_date: str | None = None, departure_date: str | None = None) -> list:
+    """Basvuru icinde secilen eSIM / sigorta urunlerini magaza katalogundan fiyatlar.
+
+    Urunlerin gecerlilik tarihleri seyahatin giris tarihinden baslatilir.
+    """
     if not items:
         return []
     from routes_store import MAX_QTY, product_list
 
     catalog = {p["id"]: p for p in await product_list()}
+    start = _parse_iso_date(arrival_date)
+    trip_days = trip_day_count(arrival_date, departure_date)
     lines = []
     for item in items:
         product = catalog.get(item.product_id)
@@ -253,6 +274,11 @@ async def resolve_store_lines(items) -> list:
             raise HTTPException(400, "Secilen ek urun bulunamadi veya satista degil.")
         quantity = max(1, min(int(item.quantity), MAX_QTY))
         unit_price = float(product["price"])
+        validity_days = int(product.get("validity_days") or 0)
+        starts_on = start.isoformat() if start else None
+        ends_on = None
+        if start and validity_days > 0:
+            ends_on = (start + timedelta(days=validity_days - 1)).isoformat()
         lines.append(
             {
                 "product_id": product["id"],
@@ -263,6 +289,11 @@ async def resolve_store_lines(items) -> list:
                 "unit_price": unit_price,
                 "unit_price_usd": float(product.get("price_usd") or 0),
                 "total": round(unit_price * quantity, 2),
+                "validity_days": validity_days,
+                "starts_on": starts_on,
+                "ends_on": ends_on,
+                "trip_days": trip_days,
+                "covers_trip": None if (not trip_days or not validity_days) else trip_days <= validity_days,
             }
         )
     return lines
@@ -280,8 +311,11 @@ async def pricing_quote(payload: QuoteRequest):
         prices,
         payload.addons.model_dump(),
         addon_prices=await addon_prices_try(),
-        store_lines=await resolve_store_lines(payload.store_items),
+        store_lines=await resolve_store_lines(
+            payload.store_items, payload.arrival_date, payload.departure_date
+        ),
     )
+    quote["trip_days"] = trip_day_count(payload.arrival_date, payload.departure_date)
     quote["fx"] = await get_fx()
     return quote
 
@@ -446,7 +480,11 @@ async def create_application(payload: ApplicationCreate):
         travelers.append(data)
         prices.append(float(visa["price"]))
 
-    store_lines = await resolve_store_lines(payload.store_items)
+    store_lines = await resolve_store_lines(
+        payload.store_items,
+        payload.travel.arrival_date,
+        payload.travel.departure_date,
+    )
     pricing = compute_pricing(
         prices,
         payload.addons.model_dump(),
