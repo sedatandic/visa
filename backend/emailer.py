@@ -400,3 +400,100 @@ def draft_reminder_html(draft: dict, resume_url: str = "") -> str:
     </p>
     """
     return _wrap("Basvurunuz yarim kaldi", body)
+
+
+def _order_items_rows(order: dict) -> str:
+    rows = []
+    for item in order.get("items") or []:
+        rows.append(
+            f'<tr><td style="padding:8px 0;font-size:13px;color:#0B1F33;">{item.get("name","")}'
+            f' <span style="color:#52606D;">x{item.get("quantity",1)}</span></td>'
+            f'<td style="padding:8px 0;font-size:13px;text-align:right;color:#0B1F33;">'
+            f'{item.get("total",0):,.0f} TL</td></tr>'
+        )
+    return "".join(rows)
+
+
+def order_received_html(order: dict, bank: dict | None = None) -> str:
+    """eSIM / seyahat sigortasi siparis onayi."""
+    bank_html = ""
+    if bank:
+        bank_html = f"""
+    <div style="margin-top:18px;background-color:#F1F5F9;border:1px solid #E2E8F0;border-radius:10px;padding:16px;">
+      <div style="font-size:12px;font-weight:bold;color:#0B1F33;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Havale / EFT Bilgileri</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        {_row('Banka', bank.get('bank_name',''))}
+        {_row('Hesap sahibi', bank.get('account_name',''))}
+        {_row('IBAN', bank.get('iban',''))}
+        {_row('Aciklama', order.get('reference_code',''))}
+      </table>
+      <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#52606D;">
+        Aciklama alanina siparis kodunuzu yazmayi unutmayin. Odemeniz onaylandiginda teslimat yapilir.
+      </p>
+    </div>
+    """
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayin {order.get('contact',{}).get('full_name','')},</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
+      Siparisiniz alindi. Odemeniz onaylandiktan sonra eSIM QR kodunuz ve/veya sigorta policeniz
+      e-posta ile size iletilecek.
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      {_row('Siparis kodu', order.get('reference_code',''))}
+      {_row('Odeme yontemi', 'Havale/EFT' if (order.get('payment') or {}).get('method') == 'bank_transfer' else 'Kredi/banka karti')}
+    </table>
+    <div style="margin-top:16px;border-top:1px solid #E2E8F0;padding-top:8px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        {_order_items_rows(order)}
+        <tr><td style="padding:10px 0 0;font-size:14px;font-weight:bold;border-top:1px solid #E2E8F0;">Toplam</td>
+        <td style="padding:10px 0 0;font-size:14px;font-weight:bold;text-align:right;border-top:1px solid #E2E8F0;">{order.get('price',0):,.0f} TL</td></tr>
+      </table>
+    </div>
+    {bank_html}
+    """
+    return _wrap("Siparisiniz alindi", body)
+
+
+def order_admin_html(order: dict) -> str:
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Yeni eSIM / sigorta siparisi olusturuldu.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      {_row('Siparis kodu', order.get('reference_code',''))}
+      {_row('Musteri', order.get('contact',{}).get('full_name',''))}
+      {_row('E-posta', order.get('contact',{}).get('email',''))}
+      {_row('Telefon', order.get('contact',{}).get('phone',''))}
+      {_row('Tutar', f"{order.get('price',0):,.0f} TL")}
+      {_row('Odeme', (order.get('payment') or {}).get('method',''))}
+    </table>
+    <div style="margin-top:12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{_order_items_rows(order)}</table>
+    </div>
+    """
+    return _wrap("Yeni siparis", body)
+
+
+def order_delivered_html(order: dict, links: list, message: str = "") -> str:
+    """eSIM QR / police teslimati."""
+    link_html = "".join(
+        f'<tr><td style="padding:8px 0;"><a href="{l["url"]}" style="color:#0B6B3A;font-size:14px;font-weight:bold;">{l["label"]}</a></td></tr>'
+        for l in links
+    )
+    note = (
+        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#0B1F33;">{message}</p>'
+        if message
+        else ""
+    )
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayin {order.get('contact',{}).get('full_name','')},</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
+      {order.get('reference_code','')} kodlu siparisiniz hazir. Belgelerinizi asagidaki baglantilardan
+      indirebilirsiniz.
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{link_html}</table>
+    {note}
+    <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#52606D;">
+      eSIM kurulumu: Ayarlar > Mobil Veri > eSIM ekle > QR kodu tarat. Kurulum sirasinda internet
+      baglantisi gereklidir.
+    </p>
+    """
+    return _wrap("Siparisiniz hazir", body)

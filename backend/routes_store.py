@@ -1,0 +1,289 @@
+"""eSIM ve seyahat sigortasi satisi (magaza).
+
+- Urunler `store_products` koleksiyonunda tutulur, fiyatlar USD bazlidir ve
+  guncel kurla TL'ye cevrilir.
+- Siparisler `store_orders` koleksiyonunda tutulur.
+- Teslimat acente eliyle yapilir: admin panelden eSIM QR kodu / police PDF
+  yuklenip musteriye e-posta ile gonderilir.
+"""
+
+import logging
+import os
+import secrets
+import string
+import uuid
+from datetime import datetime, timezone
+from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, EmailStr, Field
+
+from content import BANK_TRANSFER
+from db import orders_col, products_col, serialize_doc, settings_col
+from emailer import order_admin_html, order_received_html, send_email
+from fx import get_fx, try_price
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+ORDER_PREFIX = "SV-"
+MAX_QTY = 10
+
+ESIM_PRODUCTS = [
+    {
+        "id": "esim_1gb",
+        "kind": "esim",
+        "name": "Dubai eSIM · 1 GB / 7 gün",
+        "summary": "Kısa mola ve aktarmalarda harita, çağrı uygulamaları ve sosyal medya için yeterli veri.",
+        "price_usd": 9.0,
+        "data_amount": "1 GB",
+        "validity_days": 7,
+        "features": [
+            "BAE genelinde 4G/5G kapsama",
+            "QR kod ile 2 dakikada kurulum",
+            "Numaranız açık kalır, WhatsApp çalışır",
+            "Fiziksel SIM değiştirmeye gerek yok",
+        ],
+        "order": 1,
+        "popular": False,
+    },
+    {
+        "id": "esim_3gb",
+        "kind": "esim",
+        "name": "Dubai eSIM · 3 GB / 15 gün",
+        "summary": "Bir haftalık tatilde navigasyon, sosyal medya ve video görüşme için en çok tercih edilen paket.",
+        "price_usd": 15.0,
+        "data_amount": "3 GB",
+        "validity_days": 15,
+        "features": [
+            "BAE genelinde 4G/5G kapsama",
+            "QR kod ile anında kurulum",
+            "Hotspot (internet paylaşımı) açık",
+            "Uygulama içi veri takibi",
+        ],
+        "order": 2,
+        "popular": True,
+    },
+    {
+        "id": "esim_10gb",
+        "kind": "esim",
+        "name": "Dubai eSIM · 10 GB / 30 gün",
+        "summary": "Uzun kalışlar ve iş seyahatleri için bol veri; toplantı ve video görüşmelerinde rahat kullanım.",
+        "price_usd": 29.0,
+        "data_amount": "10 GB",
+        "validity_days": 30,
+        "features": [
+            "30 gün geçerli bol veri",
+            "Hotspot açık, dizüstü bilgisayara bağlanır",
+            "Video görüşme ve bulut yedekleme için uygun",
+            "Kurulum desteği dahil",
+        ],
+        "order": 3,
+        "popular": False,
+    },
+    {
+        "id": "esim_unlimited",
+        "kind": "esim",
+        "name": "Dubai eSIM · Sınırsız / 30 gün",
+        "summary": "Veri limiti düşünmeden kullanmak isteyenler için adil kullanım kotalı sınırsız paket.",
+        "price_usd": 49.0,
+        "data_amount": "Sınırsız",
+        "validity_days": 30,
+        "features": [
+            "Adil kullanım sonrası hız düşer, kesilmez",
+            "Yayın (streaming) ve harita kullanımı serbest",
+            "Hotspot açık",
+            "Öncelikli destek",
+        ],
+        "order": 4,
+        "popular": False,
+    },
+]
+
+INSURANCE_PRODUCTS = [
+    {
+        "id": "ins_basic",
+        "kind": "insurance",
+        "name": "Seyahat Sigortası · Temel",
+        "summary": "30 güne kadar seyahatlerde acil sağlık masraflarını karşılayan, vize başvurusu için uygun temel poliçe.",
+        "price_usd": 20.0,
+        "coverage": "30.000 € teminat",
+        "validity_days": 30,
+        "features": [
+            "30.000 € acil sağlık teminatı",
+            "30 güne kadar seyahat süresi",
+            "Vize başvurusuna uygun poliçe",
+            "Poliçe PDF olarak e-postanıza gelir",
+        ],
+        "order": 1,
+        "popular": True,
+    },
+    {
+        "id": "ins_plus",
+        "kind": "insurance",
+        "name": "Seyahat Sigortası · Geniş Kapsam",
+        "summary": "Uzun kalışlar için yüksek teminat; bagaj kaybı ve seyahat iptali gibi ek riskleri de kapsar.",
+        "price_usd": 39.0,
+        "coverage": "100.000 € teminat + bagaj / iptal",
+        "validity_days": 60,
+        "features": [
+            "100.000 € acil sağlık teminatı",
+            "60 güne kadar seyahat süresi",
+            "Bagaj kaybı ve gecikmesi teminatı",
+            "Seyahat iptal / değişiklik desteği",
+        ],
+        "order": 2,
+        "popular": False,
+    },
+]
+
+DEFAULT_PRODUCTS = ESIM_PRODUCTS + INSURANCE_PRODUCTS
+
+KIND_LABELS = {"esim": "eSIM", "insurance": "Seyahat sigortası"}
+
+
+def new_order_reference() -> str:
+    alphabet = string.ascii_uppercase + string.digits
+    return ORDER_PREFIX + "".join(secrets.choice(alphabet) for _ in range(8))
+
+
+async def product_list(kind: Optional[str] = None, include_inactive: bool = False) -> list:
+    query = {}
+    if kind:
+        query["kind"] = kind
+    if not include_inactive:
+        query["active"] = True
+    docs = await products_col.find(query).sort("order", 1).to_list(100)
+    if not docs:
+        docs = [
+            p for p in DEFAULT_PRODUCTS if (not kind or p["kind"] == kind)
+        ]
+    rate = (await get_fx())["effective_rate"]
+    items = []
+    for doc in serialize_doc(docs):
+        item = dict(doc)
+        item.pop("_id", None)
+        if item.get("price_usd"):
+            item["price"] = try_price(item["price_usd"], rate)
+        item["currency"] = "TRY"
+        item["fx_rate"] = rate
+        item["kind_label"] = KIND_LABELS.get(item.get("kind"), "")
+        items.append(item)
+    return items
+
+
+# ------------------------------------------------------------------- modeller
+class OrderItemIn(BaseModel):
+    product_id: str
+    quantity: int = Field(1, ge=1, le=MAX_QTY)
+
+
+class OrderContactIn(BaseModel):
+    full_name: str = Field(..., min_length=3, max_length=90)
+    email: EmailStr
+    phone: str = Field(..., min_length=7, max_length=25)
+
+
+class OrderCreateIn(BaseModel):
+    items: List[OrderItemIn] = Field(..., min_length=1, max_length=6)
+    contact: OrderContactIn
+    travel_start: Optional[str] = None
+    travel_end: Optional[str] = None
+    note: Optional[str] = Field(None, max_length=500)
+    payment_method: str = Field("card", pattern="^(card|transfer)$")
+
+
+# ------------------------------------------------------------------ endpointler
+@router.get("/products")
+async def get_products(kind: Optional[str] = None):
+    if kind and kind not in KIND_LABELS:
+        raise HTTPException(400, "Gecersiz urun tipi.")
+    items = await product_list(kind)
+    return {"items": items, "fx": await get_fx()}
+
+
+@router.post("/orders")
+async def create_order(payload: OrderCreateIn):
+    catalog = {p["id"]: p for p in await product_list()}
+    lines = []
+    total = 0.0
+    for item in payload.items:
+        product = catalog.get(item.product_id)
+        if not product:
+            raise HTTPException(400, "Secilen urun bulunamadi veya satista degil.")
+        line_total = round(float(product["price"]) * item.quantity, 2)
+        total += line_total
+        lines.append(
+            {
+                "product_id": product["id"],
+                "kind": product["kind"],
+                "name": product["name"],
+                "quantity": item.quantity,
+                "unit_price": float(product["price"]),
+                "unit_price_usd": float(product.get("price_usd") or 0),
+                "total": line_total,
+            }
+        )
+
+    now = datetime.now(timezone.utc)
+    doc = {
+        "id": str(uuid.uuid4()),
+        "reference_code": new_order_reference(),
+        "items": lines,
+        "contact": payload.contact.model_dump(),
+        "travel_start": payload.travel_start,
+        "travel_end": payload.travel_end,
+        "note": payload.note,
+        "price": round(total, 2),
+        "currency": "TRY",
+        "fx_rate": (await get_fx())["effective_rate"],
+        "status": "pending",
+        "payment": {
+            "method": "bank_transfer" if payload.payment_method == "transfer" else "card",
+            "status": "awaiting_transfer" if payload.payment_method == "transfer" else "pending",
+        },
+        "delivery": {},
+        "created_at": now,
+        "updated_at": now,
+    }
+    await orders_col.insert_one(dict(doc))
+
+    bank = None
+    if payload.payment_method == "transfer":
+        settings_doc = await settings_col.find_one({"key": "bank_transfer"})
+        bank = (settings_doc or {}).get("value") or BANK_TRANSFER
+
+    view = serialize_doc(doc)
+    await send_email(
+        doc["contact"]["email"],
+        f"Siparisiniz alindi - {doc['reference_code']}",
+        order_received_html(view, bank),
+        kind="order_received",
+        meta={"order_id": doc["id"], "reference_code": doc["reference_code"]},
+    )
+    admin_email = os.environ.get("ADMIN_EMAIL")
+    if admin_email:
+        await send_email(
+            admin_email,
+            f"Yeni eSIM/sigorta siparisi - {doc['reference_code']}",
+            order_admin_html(view),
+            kind="order_admin_notify",
+            meta={"order_id": doc["id"]},
+        )
+
+    return {"order": view, "bank": bank}
+
+
+@router.get("/orders/{reference}")
+async def get_order(reference: str, email: str):
+    doc = await orders_col.find_one({"reference_code": (reference or "").strip().upper()})
+    if not doc:
+        raise HTTPException(404, "Siparis bulunamadi.")
+    if (doc.get("contact") or {}).get("email", "").lower() != (email or "").strip().lower():
+        raise HTTPException(404, "Siparis kodu ve e-posta eslesmiyor.")
+    settings_doc = await settings_col.find_one({"key": "bank_transfer"})
+    bank = (settings_doc or {}).get("value") or BANK_TRANSFER
+    return {
+        "order": serialize_doc(doc),
+        "bank": bank if (doc.get("payment") or {}).get("method") == "bank_transfer" else None,
+    }

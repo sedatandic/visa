@@ -32,6 +32,8 @@ from db import (
     uploads_col,
     visa_types_col,
     login_codes_col,
+    orders_col,
+    products_col,
 )
 from content import BANK_TRANSFER, COMPANY
 from doc_reminders import (
@@ -42,9 +44,16 @@ from doc_reminders import (
     run_reminder_sweep,
     send_document_reminder,
 )
+from routes_store import product_list
 from fx import apply_fx_to_list, apply_fx_to_visa, get_fx, update_fx_settings
 from visa_guides import build_guide, guide_index
-from emailer import payment_received_html, send_email, status_change_html, visa_ready_html
+from emailer import (
+    order_delivered_html,
+    payment_received_html,
+    send_email,
+    status_change_html,
+    visa_ready_html,
+)
 from models import (
     AdminLogin,
     ArticleIn,
@@ -301,11 +310,14 @@ async def admin_delete_visa_document(application_id: str, admin=Depends(require_
     return {"application": serialize_doc(fresh)}
 
 
-def _resolve_origin(origin_url: Optional[str], request: Request) -> str:
+def _resolve_origin(origin_url: Optional[str], request: Optional[Request]) -> str:
     """Istemciden gelen origin degerini dogrular, gecersizse sunucu adresini kullanir."""
     origin = (origin_url or "").rstrip("/")
     if not origin.startswith("http"):
-        origin = str(request.base_url).rstrip("/")
+        if request is not None:
+            origin = str(request.base_url).rstrip("/")
+        else:
+            origin = (os.environ.get("PUBLIC_SITE_URL") or "").rstrip("/")
     return origin
 
 
@@ -889,3 +901,114 @@ async def admin_run_draft_reminders(
     body = payload or {}
     origin = _resolve_origin(body.get("origin_url"), request)
     return await run_draft_reminder_sweep(origin, force=bool(body.get("force")))
+
+
+# ------------------------------------------------ magaza: urunler ve siparisler
+@router.get("/admin/products")
+async def admin_products(admin=Depends(require_admin)):
+    items = await product_list(include_inactive=True)
+    return {"items": items}
+
+
+@router.patch("/admin/products/{product_id}")
+async def admin_update_product(product_id: str, payload: dict, admin=Depends(require_admin)):
+    allowed = {"price_usd", "name", "summary", "active", "popular", "data_amount", "coverage", "validity_days"}
+    update = {k: v for k, v in payload.items() if k in allowed}
+    if not update:
+        raise HTTPException(400, "Guncellenecek gecerli alan yok.")
+    if "price_usd" in update:
+        update["price_usd"] = float(update["price_usd"])
+    if "validity_days" in update:
+        update["validity_days"] = int(update["validity_days"])
+    res = await products_col.update_one({"id": product_id}, {"$set": update})
+    if res.matched_count == 0:
+        raise HTTPException(404, "Urun bulunamadi.")
+    items = await product_list(include_inactive=True)
+    return next((i for i in items if i["id"] == product_id), None)
+
+
+@router.get("/admin/orders")
+async def admin_orders(status: Optional[str] = None, admin=Depends(require_admin)):
+    query = {"status": status} if status else {}
+    docs = await orders_col.find(query).sort("created_at", -1).to_list(200)
+    return {"items": serialize_doc(docs), "total": len(docs)}
+
+
+@router.get("/admin/orders/{order_id}")
+async def admin_order_detail(order_id: str, admin=Depends(require_admin)):
+    doc = await orders_col.find_one({"id": order_id})
+    if not doc:
+        raise HTTPException(404, "Siparis bulunamadi.")
+    return serialize_doc(doc)
+
+
+@router.patch("/admin/orders/{order_id}")
+async def admin_update_order(order_id: str, payload: dict, admin=Depends(require_admin)):
+    doc = await orders_col.find_one({"id": order_id})
+    if not doc:
+        raise HTTPException(404, "Siparis bulunamadi.")
+    update = {"updated_at": datetime.now(timezone.utc)}
+    if payload.get("status") in {"pending", "processing", "fulfilled", "cancelled"}:
+        update["status"] = payload["status"]
+    if payload.get("payment_status") in {"pending", "awaiting_transfer", "paid", "refunded"}:
+        update["payment.status"] = payload["payment_status"]
+        if payload["payment_status"] == "paid":
+            update["payment.paid_at"] = datetime.now(timezone.utc)
+            update.setdefault("status", "processing")
+    if payload.get("admin_note") is not None:
+        update["admin_note"] = str(payload["admin_note"])[:1000]
+    if len(update) == 1:
+        raise HTTPException(400, "Guncellenecek gecerli alan yok.")
+    await orders_col.update_one({"id": order_id}, {"$set": update})
+    fresh = await orders_col.find_one({"id": order_id})
+    return serialize_doc(fresh)
+
+
+@router.post("/admin/orders/{order_id}/deliver")
+async def admin_deliver_order(order_id: str, payload: dict, admin=Depends(require_admin)):
+    """eSIM QR kodu / police PDF'ini musteriye e-posta ile gonderir."""
+    doc = await orders_col.find_one({"id": order_id})
+    if not doc:
+        raise HTTPException(404, "Siparis bulunamadi.")
+
+    esim_file_id = payload.get("esim_file_id")
+    policy_file_id = payload.get("policy_file_id")
+    message = str(payload.get("message") or "")[:1000]
+    if not esim_file_id and not policy_file_id:
+        raise HTTPException(400, "En az bir belge (eSIM QR veya police) yuklemelisiniz.")
+
+    origin = _resolve_origin(payload.get("origin_url"), None)
+    links = []
+    if esim_file_id:
+        links.append({"label": "eSIM QR kodunuz", "url": f"{origin}/api/files/{esim_file_id}"})
+    if policy_file_id:
+        links.append({"label": "Sigorta policeniz (PDF)", "url": f"{origin}/api/files/{policy_file_id}"})
+
+    now = datetime.now(timezone.utc)
+    await orders_col.update_one(
+        {"id": order_id},
+        {
+            "$set": {
+                "delivery": {
+                    "esim_file_id": esim_file_id,
+                    "policy_file_id": policy_file_id,
+                    "message": message,
+                    "sent_at": now,
+                },
+                "status": "fulfilled",
+                "updated_at": now,
+            }
+        },
+    )
+    fresh = await orders_col.find_one({"id": order_id})
+    to_email = (fresh.get("contact") or {}).get("email")
+    result = {"status": "skipped"}
+    if to_email:
+        result = await send_email(
+            to_email,
+            f"Siparisiniz hazir - {fresh['reference_code']}",
+            order_delivered_html(serialize_doc(fresh), links, message),
+            kind="order_delivered",
+            meta={"order_id": order_id, "reference_code": fresh["reference_code"]},
+        )
+    return {"order": serialize_doc(fresh), "email": result}

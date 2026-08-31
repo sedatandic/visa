@@ -26,6 +26,39 @@ def _client(request: Request) -> StripeCheckout:
     return StripeCheckout(api_key=api_key, webhook_url=webhook_url)
 
 
+async def _mark_order_paid(session_id: str, tx: dict):
+    """Magaza siparisi odemesini isaretler ve musteriyi bilgilendirir."""
+    from db import orders_col
+    from emailer import order_received_html
+
+    order = await orders_col.find_one({"id": tx.get("order_id")})
+    if not order:
+        return
+    now = datetime.now(timezone.utc)
+    await orders_col.update_one(
+        {"id": order["id"]},
+        {
+            "$set": {
+                "payment.status": "paid",
+                "payment.session_id": session_id,
+                "payment.paid_at": now,
+                "status": "processing",
+                "updated_at": now,
+            }
+        },
+    )
+    fresh = await orders_col.find_one({"id": order["id"]})
+    to_email = (fresh.get("contact") or {}).get("email")
+    if to_email:
+        await send_email(
+            to_email,
+            f"Odemeniz alindi - {fresh['reference_code']}",
+            order_received_html(serialize_doc(fresh)),
+            kind="order_payment_received",
+            meta={"reference_code": fresh["reference_code"]},
+        )
+
+
 async def _mark_paid(session_id: str):
     """Idempotent: flips the transaction + application to paid and emails once."""
     res = await payments_col.update_one(
@@ -42,6 +75,9 @@ async def _mark_paid(session_id: str):
         return
     tx = await payments_col.find_one({"session_id": session_id})
     if not tx:
+        return
+    if tx.get("order_id"):
+        await _mark_order_paid(session_id, tx)
         return
     app_doc = await applications_col.find_one({"id": tx.get("application_id")})
     if not app_doc:
@@ -233,3 +269,58 @@ async def stripe_webhook(request: Request):
     if result.payment_status == "paid":
         await _mark_paid(result.session_id)
     return {"status": "ok"}
+
+
+# ------------------------------------------------- magaza (eSIM / sigorta) odeme
+@router.post("/orders/{order_id}/checkout")
+async def create_order_checkout(order_id: str, payload: dict, request: Request):
+    """eSIM / sigorta siparisi icin Stripe odeme sayfasi olusturur."""
+    from db import orders_col
+
+    order = await orders_col.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(404, "Siparis bulunamadi.")
+    if (order.get("payment") or {}).get("status") == "paid":
+        raise HTTPException(400, "Bu siparisin odemesi zaten alinmis.")
+
+    origin = (payload.get("origin_url") or "").rstrip("/")
+    if not origin.startswith("http"):
+        raise HTTPException(400, "Gecersiz origin_url.")
+
+    amount = float(order["price"])
+    currency = (order.get("currency") or "TRY").lower()
+    sc = _client(request)
+    req = CheckoutSessionRequest(
+        amount=amount,
+        currency=currency,
+        success_url=f"{origin}/siparis/{order['reference_code']}?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{origin}/siparis/{order['reference_code']}?iptal=1",
+        metadata={"order_id": str(order["id"]), "reference_code": str(order["reference_code"])},
+    )
+    try:
+        session = await sc.create_checkout_session(req)
+    except Exception as exc:
+        logger.error("order checkout create failed: %s", exc)
+        raise HTTPException(502, "Odeme sayfasi olusturulamadi. Lutfen tekrar deneyin.") from exc
+    if not session or not getattr(session, "session_id", None) or not getattr(session, "url", None):
+        raise HTTPException(502, "Odeme sayfasi olusturulamadi. Lutfen tekrar deneyin.")
+
+    now = datetime.now(timezone.utc)
+    await payments_col.insert_one(
+        {
+            "session_id": session.session_id,
+            "order_id": order["id"],
+            "reference_code": order["reference_code"],
+            "amount": amount,
+            "currency": currency,
+            "status": "initiated",
+            "payment_status": "pending",
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
+    await orders_col.update_one(
+        {"id": order["id"]},
+        {"$set": {"payment.session_id": session.session_id, "payment.method": "card", "updated_at": now}},
+    )
+    return {"checkout_url": session.url, "session_id": session.session_id}

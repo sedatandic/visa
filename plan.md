@@ -35,6 +35,9 @@
 - **Fiyatlandırma (tamamlandı):**
   - **TL tahsilat + USD baz fiyat + canlı kur**: 30 gün **110$** baz alınarak tüm fiyatların canlı kurla TL’ye çevrilmesi (admin kur payı ve manuel kur kontrolü ile).
   - **Kur şeffaflığı**: müşteriye kurun “bugün güncellendi” bilgisi ve güncel kur gösterimi.
+- **Ek ürün satışları (tamamlandı):**
+  - Dubai için **eSIM** ve **seyahat sigortası** satışı: hem vize başvurusu içinde **ek hizmet** olarak hem de vizeden bağımsız **mağaza sayfaları** üzerinden.
+  - Teslimat acente eliyle: admin panelden **eSIM QR** / **poliçe PDF** yüklenir, müşteri e-posta ile teslim alır.
 
 ---
 
@@ -235,6 +238,65 @@
 
 ---
 
+### Phase 16 — eSIM + Seyahat Sigortası Satışı (Tamamlandı)
+**Amaç:** Dubai için eSIM ve seyahat sigortasını hem vize başvurusuna ek hizmet olarak hem de bağımsız satış olarak sunmak; teslimatı acente eliyle yönetmek.
+
+#### A) Mağaza Backend — **DONE**
+- `backend/routes_store.py`:
+  - Ürün kataloğu seed + DB yönetimi (`store_products`):
+    - eSIM (4 ürün): **9 / 15 / 29 / 49 $**
+    - Sigorta (2 ürün): **Temel 20 $**, **Geniş 39 $**
+  - `GET /api/products` (+ `?kind=esim|insurance`)
+  - `POST /api/orders` → `SV-` referanslı sipariş oluşturma (kart / havale)
+  - `GET /api/orders/{ref}?email=` → müşteri sipariş görüntüleme
+- `backend/routes_payments.py`:
+  - `POST /api/orders/{id}/checkout` → Stripe Checkout (kart)
+  - Webhook işleme: `_mark_order_paid` ile sipariş ödeme durumunu `paid/processing` yapar
+- `backend/emailer.py`:
+  - `order_received_html`, `order_admin_html`, `order_delivered_html`
+
+#### B) Admin Panel — **DONE**
+- `backend/routes_admin.py`:
+  - Ürün yönetimi:
+    - `GET /api/admin/products`
+    - `PATCH /api/admin/products/{product_id}` (fiyat/aktif vb.)
+  - Sipariş yönetimi:
+    - `GET /api/admin/orders` (liste)
+    - `GET /api/admin/orders/{id}` (detay)
+    - `PATCH /api/admin/orders/{id}` (status/payment_status)
+    - `POST /api/admin/orders/{id}/deliver`:
+      - admin `uploads` ile **eSIM QR / poliçe PDF** yükler
+      - linkler `GET /api/files/{file_id}` ile müşteriye gider
+
+#### C) Vize Başvurusu İçinde Ek Hizmet — **DONE**
+- `content.py ADDONS`:
+  - `insurance` (Temel 20$)
+  - `insurance_plus` (Geniş 39$)
+  - `esim` (varsayılan paket: 3GB/15gün, 15$)
+- `models.py AddonsIn` genişletildi (insurance_plus, esim)
+- `POST /api/pricing/quote` ve `POST /api/applications` fiyat hesaplarında ek hizmetler kişi başı çarpılır.
+
+#### D) Frontend Mağaza — **DONE**
+- Yeni sayfalar:
+  - `/esim` (`Esim.jsx`) — paketler + satın alma
+  - `/seyahat-sigortasi` (`Insurance.jsx`) — paketler + satın alma
+  - `/siparis/:reference` (`OrderStatus.jsx`) — sipariş durumu + havale bilgileri + belge indirme
+- Ortak bileşen: `StoreCheckout.jsx`
+- Navigasyon:
+  - Navbar: “eSIM & Sigorta”
+  - Footer linkleri eklendi
+  - `sitemap.xml` güncellendi
+- Hesap:
+  - `GET /api/account/orders` eklendi ve `/hesabim` sipariş listesini gösterir.
+
+**Test / Doğrulama**
+- `testing_agent_v3` (iteration_14.json): backend **38/40 (kritik yok)**, frontend **%100**.
+- Kalan 2 backend senaryo main agent tarafından manuel doğrulandı:
+  - Quote içinde `esim` + `insurance_plus` satırlarının oluşması
+  - Dosya ile teslimat (admin deliver) ve müşteri tarafında görünmesi
+
+---
+
 ## 3. Next Actions
 1. **Canlı E-posta Testi (Resend) — BEKLEMEDE (P0)**
    - Gerekli env:
@@ -249,12 +311,17 @@
      - `login_code`
      - `draft_saved`
      - `draft_reminder`
+     - `order_received`
+     - `order_payment_received`
+     - `order_delivered`
 2. **Stripe prod geçişi (opsiyonel) — P1**
    - Canlı anahtarlar + webhook secret + success/cancel URL’leri.
-3. **İçerik onayı ve gerçek veriler — P1**
+3. **Mağaza fiyatlarının nihai onayı — P1**
+   - eSIM paket fiyatları kullanıcı tarafından paylaşılacak; admin panelde güncellenebilir.
+4. **İçerik onayı ve gerçek veriler — P1**
    - Banka bilgileri (`/admin/banka`) gerçek değerlerle.
    - TÜRSAB/acente ticari bilgiler (`/admin/acente`) gerçek değerlerle.
-4. **Operasyonel güvenlik (opsiyonel) — P2**
+5. **Operasyonel güvenlik (opsiyonel) — P2**
    - Admin şifresi değişimi, rate limit/bot koruması.
 
 ---
@@ -295,16 +362,22 @@
   - 30 gün tek giriş = 110 USD baz; TL fiyatlar canlı kurla hesaplanır.
   - Admin kur payı / manuel kur ile fiyat kontrolü yapabilir.
   - Müşteri arayüzünde “kur bugün güncellendi” bilgisi ve kur değeri görünür.
+- **eSIM + Sigorta Mağazası**:
+  - `/esim` ve `/seyahat-sigortasi` üzerinden kart/havale ile sipariş oluşturulabilir.
+  - `/siparis/{ref}` sayfasında durum + havale bilgileri görünür.
+  - Admin `Siparişler` ekranında ödemeyi onaylar ve eSIM QR / poliçe PDF yükleyip teslim eder.
+  - Müşteri linklerden dosyaları indirebilir.
+  - Siparişler `/hesabim` içinde listelenir.
 - `RESEND_API_KEY` yokken hiçbir kritik akış kırılmaz; tüm “atlanan” mailler `email_outbox`’a kaydolur.
 - Canlı Resend anahtarı verildiğinde e-postalar gerçek adrese gider ve outbox “sent” olarak kaydolur.
 
 ---
 
 ## DURUM (2026-08-31)
-- Phase 1–14: **TAMAMLANDI**.
-- Phase 15: **TAMAMLANDI** — kur şeffaflığı + sepeti kurtarma + aile profili.
+- Phase 1–16: **TAMAMLANDI**.
 
 Test:
 - `testing_agent_v3` iteration_13.json — **backend 46/46 PASS**, frontend **%100 PASS**.
+- `testing_agent_v3` iteration_14.json — backend **38/40 (kritik yok)**, frontend **%100**; kalan 2 senaryo manuel doğrulandı.
 
-Kalan opsiyonel işler: **RESEND_API_KEY ile canlı e-posta doğrulaması**, Stripe prod geçişi, içerik/hukuk onayı, gerçek banka/acente bilgileri, operasyonel güvenlik ayarları.
+Kalan opsiyonel işler: **RESEND_API_KEY ile canlı e-posta doğrulaması**, Stripe prod geçişi, içerik/hukuk onayı, gerçek banka/acente bilgileri, operasyonel güvenlik ayarları, eSIM fiyatlarının son hali (admin panelden güncellenebilir).

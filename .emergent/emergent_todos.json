@@ -1,18 +1,22 @@
 [
   {
-    "content": "Kur seffafligi (public /api/fx + FxNote) - TAMAM",
+    "content": "Backend: urun katalogu + siparis + odeme + admin teslimat endpointleri",
     "status": "completed"
   },
   {
-    "content": "Sepeti kurtarma (taslak hatirlatma + sweep + admin endpointleri) - TAMAM",
+    "content": "Basvuru formuna eSIM ve genis kapsam sigorta ek hizmetleri",
     "status": "completed"
   },
   {
-    "content": "Aile profili (saved travelers CRUD + otomatik kayit + backfill) - TAMAM",
+    "content": "Frontend: /esim, /seyahat-sigortasi, /siparis/:ref sayfalari",
     "status": "completed"
   },
   {
-    "content": "Frontend: MyAccount kayitli yolcular + Apply tek tikla ekleme - TAMAM",
+    "content": "Admin: /admin/siparisler (fiyat yonetimi + teslimat)",
+    "status": "completed"
+  },
+  {
+    "content": "MyAccount siparis listesi, navbar/footer/sitemap linkleri",
     "status": "completed"
   },
   {

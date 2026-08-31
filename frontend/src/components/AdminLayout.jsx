@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, NavLink, Navigate, useNavigate } from "react-router-dom";
-import { BookOpen, Building2, FileText, Landmark, LayoutDashboard, LogOut, Mail, MessageSquare, Star, Tag } from "lucide-react";
+import { BookOpen, Package, Building2, FileText, Landmark, LayoutDashboard, LogOut, Mail, MessageSquare, Star, Tag } from "lucide-react";
 import { Button } from "./ui/button";
 import { BrandMark } from "./BrandMark";
 
@@ -10,6 +10,7 @@ const NAV = [
     { to: "/admin/e-postalar", label: "E-postalar", icon: Mail },
     { to: "/admin/vize-tipleri", label: "Vize Tipleri", icon: Tag },
     { to: "/admin/vize-rehberleri", label: "Vize Rehberleri", icon: BookOpen },
+    { to: "/admin/siparisler", label: "eSIM & Sigorta", icon: Package },
     { to: "/admin/yorumlar", label: "Yorumlar", icon: Star },
     { to: "/admin/yazilar", label: "Blog Yazıları", icon: FileText },
     { to: "/admin/banka", label: "Banka Bilgileri", icon: Landmark },

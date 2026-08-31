@@ -174,6 +174,7 @@ export default function MyAccount() {
     const [token, setToken] = useState(customerAuth.token);
     const [data, setData] = useState(null);
     const [travelers, setTravelers] = useState([]);
+    const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -192,6 +193,9 @@ export default function MyAccount() {
             setData(res);
             api.get("/account/travelers")
                 .then(({ data: t }) => setTravelers(t.items || []))
+                .catch(() => {});
+            api.get("/account/orders")
+                .then(({ data: o }) => setOrders(o.items || []))
                 .catch(() => {});
         } catch (err) {
             if (err?.response?.status === 401) {
@@ -221,6 +225,7 @@ export default function MyAccount() {
         setToken(null);
         setData(null);
         setTravelers([]);
+        setOrders([]);
         toast.success("Çıkış yapıldı.");
     };
 
@@ -336,6 +341,52 @@ export default function MyAccount() {
                                                         <ArrowRight className="ml-2 h-4 w-4" />
                                                     </Link>
                                                 </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ORDERS (eSIM / sigorta) */}
+                            {orders.length > 0 && (
+                                <div className="mt-10" data-testid="account-orders">
+                                    <h2 className="font-heading text-lg font-bold">eSIM & sigorta siparişlerim</h2>
+                                    <div className="mt-4 space-y-3">
+                                        {orders.map((o) => (
+                                            <div
+                                                key={o.id}
+                                                className="card-surface flex flex-wrap items-center justify-between gap-4 p-5"
+                                                data-testid={`account-order-${o.reference_code}`}
+                                            >
+                                                <div>
+                                                    <p className="font-heading text-base font-extrabold">
+                                                        {o.reference_code}
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-muted-foreground">
+                                                        {(o.items || []).map((i) => `${i.name} x${i.quantity}`).join(", ")}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                        {formatDateTime(o.created_at)} ·{" "}
+                                                        {o.status === "fulfilled"
+                                                            ? "Teslim edildi"
+                                                            : o.payment?.status === "paid"
+                                                              ? "Hazırlanıyor"
+                                                              : "Ödeme bekleniyor"}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <span className="font-heading text-lg font-extrabold">
+                                                        {formatMoney(o.price, o.currency)}
+                                                    </span>
+                                                    <Button
+                                                        asChild
+                                                        variant="secondary"
+                                                        className="h-10 border border-border"
+                                                        data-testid={`view-order-${o.reference_code}`}
+                                                    >
+                                                        <Link to={`/siparis/${o.reference_code}`}>Siparişi gör</Link>
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

@@ -28,6 +28,8 @@ notifications_col = db["notifications"]
 login_codes_col = db["login_codes"]
 drafts_col = db["application_drafts"]
 saved_travelers_col = db["saved_travelers"]
+products_col = db["store_products"]
+orders_col = db["store_orders"]
 
 
 def serialize_doc(doc):

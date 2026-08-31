@@ -38,6 +38,8 @@ class TravelIn(BaseModel):
 class AddonsIn(BaseModel):
     express: bool = False
     insurance: bool = False
+    insurance_plus: bool = False
+    esim: bool = False
 
 
 class ExtraDocumentsIn(BaseModel):

@@ -12,6 +12,7 @@ const LINKS = [
     { to: "/hizmetler", label: "Hizmetler" },
     { to: "/gelismeler", label: "Gelişmeler" },
     { to: "/sss", label: "S.S.S." },
+    { to: "/esim", label: "eSIM & Sigorta" },
     { to: "/takip", label: "Başvuru Takip" },
     { to: "/hesabim", label: "Başvurularım" },
     { to: "/iletisim", label: "İletişim" },

@@ -240,6 +240,18 @@ async def account_application_detail(application_id: str, email: str = Depends(r
     return view
 
 
+@router.get("/account/orders")
+async def account_orders(email: str = Depends(require_customer)):
+    """eSIM / sigorta siparisleri."""
+    from db import orders_col
+
+    cursor = orders_col.find({"contact.email": {"$regex": f"^{email}$", "$options": "i"}}).sort(
+        "created_at", -1
+    )
+    items = [serialize_doc(doc) async for doc in cursor]
+    return {"items": items}
+
+
 @router.get("/account/drafts/{draft_id}")
 async def account_draft_detail(draft_id: str, email: str = Depends(require_customer)):
     doc = await drafts_col.find_one({"id": draft_id, "email": email})

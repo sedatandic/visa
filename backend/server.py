@@ -15,6 +15,7 @@ from db import (
     client,
     ensure_indexes,
     settings_col,
+    products_col,
     testimonials_col,
     visa_types_col,
 )
@@ -62,6 +63,25 @@ async def seed_visa_types():
     # retire catalogue entries that no longer exist in code
     await visa_types_col.update_many({"id": {"$nin": known_ids}}, {"$set": {"active": False}})
     logger.info("visa types upserted (%d active)", len(known_ids))
+
+
+async def seed_products():
+    """eSIM ve sigorta urunlerini bir kez olusturur; fiyatlar admin tarafindan yonetilir."""
+    from routes_store import DEFAULT_PRODUCTS
+
+    for product in DEFAULT_PRODUCTS:
+        doc = dict(product)
+        price_usd = doc.pop("price_usd")
+        popular = doc.pop("popular", False)
+        await products_col.update_one(
+            {"id": doc["id"]},
+            {
+                "$set": doc,
+                "$setOnInsert": {"price_usd": price_usd, "popular": popular, "active": True},
+            },
+            upsert=True,
+        )
+    logger.info("store products seeded (%d)", len(DEFAULT_PRODUCTS))
 
 
 async def backfill_saved_travelers():
@@ -194,6 +214,7 @@ async def lifespan(app: FastAPI):
         await seed_visa_types()
         await seed_content_collections()
         await migrate_legacy_applications()
+        await seed_products()
         await backfill_saved_travelers()
     except Exception as exc:
         logger.error("startup db init failed: %s", exc)
@@ -244,12 +265,14 @@ async def health():
 
 import routes_account
 import routes_admin  # noqa: E402
+import routes_store  # noqa: E402
 import routes_payments  # noqa: E402
 import routes_public  # noqa: E402
 
 api_router.include_router(routes_public.router, tags=["public"])
 api_router.include_router(routes_payments.router, tags=["payments"])
 api_router.include_router(routes_account.router, tags=["account"])
+api_router.include_router(routes_store.router, tags=["store"])
 api_router.include_router(routes_admin.router, tags=["admin"])
 
 app.include_router(api_router)
