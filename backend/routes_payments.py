@@ -106,10 +106,16 @@ async def create_checkout(payload: CheckoutRequest, request: Request):
         cancel_url=f"{origin}/odeme/iptal?ref={app_doc['reference_code']}",
         metadata=metadata,
     )
+    session = None
     try:
         session = await sc.create_checkout_session(req)
     except Exception as exc:
         logger.error("checkout create failed: %s", exc)
+        raise HTTPException(
+            502, "Odeme sayfasi olusturulamadi. Lutfen tekrar deneyin."
+        ) from exc
+
+    if not session or not getattr(session, "session_id", None) or not getattr(session, "url", None):
         raise HTTPException(502, "Odeme sayfasi olusturulamadi. Lutfen tekrar deneyin.")
 
     now = datetime.now(timezone.utc)

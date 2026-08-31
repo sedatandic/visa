@@ -14,7 +14,7 @@
   - **Müşteri deneyimleri**: 4,9/5 puan özeti + memnuniyet barları + doğrulanmış yorum kartları (DB tabanlı).
   - **Örnek vize**: Kişisel verileri gizlenmiş (blur) + “ÖRNEKTİR/SPECIMEN” filigranlı **BAE e-vize örneği**.
   - **UAE + TR bayrak ikonları**: navbar/footer ve içerik içinde (Türkiye → BAE vurgusu).
-  - **TÜRSAB + acente şeffaflığı**: footer + hakkımızda’da TÜRSAB rozeti ve acente detayları.
+  - **TÜRSAB + acente şeffaflığı**: footer + hakkımızda’da TÜRSAB rozeti ve acente detayları (admin’den yönetilebilir).
 - **Sadece vize hizmeti**: otel/tur/transfer içerikleri kaldırıldı (6 vize hizmeti kaldı).
 - **Phase 3 (tamamlandı):**
   - **Aile Başvurusu:** Tek formda çoklu yolcu ekleme/çıkarma, kişi sayısına göre otomatik fiyat + aile indirimi.
@@ -210,7 +210,7 @@
 
 **Adımlar / Çıktılar**
 - **60 günlük kart tıklanmıyor** bug fix:
-  - `VisaTypeCard` kartlarının tamamı tıklanabilir hale getirildi.
+  - `VisaTypeCard` kartlarının tamamı tıklanabilir hale getirildi (mobil dahil).
   - Mobilde “tap” sorununu gidermek için kart üstüne **stretched Link overlay** eklendi.
   - Klavye erişimi (Enter/Space) korundu.
 - **Sadece vize hizmeti**:
@@ -241,6 +241,34 @@
 
 ---
 
+### Phase 8 — Kod Kalitesi + Güvenlik Sertleştirme (Tamamlandı)
+**Amaç:** Code review bulgularını uygulamak; runtime crash riskini azaltmak, güvenli token üretimi sağlamak ve refactor sonrası regresyon olmadığını kanıtlamak.
+
+**Adımlar / Çıktılar**
+- Tanımsız kalabilen değişkenler:
+  - `routes_public.upload_document()` ve dosya okuma akışlarında `result/data/content_type` ön-ilklendirildi.
+  - `routes_payments` checkout akışında `session` ön-ilklendirildi ve doğrulama eklendi.
+  - `routes_admin` JWT decode akışında `data` ön-ilklendirildi.
+  - WhatsApp akışında `message` üretimi helper ile garanti altına alındı.
+- Güvenli rastgele üretim:
+  - Referans kod üretimi `random` → `secrets` (kriptografik güvenli).
+- Daha iyi hata zinciri:
+  - Kritik dış servis hatalarında `raise ... from exc` ile kök hata korundu.
+- Karmaşıklık azaltma:
+  - `admin_whatsapp_link`, `admin_send_visa`, `admin_update_application` fonksiyonlarında helper’lar eklendi:
+    - `_build_whatsapp_message`, `_notify_status_change`, `_resolve_origin`, `_visa_send_update`.
+- Yanlış karşılaştırma düzeltmeleri:
+  - `is` kullanımı: None kontrolleri için doğru olduğu doğrulandı; literal karşılaştırmaları bulunmadı (değişiklik gerekmedi).
+
+**Test / Doğrulama**
+- `testing_agent_v3` (iteration_9.json):
+  - Refactor doğrulama: 11/11 (%100)
+  - Backend: %96.2
+  - Frontend smoke: %100
+  - Regresyon yok.
+
+---
+
 ## 3. Next Actions
 1. **İçerik onayı ve gerçek veriler**:
    - Banka bilgileri (IBAN/ünvan/banka adı) gerçek bilgilerle girilsin (`/admin/banka`).
@@ -268,10 +296,11 @@
 - **Havale/EFT:** kullanıcı bank transfer seçer, sistem bank bilgilerini ve referansı gösterir; admin “mark-paid” ile ödemeyi onaylar ve başvuru incelemeye geçer.
 - **Banka ve acente yönetimi:** `/admin/banka` ve `/admin/acente` üzerinden girilen bilgiler sitede ve e-posta şablonlarında doğru görünür.
 - `RESEND_API_KEY` yokken hiçbir kritik akış kırılmaz; tüm “atlanan” mailler `email_outbox`’a kaydolur.
+- **Kod kalitesi:** referans kod üretimi güvenli (`secrets`), error-path’lerde 500 yerine doğru 4xx, refactor sonrası regresyon yok.
 
 ---
 
-## DURUM (2026-08-30)
+## DURUM (2026-08-31)
 - Phase 1 POC: PASS (Mongo, objstore upload/download, Stripe checkout+status, Resend graceful skip).
 - Phase 2: Backend + Frontend tamamlandı; E2E test PASS (iteration_1).
 - **Phase 3: TAMAMLANDI**
@@ -287,9 +316,14 @@
 - **Phase 7: TAMAMLANDI**
   - 60 günlük kart tıklama bug fix (mobil dahil).
   - Otel/tur kaldırıldı; yalnızca vize hizmetleri.
-  - Banka bilgileri admin’den yönetiliyor.
+  - Banka bilgileri + acente bilgileri admin’den yönetiliyor.
   - Form validasyon UX düzeltmeleri.
   - Koyu mod kaldırıldı.
-  - TÜRSAB rozeti + acente bilgileri (admin’den yönetilebilir).
   - Başlık fontu Montserrat, gövde Figtree.
-- Kalan opsiyonel işler: RESEND_API_KEY ile canlı e-posta doğrulaması, Stripe prod geçişi, içerik/hukuk onayı, gerçek banka/acente bilgileri, operasyonel güvenlik ayarları.
+- **Phase 8: TAMAMLANDI**
+  - `random` → `secrets` (güvenli referans kodları).
+  - Undefined variable riskleri giderildi (result/data/content_type/session/message/jwt data).
+  - Admin fonksiyonları helper’lara ayrıldı; hata zinciri `raise ... from exc`.
+  - `testing_agent_v3` iteration_9: refactor doğrulama %100, backend %96.2, frontend %100.
+
+Kalan opsiyonel işler: RESEND_API_KEY ile canlı e-posta doğrulaması, Stripe prod geçişi, içerik/hukuk onayı, gerçek banka/acente bilgileri, operasyonel güvenlik ayarları.

@@ -72,12 +72,13 @@ def create_token(email: str) -> str:
 async def require_admin(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)):
     if not creds or not creds.credentials:
         raise HTTPException(401, "Yetkisiz erisim. Lutfen giris yapin.")
+    data: dict = {}
     try:
         data = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGO])
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(401, "Oturum suresi doldu. Lutfen tekrar giris yapin.")
-    except Exception:
-        raise HTTPException(401, "Gecersiz oturum.")
+    except jwt.ExpiredSignatureError as exc:
+        raise HTTPException(401, "Oturum suresi doldu. Lutfen tekrar giris yapin.") from exc
+    except Exception as exc:
+        raise HTTPException(401, "Gecersiz oturum.") from exc
     if data.get("role") != "admin":
         raise HTTPException(403, "Bu islem icin yetkiniz yok.")
     return data
@@ -174,6 +175,21 @@ async def admin_application_detail(application_id: str, admin=Depends(require_ad
     return {"application": serialize_doc(doc), "transactions": serialize_doc(txs)}
 
 
+async def _notify_status_change(fresh: dict, previous_status: str, payload: StatusUpdate):
+    """Durum degistiyse musteriye bilgilendirme e-postasi gonderir."""
+    to_email = (fresh.get("contact") or {}).get("email") or (fresh.get("applicant") or {}).get("email")
+    if not (payload.notify and payload.status != previous_status and to_email):
+        return None
+    res = await send_email(
+        to_email,
+        f"Basvuru durumu guncellendi - {fresh['reference_code']}",
+        status_change_html(serialize_doc(fresh), STATUS_LABELS[payload.status], payload.note or ""),
+        kind="status_change",
+        meta={"reference_code": fresh["reference_code"], "status": payload.status},
+    )
+    return res.get("status")
+
+
 @router.patch("/admin/applications/{application_id}")
 async def admin_update_application(application_id: str, payload: StatusUpdate, admin=Depends(require_admin)):
     if payload.status not in STATUS_LABELS:
@@ -193,17 +209,7 @@ async def admin_update_application(application_id: str, payload: StatusUpdate, a
         },
     )
     fresh = await applications_col.find_one({"id": application_id})
-    email_status = None
-    to_email = (fresh.get("contact") or {}).get("email") or (fresh.get("applicant") or {}).get("email")
-    if payload.notify and payload.status != doc.get("status") and to_email:
-        res = await send_email(
-            to_email,
-            f"Basvuru durumu guncellendi - {fresh['reference_code']}",
-            status_change_html(serialize_doc(fresh), STATUS_LABELS[payload.status], payload.note or ""),
-            kind="status_change",
-            meta={"reference_code": fresh["reference_code"], "status": payload.status},
-        )
-        email_status = res.get("status")
+    email_status = await _notify_status_change(fresh, doc.get("status", ""), payload)
     return {"application": serialize_doc(fresh), "email_notification": email_status}
 
 
@@ -284,6 +290,26 @@ async def admin_delete_visa_document(application_id: str, admin=Depends(require_
     return {"application": serialize_doc(fresh)}
 
 
+def _resolve_origin(origin_url: Optional[str], request: Request) -> str:
+    """Istemciden gelen origin degerini dogrular, gecersizse sunucu adresini kullanir."""
+    origin = (origin_url or "").rstrip("/")
+    if not origin.startswith("http"):
+        origin = str(request.base_url).rstrip("/")
+    return origin
+
+
+def _visa_send_update(app_doc: dict, to_email: str, now: datetime, payload: SendVisaRequest) -> dict:
+    """Vize gonderimi sonrasi yazilacak alanlari hazirlar."""
+    update = {
+        "visa_result.sent_at": now,
+        "visa_result.sent_to": to_email,
+        "updated_at": now,
+    }
+    if payload.set_approved and app_doc.get("status") != "approved":
+        update["status"] = "approved"
+    return update
+
+
 @router.post("/admin/applications/{application_id}/send-visa")
 async def admin_send_visa(
     application_id: str,
@@ -301,19 +327,11 @@ async def admin_send_visa(
     if not to_email:
         raise HTTPException(400, "Basvuruda e-posta adresi bulunamadi.")
 
-    origin = (payload.origin_url or "").rstrip("/")
-    if not origin.startswith("http"):
-        origin = str(request.base_url).rstrip("/")
+    origin = _resolve_origin(payload.origin_url, request)
     download_url = f"{origin}/api/files/{vr['file_id']}?download=1"
 
     now = datetime.now(timezone.utc)
-    update = {
-        "visa_result.sent_at": now,
-        "visa_result.sent_to": to_email,
-        "updated_at": now,
-    }
-    if payload.set_approved and app_doc.get("status") != "approved":
-        update["status"] = "approved"
+    update = _visa_send_update(app_doc, to_email, now, payload)
 
     res = await send_email(
         to_email,
@@ -324,18 +342,15 @@ async def admin_send_visa(
     )
     update["visa_result.send_status"] = res.get("status")
 
-    push = {}
+    mongo_update = {"$set": update}
     if update.get("status") == "approved":
-        push = {
+        mongo_update["$push"] = {
             "status_history": {
                 "status": "approved",
                 "at": now,
                 "note": payload.message or "Vize belgesi basvuru sahibine iletildi",
             }
         }
-    mongo_update = {"$set": update}
-    if push:
-        mongo_update["$push"] = push
     await applications_col.update_one({"id": application_id}, mongo_update)
 
     fresh = await applications_col.find_one({"id": application_id})
@@ -471,6 +486,39 @@ def _wa_number(raw: str) -> str:
     return digits
 
 
+def _build_whatsapp_message(app_doc: dict, template: str, origin: str, custom: str = "") -> str:
+    """Basvuru durumuna gore musteriye gidecek hazir WhatsApp metnini uretir."""
+    if custom:
+        return custom
+
+    ref = app_doc.get("reference_code", "")
+    name = (app_doc.get("contact") or {}).get("full_name", "")
+    track_url = f"{origin}/takip?kod={ref}"
+    visa_file_id = (app_doc.get("visa_result") or {}).get("file_id")
+
+    if template == "visa_ready" and visa_file_id:
+        return (
+            f"Merhaba {name}, VizeAtlas Dubai'den yaziyoruz. "
+            f"{ref} numarali basvurunuz ONAYLANDI. Vize belgenizi e-postanizdan veya "
+            f"su adresten indirebilirsiniz: {origin}/api/files/{visa_file_id}?download=1 "
+            f"Iyi yolculuklar dileriz."
+        )
+    if template == "documents_pending":
+        return (
+            f"Merhaba {name}, {ref} numarali Dubai vize basvurunuzda eksik belge bulunuyor. "
+            f"Detaylar icin takip sayfaniz: {track_url}"
+        )
+    if template == "payment_pending":
+        return (
+            f"Merhaba {name}, {ref} numarali basvurunuzun odemesi henuz tamamlanmadi. "
+            f"Odemenizi su adresten tamamlayabilirsiniz: {track_url}"
+        )
+    return (
+        f"Merhaba {name}, {ref} numarali Dubai vize basvurunuz hakkinda bilgi vermek istiyoruz. "
+        f"Takip sayfaniz: {track_url}"
+    )
+
+
 @router.post("/admin/applications/{application_id}/whatsapp")
 async def admin_whatsapp_link(
     application_id: str,
@@ -487,38 +535,11 @@ async def admin_whatsapp_link(
     if not number:
         raise HTTPException(400, "Basvuruda gecerli bir telefon numarasi bulunamadi.")
 
-    origin = (payload.origin_url or "").rstrip("/")
-    if not origin.startswith("http"):
-        origin = str(request.base_url).rstrip("/")
+    origin = _resolve_origin(payload.origin_url, request)
     ref = app_doc.get("reference_code", "")
-    name = (app_doc.get("contact") or {}).get("full_name", "")
-    track_url = f"{origin}/takip?kod={ref}"
-    vr = app_doc.get("visa_result") or {}
-
-    if payload.message:
-        message = payload.message
-    elif payload.template == "visa_ready" and vr.get("file_id"):
-        message = (
-            f"Merhaba {name}, VizeAtlas Dubai'den yaziyoruz. "
-            f"{ref} numarali basvurunuz ONAYLANDI. Vize belgenizi e-postanizdan veya "
-            f"su adresten indirebilirsiniz: {origin}/api/files/{vr['file_id']}?download=1 "
-            f"Iyi yolculuklar dileriz."
-        )
-    elif payload.template == "documents_pending":
-        message = (
-            f"Merhaba {name}, {ref} numarali Dubai vize basvurunuzda eksik belge bulunuyor. "
-            f"Detaylar icin takip sayfaniz: {track_url}"
-        )
-    elif payload.template == "payment_pending":
-        message = (
-            f"Merhaba {name}, {ref} numarali basvurunuzun odemesi henuz tamamlanmadi. "
-            f"Odemenizi su adresten tamamlayabilirsiniz: {track_url}"
-        )
-    else:
-        message = (
-            f"Merhaba {name}, {ref} numarali Dubai vize basvurunuz hakkinda bilgi vermek istiyoruz. "
-            f"Takip sayfaniz: {track_url}"
-        )
+    message = _build_whatsapp_message(
+        app_doc, payload.template or "", origin, (payload.message or "").strip()
+    )
 
     url = f"https://wa.me/{number}?text={quote(message)}"
     now = datetime.now(timezone.utc)

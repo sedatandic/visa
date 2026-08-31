@@ -1,6 +1,6 @@
 import logging
 import os
-import random
+import secrets
 import string
 import uuid
 from datetime import datetime, timezone
@@ -64,8 +64,8 @@ ALLOWED_EXT = {"jpg", "jpeg", "png", "webp", "pdf"}
 
 def generate_reference_code() -> str:
     alphabet = "ABCDEFGHJKLMNPRSTUVYZ"
-    letters = "".join(random.choices(alphabet, k=2))
-    digits = "".join(random.choices(string.digits, k=6))
+    letters = "".join(secrets.choice(alphabet) for _ in range(2))
+    digits = "".join(secrets.choice(string.digits) for _ in range(6))
     return f"DV-{letters}{digits}"
 
 
@@ -205,11 +205,16 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
     content_type = MIME_TYPES.get(ext, file.content_type or "application/octet-stream")
     safe_type = "".join(c for c in doc_type if c.isalnum() or c in "-_") or "other"
     path = f"{APP_NAME}/uploads/{safe_type}/{file_id}.{ext}"
+    result: dict = {}
     try:
         result = put_object(path, data, content_type)
     except Exception as exc:
         logger.error("upload failed: %s", exc)
-        raise HTTPException(502, "Dosya yuklenemedi. Lutfen birkac saniye sonra tekrar deneyin.")
+        raise HTTPException(
+            502, "Dosya yuklenemedi. Lutfen birkac saniye sonra tekrar deneyin."
+        ) from exc
+    if not result.get("path"):
+        raise HTTPException(502, "Dosya yuklenemedi. Lutfen tekrar deneyin.")
 
     record = {
         "id": file_id,
@@ -245,12 +250,15 @@ async def read_passport_document(file_id: str = Form(...)):
             "reason": "pdf",
             "message": "PDF dosyalari otomatik okunamiyor. Lutfen bilgileri elle girin.",
         }
+    data: bytes = b""
+    ct = ""
     try:
         data, ct = get_object(record["storage_path"])
     except Exception as exc:
         logger.error("passport fetch failed: %s", exc)
-        raise HTTPException(502, "Dosya okunamadi.")
+        raise HTTPException(502, "Dosya okunamadi.") from exc
 
+    result: dict = {}
     try:
         result = await read_passport(data, content_type or ct)
     except Exception as exc:
@@ -281,11 +289,13 @@ async def get_file(file_id: str, download: int = 0):
     record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
     if not record:
         raise HTTPException(404, "Dosya bulunamadi.")
+    data: bytes = b""
+    content_type = ""
     try:
         data, content_type = get_object(record["storage_path"])
     except Exception as exc:
         logger.error("file fetch failed: %s", exc)
-        raise HTTPException(502, "Dosya okunamadi.")
+        raise HTTPException(502, "Dosya okunamadi.") from exc
     headers = {"Cache-Control": "private, max-age=300"}
     if download:
         name = record.get("original_filename") or f"{file_id}"
