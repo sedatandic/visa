@@ -31,6 +31,7 @@ import { ServiceCard } from "../components/IconCards";
 import { ReviewSummary, TestimonialCard } from "../components/Testimonials";
 import { SampleVisa } from "../components/SampleVisa";
 import { RouteFlags } from "../components/FlagIcons";
+import { AuthorityStrip } from "../components/AuthorityStrip";
 import {
     Accordion,
     AccordionContent,
@@ -229,6 +230,9 @@ export default function Home() {
                     </div>
                 </div>
             </section>
+
+            {/* AUTHORITIES / TRUST STRIP */}
+            <AuthorityStrip />
 
             {/* PRICING TABS */}
             <section className="section" data-testid="landing-pricing">

@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { COMPANY } from "../lib/site";
 import { TrFlag, UaeFlag } from "./FlagIcons";
 import { TursabBadge } from "./TursabBadge";
+import { GdrfaBadge } from "./GdrfaBadge";
 
 export const Footer = () => {
     const [agency, setAgency] = useState(null);
@@ -45,8 +46,9 @@ export const Footer = () => {
                     TÜRSAB üyesi seyahat acentesiyiz. Resmî bir devlet kurumu değiliz; başvurunuzu
                     sizin adınıza hazırlar ve yetkili mercilere iletiriz.
                 </p>
-                <div className="mt-5">
+                <div className="mt-5 flex flex-wrap items-center gap-3">
                     <TursabBadge number={agency?.tursab_no} type={agency?.tursab_type} light />
+                    <GdrfaBadge light />
                 </div>
                 <div className="mt-5 flex items-center gap-3">
                     <TrFlag className="h-5 w-8" />
