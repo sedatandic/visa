@@ -274,6 +274,80 @@ async def create_order(payload: OrderCreateIn):
     return {"order": view, "bank": bank}
 
 
+async def create_application_order(app_doc: dict, lines: list) -> dict:
+    """Vize basvurusu icinde alinan eSIM / sigorta urunleri icin teslimat siparisi olusturur.
+
+    Odeme vize basvurusu uzerinden tahsil edilir; bu kayit yalnizca admin
+    teslimat akisi (eSIM QR / police PDF) icin kullanilir.
+    """
+    now = datetime.now(timezone.utc)
+    contact = app_doc.get("contact") or {}
+    travel = app_doc.get("travel") or {}
+    payment = app_doc.get("payment") or {}
+    items = [
+        {
+            "product_id": line["product_id"],
+            "kind": line.get("kind", ""),
+            "name": line["name"],
+            "quantity": int(line.get("quantity") or 1),
+            "unit_price": float(line.get("unit_price") or 0),
+            "unit_price_usd": float(line.get("unit_price_usd") or 0),
+            "total": float(line.get("total") or 0),
+        }
+        for line in lines
+    ]
+    doc = {
+        "id": str(uuid.uuid4()),
+        "reference_code": new_order_reference(),
+        "items": items,
+        "contact": {
+            "full_name": contact.get("full_name", ""),
+            "email": contact.get("email", ""),
+            "phone": contact.get("phone", ""),
+        },
+        "travel_start": travel.get("arrival_date"),
+        "travel_end": travel.get("departure_date"),
+        "note": f"Vize basvurusu ile birlikte alindi ({app_doc.get('reference_code')}).",
+        "source": "visa_application",
+        "application_id": app_doc.get("id"),
+        "application_reference": app_doc.get("reference_code"),
+        "price": round(sum(i["total"] for i in items), 2),
+        "currency": "TRY",
+        "fx_rate": (await get_fx())["effective_rate"],
+        "status": "pending",
+        "payment": {
+            "method": payment.get("method") or "card",
+            "status": payment.get("status") or "pending",
+            "via": "visa_application",
+        },
+        "delivery": {},
+        "created_at": now,
+        "updated_at": now,
+    }
+    await orders_col.insert_one(dict(doc))
+    return doc
+
+
+async def sync_application_order_payment(application_id: str, status: str, method: str | None = None) -> None:
+    """Vize basvurusunun odeme durumu degistiginde bagli siparisi de guncelle."""
+    if not application_id:
+        return
+    now = datetime.now(timezone.utc)
+    update = {"payment.status": status, "updated_at": now}
+    if method:
+        update["payment.method"] = method
+    if status == "paid":
+        update["payment.paid_at"] = now
+        update["status"] = "processing"
+    try:
+        await orders_col.update_many(
+            {"application_id": application_id, "source": "visa_application"},
+            {"$set": update},
+        )
+    except Exception as exc:  # pragma: no cover
+        logger.warning("linked order payment sync failed: %s", exc)
+
+
 @router.get("/orders/{reference}")
 async def get_order(reference: str, email: str):
     doc = await orders_col.find_one({"reference_code": (reference or "").strip().upper()})

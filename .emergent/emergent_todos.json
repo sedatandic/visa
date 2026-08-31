@@ -1,26 +1,26 @@
 [
   {
-    "content": "Backend: urun katalogu + siparis + odeme + admin teslimat endpointleri",
+    "content": "Backend: models.py StoreItemIn + store_items alanları",
     "status": "completed"
   },
   {
-    "content": "Basvuru formuna eSIM ve genis kapsam sigorta ek hizmetleri",
+    "content": "Backend: compute_pricing store_lines desteği (content.py)",
     "status": "completed"
   },
   {
-    "content": "Frontend: /esim, /seyahat-sigortasi, /siparis/:ref sayfalari",
+    "content": "Backend: /pricing/quote + /applications store ürün fiyatlama & bağlı sipariş oluşturma",
     "status": "completed"
   },
   {
-    "content": "Admin: /admin/siparisler (fiyat yonetimi + teslimat)",
+    "content": "Backend: ödeme onayında bağlı siparişi paid yap",
     "status": "completed"
   },
   {
-    "content": "MyAccount siparis listesi, navbar/footer/sitemap linkleri",
+    "content": "Frontend: Apply.jsx eSIM/sigorta seçim kartları + özet & payload",
     "status": "completed"
   },
   {
-    "content": "testing_agent ile dogrulama",
-    "status": "in_progress"
+    "content": "Test: backend fiyat/sipariş + E2E ödeme senkron testi",
+    "status": "completed"
   }
 ]

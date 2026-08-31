@@ -13,13 +13,16 @@ import {
     Loader2,
     Landmark,
     Lock,
+    Minus,
     Plus,
     Save,
     ShieldCheck,
+    Signal,
     Sparkles,
     Trash2,
     User,
     Users,
+    Wifi,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -146,6 +149,10 @@ export default function Apply() {
         notes: "",
     });
     const [addons, setAddons] = useState({ express: false, insurance: false });
+    // Vize basvurusu icinde satilan ek urunler (magaza katalogundan)
+    const [storeProducts, setStoreProducts] = useState([]);
+    const [insurancePick, setInsurancePick] = useState(null);
+    const [esimQty, setEsimQty] = useState({});
     const [extraDocs, setExtraDocs] = useState({ ticket: null, hotel: null, other: null });
     const [kvkk, setKvkk] = useState(false);
     const [errors, setErrors] = useState({});
@@ -208,7 +215,7 @@ export default function Apply() {
                 step,
                 traveler_count: travelers.length,
                 title: `${travelers.length} yolcu · ${contact.full_name || contact.email}`,
-                data: { contact, travelers, travel, addons, extraDocs, step },
+                data: { contact, travelers, travel, addons, extraDocs, step, insurancePick, esimQty },
             });
             setDraft({ id: data.draft_id, code: data.resume_code });
             toast.success(
@@ -234,6 +241,8 @@ export default function Apply() {
             if (Array.isArray(d.travelers) && d.travelers.length) setTravelers(d.travelers);
             if (d.travel) setTravel((t) => ({ ...t, ...d.travel }));
             if (d.addons) setAddons((a) => ({ ...a, ...d.addons }));
+            if (d.insurancePick) setInsurancePick(d.insurancePick);
+            if (d.esimQty && typeof d.esimQty === "object") setEsimQty(d.esimQty);
             if (d.extraDocs) setExtraDocs((e) => ({ ...e, ...d.extraDocs }));
             if (typeof d.step === "number") setStep(Math.min(d.step, 3));
         };
@@ -308,14 +317,64 @@ export default function Apply() {
 
     // live authoritative price quote
     const selectedVisaIds = travelers.map((t) => t.visa_type_id).filter(Boolean);
-    const quoteKey = JSON.stringify([selectedVisaIds, addons]);
+    const travelerCount = travelers.length;
+
+    // Magaza urunleri (eSIM + seyahat sigortasi) basvuru icinde de satilir
+    useEffect(() => {
+        api.get("/products")
+            .then(({ data }) => setStoreProducts(data.items || []))
+            .catch(() => {});
+    }, []);
+
+    const esimProducts = useMemo(() => storeProducts.filter((p) => p.kind === "esim"), [storeProducts]);
+    const insuranceProducts = useMemo(
+        () => storeProducts.filter((p) => p.kind === "insurance"),
+        [storeProducts]
+    );
+
+    const storeItems = useMemo(() => {
+        const items = [];
+        if (insurancePick) {
+            items.push({ product_id: insurancePick, quantity: Math.min(Math.max(travelerCount, 1), 10) });
+        }
+        Object.entries(esimQty).forEach(([pid, qty]) => {
+            if (qty > 0) items.push({ product_id: pid, quantity: Math.min(qty, 10) });
+        });
+        return items.slice(0, 6);
+    }, [insurancePick, esimQty, travelerCount]);
+
+    const toggleEsim = (product) => {
+        setEsimQty((prev) => {
+            const next = { ...prev };
+            if (next[product.id]) {
+                delete next[product.id];
+                return next;
+            }
+            if (Object.keys(next).length >= 5) {
+                toast.error("Tek başvuruda en fazla 5 farklı eSIM paketi seçebilirsiniz.");
+                return prev;
+            }
+            next[product.id] = Math.min(Math.max(travelerCount, 1), 10);
+            return next;
+        });
+    };
+
+    const changeEsimQty = (productId, delta) => {
+        setEsimQty((prev) => {
+            const current = prev[productId] || 0;
+            const value = Math.min(10, Math.max(1, current + delta));
+            return { ...prev, [productId]: value };
+        });
+    };
+
+    const quoteKey = JSON.stringify([selectedVisaIds, addons, storeItems]);
     useEffect(() => {
         if (selectedVisaIds.length !== travelers.length || selectedVisaIds.length === 0) {
             setQuote(null);
             return;
         }
         let cancelled = false;
-        api.post("/pricing/quote", { visa_type_ids: selectedVisaIds, addons })
+        api.post("/pricing/quote", { visa_type_ids: selectedVisaIds, addons, store_items: storeItems })
             .then(({ data }) => {
                 if (!cancelled) setQuote(data);
             })
@@ -523,6 +582,7 @@ export default function Apply() {
                 })),
                 travel,
                 addons,
+                store_items: storeItems,
                 extra_documents: {
                     ticket_file_id: extraDocs.ticket?.file_id || null,
                     hotel_file_id: extraDocs.hotel?.file_id || null,
@@ -988,6 +1048,143 @@ export default function Apply() {
                                             ))}
                                         </div>
                                     </div>
+
+                                    {/* SEYAHAT SIGORTASI (magaza katalogu) */}
+                                    {insuranceProducts.length > 0 && (
+                                        <div className="mt-10" data-testid="apply-insurance-section">
+                                            <div className="flex items-center gap-2">
+                                                <ShieldCheck className="h-5 w-5 text-primary" />
+                                                <h3 className="font-heading text-base font-bold">Seyahat sağlık sigortası</h3>
+                                            </div>
+                                            <p className="mt-1.5 text-sm text-muted-foreground">
+                                                BAE'de sağlık masrafları yüksektir. Poliçe bedeli yolcu başına hesaplanır
+                                                ({travelerCount} yolcu). Poliçeniz ödeme sonrası PDF olarak e-postanıza gelir.
+                                            </p>
+                                            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                                {insuranceProducts.map((p) => {
+                                                    const selected = insurancePick === p.id;
+                                                    return (
+                                                        <button
+                                                            type="button"
+                                                            key={p.id}
+                                                            aria-pressed={selected}
+                                                            onClick={() => setInsurancePick(selected ? null : p.id)}
+                                                            className={`rounded-xl border p-5 text-left transition-colors duration-200 hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                                                                selected ? "border-primary bg-primary/5" : "border-border bg-card"
+                                                            }`}
+                                                            data-testid={`insurance-option-${p.id}`}
+                                                        >
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div>
+                                                                    <p className="font-heading text-sm font-bold">{p.name}</p>
+                                                                    {p.coverage && (
+                                                                        <p className="mt-1 text-xs font-semibold text-muted-foreground">{p.coverage}</p>
+                                                                    )}
+                                                                </div>
+                                                                {selected ? (
+                                                                    <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
+                                                                ) : (
+                                                                    <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full border border-border" aria-hidden="true" />
+                                                                )}
+                                                            </div>
+                                                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{p.summary}</p>
+                                                            <p className="mt-3 font-heading text-sm font-bold text-primary">
+                                                                + {formatMoney(p.price, p.currency)} / kişi
+                                                            </p>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            {insurancePick && (
+                                                <p className="mt-3 text-sm text-muted-foreground" data-testid="insurance-selected-note">
+                                                    {travelerCount} yolcu için poliçe eklendi. Toplam sepetinizde otomatik hesaplanır.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* DUBAI eSIM (magaza katalogu) */}
+                                    {esimProducts.length > 0 && (
+                                        <div className="mt-10" data-testid="apply-esim-section">
+                                            <div className="flex items-center gap-2">
+                                                <Wifi className="h-5 w-5 text-primary" />
+                                                <h3 className="font-heading text-base font-bold">Dubai eSIM (internet paketi)</h3>
+                                            </div>
+                                            <p className="mt-1.5 text-sm text-muted-foreground">
+                                                Dubai'ye indiğiniz anda internetiniz hazır olsun. Adet, yolcu sayınıza göre
+                                                otomatik seçilir; dilediğiniz gibi değiştirebilirsiniz. QR kodunuz ödeme
+                                                sonrası e-postanıza gelir.
+                                            </p>
+                                            <div className="mt-4 space-y-4">
+                                                {esimProducts.map((p) => {
+                                                    const qty = esimQty[p.id] || 0;
+                                                    const selected = qty > 0;
+                                                    return (
+                                                        <div
+                                                            key={p.id}
+                                                            className={`rounded-xl border p-5 transition-colors duration-200 ${
+                                                                selected ? "border-primary bg-primary/5" : "border-border bg-card"
+                                                            }`}
+                                                            data-testid={`esim-option-${p.id}`}
+                                                        >
+                                                            <div className="flex flex-wrap items-start gap-4">
+                                                                <Switch
+                                                                    checked={selected}
+                                                                    onCheckedChange={() => toggleEsim(p)}
+                                                                    className="mt-1"
+                                                                    data-testid={`esim-switch-${p.id}`}
+                                                                />
+                                                                <div className="min-w-[200px] flex-1">
+                                                                    <div className="flex flex-wrap items-center gap-2">
+                                                                        <p className="font-heading text-sm font-bold">{p.name}</p>
+                                                                        {p.popular && (
+                                                                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                                                                                En çok tercih edilen
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{p.summary}</p>
+                                                                    <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-primary">
+                                                                        <Signal className="h-4 w-4" aria-hidden="true" />
+                                                                        + {formatMoney(p.price, p.currency)} / adet
+                                                                    </p>
+                                                                </div>
+                                                                {selected && (
+                                                                    <div className="flex items-center gap-2" data-testid={`esim-qty-${p.id}`}>
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() => changeEsimQty(p.id, -1)}
+                                                                            disabled={qty <= 1}
+                                                                            aria-label="Adet azalt"
+                                                                            data-testid={`esim-qty-minus-${p.id}`}
+                                                                        >
+                                                                            <Minus className="h-4 w-4" />
+                                                                        </Button>
+                                                                        <span className="w-9 text-center font-heading text-sm font-bold" data-testid={`esim-qty-value-${p.id}`}>
+                                                                            {qty}
+                                                                        </span>
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() => changeEsimQty(p.id, 1)}
+                                                                            disabled={qty >= 10}
+                                                                            aria-label="Adet arttır"
+                                                                            data-testid={`esim-qty-plus-${p.id}`}
+                                                                        >
+                                                                            <Plus className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -1190,6 +1387,13 @@ export default function Apply() {
                                                     {(quote.addons || []).map((a) => (
                                                         <SummaryRow key={a.id} label={`${a.name} x${a.quantity}`} value={formatMoney(a.total, quote.currency)} />
                                                     ))}
+                                                    {(quote.store_items || []).map((s) => (
+                                                        <SummaryRow
+                                                            key={s.product_id}
+                                                            label={`${s.name} x${s.quantity}`}
+                                                            value={formatMoney(s.total, quote.currency)}
+                                                        />
+                                                    ))}
                                                     <SummaryRow label="Toplam" value={formatMoney(quote.total, quote.currency)} strong />
                                                 </div>
                                             </div>
@@ -1352,6 +1556,12 @@ export default function Apply() {
                                             <div key={a.id} className="flex justify-between">
                                                 <span className="text-muted-foreground">{a.name} x{a.quantity}</span>
                                                 <span className="font-semibold">{formatMoney(a.total, quote.currency)}</span>
+                                            </div>
+                                        ))}
+                                        {(quote.store_items || []).map((s) => (
+                                            <div key={s.product_id} className="flex justify-between" data-testid={`summary-store-line-${s.product_id}`}>
+                                                <span className="text-muted-foreground">{s.name} x{s.quantity}</span>
+                                                <span className="font-semibold">{formatMoney(s.total, quote.currency)}</span>
                                             </div>
                                         ))}
                                         <div className="flex items-end justify-between border-t border-border pt-3">

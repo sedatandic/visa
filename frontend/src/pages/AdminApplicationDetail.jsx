@@ -404,6 +404,16 @@ export default function AdminApplicationDetail() {
                                     {(pricing.addons || []).map((ad) => (
                                         <Row key={ad.id} label={`${ad.name} x${ad.quantity}`} value={formatMoney(ad.total, pricing.currency)} />
                                     ))}
+                                    {(pricing.store_items || []).map((s) => (
+                                        <Row
+                                            key={s.product_id}
+                                            label={`${s.name} x${s.quantity}${s.kind_label ? ` · ${s.kind_label}` : ""}`}
+                                            value={formatMoney(s.total, pricing.currency)}
+                                        />
+                                    ))}
+                                    {a.linked_order_reference && (
+                                        <Row label="Bağlı sipariş (teslimat)" value={a.linked_order_reference} />
+                                    )}
                                     <Row label="Toplam" value={formatMoney(pricing.total, pricing.currency)} />
                                 </div>
                             ) : (

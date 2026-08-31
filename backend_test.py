@@ -962,6 +962,163 @@ class APITester:
                             else:
                                 self.log(f"   ⚠️  Guide may not have reset correctly", Colors.YELLOW)
 
+    def test_store_items_in_application(self):
+        """Test eSIM and insurance products in visa application"""
+        self.log("\n" + "="*60, Colors.YELLOW)
+        self.log("FEATURE 8: STORE ITEMS IN VISA APPLICATION", Colors.YELLOW)
+        self.log("="*60, Colors.YELLOW)
+        
+        headers = {'Authorization': f'Bearer {self.admin_token}'}
+        
+        # Test 1: GET /api/products - List all store products
+        success, products = self.test(
+            "GET /api/products - List store products",
+            "GET",
+            "/products",
+            200
+        )
+        
+        if success:
+            items = products.get('items', [])
+            self.log(f"   Found {len(items)} products", Colors.BLUE)
+            esim_products = [p for p in items if p.get('kind') == 'esim']
+            insurance_products = [p for p in items if p.get('kind') == 'insurance']
+            self.log(f"   eSIM products: {len(esim_products)}", Colors.BLUE)
+            self.log(f"   Insurance products: {len(insurance_products)}", Colors.BLUE)
+            
+            if len(esim_products) >= 4 and len(insurance_products) >= 2:
+                self.log(f"   ✅ All expected products present", Colors.GREEN)
+        
+        # Test 2: POST /api/pricing/quote with store_items
+        success, quote = self.test(
+            "POST /api/pricing/quote - Quote with store_items",
+            "POST",
+            "/pricing/quote",
+            200,
+            data={
+                'visa_type_ids': ['visa_30_single', 'visa_30_single'],
+                'addons': {'express': False},
+                'store_items': [
+                    {'product_id': 'esim_3gb', 'quantity': 2},
+                    {'product_id': 'ins_basic', 'quantity': 2}
+                ]
+            }
+        )
+        
+        if success:
+            store_items = quote.get('store_items', [])
+            store_total = quote.get('store_total', 0)
+            total = quote.get('total', 0)
+            subtotal = quote.get('subtotal', 0)
+            
+            self.log(f"   Store items count: {len(store_items)}", Colors.BLUE)
+            self.log(f"   Store total: {store_total} TRY", Colors.BLUE)
+            self.log(f"   Visa subtotal: {subtotal} TRY", Colors.BLUE)
+            self.log(f"   Grand total: {total} TRY", Colors.BLUE)
+            
+            if len(store_items) == 2:
+                self.log(f"   ✅ Store items returned correctly", Colors.GREEN)
+            if store_total > 0:
+                self.log(f"   ✅ Store total calculated", Colors.GREEN)
+            if total > subtotal:
+                self.log(f"   ✅ Total includes store items", Colors.GREEN)
+        
+        # Test 3: POST /api/pricing/quote with invalid product_id (should return 400)
+        success, error = self.test(
+            "POST /api/pricing/quote - Invalid product_id (should fail)",
+            "POST",
+            "/pricing/quote",
+            400,
+            data={
+                'visa_type_ids': ['visa_30_single'],
+                'addons': {'express': False},
+                'store_items': [{'product_id': 'invalid_product', 'quantity': 1}]
+            }
+        )
+        
+        if success:
+            self.log(f"   ✅ Invalid product_id correctly rejected", Colors.GREEN)
+        
+        # Test 4: POST /api/pricing/quote with quantity > 10 (should return 422)
+        success, error = self.test(
+            "POST /api/pricing/quote - Quantity > 10 (should fail)",
+            "POST",
+            "/pricing/quote",
+            422,
+            data={
+                'visa_type_ids': ['visa_30_single'],
+                'addons': {'express': False},
+                'store_items': [{'product_id': 'esim_3gb', 'quantity': 11}]
+            }
+        )
+        
+        if success:
+            self.log(f"   ✅ Quantity > 10 correctly rejected", Colors.GREEN)
+        
+        # Test 5: Create application without store_items (regression test)
+        success, app_no_store = self.test(
+            "POST /api/applications - Without store_items (regression)",
+            "POST",
+            "/applications",
+            200,
+            data={
+                'contact': {
+                    'full_name': 'Test User NoStore',
+                    'email': f'nostore{int(time.time())}@test.com',
+                    'phone': '+905551234567',
+                    'address_city': 'Istanbul'
+                },
+                'travelers': [{
+                    'first_name': 'AHMET',
+                    'last_name': 'TEST',
+                    'birth_date': '1990-01-01',
+                    'gender': 'male',
+                    'applicant_type': 'adult',
+                    'nationality': 'TR',
+                    'passport_no': 'U12345678',
+                    'passport_expiry': '2030-12-31',
+                    'visa_type_id': 'visa_30_single',
+                    'passport_file_id': 'dummy-file-id-1',
+                    'photo_file_id': 'dummy-file-id-2'
+                }],
+                'travel': {
+                    'arrival_date': '2026-12-01',
+                    'departure_date': '2026-12-15',
+                    'purpose': 'tourism'
+                },
+                'addons': {'express': False},
+                'extra_documents': {
+                    'ticket_file_id': 'dummy-ticket-id',
+                    'hotel_file_id': 'dummy-hotel-id'
+                },
+                'kvkk_accepted': True
+            }
+        )
+        
+        if success:
+            pricing = app_no_store.get('pricing', {})
+            store_total = pricing.get('store_total', 0)
+            linked_order_id = app_no_store.get('linked_order_id')
+            
+            if store_total == 0:
+                self.log(f"   ✅ No store_total when no items", Colors.GREEN)
+            if not linked_order_id:
+                self.log(f"   ✅ No linked order created", Colors.GREEN)
+        
+        # Test 6: GET /api/admin/orders - Check if orders endpoint works (regression)
+        success, orders = self.test(
+            "GET /api/admin/orders - List orders (regression)",
+            "GET",
+            "/admin/orders",
+            200,
+            headers=headers
+        )
+        
+        if success:
+            items = orders.get('items', [])
+            self.log(f"   Found {len(items)} orders", Colors.BLUE)
+            self.log(f"   ✅ Orders endpoint working", Colors.GREEN)
+
     def print_summary(self):
         """Print test summary"""
         self.log("\n" + "="*60, Colors.YELLOW)
@@ -989,7 +1146,7 @@ def main():
     
     print(f"\n{Colors.BLUE}{'='*60}")
     print("VizeAtlas Dubai Backend API Test Suite")
-    print(f"Testing 7 Features (Iteration 13)")
+    print(f"Testing 8 Features (Iteration 15 - Store Items)")
     print(f"Base URL: {BASE_URL}")
     print(f"{'='*60}{Colors.END}\n")
     
@@ -1006,6 +1163,7 @@ def main():
     tester.test_saved_travelers()
     tester.test_drafts()
     tester.test_visa_guides()
+    tester.test_store_items_in_application()
     
     # Print summary
     return tester.print_summary()

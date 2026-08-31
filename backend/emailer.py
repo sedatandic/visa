@@ -133,6 +133,8 @@ def _pricing_block(app_doc: dict) -> str:
         )
     for a in p.get("addons") or []:
         lines.append(_row(f"{a['name']} x{a['quantity']}", money(a["total"], p.get("currency", "TRY"))))
+    for s in p.get("store_items") or []:
+        lines.append(_row(f"{s['name']} x{s['quantity']}", money(s["total"], p.get("currency", "TRY"))))
     lines.append(_row("<strong>Toplam</strong>", "<strong>" + money(p.get("total", 0), p.get("currency", "TRY")) + "</strong>"))
     return "".join(lines)
 

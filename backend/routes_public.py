@@ -239,6 +239,35 @@ async def get_article(slug: str):
     return {"article": article, "related": serialize_doc(related)}
 
 
+async def resolve_store_lines(items) -> list:
+    """Basvuru icinde secilen eSIM / sigorta urunlerini magaza katalogundan fiyatlar."""
+    if not items:
+        return []
+    from routes_store import MAX_QTY, product_list
+
+    catalog = {p["id"]: p for p in await product_list()}
+    lines = []
+    for item in items:
+        product = catalog.get(item.product_id)
+        if not product:
+            raise HTTPException(400, "Secilen ek urun bulunamadi veya satista degil.")
+        quantity = max(1, min(int(item.quantity), MAX_QTY))
+        unit_price = float(product["price"])
+        lines.append(
+            {
+                "product_id": product["id"],
+                "kind": product.get("kind", ""),
+                "kind_label": product.get("kind_label", ""),
+                "name": product["name"],
+                "quantity": quantity,
+                "unit_price": unit_price,
+                "unit_price_usd": float(product.get("price_usd") or 0),
+                "total": round(unit_price * quantity, 2),
+            }
+        )
+    return lines
+
+
 @router.post("/pricing/quote")
 async def pricing_quote(payload: QuoteRequest):
     prices = []
@@ -247,7 +276,12 @@ async def pricing_quote(payload: QuoteRequest):
         if not visa:
             raise HTTPException(400, f"Gecersiz vize tipi: {vid}")
         prices.append(float(visa["price"]))
-    quote = compute_pricing(prices, payload.addons.model_dump(), addon_prices=await addon_prices_try())
+    quote = compute_pricing(
+        prices,
+        payload.addons.model_dump(),
+        addon_prices=await addon_prices_try(),
+        store_lines=await resolve_store_lines(payload.store_items),
+    )
     quote["fx"] = await get_fx()
     return quote
 
@@ -412,7 +446,13 @@ async def create_application(payload: ApplicationCreate):
         travelers.append(data)
         prices.append(float(visa["price"]))
 
-    pricing = compute_pricing(prices, payload.addons.model_dump(), addon_prices=await addon_prices_try())
+    store_lines = await resolve_store_lines(payload.store_items)
+    pricing = compute_pricing(
+        prices,
+        payload.addons.model_dump(),
+        addon_prices=await addon_prices_try(),
+        store_lines=store_lines,
+    )
 
     reference_code = generate_reference_code()
     while await applications_col.find_one({"reference_code": reference_code}):
@@ -427,6 +467,10 @@ async def create_application(payload: ApplicationCreate):
         "travelers": travelers,
         "travel": payload.travel.model_dump(),
         "addons": payload.addons.model_dump(),
+        "store_items": store_lines,
+        "store_total": pricing.get("store_total", 0.0),
+        "linked_order_id": None,
+        "linked_order_reference": None,
         "extra_documents": payload.extra_documents.model_dump(),
         "pricing": pricing,
         "price": pricing["total"],
@@ -452,6 +496,26 @@ async def create_application(payload: ApplicationCreate):
         "updated_at": now,
     }
     await applications_col.insert_one(dict(doc))
+
+    # basvuru icinde alinan eSIM / sigorta urunleri icin teslimat siparisi olustur
+    if store_lines:
+        try:
+            from routes_store import create_application_order
+
+            linked = await create_application_order(doc, store_lines)
+            doc["linked_order_id"] = linked["id"]
+            doc["linked_order_reference"] = linked["reference_code"]
+            await applications_col.update_one(
+                {"id": doc["id"]},
+                {
+                    "$set": {
+                        "linked_order_id": linked["id"],
+                        "linked_order_reference": linked["reference_code"],
+                    }
+                },
+            )
+        except Exception as exc:  # pragma: no cover
+            logger.error("linked store order creation failed: %s", exc)
 
     # aile profili: yolcular bir sonraki basvuruda tek tikla eklenebilsin
     try:

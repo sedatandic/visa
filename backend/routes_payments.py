@@ -98,6 +98,9 @@ async def _mark_paid(session_id: str):
             },
         },
     )
+    from routes_store import sync_application_order_payment
+
+    await sync_application_order_payment(app_doc["id"], "paid", method="card")
     fresh = await applications_col.find_one({"id": app_doc["id"]})
     to_email = (fresh.get("contact") or {}).get("email") or (fresh.get("applicant") or {}).get("email")
     if to_email:
@@ -204,6 +207,9 @@ async def choose_bank_transfer(payload: CheckoutRequest):
         },
     )
     fresh = await applications_col.find_one({"id": app_doc["id"]})
+    from routes_store import sync_application_order_payment
+
+    await sync_application_order_payment(app_doc["id"], "awaiting_transfer", method="bank_transfer")
     settings_doc = await settings_col.find_one({"key": "bank_transfer"})
     bank = (settings_doc or {}).get("value") or BANK_TRANSFER
     to_email = (fresh.get("contact") or {}).get("email")

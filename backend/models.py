@@ -42,6 +42,13 @@ class AddonsIn(BaseModel):
     esim: bool = False
 
 
+class StoreItemIn(BaseModel):
+    """Vize basvurusu icinde satin alinan eSIM / sigorta urunu."""
+
+    product_id: str = Field(..., min_length=2, max_length=60)
+    quantity: int = Field(1, ge=1, le=10)
+
+
 class ExtraDocumentsIn(BaseModel):
     ticket_file_id: Optional[str] = None
     hotel_file_id: Optional[str] = None
@@ -53,6 +60,7 @@ class ApplicationCreate(BaseModel):
     travelers: List[TravelerIn] = Field(..., min_length=1, max_length=10)
     travel: TravelIn
     addons: AddonsIn = Field(default_factory=AddonsIn)
+    store_items: List[StoreItemIn] = Field(default_factory=list, max_length=6)
     extra_documents: ExtraDocumentsIn = Field(default_factory=ExtraDocumentsIn)
     kvkk_accepted: bool = True
 
@@ -75,6 +83,7 @@ class DocumentSubmission(BaseModel):
 class QuoteRequest(BaseModel):
     visa_type_ids: List[str] = Field(..., min_length=1, max_length=10)
     addons: AddonsIn = Field(default_factory=AddonsIn)
+    store_items: List[StoreItemIn] = Field(default_factory=list, max_length=6)
 
 
 class CheckoutRequest(BaseModel):

@@ -81,6 +81,14 @@ const OrderRow = ({ order, onUpdate }) => {
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p className="font-heading text-base font-extrabold">{order.reference_code}</p>
+                    {order.source === "visa_application" && (
+                        <p
+                            className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary"
+                            data-testid={`order-source-visa-${order.reference_code}`}
+                        >
+                            Vize başvurusu ile alındı{order.application_reference ? ` · ${order.application_reference}` : ""}
+                        </p>
+                    )}
                     <p className="mt-1 text-sm text-muted-foreground">
                         {order.contact?.full_name} · {order.contact?.email} · {order.contact?.phone}
                     </p>

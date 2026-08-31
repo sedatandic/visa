@@ -440,6 +440,9 @@ async def admin_mark_paid(application_id: str, admin=Depends(require_admin)):
         },
     )
     fresh = await applications_col.find_one({"id": application_id})
+    from routes_store import sync_application_order_payment
+
+    await sync_application_order_payment(application_id, "paid")
     to_email = (fresh.get("contact") or {}).get("email")
     notification = "skipped"
     if to_email:

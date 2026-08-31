@@ -246,6 +246,10 @@ ADDONS = {
         'description': 'Acil seyahatler için öncelikli işlem. Başvurunuz sıraya girmeden işleme alınır, sonuç genellikle 24 saat içinde çıkar.',
         'features': ['24 saat içinde sonuç', 'Öncelikli işlem sırası', 'Anlık bilgilendirme'],
     },
+}
+
+# Geriye uyumluluk: eski basvurularda saklanan ek hizmet adlari
+LEGACY_ADDONS = {
     "insurance": {
         'id': 'insurance',
         'name': 'Seyahat Sağlık Sigortası · Temel',
@@ -616,7 +620,13 @@ def family_discount_rate(traveler_count: int) -> float:
     return 0.0
 
 
-def compute_pricing(visa_prices, addons: dict, currency: str = "TRY", addon_prices: dict | None = None) -> dict:
+def compute_pricing(
+    visa_prices,
+    addons: dict,
+    currency: str = "TRY",
+    addon_prices: dict | None = None,
+    store_lines: list | None = None,
+) -> dict:
     """Server-side authoritative pricing. visa_prices = list of float per traveller."""
     count = len(visa_prices)
     subtotal = round(sum(float(p) for p in visa_prices), 2)
@@ -639,7 +649,9 @@ def compute_pricing(visa_prices, addons: dict, currency: str = "TRY", addon_pric
             )
             addons_total += line_total
     addons_total = round(addons_total, 2)
-    total = round(subtotal - discount + addons_total, 2)
+    store_lines = list(store_lines or [])
+    store_total = round(sum(float(line.get("total") or 0) for line in store_lines), 2)
+    total = round(subtotal - discount + addons_total + store_total, 2)
     return {
         "traveler_count": count,
         "subtotal": subtotal,
@@ -647,6 +659,8 @@ def compute_pricing(visa_prices, addons: dict, currency: str = "TRY", addon_pric
         "family_discount": discount,
         "addons": addon_lines,
         "addons_total": addons_total,
+        "store_items": store_lines,
+        "store_total": store_total,
         "total": total,
         "currency": currency,
     }
