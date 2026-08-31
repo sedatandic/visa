@@ -10,7 +10,7 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 
-from db import applications_col
+from db import applications_col, drafts_col
 from emailer import document_reminder_html, send_email
 
 logger = logging.getLogger(__name__)
@@ -236,6 +236,9 @@ async def reminder_loop(origin: str):
             summary = await run_reminder_sweep(origin)
             if summary["sent"]:
                 logger.info("document reminder sweep: %s gonderildi", summary["sent"])
+            draft_summary = await run_draft_reminder_sweep(origin)
+            if draft_summary["sent"]:
+                logger.info("draft reminder sweep: %s gonderildi", draft_summary["sent"])
         except asyncio.CancelledError:
             raise
         except Exception as exc:  # pragma: no cover
@@ -245,3 +248,116 @@ async def reminder_loop(origin: str):
 
 def default_origin() -> str:
     return (os.environ.get("PUBLIC_SITE_URL") or "").rstrip("/")
+
+
+# ------------------------------------------------------- taslak (sepeti kurtarma)
+DRAFT_FIRST_REMINDER_AFTER_HOURS = 24
+DRAFT_REMINDER_INTERVAL_HOURS = 72
+MAX_DRAFT_REMINDERS = 2
+
+
+def _draft_resume_url(origin: str, draft: dict) -> str:
+    base = (origin or "").rstrip("/")
+    if not base:
+        return ""
+    return f"{base}/basvuru?taslak={draft.get('id')}&kod={draft.get('resume_code', '')}"
+
+
+def _draft_due(draft: dict, now: datetime) -> bool:
+    state = draft.get("reminder") or {}
+    if int(state.get("count") or 0) >= MAX_DRAFT_REMINDERS:
+        return False
+    updated = draft.get("updated_at")
+    if isinstance(updated, datetime):
+        ts = updated if updated.tzinfo else updated.replace(tzinfo=timezone.utc)
+        if now - ts < timedelta(hours=DRAFT_FIRST_REMINDER_AFTER_HOURS):
+            return False
+    last = state.get("last_sent_at")
+    if isinstance(last, datetime):
+        ts = last if last.tzinfo else last.replace(tzinfo=timezone.utc)
+        if now - ts < timedelta(hours=DRAFT_REMINDER_INTERVAL_HOURS):
+            return False
+    return True
+
+
+async def _draft_converted(draft: dict) -> bool:
+    """Taslak sonrasinda ayni e-posta ile basvuru olusturulmus mu?"""
+    updated = draft.get("updated_at")
+    query = {"contact.email": {"$regex": f"^{draft.get('email', '')}$", "$options": "i"}}
+    if isinstance(updated, datetime):
+        query["created_at"] = {"$gte": updated}
+    return await applications_col.count_documents(query) > 0
+
+
+async def send_draft_reminder(draft: dict, origin: str) -> dict:
+    """Yarim kalan basvuru icin hatirlatma e-postasi gonderir."""
+    from emailer import draft_reminder_html
+
+    email = draft.get("email")
+    if not email:
+        return {"status": "skipped", "reason": "e-posta yok"}
+    state = draft.get("reminder") or {}
+    result = await send_email(
+        email,
+        "Dubai vize basvurunuz yarim kaldi",
+        draft_reminder_html(draft, _draft_resume_url(origin, draft)),
+        kind="draft_reminder",
+        meta={"draft_id": draft.get("id"), "reminder_no": int(state.get("count") or 0) + 1},
+    )
+    await drafts_col.update_one(
+        {"id": draft.get("id")},
+        {
+            "$set": {
+                "reminder": {
+                    "count": int(state.get("count") or 0) + 1,
+                    "last_sent_at": datetime.now(timezone.utc),
+                }
+            }
+        },
+    )
+    return {"status": result.get("status"), "email": result}
+
+
+async def pending_drafts() -> list:
+    """Hatirlatma adayi taslaklar."""
+    now = datetime.now(timezone.utc)
+    items = []
+    async for draft in drafts_col.find({}).sort("updated_at", -1):
+        if await _draft_converted(draft):
+            continue
+        state = draft.get("reminder") or {}
+        items.append(
+            {
+                "id": draft.get("id"),
+                "email": draft.get("email"),
+                "title": draft.get("title"),
+                "traveler_count": draft.get("traveler_count", 1),
+                "step": draft.get("step", 0),
+                "updated_at": draft.get("updated_at").isoformat()
+                if isinstance(draft.get("updated_at"), datetime)
+                else draft.get("updated_at"),
+                "reminder_count": int(state.get("count") or 0),
+                "due": _draft_due(draft, now),
+            }
+        )
+    return items
+
+
+async def run_draft_reminder_sweep(origin: str, force: bool = False) -> dict:
+    """Yarim kalan basvurulara hatirlatma gonderir (sepeti kurtarma)."""
+    now = datetime.now(timezone.utc)
+    sent, skipped = 0, 0
+    async for draft in drafts_col.find({}):
+        if await _draft_converted(draft):
+            skipped += 1
+            continue
+        if not force and not _draft_due(draft, now):
+            skipped += 1
+            continue
+        try:
+            await send_draft_reminder(draft, origin)
+            sent += 1
+        except Exception as exc:  # pragma: no cover
+            logger.error("draft reminder failed for %s: %s", draft.get("id"), exc)
+            skipped += 1
+    return {"sent": sent, "skipped": skipped, "ran_at": now.isoformat()}

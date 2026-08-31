@@ -33,6 +33,7 @@ import { SampleVisa } from "../components/SampleVisa";
 import { RouteFlags } from "../components/FlagIcons";
 import { AuthorityStrip } from "../components/AuthorityStrip";
 import { VisaGuideLinks } from "../components/VisaGuideLinks";
+import { FxNote } from "../components/FxNote";
 import {
     Accordion,
     AccordionContent,
@@ -246,6 +247,12 @@ export default function Home() {
                             danışmanlık adı altında ek kalem çıkarmıyoruz. Yalnızca üçüncü taraf danışmanlık
                             hizmeti veriyoruz; resmî bir devlet kurumu değiliz.
                         </p>
+                    </div>
+                    <div className="mt-5 flex flex-wrap items-center gap-3">
+                        <FxNote />
+                        <span className="text-xs text-muted-foreground">
+                            Fiyatlar dolar bazlıdır, tahsilat güncel kurla TL olarak yapılır.
+                        </span>
                     </div>
                     <div className="mt-8">
                         <PricingTabs />

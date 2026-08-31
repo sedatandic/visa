@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { api } from "../lib/api";
 import { COMPANY, formatMoney, formatUsd, setJsonLd, setMeta } from "../lib/site";
+import { FxNote } from "../components/FxNote";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
 import {
@@ -225,6 +226,9 @@ export default function VisaGuide() {
                                     {formatUsd(visa.price_usd)} — ödeme, işlem günündeki güncel kurla TL olarak alınır
                                 </p>
                             ) : null}
+                            <div className="mt-3">
+                                <FxNote variant="inline" />
+                            </div>
                             <dl className="mt-5 space-y-3 border-t border-border pt-5">
                                 {facts.map(({ icon: Icon, label, value }) => (
                                     <div key={label} className="flex items-start justify-between gap-3 text-sm">

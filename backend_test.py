@@ -106,14 +106,45 @@ class APITester:
     def test_fx_apis(self):
         """Test FX (USD/TRY) APIs"""
         self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 1: FX (USD/TRY) APIS", Colors.YELLOW)
+        self.log("FEATURE 1: FX (USD/TRY) TRANSPARENCY", Colors.YELLOW)
         self.log("="*60, Colors.YELLOW)
+        
+        # Test public FX endpoint (no auth required)
+        success, public_fx = self.test(
+            "GET /api/fx - Public FX endpoint (no auth)",
+            "GET",
+            "/fx",
+            200
+        )
+        
+        if success:
+            # Check required fields
+            required_fields = ['effective_rate', 'currency_pair', 'fetched_at', 'source']
+            for field in required_fields:
+                if field in public_fx:
+                    self.log(f"   ✅ Field present: {field} = {public_fx[field]}", Colors.GREEN)
+                else:
+                    self.log(f"   ❌ Missing required field: {field}", Colors.RED)
+            
+            # Check sensitive fields are NOT exposed
+            sensitive_fields = ['manual_rate', 'margin_pct', 'base_rate', 'mode']
+            for field in sensitive_fields:
+                if field in public_fx:
+                    self.log(f"   ❌ SECURITY ISSUE: Sensitive field exposed: {field}", Colors.RED)
+                else:
+                    self.log(f"   ✅ Sensitive field NOT exposed: {field}", Colors.GREEN)
+            
+            # Verify currency_pair
+            if public_fx.get('currency_pair') == 'USD/TRY':
+                self.log(f"   ✅ currency_pair is USD/TRY", Colors.GREEN)
+            else:
+                self.log(f"   ❌ currency_pair should be USD/TRY, got {public_fx.get('currency_pair')}", Colors.RED)
         
         headers = {'Authorization': f'Bearer {self.admin_token}'}
         
-        # Get current FX settings
+        # Get current FX settings (admin)
         success, fx = self.test(
-            "GET /api/admin/fx - Get current FX settings",
+            "GET /api/admin/fx - Get current FX settings (admin)",
             "GET",
             "/admin/fx",
             200,
@@ -468,10 +499,292 @@ class APITester:
                 self.log(f"   Drafts: {len(drafts)}", Colors.BLUE)
                 self.log(f"   ✅ Account info retrieved", Colors.GREEN)
 
+    def test_draft_reminders(self):
+        """Test draft reminder (cart recovery) automation"""
+        self.log("\n" + "="*60, Colors.YELLOW)
+        self.log("FEATURE 4: DRAFT REMINDERS (CART RECOVERY)", Colors.YELLOW)
+        self.log("="*60, Colors.YELLOW)
+        
+        headers = {'Authorization': f'Bearer {self.admin_token}'}
+        
+        # Create a draft first
+        test_email = f"cartrecovery{int(time.time())}@example.com"
+        success, draft = self.test(
+            "POST /api/drafts - Create draft for cart recovery test",
+            "POST",
+            "/drafts",
+            200,
+            data={
+                'email': test_email,
+                'title': 'Cart Recovery Test',
+                'step': 2,
+                'traveler_count': 1,
+                'data': {'contact': {'email': test_email}}
+            }
+        )
+        
+        if success:
+            draft_id = draft.get('draft_id')
+            self.log(f"   Draft created: {draft_id}", Colors.BLUE)
+        
+        # Get pending draft reminders
+        success, pending = self.test(
+            "GET /api/admin/draft-reminders/pending - List drafts needing reminders",
+            "GET",
+            "/admin/draft-reminders/pending",
+            200,
+            headers=headers
+        )
+        
+        if success:
+            items = pending.get('items', [])
+            total = pending.get('total', 0)
+            due = pending.get('due', 0)
+            
+            self.log(f"   Total drafts: {total}", Colors.BLUE)
+            self.log(f"   Due for reminder: {due}", Colors.BLUE)
+            
+            # Check required fields in items
+            if items:
+                item = items[0]
+                required_fields = ['id', 'email', 'traveler_count', 'reminder_count', 'due']
+                for field in required_fields:
+                    if field in item:
+                        self.log(f"   ✅ Field present in item: {field}", Colors.GREEN)
+                    else:
+                        self.log(f"   ❌ Missing field in item: {field}", Colors.RED)
+        
+        # Run draft reminder sweep with force=true
+        success, sweep = self.test(
+            "POST /api/admin/draft-reminders/run - Run sweep with force=true",
+            "POST",
+            "/admin/draft-reminders/run",
+            200,
+            data={'force': True, 'origin_url': 'https://visa-application-ae.preview.emergentagent.com'},
+            headers=headers
+        )
+        
+        if success:
+            sent = sweep.get('sent', 0)
+            skipped = sweep.get('skipped', 0)
+            ran_at = sweep.get('ran_at')
+            
+            self.log(f"   Sent: {sent}", Colors.BLUE)
+            self.log(f"   Skipped: {skipped}", Colors.BLUE)
+            self.log(f"   Ran at: {ran_at}", Colors.BLUE)
+            
+            if 'sent' in sweep and 'skipped' in sweep and 'ran_at' in sweep:
+                self.log(f"   ✅ Sweep completed with all required fields", Colors.GREEN)
+            
+            # Run again without force - should respect reminder count limit
+            success, sweep2 = self.test(
+                "POST /api/admin/draft-reminders/run - Run sweep again (should skip due to count limit)",
+                "POST",
+                "/admin/draft-reminders/run",
+                200,
+                data={'force': False, 'origin_url': 'https://visa-application-ae.preview.emergentagent.com'},
+                headers=headers
+            )
+            
+            if success:
+                sent2 = sweep2.get('sent', 0)
+                skipped2 = sweep2.get('skipped', 0)
+                self.log(f"   Second sweep: {sent2} sent, {skipped2} skipped", Colors.BLUE)
+                
+                # With force=false, same drafts should be skipped (reminder count limit)
+                if skipped2 >= skipped:
+                    self.log(f"   ✅ Reminder count limit working (skipped increased)", Colors.GREEN)
+    
+    def test_saved_travelers(self):
+        """Test family profile (saved travelers) feature"""
+        self.log("\n" + "="*60, Colors.YELLOW)
+        self.log("FEATURE 5: FAMILY PROFILE (SAVED TRAVELERS)", Colors.YELLOW)
+        self.log("="*60, Colors.YELLOW)
+        
+        # Create a customer account
+        test_email = f"family{int(time.time())}@example.com"
+        
+        # Request login code
+        success, code_response = self.test(
+            "POST /api/account/request-code - Create customer account",
+            "POST",
+            "/account/request-code",
+            200,
+            data={'email': test_email}
+        )
+        
+        # Get code from admin endpoint
+        admin_headers = {'Authorization': f'Bearer {self.admin_token}'}
+        success, codes = self.test(
+            f"GET /api/admin/login-codes?email={test_email}",
+            "GET",
+            "/admin/login-codes",
+            200,
+            headers=admin_headers,
+            params={'email': test_email}
+        )
+        
+        customer_token = None
+        if success and codes.get('items'):
+            code = codes['items'][0].get('code')
+            
+            # Verify code to get customer token
+            success, verify = self.test(
+                "POST /api/account/verify-code - Get customer token",
+                "POST",
+                "/account/verify-code",
+                200,
+                data={'email': test_email, 'code': code}
+            )
+            
+            if success and 'token' in verify:
+                customer_token = verify['token']
+                self.log(f"   ✅ Customer token obtained", Colors.GREEN)
+        
+        if not customer_token:
+            self.log(f"   ❌ Could not get customer token, skipping saved travelers tests", Colors.RED)
+            return
+        
+        headers = {'Authorization': f'Bearer {customer_token}'}
+        
+        # Test GET /api/account/travelers (should be empty initially)
+        success, travelers = self.test(
+            "GET /api/account/travelers - Get saved travelers (should be empty)",
+            "GET",
+            "/account/travelers",
+            200,
+            headers=headers
+        )
+        
+        if success:
+            items = travelers.get('items', [])
+            self.log(f"   Initial travelers count: {len(items)}", Colors.BLUE)
+            if len(items) == 0:
+                self.log(f"   ✅ Initially empty as expected", Colors.GREEN)
+        
+        # Test POST /api/account/travelers - Add new traveler
+        traveler_data = {
+            'first_name': 'AHMET',
+            'last_name': 'YILMAZ',
+            'birth_date': '1990-01-15',
+            'gender': 'male',
+            'passport_no': 'U12345678',
+            'passport_expiry': '2030-12-31',
+            'applicant_type': 'adult'
+        }
+        
+        success, new_traveler = self.test(
+            "POST /api/account/travelers - Add new traveler",
+            "POST",
+            "/account/travelers",
+            200,
+            data=traveler_data,
+            headers=headers
+        )
+        
+        traveler_id = None
+        if success:
+            traveler_id = new_traveler.get('id')
+            self.log(f"   Traveler ID: {traveler_id}", Colors.BLUE)
+            
+            # Check all fields are returned
+            for field in ['first_name', 'last_name', 'birth_date', 'passport_no']:
+                if new_traveler.get(field) == traveler_data[field]:
+                    self.log(f"   ✅ Field {field} saved correctly", Colors.GREEN)
+                else:
+                    self.log(f"   ❌ Field {field} mismatch", Colors.RED)
+        
+        # Test adding same traveler again (should not create duplicate)
+        success, duplicate = self.test(
+            "POST /api/account/travelers - Add same traveler again (should upsert)",
+            "POST",
+            "/account/travelers",
+            200,
+            data=traveler_data,
+            headers=headers
+        )
+        
+        # Get travelers list again
+        success, travelers2 = self.test(
+            "GET /api/account/travelers - Get travelers after adding",
+            "GET",
+            "/account/travelers",
+            200,
+            headers=headers
+        )
+        
+        if success:
+            items = travelers2.get('items', [])
+            self.log(f"   Travelers count after adding: {len(items)}", Colors.BLUE)
+            
+            # Should still be 1 (no duplicate)
+            if len(items) == 1:
+                self.log(f"   ✅ No duplicate created (upsert working)", Colors.GREEN)
+            else:
+                self.log(f"   ⚠️  Expected 1 traveler, got {len(items)}", Colors.YELLOW)
+        
+        # Test POST with id (update existing)
+        if traveler_id:
+            update_data = {
+                **traveler_data,
+                'id': traveler_id,
+                'first_name': 'MEHMET'  # Change first name
+            }
+            
+            success, updated = self.test(
+                f"POST /api/account/travelers - Update existing traveler",
+                "POST",
+                "/account/travelers",
+                200,
+                data=update_data,
+                headers=headers
+            )
+            
+            if success and updated.get('first_name') == 'MEHMET':
+                self.log(f"   ✅ Traveler updated successfully", Colors.GREEN)
+        
+        # Test DELETE /api/account/travelers/{id}
+        if traveler_id:
+            success, deleted = self.test(
+                f"DELETE /api/account/travelers/{traveler_id} - Delete traveler",
+                "DELETE",
+                f"/account/travelers/{traveler_id}",
+                200,
+                headers=headers
+            )
+            
+            if success:
+                self.log(f"   ✅ Traveler deleted", Colors.GREEN)
+                
+                # Verify it's gone
+                success, travelers3 = self.test(
+                    "GET /api/account/travelers - Verify deletion",
+                    "GET",
+                    "/account/travelers",
+                    200,
+                    headers=headers
+                )
+                
+                if success:
+                    items = travelers3.get('items', [])
+                    if len(items) == 0:
+                        self.log(f"   ✅ Traveler successfully removed from list", Colors.GREEN)
+        
+        # Test without token (should fail with 401)
+        success, no_auth = self.test(
+            "GET /api/account/travelers - Without token (should fail)",
+            "GET",
+            "/account/travelers",
+            401
+        )
+        
+        if success:
+            self.log(f"   ✅ Correctly requires authentication", Colors.GREEN)
+
     def test_drafts(self):
         """Test draft save and resume"""
         self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 4: DRAFT SAVE & RESUME", Colors.YELLOW)
+        self.log("FEATURE 6: DRAFT SAVE & RESUME", Colors.YELLOW)
         self.log("="*60, Colors.YELLOW)
         
         test_email = f"draft{int(time.time())}@example.com"
@@ -554,7 +867,7 @@ class APITester:
     def test_visa_guides(self):
         """Test visa guide content management"""
         self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 5: VISA GUIDE CONTENT MANAGEMENT", Colors.YELLOW)
+        self.log("FEATURE 7: VISA GUIDE CONTENT MANAGEMENT", Colors.YELLOW)
         self.log("="*60, Colors.YELLOW)
         
         headers = {'Authorization': f'Bearer {self.admin_token}'}
@@ -676,7 +989,7 @@ def main():
     
     print(f"\n{Colors.BLUE}{'='*60}")
     print("VizeAtlas Dubai Backend API Test Suite")
-    print(f"Testing 4 New Features")
+    print(f"Testing 7 Features (Iteration 13)")
     print(f"Base URL: {BASE_URL}")
     print(f"{'='*60}{Colors.END}\n")
     
@@ -689,6 +1002,8 @@ def main():
     tester.test_fx_apis()
     tester.test_document_reminders()
     tester.test_customer_account()
+    tester.test_draft_reminders()
+    tester.test_saved_travelers()
     tester.test_drafts()
     tester.test_visa_guides()
     

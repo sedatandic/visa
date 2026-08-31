@@ -369,3 +369,34 @@ def draft_saved_html(draft: dict, resume_url: str = "") -> str:
     </p>
     """
     return _wrap("Basvurunuz kaydedildi", body)
+
+
+def draft_reminder_html(draft: dict, resume_url: str = "") -> str:
+    """Yarim kalan basvuru hatirlatmasi (sepeti kurtarma)."""
+    button = ""
+    if resume_url:
+        button = f"""
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
+      <tr><td style="background-color:#0B6B3A;border-radius:8px;">
+        <a href="{resume_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Basvuruma devam et</a>
+      </td></tr>
+    </table>
+    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#52606D;">Buton calismiyorsa: {resume_url}</p>
+    """
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Merhaba,</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
+      Dubai vize basvurunuz yarim kalmis gorunuyor. Bilgileriniz kayitli; kaldiginiz yerden
+      devam edip basvurunuzu birkac dakikada tamamlayabilirsiniz.
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      {_row('Devam kodu', draft.get('resume_code', ''))}
+      {_row('Yolcu sayisi', draft.get('traveler_count', 1))}
+    </table>
+    {button}
+    <p style="margin:18px 0 0;font-size:13px;line-height:21px;color:#52606D;">
+      Seyahat tarihiniz yaklastiysa ekspres hizmetimizle basvurunuzu onceliklendirebiliriz.
+      Sorulariniz icin bu e-postayi yanitlayabilirsiniz.
+    </p>
+    """
+    return _wrap("Basvurunuz yarim kaldi", body)

@@ -23,10 +23,11 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { api, apiError } from "../lib/api";
+import { api, apiError, customerAuth } from "../lib/api";
 import { COMPANY, PURPOSES, PURPOSE_LABELS, formatDate, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
+import { FxNote } from "../components/FxNote";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -157,6 +158,38 @@ export default function Apply() {
     const [paying, setPaying] = useState(false);
     const [draft, setDraft] = useState({ id: null, code: null });
     const [savingDraft, setSavingDraft] = useState(false);
+    const [savedTravelers, setSavedTravelers] = useState([]);
+
+    // Giris yapmis musterinin kayitli yolcularini getir (aile profili)
+    useEffect(() => {
+        if (!customerAuth.token) return;
+        api.get("/account/travelers")
+            .then(({ data }) => setSavedTravelers(data.items || []))
+            .catch(() => {});
+    }, []);
+
+    const addSavedTraveler = (saved) => {
+        if (travelers.length >= maxTravelers) {
+            toast.error(`Tek başvuruda en fazla ${maxTravelers} yolcu ekleyebilirsiniz.`);
+            return;
+        }
+        const type = saved.applicant_type === "child" ? "child" : "adult";
+        setTravelers((list) => [
+            ...list,
+            {
+                ...newTraveler(type),
+                first_name: saved.first_name || "",
+                last_name: saved.last_name || "",
+                birth_date: saved.birth_date || "",
+                gender: saved.gender || "female",
+                national_id: saved.national_id || "",
+                passport_no: saved.passport_no || "",
+                passport_expiry: saved.passport_expiry || "",
+                applicant_type: type,
+            },
+        ]);
+        toast.success(`${saved.first_name} ${saved.last_name} eklendi. Belgelerini yüklemeyi unutmayın.`);
+    };
 
     // --- Taslak kaydet / devam et -----------------------------------------
     const saveDraft = async () => {
@@ -653,6 +686,52 @@ export default function Apply() {
                                             </Button>
                                         </div>
                                     </div>
+
+                                    {savedTravelers.length > 0 && (
+                                        <div
+                                            className="mt-5 rounded-xl border border-primary/25 bg-primary/5 p-5"
+                                            data-testid="saved-travelers-panel"
+                                        >
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <p className="font-heading text-sm font-bold">Kayıtlı yolcularım</p>
+                                                <span className="text-xs text-muted-foreground">
+                                                    Tek tıkla ekleyin, bilgiler otomatik dolar
+                                                </span>
+                                            </div>
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                                {savedTravelers.map((s) => {
+                                                    const added = travelers.some(
+                                                        (t) =>
+                                                            (s.passport_no && t.passport_no === s.passport_no) ||
+                                                            (t.first_name === s.first_name && t.last_name === s.last_name)
+                                                    );
+                                                    return (
+                                                        <Button
+                                                            key={s.id}
+                                                            type="button"
+                                                            variant="secondary"
+                                                            className="h-10 border border-border"
+                                                            onClick={() => addSavedTraveler(s)}
+                                                            disabled={added}
+                                                            data-testid={`add-saved-traveler-${s.id}`}
+                                                        >
+                                                            {added ? (
+                                                                <CheckCircle2 className="mr-1.5 h-4 w-4 text-[hsl(var(--success))]" />
+                                                            ) : (
+                                                                <Plus className="mr-1.5 h-4 w-4" />
+                                                            )}
+                                                            {s.applicant_type === "child" ? (
+                                                                <Baby className="mr-1.5 h-4 w-4" />
+                                                            ) : (
+                                                                <User className="mr-1.5 h-4 w-4" />
+                                                            )}
+                                                            {s.first_name} {s.last_name}
+                                                        </Button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="mt-5 space-y-6">
                                         {travelers.map((t, idx) => {
@@ -1280,6 +1359,9 @@ export default function Apply() {
                                             <span className="font-heading text-2xl font-bold" data-testid="summary-total-price">
                                                 {formatMoney(quote.total, quote.currency)}
                                             </span>
+                                        </div>
+                                        <div className="pt-1">
+                                            <FxNote variant="inline" />
                                         </div>
                                     </div>
                                 ) : (

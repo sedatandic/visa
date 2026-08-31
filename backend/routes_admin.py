@@ -36,6 +36,8 @@ from db import (
 from content import BANK_TRANSFER, COMPANY
 from doc_reminders import (
     missing_documents,
+    pending_drafts,
+    run_draft_reminder_sweep,
     pending_applications,
     run_reminder_sweep,
     send_document_reminder,
@@ -871,3 +873,19 @@ async def admin_login_codes(email: Optional[str] = None, admin=Depends(require_a
             for d in docs
         ]
     }
+
+
+# --------------------------------------------------- taslak (sepeti kurtarma)
+@router.get("/admin/draft-reminders/pending")
+async def admin_pending_draft_reminders(admin=Depends(require_admin)):
+    items = await pending_drafts()
+    return {"items": items, "total": len(items), "due": sum(1 for i in items if i["due"])}
+
+
+@router.post("/admin/draft-reminders/run")
+async def admin_run_draft_reminders(
+    request: Request, payload: Optional[dict] = None, admin=Depends(require_admin)
+):
+    body = payload or {}
+    origin = _resolve_origin(body.get("origin_url"), request)
+    return await run_draft_reminder_sweep(origin, force=bool(body.get("force")))

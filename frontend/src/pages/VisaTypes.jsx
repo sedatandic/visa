@@ -5,6 +5,7 @@ import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { PricingTabs } from "../components/PricingTabs";
 import { VisaGuideLinks } from "../components/VisaGuideLinks";
+import { FxNote } from "../components/FxNote";
 import { Button } from "../components/ui/button";
 
 const INCLUDED = [
@@ -41,6 +42,12 @@ export default function VisaTypes() {
 
             <section className="section">
                 <div className="container-page">
+                    <div className="mb-6 flex flex-wrap items-center gap-3">
+                        <FxNote />
+                        <span className="text-xs text-muted-foreground">
+                            Fiyatlar dolar bazlıdır, tahsilat güncel kurla TL olarak yapılır.
+                        </span>
+                    </div>
                     <PricingTabs />
 
                     <div className="mt-14" data-testid="visa-guides-index">

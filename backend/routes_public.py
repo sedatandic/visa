@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import secrets
 import string
 import uuid
@@ -44,6 +45,7 @@ from db import (
     testimonials_col,
     uploads_col,
     visa_types_col,
+    drafts_col,
 )
 from emailer import (
     admin_notify_html,
@@ -138,6 +140,18 @@ async def get_visa_guide(slug: str):
     guide["related"] = [await apply_fx_to_visa(r, fx["effective_rate"]) for r in guide["related"]]
     guide["fx"] = fx
     return guide
+
+
+@router.get("/fx")
+async def public_fx():
+    """Musteriye gosterilen guncel USD/TRY kuru (seffaflik icin)."""
+    fx = await get_fx()
+    return {
+        "effective_rate": fx["effective_rate"],
+        "currency_pair": fx["currency_pair"],
+        "fetched_at": fx["fetched_at"],
+        "source": fx["source"] if fx["mode"] == "live" else "sabit kur",
+    }
 
 
 @router.get("/content/site")
@@ -438,6 +452,22 @@ async def create_application(payload: ApplicationCreate):
         "updated_at": now,
     }
     await applications_col.insert_one(dict(doc))
+
+    # aile profili: yolcular bir sonraki basvuruda tek tikla eklenebilsin
+    try:
+        from routes_account import upsert_saved_travelers
+
+        await upsert_saved_travelers(doc["contact"]["email"], travelers)
+    except Exception as exc:  # pragma: no cover
+        logger.warning("saved travelers upsert failed: %s", exc)
+
+    # basvuru olustugu icin varsa bekleyen taslaklar temizlenir
+    try:
+        await drafts_col.delete_many(
+            {"email": {"$regex": f"^{re.escape(doc['contact']['email'])}$", "$options": "i"}}
+        )
+    except Exception as exc:  # pragma: no cover
+        logger.warning("draft cleanup failed: %s", exc)
 
     email_result = await send_email(
         doc["contact"]["email"],

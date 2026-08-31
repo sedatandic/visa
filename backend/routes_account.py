@@ -19,7 +19,13 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr, Field
 
-from db import applications_col, drafts_col, login_codes_col, serialize_doc
+from db import (
+    applications_col,
+    drafts_col,
+    login_codes_col,
+    saved_travelers_col,
+    serialize_doc,
+)
 from doc_reminders import missing_documents
 from emailer import draft_saved_html, login_code_html, send_email
 
@@ -307,3 +313,118 @@ async def get_draft(draft_id: str, code: str):
     if not doc or doc.get("resume_code") != (code or "").strip().upper():
         raise HTTPException(404, "Taslak bulunamadi veya devam kodu hatali.")
     return _draft_summary(doc, include_data=True)
+
+
+# ------------------------------------------------- aile profili (kayitli yolcular)
+TRAVELER_FIELDS = (
+    "first_name",
+    "last_name",
+    "birth_date",
+    "gender",
+    "national_id",
+    "passport_no",
+    "passport_expiry",
+    "applicant_type",
+)
+
+
+class SavedTravelerIn(BaseModel):
+    first_name: str = Field(..., min_length=2, max_length=60)
+    last_name: str = Field(..., min_length=2, max_length=60)
+    birth_date: Optional[str] = None
+    gender: Optional[str] = None
+    national_id: Optional[str] = None
+    passport_no: Optional[str] = None
+    passport_expiry: Optional[str] = None
+    applicant_type: str = "adult"
+    id: Optional[str] = None
+
+
+def _traveler_key(data: dict) -> str:
+    """Ayni yolcuyu tekrar kaydetmemek icin benzersiz anahtar."""
+    passport = (data.get("passport_no") or "").strip().upper()
+    if passport:
+        return f"p:{passport}"
+    return (
+        "n:"
+        + (data.get("first_name") or "").strip().lower()
+        + "|"
+        + (data.get("last_name") or "").strip().lower()
+        + "|"
+        + (data.get("birth_date") or "")
+    )
+
+
+def _saved_traveler_view(doc: dict) -> dict:
+    d = serialize_doc(doc) or {}
+    return {
+        "id": d.get("id"),
+        **{f: d.get(f) for f in TRAVELER_FIELDS},
+        "created_at": d.get("created_at"),
+        "updated_at": d.get("updated_at"),
+    }
+
+
+async def upsert_saved_travelers(email: str, travelers: list) -> int:
+    """Basvuru olusturuldugunda yolcularin profilini kaydeder/gunceller."""
+    email = _norm_email(email)
+    if not email:
+        return 0
+    saved = 0
+    now = datetime.now(timezone.utc)
+    for traveler in travelers or []:
+        data = {f: traveler.get(f) for f in TRAVELER_FIELDS}
+        if not data.get("first_name") or not data.get("last_name"):
+            continue
+        key = _traveler_key(data)
+        await saved_travelers_col.update_one(
+            {"email": email, "match_key": key},
+            {
+                "$set": {**data, "email": email, "match_key": key, "updated_at": now},
+                "$setOnInsert": {"id": str(uuid.uuid4()), "created_at": now},
+            },
+            upsert=True,
+        )
+        saved += 1
+    return saved
+
+
+@router.get("/account/travelers")
+async def list_saved_travelers(email: str = Depends(require_customer)):
+    docs = await saved_travelers_col.find({"email": email}).sort("updated_at", -1).to_list(50)
+    return {"items": [_saved_traveler_view(d) for d in docs]}
+
+
+@router.post("/account/travelers")
+async def save_traveler(payload: SavedTravelerIn, email: str = Depends(require_customer)):
+    data = {f: getattr(payload, f, None) for f in TRAVELER_FIELDS}
+    now = datetime.now(timezone.utc)
+    if payload.id:
+        res = await saved_travelers_col.update_one(
+            {"id": payload.id, "email": email},
+            {"$set": {**data, "match_key": _traveler_key(data), "updated_at": now}},
+        )
+        if res.matched_count == 0:
+            raise HTTPException(404, "Kayitli yolcu bulunamadi.")
+        doc = await saved_travelers_col.find_one({"id": payload.id, "email": email})
+        return _saved_traveler_view(doc)
+
+    key = _traveler_key(data)
+    await saved_travelers_col.update_one(
+        {"email": email, "match_key": key},
+        {
+            "$set": {**data, "email": email, "match_key": key, "updated_at": now},
+            "$setOnInsert": {"id": str(uuid.uuid4()), "created_at": now},
+        },
+        upsert=True,
+    )
+    doc = await saved_travelers_col.find_one({"email": email, "match_key": key})
+    return _saved_traveler_view(doc)
+
+
+@router.delete("/account/travelers/{traveler_id}")
+async def delete_saved_traveler(traveler_id: str, email: str = Depends(require_customer)):
+    res = await saved_travelers_col.delete_one({"id": traveler_id, "email": email})
+    if res.deleted_count == 0:
+        raise HTTPException(404, "Kayitli yolcu bulunamadi.")
+    return {"deleted": True}

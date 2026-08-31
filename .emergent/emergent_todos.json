@@ -1,22 +1,22 @@
 [
   {
-    "content": "Phase 12: eksik belge hatirlatma + rehber yonetimi - TAMAM",
+    "content": "Kur seffafligi (public /api/fx + FxNote) - TAMAM",
     "status": "completed"
   },
   {
-    "content": "Phase 14: USD bazli fiyat + canli kur + admin kur karti - TAMAM",
+    "content": "Sepeti kurtarma (taslak hatirlatma + sweep + admin endpointleri) - TAMAM",
     "status": "completed"
   },
   {
-    "content": "Phase 13: musteri hesabi (kod / e-posta+soyad), Basvurularim sayfasi - TAMAM",
+    "content": "Aile profili (saved travelers CRUD + otomatik kayit + backfill) - TAMAM",
     "status": "completed"
   },
   {
-    "content": "Phase 13: taslak kaydet & devam et + onceki basvurudan kopyalama - TAMAM",
+    "content": "Frontend: MyAccount kayitli yolcular + Apply tek tikla ekleme - TAMAM",
     "status": "completed"
   },
   {
-    "content": "testing_agent ile tum yeni ozelliklerin dogrulanmasi",
+    "content": "testing_agent ile dogrulama",
     "status": "in_progress"
   }
 ]

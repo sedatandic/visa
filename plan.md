@@ -28,9 +28,13 @@
 - **Operasyonel verim + dönüşüm (tamamlandı):**
   - **Eksik belge hatırlatma otomasyonu** (otomatik + admin’den manuel tetikleme) ile belge toplama süresini kısaltmak.
   - **Rehber içerik yönetimi**: Vize rehber metinleri ve SSS’leri admin panelinden düzenlenebilir hale getirmek.
-- **Yeni hedefler (tamamlandı):**
+- **Müşteri yaşam döngüsü (tamamlandı):**
   - **Müşteri Hesabı + Taslak**: müşterinin e-posta ile giriş yapıp başvurularını görmesi, yarım kalan başvuruya devam etmesi ve eski başvurudan kopyalayarak yeni başvuru başlatması.
-  - **TL tahsilat + USD baz fiyat**: 30 gün 110$ baz alınarak tüm fiyatların canlı kurla TL’ye çevrilmesi (admin kur payı ve manuel kur kontrolü ile).
+  - **Sepeti kurtarma (taslak hatırlatma)**: yarım kalan taslaklara otomatik hatırlatma e-postası.
+  - **Aile profili**: kayıtlı yolcuları hesapta saklayıp başvuruda tek tıkla ekleme.
+- **Fiyatlandırma (tamamlandı):**
+  - **TL tahsilat + USD baz fiyat + canlı kur**: 30 gün **110$** baz alınarak tüm fiyatların canlı kurla TL’ye çevrilmesi (admin kur payı ve manuel kur kontrolü ile).
+  - **Kur şeffaflığı**: müşteriye kurun “bugün güncellendi” bilgisi ve güncel kur gösterimi.
 
 ---
 
@@ -101,7 +105,7 @@
     - `POST /api/admin/applications/{id}/send-document-reminder`
     - `GET /api/admin/document-reminders/pending`
     - `POST /api/admin/document-reminders/run`
-  - `emailer.py`: `document_reminder_html` + müşteri belge yükledi admin bildirimi.
+  - `emailer.py`: `document_reminder_html` + müşteri belge yükledi admin bildirimi (`documents_completed_admin_html`).
 - Frontend:
   - `Track.jsx`: eksik belge paneli + upload + gönder.
   - `AdminApplicationDetail.jsx`: eksik belgeler paneli + hatırlatma butonu.
@@ -114,7 +118,7 @@
   - Menü linki eklendi.
 
 **Test / Doğrulama**
-- `testing_agent_v3` (iteration_12.json): belge otomasyonu + rehber yönetimi PASS (backend+frontend).
+- `testing_agent_v3` (iteration_12.json): PASS.
 
 ---
 
@@ -150,7 +154,7 @@
 - Navbar: “Başvurularım” linki eklendi.
 
 **Test / Doğrulama**
-- `testing_agent_v3` (iteration_12.json): müşteri hesap + taslak akışları PASS.
+- `testing_agent_v3` (iteration_12.json): PASS.
 
 ---
 
@@ -178,7 +182,56 @@
 - Kartlarda ve rehber sayfasında TL fiyatın altında: **“≈ 110 $ · güncel kurla TL tahsil edilir”** notu.
 
 **Test / Doğrulama**
-- `testing_agent_v3` (iteration_12.json): FX + pricing %100 PASS.
+- `testing_agent_v3` (iteration_12.json): PASS.
+
+---
+
+### Phase 15 — Kur Şeffaflığı + Sepeti Kurtarma + Aile Profili (Tamamlandı)
+**Amaç:** Kur bilgisini şeffaflaştırmak, yarım kalan başvurulardan dönüşümü artırmak ve aile yolcu profilini tekrar kullanılabilir yapmak.
+
+#### A) Kur Şeffaflığı — **DONE**
+- Backend:
+  - Public endpoint: `GET /api/fx` → sadece **effective_rate, currency_pair, fetched_at, source** (hassas alanlar dönmez).
+- Frontend:
+  - Yeni bileşen: `FxNote.jsx`.
+  - Yerleşim:
+    - Ana sayfa fiyat bölümünde (badge)
+    - `/vize-tipleri` fiyat üstünde (badge)
+    - Rehber sayfası fiyat kutusunda (inline)
+    - Başvuru özetinde (inline)
+  - Metin: **“1 $ = X ₺ · kur bugün güncellendi”**.
+
+#### B) Sepeti Kurtarma (Taslak Hatırlatma) — **DONE**
+- Backend:
+  - `doc_reminders.py` içine taslak sweep eklendi:
+    - 24 saat sonra ilk hatırlatma
+    - 72 saat aralık
+    - Max 2 hatırlatma
+    - Başvuruya dönüşmüş taslaklar atlanır
+  - `emailer.py`: `draft_reminder_html`
+  - Scheduler loop: 6 saatlik döngüye taslak sweep dahil.
+- Admin:
+  - `GET /api/admin/draft-reminders/pending`
+  - `POST /api/admin/draft-reminders/run`
+
+#### C) Aile Profili (Kayıtlı Yolcular) — **DONE**
+- Backend:
+  - Koleksiyon: `saved_travelers`
+  - Account API:
+    - `GET /api/account/travelers`
+    - `POST /api/account/travelers` (upsert; aynı pasaportla tekrar eklenmez)
+    - `DELETE /api/account/travelers/{id}`
+  - Otomasyon:
+    - Başvuru oluşturulunca yolcular otomatik `upsert` edilir.
+    - Mevcut başvurular için tek seferlik backfill: **61 kayıt**.
+    - Başvuru sonrası aynı e-postanın taslakları otomatik silinir.
+- Frontend:
+  - `/hesabim` içinde “Kayıtlı yolcularım” bölümü (liste + sil).
+  - `Apply.jsx`: giriş yapmış kullanıcıya “Kayıtlı yolcularım” paneli ve **tek tıkla yolcu ekleme**.
+  - Giriş yapılmamışsa panel görünmez.
+
+**Test / Doğrulama**
+- `testing_agent_v3` (iteration_13.json): **backend 46/46 PASS**, frontend **%100 PASS**.
 
 ---
 
@@ -195,6 +248,7 @@
      - `document_reminder`
      - `login_code`
      - `draft_saved`
+     - `draft_reminder`
 2. **Stripe prod geçişi (opsiyonel) — P1**
    - Canlı anahtarlar + webhook secret + success/cancel URL’leri.
 3. **İçerik onayı ve gerçek veriler — P1**
@@ -232,30 +286,25 @@
   - `/hesabim` üzerinden giriş (kod veya soyad) çalışır; başvurular ve taslaklar listelenir.
   - Başvurudan kopyalayarak yeni başvuru başlatma çalışır.
   - Taslak kaydetme ve devam etme çalışır.
-- **USD baz fiyat + canlı kur**:
+- **Sepeti kurtarma (taslak hatırlatma)**:
+  - 24 saat sonra otomatik hatırlatma çalışır; başvuruya dönüşen taslaklara mail gitmez.
+  - Admin pending/run endpointleri ile manuel tetikleme yapılabilir.
+- **Aile profili**:
+  - Yolcular otomatik kaydolur; `/hesabim` sayfasında görünür; başvuruda tek tıkla eklenebilir.
+- **USD baz fiyat + canlı kur + şeffaflık**:
   - 30 gün tek giriş = 110 USD baz; TL fiyatlar canlı kurla hesaplanır.
   - Admin kur payı / manuel kur ile fiyat kontrolü yapabilir.
+  - Müşteri arayüzünde “kur bugün güncellendi” bilgisi ve kur değeri görünür.
 - `RESEND_API_KEY` yokken hiçbir kritik akış kırılmaz; tüm “atlanan” mailler `email_outbox`’a kaydolur.
 - Canlı Resend anahtarı verildiğinde e-postalar gerçek adrese gider ve outbox “sent” olarak kaydolur.
 
 ---
 
 ## DURUM (2026-08-31)
-- Phase 1 POC: PASS.
-- Phase 2: Backend + Frontend tamamlandı; E2E test PASS.
-- Phase 3: TAMAMLANDI.
-- Phase 4: TAMAMLANDI.
-- Phase 5: TAMAMLANDI.
-- Phase 6: TAMAMLANDI.
-- Phase 7: TAMAMLANDI.
-- Phase 8: TAMAMLANDI.
-- Phase 9: TAMAMLANDI.
-- Phase 10: **TAMAMLANDI** — iteration_10.json PASS.
-- Phase 11: **TAMAMLANDI** — iteration_11.json PASS.
-- Phase 12: **TAMAMLANDI** — belge hatırlatma + rehber yönetimi.
-- Phase 13: **TAMAMLANDI** — müşteri hesabı + taslak + kopyalayarak yeni başvuru.
-- Phase 14: **TAMAMLANDI** — USD baz fiyat + canlı kur + admin kur kartı.
+- Phase 1–14: **TAMAMLANDI**.
+- Phase 15: **TAMAMLANDI** — kur şeffaflığı + sepeti kurtarma + aile profili.
 
-Test: `testing_agent_v3` iteration_12.json — backend 30/30 PASS, frontend %95 (kritik bug yok; uzun testte admin oturum zaman aşımı beklenen davranış).
+Test:
+- `testing_agent_v3` iteration_13.json — **backend 46/46 PASS**, frontend **%100 PASS**.
 
 Kalan opsiyonel işler: **RESEND_API_KEY ile canlı e-posta doğrulaması**, Stripe prod geçişi, içerik/hukuk onayı, gerçek banka/acente bilgileri, operasyonel güvenlik ayarları.

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     AlertTriangle,
     ArrowRight,
+    Baby,
     Copy,
     FileText,
     KeyRound,
@@ -11,6 +12,7 @@ import {
     Mail,
     RefreshCw,
     Trash2,
+    User,
     UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -171,6 +173,7 @@ export default function MyAccount() {
     const navigate = useNavigate();
     const [token, setToken] = useState(customerAuth.token);
     const [data, setData] = useState(null);
+    const [travelers, setTravelers] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -187,6 +190,9 @@ export default function MyAccount() {
         try {
             const { data: res } = await api.get("/account/me");
             setData(res);
+            api.get("/account/travelers")
+                .then(({ data: t }) => setTravelers(t.items || []))
+                .catch(() => {});
         } catch (err) {
             if (err?.response?.status === 401) {
                 customerAuth.clear();
@@ -214,7 +220,18 @@ export default function MyAccount() {
         customerAuth.clear();
         setToken(null);
         setData(null);
+        setTravelers([]);
         toast.success("Çıkış yapıldı.");
+    };
+
+    const deleteTraveler = async (id) => {
+        try {
+            await api.delete(`/account/travelers/${id}`);
+            setTravelers((list) => list.filter((t) => t.id !== id));
+            toast.success("Kayıtlı yolcu silindi.");
+        } catch (err) {
+            toast.error(apiError(err, "Yolcu silinemedi."));
+        }
     };
 
     const deleteDraft = async (id) => {
@@ -325,8 +342,65 @@ export default function MyAccount() {
                                 </div>
                             )}
 
-                            {/* APPLICATIONS */}
-                            <div className="mt-10" data-testid="account-applications">
+                            {/* SAVED TRAVELERS */}
+                            <div className="mt-10" data-testid="account-saved-travelers">
+                                <div className="flex flex-wrap items-end justify-between gap-3">
+                                    <div>
+                                        <h2 className="font-heading text-lg font-bold">Kayıtlı yolcularım</h2>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            Başvurularınızdaki yolcular burada saklanır; yeni başvuruda tek tıkla
+                                            eklenir. Belgeler her başvuruda yeniden yüklenmelidir.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {(travelers || []).length === 0 ? (
+                                    <div className="card-surface mt-4 p-6">
+                                        <p className="text-sm text-muted-foreground">
+                                            Henüz kayıtlı yolcu yok. İlk başvurunuzu tamamladığınızda yolcular
+                                            otomatik olarak buraya eklenir.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                        {travelers.map((t) => (
+                                            <div
+                                                key={t.id}
+                                                className="card-surface flex items-start justify-between gap-3 p-5"
+                                                data-testid={`saved-traveler-${t.id}`}
+                                            >
+                                                <div className="min-w-0">
+                                                    <p className="flex items-center gap-1.5 font-heading text-base font-bold">
+                                                        {t.applicant_type === "child" ? (
+                                                            <Baby className="h-4 w-4 text-primary" />
+                                                        ) : (
+                                                            <User className="h-4 w-4 text-primary" />
+                                                        )}
+                                                        {t.first_name} {t.last_name}
+                                                    </p>
+                                                    <p className="mt-1.5 text-xs text-muted-foreground">
+                                                        {t.birth_date ? `Doğum: ${t.birth_date}` : "Doğum tarihi yok"}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {t.passport_no ? `Pasaport: ${t.passport_no}` : "Pasaport bilgisi yok"}
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    variant="secondary"
+                                                    className="h-9 shrink-0 border border-border text-destructive"
+                                                    onClick={() => deleteTraveler(t.id)}
+                                                    aria-label="Kayıtlı yolcuyu sil"
+                                                    data-testid={`delete-saved-traveler-${t.id}`}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* APPLICATIONS */}                            <div className="mt-10" data-testid="account-applications">
                                 <h2 className="font-heading text-lg font-bold">Başvurularım</h2>
                                 {(data?.applications || []).length === 0 ? (
                                     <div className="card-surface mt-4 p-8 text-center">

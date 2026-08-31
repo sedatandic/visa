@@ -64,6 +64,28 @@ async def seed_visa_types():
     logger.info("visa types upserted (%d active)", len(known_ids))
 
 
+async def backfill_saved_travelers():
+    """Mevcut basvurulardaki yolculari bir kez aile profiline aktarir."""
+    flag = await settings_col.find_one({"key": "saved_travelers_backfilled"})
+    if flag:
+        return
+    from routes_account import upsert_saved_travelers
+
+    total = 0
+    cursor = applications_col.find({"contact.email": {"$exists": True}})
+    async for doc in cursor:
+        email = (doc.get("contact") or {}).get("email")
+        if not email:
+            continue
+        total += await upsert_saved_travelers(email, doc.get("travelers") or [])
+    await settings_col.update_one(
+        {"key": "saved_travelers_backfilled"},
+        {"$set": {"key": "saved_travelers_backfilled", "value": {"count": total}}},
+        upsert=True,
+    )
+    logger.info("saved travelers backfilled (%d)", total)
+
+
 async def migrate_legacy_applications():
     """Convert single-applicant applications (v1 schema) to the multi-traveller schema."""
     cursor = applications_col.find({"travelers": {"$exists": False}, "applicant": {"$exists": True}})
@@ -172,6 +194,7 @@ async def lifespan(app: FastAPI):
         await seed_visa_types()
         await seed_content_collections()
         await migrate_legacy_applications()
+        await backfill_saved_travelers()
     except Exception as exc:
         logger.error("startup db init failed: %s", exc)
     try:
