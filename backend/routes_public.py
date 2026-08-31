@@ -49,9 +49,12 @@ from emailer import (
     admin_notify_html,
     applicant_received_html,
     contact_admin_html,
+    documents_completed_admin_html,
     send_email,
 )
-from models import ApplicationCreate, ContactCreate, QuoteRequest
+from models import ApplicationCreate, ContactCreate, DocumentSubmission, QuoteRequest
+from doc_reminders import missing_documents
+from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
 from passport_ai import read_passport
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
 from visa_guides import build_guide, guide_index
@@ -82,16 +85,17 @@ async def get_visa_type(visa_type_id: str):
     visa = await visa_types_col.find_one({"id": visa_type_id})
     if not visa:
         visa = next((v for v in VISA_TYPES if v["id"] == visa_type_id), None)
-    return visa
+    if not visa:
+        return None
+    return await apply_fx_to_visa(serialize_doc(visa))
 
 
 # ---------------------------------------------------------------- content
 @router.get("/visa-types")
 async def get_visa_types():
     docs = await visa_types_col.find({"active": True}).sort("order", 1).to_list(100)
-    if not docs:
-        return VISA_TYPES
-    return serialize_doc(docs)
+    items = serialize_doc(docs) if docs else VISA_TYPES
+    return await apply_fx_to_list(items)
 
 
 @router.get("/visa-guides")
@@ -99,6 +103,7 @@ async def list_visa_guides():
     """Vize rehberi (SEO) sayfalarinin listesi. Fiyatlar DB'den guncellenir."""
     docs = await visa_types_col.find({"active": True}).to_list(100)
     by_slug = {d.get("slug"): d for d in docs}
+    fx = await get_fx()
     items = []
     for item in guide_index():
         doc = by_slug.get(item["slug"])
@@ -109,12 +114,13 @@ async def list_visa_guides():
                 **item,
                 "name": doc.get("name", item["name"]),
                 "price": doc.get("price", item["price"]),
+                "price_usd": doc.get("price_usd", item.get("price_usd")),
                 "currency": doc.get("currency", item["currency"]),
                 "processing_days": doc.get("processing_days", item["processing_days"]),
                 "summary": doc.get("description", item["summary"]),
             }
-        items.append(item)
-    return {"items": items}
+        items.append(await apply_fx_to_visa(item, fx["effective_rate"]))
+    return {"items": items, "fx": fx}
 
 
 @router.get("/visa-guides/{slug}")
@@ -127,6 +133,10 @@ async def get_visa_guide(slug: str):
     guide = build_guide(slug, visa_override=visa_override, guide_override=guide_override)
     if not guide:
         raise HTTPException(404, "Vize rehberi bulunamadi.")
+    fx = await get_fx()
+    guide["visa"] = await apply_fx_to_visa(guide["visa"], fx["effective_rate"])
+    guide["related"] = [await apply_fx_to_visa(r, fx["effective_rate"]) for r in guide["related"]]
+    guide["fx"] = fx
     return guide
 
 
@@ -159,7 +169,8 @@ async def get_site_content():
     return {
         "company": company,
         "visa_categories": VISA_CATEGORIES,
-        "addons": list(ADDONS.values()),
+        "addons": await addons_with_fx(),
+        "fx": await get_fx(),
         "family_discount_tiers": [{"min": m, "rate": r} for m, r in FAMILY_DISCOUNT_TIERS],
         "family_discount_text": FAMILY_DISCOUNT_TEXT,
         "max_travelers": MAX_TRAVELERS,
@@ -222,7 +233,9 @@ async def pricing_quote(payload: QuoteRequest):
         if not visa:
             raise HTTPException(400, f"Gecersiz vize tipi: {vid}")
         prices.append(float(visa["price"]))
-    return compute_pricing(prices, payload.addons.model_dump())
+    quote = compute_pricing(prices, payload.addons.model_dump(), addon_prices=await addon_prices_try())
+    quote["fx"] = await get_fx()
+    return quote
 
 
 # ---------------------------------------------------------------- uploads
@@ -385,7 +398,7 @@ async def create_application(payload: ApplicationCreate):
         travelers.append(data)
         prices.append(float(visa["price"]))
 
-    pricing = compute_pricing(prices, payload.addons.model_dump())
+    pricing = compute_pricing(prices, payload.addons.model_dump(), addon_prices=await addon_prices_try())
 
     reference_code = generate_reference_code()
     while await applications_col.find_one({"reference_code": reference_code}):
@@ -448,8 +461,8 @@ async def create_application(payload: ApplicationCreate):
     return result
 
 
-@router.get("/applications/track")
-async def track_application(code: str, last_name: str):
+async def _find_application_for_tracking(code: str, last_name: str) -> dict:
+    """Takip kodu + soyad dogrulamasi yapar; basarisizsa 400/404 firlatir."""
     code = (code or "").strip().upper()
     last_name = (last_name or "").strip()
     if not code or not last_name:
@@ -470,7 +483,81 @@ async def track_application(code: str, last_name: str):
 
     if last_name.lower() not in candidates:
         raise HTTPException(404, "Takip kodu ve soyad bilgisi eslesmiyor.")
-    return public_application_view(doc)
+    return doc
+
+
+@router.get("/applications/track")
+async def track_application(code: str, last_name: str):
+    doc = await _find_application_for_tracking(code, last_name)
+    view = public_application_view(doc)
+    view["missing_documents"] = missing_documents(doc)
+    return view
+
+
+@router.post("/applications/{code}/documents")
+async def submit_missing_documents(code: str, payload: DocumentSubmission):
+    """Musterinin takip sayfasindan eksik belgelerini yuklemesi."""
+    doc = await _find_application_for_tracking(code, payload.last_name)
+    updates = {}
+    uploaded_keys = []
+
+    async def _validate(file_id: str):
+        exists = await uploads_col.find_one({"id": file_id, "is_deleted": False})
+        if not exists:
+            raise HTTPException(400, "Yuklenen belge bulunamadi. Lutfen tekrar yukleyin.")
+
+    extra = dict(doc.get("extra_documents") or {})
+    for key in ("ticket", "hotel"):
+        file_id = getattr(payload, f"{key}_file_id", None)
+        if file_id:
+            await _validate(file_id)
+            extra[f"{key}_file_id"] = file_id
+            uploaded_keys.append(key)
+    if uploaded_keys:
+        updates["extra_documents"] = extra
+
+    travelers = [dict(t) for t in (doc.get("travelers") or [])]
+    for item in payload.traveler_documents or []:
+        target = next((t for t in travelers if t.get("id") == item.traveler_id), None)
+        if not target:
+            raise HTTPException(400, "Yolcu bulunamadi.")
+        docs = dict(target.get("documents") or {})
+        for key in ("passport", "photo"):
+            file_id = getattr(item, f"{key}_file_id", None)
+            if file_id:
+                await _validate(file_id)
+                docs[f"{key}_file_id"] = file_id
+                target[f"{key}_file_id"] = file_id
+                uploaded_keys.append(f"{key}:{item.traveler_id}")
+        target["documents"] = docs
+    if any(t.get("documents") for t in travelers):
+        updates["travelers"] = travelers
+
+    if not uploaded_keys:
+        raise HTTPException(400, "Yuklenecek belge belirtilmedi.")
+
+    updates["updated_at"] = datetime.now(timezone.utc)
+    await applications_col.update_one({"id": doc["id"]}, {"$set": updates})
+    fresh = await applications_col.find_one({"id": doc["id"]})
+    remaining = missing_documents(fresh)
+
+    if not remaining and fresh.get("status") in {"submitted", "documents_pending"}:
+        await applications_col.update_one({"id": doc["id"]}, {"$set": {"status": "reviewing"}})
+        fresh = await applications_col.find_one({"id": doc["id"]})
+
+    admin_email = os.environ.get("ADMIN_EMAIL")
+    if admin_email:
+        await send_email(
+            admin_email,
+            f"Musteri belge yukledi - {fresh.get('reference_code', '')}",
+            documents_completed_admin_html(fresh, uploaded_keys),
+            kind="documents_uploaded",
+            meta={"application_id": fresh.get("id")},
+        )
+
+    view = public_application_view(fresh)
+    view["missing_documents"] = remaining
+    return {"application": view, "missing_documents": remaining, "uploaded": uploaded_keys}
 
 
 # ---------------------------------------------------------------- contact

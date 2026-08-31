@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Clock } from "lucide-react";
 import { Button } from "./ui/button";
-import { formatMoney } from "../lib/site";
+import { formatMoney, formatUsd } from "../lib/site";
 
 export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false }) => {
     const isPopular = !!visa.popular;
@@ -61,6 +61,12 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                 </span>
                 <span className="pb-1.5 text-sm text-muted-foreground">/ kişi başı</span>
             </div>
+
+            {visa.price_usd ? (
+                <p className="mt-1.5 text-xs text-muted-foreground" data-testid={`visa-price-usd-${visa.id}`}>
+                    {formatUsd(visa.price_usd)} · güncel kurla TL tahsil edilir
+                </p>
+            ) : null}
 
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1">

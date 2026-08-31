@@ -70,6 +70,18 @@ export function formatMoney(amount, currency = "TRY") {
     return `${formatted} ${cur === "TRY" ? "₺" : cur}`;
 }
 
+/** USD baz fiyat gosterimi: "≈ 110 $" */
+export function formatUsd(amount, { approx = true } = {}) {
+    if (amount === null || amount === undefined || amount === "") return "-";
+    const value = Number(amount);
+    const formatted = value.toLocaleString("tr-TR", {
+        minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+    });
+    return `${approx ? "≈ " : ""}${formatted} $`;
+}
+
+
 export function formatDate(value) {
     if (!value) return "-";
     const d = new Date(value);

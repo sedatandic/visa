@@ -253,6 +253,59 @@ def visa_ready_html(app_doc: dict, download_url: str, message: str = "") -> str:
     return _wrap("Vizeniz hazır", body)
 
 
+def document_reminder_html(app_doc: dict, missing: list, upload_url: str = "") -> str:
+    """Eksik belge hatirlatmasi: eksik listesi + yukleme baglantisi."""
+    items = []
+    for m in missing:
+        who = f" — {m['traveler_name']}" if m.get("traveler_name") else ""
+        items.append(
+            '<li style="margin:0 0 8px;font-size:14px;line-height:22px;color:#0B1F33;">'
+            f"<strong>{m['label']}</strong>{who}</li>"
+        )
+    button_html = ""
+    if upload_url:
+        button_html = f"""
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
+      <tr><td style="background-color:#0B6B3A;border-radius:8px;">
+        <a href="{upload_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Eksik belgeleri yükle</a>
+      </td></tr>
+    </table>
+    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#52606D;">Buton çalışmıyorsa bu adresi tarayıcınıza kopyalayabilirsiniz:<br/>{upload_url}</p>
+    """
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {_contact_name(app_doc)},</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
+      {app_doc.get('reference_code','')} kodlu Dubai vize başvurunuzu yetkili mercilere iletebilmemiz için
+      aşağıdaki belgelere ihtiyacımız var. Belgeleriniz tamamlandığı anda başvurunuz işleme alınır.
+    </p>
+    <div style="background-color:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:16px;">
+      <div style="font-size:12px;font-weight:bold;color:#B45309;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Eksik Belgeler</div>
+      <ul style="margin:0;padding-left:18px;">{''.join(items)}</ul>
+    </div>
+    {button_html}
+    <p style="margin:18px 0 0;font-size:13px;line-height:21px;color:#52606D;">
+      Belgelerinizi telefonunuzla fotoğraflayıp yükleyebilirsiniz. Yükleme sırasında takip kodunuz ve
+      soyadınız sorulur. Sorunuz olursa bu e-postayı yanıtlayabilir veya WhatsApp üzerinden bize yazabilirsiniz.
+    </p>
+    """
+    return _wrap("Eksik belge hatırlatması", body)
+
+
+def documents_completed_admin_html(app_doc: dict, uploaded_keys: list) -> str:
+    """Musteri eksik belgeleri yukledi - admin bildirimi."""
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
+      {app_doc.get('reference_code','')} kodlu başvuru için müşteri yeni belge yükledi.
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      {_row('Takip Kodu', app_doc.get('reference_code',''))}
+      {_row('İletişim', _contact_name(app_doc))}
+      {_row('Yüklenen belgeler', ', '.join(uploaded_keys) or '-')}
+    </table>
+    """
+    return _wrap("Müşteri belge yükledi", body)
+
+
 def contact_admin_html(msg: dict) -> str:
     body = f"""
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -264,3 +317,55 @@ def contact_admin_html(msg: dict) -> str:
     <p style="margin:16px 0 0;font-size:14px;line-height:22px;white-space:pre-wrap;">{msg.get('message','')}</p>
     """
     return _wrap("Yeni iletişim mesajı", body)
+
+
+def login_code_html(code: str, ttl_minutes: int, account_url: str = "") -> str:
+    """Musteri girisi icin tek kullanimlik kod."""
+    link = (
+        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#52606D;">'
+        f'Giris sayfasi: <a href="{account_url}" style="color:#0B6B3A;">{account_url}</a></p>'
+        if account_url
+        else ""
+    )
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
+      Basvurularinizi goruntulemek ve yarim kalan basvurunuza devam etmek icin giris kodunuz:
+    </p>
+    <div style="background-color:#F1F5F9;border:1px solid #E2E8F0;border-radius:10px;padding:18px;text-align:center;">
+      <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#0B1F33;">{code}</div>
+      <div style="margin-top:8px;font-size:12px;color:#52606D;">Kod {ttl_minutes} dakika gecerlidir.</div>
+    </div>
+    {link}
+    <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#52606D;">
+      Bu kodu siz talep etmediyseniz bu e-postayi dikkate almayabilirsiniz.
+    </p>
+    """
+    return _wrap("Giris kodunuz", body)
+
+
+def draft_saved_html(draft: dict, resume_url: str = "") -> str:
+    """Taslak kaydedildi bilgilendirmesi."""
+    button = ""
+    if resume_url:
+        button = f"""
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
+      <tr><td style="background-color:#0B6B3A;border-radius:8px;">
+        <a href="{resume_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Basvuruya devam et</a>
+      </td></tr>
+    </table>
+    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#52606D;">Buton calismiyorsa: {resume_url}</p>
+    """
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
+      Basvurunuz kaydedildi. Diledigini zaman kaldiginiz yerden devam edebilirsiniz.
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      {_row('Devam kodu', draft.get('resume_code', ''))}
+      {_row('Yolcu sayisi', draft.get('traveler_count', 1))}
+    </table>
+    {button}
+    <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#52606D;">
+      Kaydedilen bilgiler 60 gun saklanir. Belgeleriniz yalnizca basvurunuz icin kullanilir.
+    </p>
+    """
+    return _wrap("Basvurunuz kaydedildi", body)

@@ -422,6 +422,7 @@ def guide_index() -> list:
                 "applicant_type": visa.get("applicant_type"),
                 "processing_days": visa.get("processing_days"),
                 "price": visa.get("price"),
+                "price_usd": visa.get("price_usd"),
                 "currency": visa.get("currency", "TRY"),
                 "popular": visa.get("popular", False),
                 "summary": visa.get("description", ""),

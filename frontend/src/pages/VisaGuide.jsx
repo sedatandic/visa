@@ -13,7 +13,7 @@ import {
     Users,
 } from "lucide-react";
 import { api } from "../lib/api";
-import { COMPANY, formatMoney, setJsonLd, setMeta } from "../lib/site";
+import { COMPANY, formatMoney, formatUsd, setJsonLd, setMeta } from "../lib/site";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
 import {
@@ -220,6 +220,11 @@ export default function VisaGuide() {
                                     / kişi başı
                                 </span>
                             </p>
+                            {visa.price_usd ? (
+                                <p className="mt-1.5 text-xs text-muted-foreground" data-testid="visa-guide-price-usd">
+                                    {formatUsd(visa.price_usd)} — ödeme, işlem günündeki güncel kurla TL olarak alınır
+                                </p>
+                            ) : null}
                             <dl className="mt-5 space-y-3 border-t border-border pt-5">
                                 {facts.map(({ icon: Icon, label, value }) => (
                                     <div key={label} className="flex items-start justify-between gap-3 text-sm">

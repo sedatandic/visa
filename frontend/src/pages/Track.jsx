@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CreditCard, Download, FileCheck2, Loader2, Search } from "lucide-react";
+import { AlertTriangle, CreditCard, Download, FileCheck2, Loader2, Search, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError, API } from "../lib/api";
 import { STATUS_META, formatDate, formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { PaymentBadge, StatusBadge } from "../components/StatusBadge";
+import { FileDropzone } from "../components/FileDropzone";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -13,11 +14,44 @@ import { Label } from "../components/ui/label";
 export default function Track() {
     const [searchParams] = useSearchParams();
     const [code, setCode] = useState(searchParams.get("kod") || "");
-    const [lastName, setLastName] = useState("");
+    const [lastName, setLastName] = useState(searchParams.get("soyad") || "");
     const [loading, setLoading] = useState(false);
     const [paying, setPaying] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState("");
+    const [docSlots, setDocSlots] = useState({});
+    const [submittingDocs, setSubmittingDocs] = useState(false);
+
+    const submitDocuments = async () => {
+        const body = { last_name: lastName.trim(), traveler_documents: [] };
+        const perTraveler = {};
+        Object.entries(docSlots).forEach(([slot, file]) => {
+            if (!file?.file_id) return;
+            const [key, travelerId] = slot.split(":");
+            if (travelerId) {
+                perTraveler[travelerId] = { ...(perTraveler[travelerId] || {}), traveler_id: travelerId };
+                perTraveler[travelerId][`${key}_file_id`] = file.file_id;
+            } else {
+                body[`${key}_file_id`] = file.file_id;
+            }
+        });
+        body.traveler_documents = Object.values(perTraveler);
+        setSubmittingDocs(true);
+        try {
+            const { data } = await api.post(`/applications/${result.reference_code}/documents`, body);
+            setResult(data.application);
+            setDocSlots({});
+            toast.success(
+                (data.missing_documents || []).length === 0
+                    ? "Tüm belgeleriniz alındı. Başvurunuz incelemeye alındı."
+                    : "Belgeleriniz alındı. Kalan belgeleri de yükleyebilirsiniz."
+            );
+        } catch (err) {
+            toast.error(apiError(err, "Belgeler gönderilemedi."));
+        } finally {
+            setSubmittingDocs(false);
+        }
+    };
 
     useEffect(() => {
         setMeta(
@@ -169,6 +203,70 @@ export default function Track() {
                                     </div>
                                 )}
                             </div>
+
+                            {(result.missing_documents || []).length > 0 && (
+                                <div
+                                    className="rounded-xl border border-[hsl(var(--status-warning)/0.4)] bg-[hsl(var(--status-warning)/0.07)] p-6"
+                                    data-testid="tracking-missing-documents"
+                                >
+                                    <div className="flex items-start gap-2.5">
+                                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--status-warning))]" />
+                                        <div>
+                                            <h2 className="font-heading text-lg font-bold text-[hsl(var(--status-warning))]">
+                                                Eksik belgeler var
+                                            </h2>
+                                            <p className="mt-1 text-sm leading-6 text-[hsl(var(--status-warning))]">
+                                                Başvurunuzu yetkili mercilere iletebilmemiz için aşağıdaki belgeleri
+                                                yüklemeniz gerekiyor. Yükledikten sonra başvurunuz otomatik olarak
+                                                incelemeye alınır.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                                        {(result.missing_documents || []).map((m) => {
+                                            const slot = m.scope === "traveler" ? `${m.key}:${m.traveler_id}` : m.key;
+                                            return (
+                                                <div key={slot} className="rounded-xl border border-border bg-card p-4">
+                                                    <FileDropzone
+                                                        label={m.label}
+                                                        hint={m.traveler_name || "Başvuru geneli"}
+                                                        docType={m.key}
+                                                        value={docSlots[slot] || null}
+                                                        onChange={(f) => setDocSlots((s) => ({ ...s, [slot]: f }))}
+                                                        testId={`missing-doc-${slot}`}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <Button
+                                        onClick={submitDocuments}
+                                        disabled={submittingDocs || Object.keys(docSlots).length === 0}
+                                        className="mt-6 h-11"
+                                        data-testid="submit-missing-documents-button"
+                                    >
+                                        {submittingDocs ? (
+                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gönderiliyor…</>
+                                        ) : (
+                                            <><UploadCloud className="mr-2 h-4 w-4" /> Belgeleri gönder</>
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+
+                            {result.missing_documents && result.missing_documents.length === 0 && (
+                                <div
+                                    className="flex items-start gap-2.5 rounded-xl border border-[hsl(var(--brand-green)/0.3)] bg-[hsl(var(--brand-green)/0.07)] p-5"
+                                    data-testid="tracking-documents-complete"
+                                >
+                                    <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--brand-green))]" />
+                                    <p className="text-sm font-medium text-[hsl(var(--brand-green))]">
+                                        Tüm belgeleriniz tamam. Başvurunuz danışmanlarımız tarafından takip ediliyor.
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="card-surface p-6" data-testid="tracking-travelers">
                                 <h2 className="font-heading text-lg font-bold">Yolcular</h2>

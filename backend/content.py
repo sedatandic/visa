@@ -15,6 +15,7 @@ VISA_TYPES = [
         "entry_label": "Tek Giriş",
         "applicant_type": "adult",
         "price": 1999.0,
+        "price_usd": 110.0,
         "currency": "TRY",
         "processing_days": "ortalama 3 iş günü",
         "popular": True,
@@ -39,6 +40,7 @@ VISA_TYPES = [
         "entry_label": "Tek Giriş",
         "applicant_type": "adult",
         "price": 3999.0,
+        "price_usd": 220.0,
         "currency": "TRY",
         "processing_days": "ortalama 3 iş günü",
         "popular": False,
@@ -63,6 +65,7 @@ VISA_TYPES = [
         "entry_label": "Çok Giriş",
         "applicant_type": "adult",
         "price": 3499.0,
+        "price_usd": 195.0,
         "currency": "TRY",
         "processing_days": "3-5 iş günü",
         "popular": True,
@@ -87,6 +90,7 @@ VISA_TYPES = [
         "entry_label": "Çok Giriş",
         "applicant_type": "adult",
         "price": 5499.0,
+        "price_usd": 305.0,
         "currency": "TRY",
         "processing_days": "3-5 iş günü",
         "popular": False,
@@ -111,6 +115,7 @@ VISA_TYPES = [
         "entry_label": "Tek Giriş",
         "applicant_type": "child",
         "price": 999.0,
+        "price_usd": 55.0,
         "currency": "TRY",
         "processing_days": "ortalama 3 iş günü",
         "popular": True,
@@ -134,6 +139,7 @@ VISA_TYPES = [
         "entry_label": "Tek Giriş",
         "applicant_type": "child",
         "price": 1899.0,
+        "price_usd": 105.0,
         "currency": "TRY",
         "processing_days": "3-5 iş günü",
         "popular": False,
@@ -157,6 +163,7 @@ VISA_TYPES = [
         "entry_label": "Uzatma",
         "applicant_type": "adult",
         "price": 5299.0,
+        "price_usd": 290.0,
         "currency": "TRY",
         "processing_days": "2-4 iş günü",
         "popular": False,
@@ -180,6 +187,7 @@ VISA_TYPES = [
         "entry_label": "Transit",
         "applicant_type": "adult",
         "price": 1299.0,
+        "price_usd": 70.0,
         "currency": "TRY",
         "processing_days": "1-2 iş günü",
         "popular": False,
@@ -203,6 +211,7 @@ VISA_TYPES = [
         "entry_label": "2 Yıl Çok Giriş",
         "applicant_type": "adult",
         "price": 109000.0,
+        "price_usd": 6000.0,
         "currency": "TRY",
         "processing_days": "15-25 iş günü",
         "popular": False,
@@ -231,6 +240,7 @@ ADDONS = {
         "id": "express",
         "name": "Ekspres Vize Hizmeti",
         "price": 649.0,
+        "price_usd": 35.0,
         "currency": "TRY",
         "per_person": True,
         "description": "Acil seyahatler için öncelikli işlem. Başvurunuz sıraya girmeden işleme alınır, sonuç genellikle 24 saat içinde çıkar.",
@@ -240,6 +250,7 @@ ADDONS = {
         "id": "insurance",
         "name": "Seyahat Sağlık Sigortası",
         "price": 349.0,
+        "price_usd": 20.0,
         "currency": "TRY",
         "per_person": True,
         "description": "BAE'de sağlık masrafları yüksektir. Seyahat sürenizi kapsayan sağlık sigortasını başvurunuza ekleyin.",
@@ -585,7 +596,7 @@ def family_discount_rate(traveler_count: int) -> float:
     return 0.0
 
 
-def compute_pricing(visa_prices, addons: dict, currency: str = "TRY") -> dict:
+def compute_pricing(visa_prices, addons: dict, currency: str = "TRY", addon_prices: dict | None = None) -> dict:
     """Server-side authoritative pricing. visa_prices = list of float per traveller."""
     count = len(visa_prices)
     subtotal = round(sum(float(p) for p in visa_prices), 2)
@@ -595,12 +606,13 @@ def compute_pricing(visa_prices, addons: dict, currency: str = "TRY") -> dict:
     addons_total = 0.0
     for key, meta in ADDONS.items():
         if addons.get(key):
-            line_total = round(meta["price"] * (count if meta["per_person"] else 1), 2)
+            unit_price = float((addon_prices or {}).get(key, meta["price"]))
+            line_total = round(unit_price * (count if meta["per_person"] else 1), 2)
             addon_lines.append(
                 {
                     "id": key,
                     "name": meta["name"],
-                    "unit_price": meta["price"],
+                    "unit_price": unit_price,
                     "quantity": count if meta["per_person"] else 1,
                     "total": line_total,
                 }

@@ -1,6 +1,7 @@
 import logging
 import os
 import uuid
+import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -33,15 +34,31 @@ async def seed_visa_types():
         known_ids.append(vt["id"])
         doc = dict(vt)
         price = doc.pop("price")
+        price_usd = doc.pop("price_usd", None)
         popular = doc.pop("popular")
         await visa_types_col.update_one(
             {"id": vt["id"]},
             {
                 "$set": doc,
-                "$setOnInsert": {"price": price, "popular": popular, "active": True},
+                "$setOnInsert": {
+                    "price": price,
+                    "price_usd": price_usd,
+                    "popular": popular,
+                    "active": True,
+                },
             },
             upsert=True,
         )
+        # USD baz fiyat sonradan eklendi: eksik olan kayitlara bir kez yazilir
+        if price_usd:
+            await visa_types_col.update_one(
+                {"id": vt["id"], "price_usd": {"$in": [None, 0]}},
+                {"$set": {"price_usd": price_usd}},
+            )
+            await visa_types_col.update_one(
+                {"id": vt["id"], "price_usd": {"$exists": False}},
+                {"$set": {"price_usd": price_usd}},
+            )
     # retire catalogue entries that no longer exist in code
     await visa_types_col.update_many({"id": {"$nin": known_ids}}, {"$set": {"active": False}})
     logger.info("visa types upserted (%d active)", len(known_ids))
@@ -162,7 +179,24 @@ async def lifespan(app: FastAPI):
         logger.info("object storage initialized")
     except Exception as exc:
         logger.error("storage init failed: %s", exc)
+
+    reminder_task = None
+    try:
+        from doc_reminders import default_origin, reminder_loop
+
+        reminder_task = asyncio.create_task(reminder_loop(default_origin()))
+        logger.info("document reminder scheduler started")
+    except Exception as exc:
+        logger.error("reminder scheduler failed to start: %s", exc)
+
     yield
+
+    if reminder_task:
+        reminder_task.cancel()
+        try:
+            await reminder_task
+        except (asyncio.CancelledError, Exception):
+            pass
     client.close()
 
 
@@ -185,12 +219,14 @@ async def health():
     }
 
 
+import routes_account
 import routes_admin  # noqa: E402
 import routes_payments  # noqa: E402
 import routes_public  # noqa: E402
 
 api_router.include_router(routes_public.router, tags=["public"])
 api_router.include_router(routes_payments.router, tags=["payments"])
+api_router.include_router(routes_account.router, tags=["account"])
 api_router.include_router(routes_admin.router, tags=["admin"])
 
 app.include_router(api_router)

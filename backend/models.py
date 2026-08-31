@@ -55,6 +55,21 @@ class ApplicationCreate(BaseModel):
     kvkk_accepted: bool = True
 
 
+class TravelerDocumentIn(BaseModel):
+    traveler_id: str = Field(..., min_length=4)
+    passport_file_id: Optional[str] = None
+    photo_file_id: Optional[str] = None
+
+
+class DocumentSubmission(BaseModel):
+    """Musterinin takip sayfasindan eksik belge yuklemesi."""
+
+    last_name: str = Field(..., min_length=2, max_length=80)
+    ticket_file_id: Optional[str] = None
+    hotel_file_id: Optional[str] = None
+    traveler_documents: List[TravelerDocumentIn] = Field(default_factory=list)
+
+
 class QuoteRequest(BaseModel):
     visa_type_ids: List[str] = Field(..., min_length=1, max_length=10)
     addons: AddonsIn = Field(default_factory=AddonsIn)

@@ -17,6 +17,7 @@ import Kvkk from "./pages/Kvkk";
 import LegalTerms from "./pages/LegalTerms";
 import Apply from "./pages/Apply";
 import Track from "./pages/Track";
+import MyAccount from "./pages/MyAccount";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import AdminLogin from "./pages/AdminLogin";
@@ -25,6 +26,7 @@ import AdminApplicationDetail from "./pages/AdminApplicationDetail";
 import AdminMessages from "./pages/AdminMessages";
 import AdminEmails from "./pages/AdminEmails";
 import AdminVisaTypes from "./pages/AdminVisaTypes";
+import AdminVisaGuides from "./pages/AdminVisaGuides";
 import AdminTestimonials from "./pages/AdminTestimonials";
 import AdminArticles from "./pages/AdminArticles";
 import AdminBankTransfer from "./pages/AdminBankTransfer";
@@ -63,6 +65,7 @@ function App() {
                     <Route path="/hizmet-sozlesmesi" element={<Site><LegalTerms variant="service" /></Site>} />
                     <Route path="/basvuru" element={<Site><Apply /></Site>} />
                     <Route path="/takip" element={<Site><Track /></Site>} />
+                    <Route path="/hesabim" element={<Site><MyAccount /></Site>} />
                     <Route path="/odeme/basarili" element={<Site><PaymentSuccess /></Site>} />
                     <Route path="/odeme/iptal" element={<Site><PaymentCancel /></Site>} />
 
@@ -72,6 +75,7 @@ function App() {
                     <Route path="/admin/mesajlar" element={<RequireAdmin><AdminMessages /></RequireAdmin>} />
                     <Route path="/admin/e-postalar" element={<RequireAdmin><AdminEmails /></RequireAdmin>} />
                     <Route path="/admin/vize-tipleri" element={<RequireAdmin><AdminVisaTypes /></RequireAdmin>} />
+                    <Route path="/admin/vize-rehberleri" element={<RequireAdmin><AdminVisaGuides /></RequireAdmin>} />
                     <Route path="/admin/yorumlar" element={<RequireAdmin><AdminTestimonials /></RequireAdmin>} />
                     <Route path="/admin/yazilar" element={<RequireAdmin><AdminArticles /></RequireAdmin>} />
                     <Route path="/admin/banka" element={<RequireAdmin><AdminBankTransfer /></RequireAdmin>} />

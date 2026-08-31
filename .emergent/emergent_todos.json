@@ -1,18 +1,22 @@
 [
   {
-    "content": "Ucak bileti + otel rezervasyonu zorunlu (frontend validasyon + backend 400 + icerik metinleri)",
+    "content": "Phase 12: eksik belge hatirlatma + rehber yonetimi - TAMAM",
     "status": "completed"
   },
   {
-    "content": "Vize kartina tiklayinca otomatik basvuruya gitmesin (sadece buton)",
+    "content": "Phase 14: USD bazli fiyat + canli kur + admin kur karti - TAMAM",
     "status": "completed"
   },
   {
-    "content": "testing_agent ile yeni davranislari + regresyon dogrula",
+    "content": "Phase 13: musteri hesabi (kod / e-posta+soyad), Basvurularim sayfasi - TAMAM",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 13: taslak kaydet & devam et + onceki basvurudan kopyalama - TAMAM",
+    "status": "completed"
+  },
+  {
+    "content": "testing_agent ile tum yeni ozelliklerin dogrulanmasi",
     "status": "in_progress"
-  },
-  {
-    "content": "Canli e-posta testi: RESEND_API_KEY bekleniyor (blocked)",
-    "status": "pending"
   }
 ]

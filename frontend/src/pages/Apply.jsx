@@ -14,6 +14,7 @@ import {
     Landmark,
     Lock,
     Plus,
+    Save,
     ShieldCheck,
     Sparkles,
     Trash2,
@@ -154,6 +155,94 @@ export default function Apply() {
     const [submitting, setSubmitting] = useState(false);
     const [created, setCreated] = useState(null);
     const [paying, setPaying] = useState(false);
+    const [draft, setDraft] = useState({ id: null, code: null });
+    const [savingDraft, setSavingDraft] = useState(false);
+
+    // --- Taslak kaydet / devam et -----------------------------------------
+    const saveDraft = async () => {
+        if (!contact.email.trim()) {
+            setStep(0);
+            setErrors((p) => ({ ...p, contact: { ...(p.contact || {}), email: "Kaydetmek için e-posta gerekli." } }));
+            toast.error("Başvurunuzu kaydetmek için e-posta adresinizi girin.");
+            return;
+        }
+        setSavingDraft(true);
+        try {
+            const { data } = await api.post("/drafts", {
+                email: contact.email.trim(),
+                draft_id: draft.id,
+                resume_code: draft.code,
+                step,
+                traveler_count: travelers.length,
+                title: `${travelers.length} yolcu · ${contact.full_name || contact.email}`,
+                data: { contact, travelers, travel, addons, extraDocs, step },
+            });
+            setDraft({ id: data.draft_id, code: data.resume_code });
+            toast.success(
+                `Başvurunuz kaydedildi. Devam kodunuz: ${data.resume_code}` +
+                    (data.email_status === "sent" ? " (e-postanıza da gönderildi)" : "")
+            );
+        } catch (err) {
+            toast.error(apiError(err, "Taslak kaydedilemedi."));
+        } finally {
+            setSavingDraft(false);
+        }
+    };
+
+    // taslaktan devam / onceki basvurudan kopyala
+    useEffect(() => {
+        const draftId = searchParams.get("taslak");
+        const resumeCode = searchParams.get("kod");
+        const copyId = searchParams.get("kopya");
+
+        const applyDraftData = (d) => {
+            if (!d) return;
+            if (d.contact) setContact((c) => ({ ...c, ...d.contact }));
+            if (Array.isArray(d.travelers) && d.travelers.length) setTravelers(d.travelers);
+            if (d.travel) setTravel((t) => ({ ...t, ...d.travel }));
+            if (d.addons) setAddons((a) => ({ ...a, ...d.addons }));
+            if (d.extraDocs) setExtraDocs((e) => ({ ...e, ...d.extraDocs }));
+            if (typeof d.step === "number") setStep(Math.min(d.step, 3));
+        };
+
+        if (draftId && resumeCode) {
+            api.get(`/drafts/${draftId}`, { params: { code: resumeCode } })
+                .then(({ data }) => {
+                    applyDraftData(data.data);
+                    setDraft({ id: data.id, code: data.resume_code });
+                    toast.success("Kaydedilen başvurunuz yüklendi. Kaldığınız yerden devam edebilirsiniz.");
+                })
+                .catch(() => toast.error("Taslak bulunamadı veya devam kodu hatalı."));
+            return;
+        }
+
+        if (copyId) {
+            api.get(`/account/applications/${copyId}`)
+                .then(({ data }) => {
+                    if (data.contact) setContact((c) => ({ ...c, ...data.contact }));
+                    if (data.travel) setTravel((t) => ({ ...t, ...data.travel, arrival_date: "", departure_date: "" }));
+                    if (Array.isArray(data.travelers)) {
+                        setTravelers(
+                            data.travelers.map((t) => ({
+                                ...newTraveler(t.applicant_type || "adult"),
+                                first_name: t.first_name || "",
+                                last_name: t.last_name || "",
+                                birth_date: t.birth_date || "",
+                                gender: t.gender || "female",
+                                national_id: t.national_id || "",
+                                passport_no: t.passport_no || "",
+                                passport_expiry: t.passport_expiry || "",
+                                visa_type_id: t.visa_type_id || "",
+                                applicant_type: t.applicant_type || "adult",
+                            }))
+                        );
+                    }
+                    toast.success("Önceki başvurunuzun bilgileri forma kopyalandı. Belgeleri yeniden yüklemeniz gerekir.");
+                })
+                .catch(() => toast.error("Önceki başvuru bilgileri alınamadı. Lütfen tekrar giriş yapın."));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         setMeta(
@@ -1121,28 +1210,45 @@ export default function Apply() {
                                     <ArrowLeft className="mr-2 h-4 w-4" /> Geri
                                 </Button>
 
-                                {step < STEPS.length - 1 ? (
-                                    <Button type="button" className="h-11 px-6" onClick={next} data-testid="wizard-next-step-button">
-                                        Devam Et <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Button>
-                                ) : (
-                                    <Button type="button" className="h-12 px-7 text-base" onClick={payMethod === "transfer" ? startBankTransfer : startPayment} disabled={submitting || paying} data-testid="wizard-pay-button">
-                                        {submitting || paying ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                {submitting ? "Başvuru kaydediliyor…" : payMethod === "transfer" ? "Hazırlanıyor…" : "Ödeme sayfası açılıyor…"}
-                                            </>
-                                        ) : payMethod === "transfer" ? (
-                                            <>
-                                                <Landmark className="mr-2 h-4 w-4" /> Havale bilgilerini al
-                                            </>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        className="h-11 border border-border"
+                                        onClick={saveDraft}
+                                        disabled={savingDraft}
+                                        data-testid="wizard-save-draft-button"
+                                    >
+                                        {savingDraft ? (
+                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor…</>
                                         ) : (
-                                            <>
-                                                <Lock className="mr-2 h-4 w-4" /> Ödemeye geç
-                                            </>
+                                            <><Save className="mr-2 h-4 w-4" /> Kaydet, sonra devam et</>
                                         )}
                                     </Button>
-                                )}
+
+                                    {step < STEPS.length - 1 ? (
+                                        <Button type="button" className="h-11 px-6" onClick={next} data-testid="wizard-next-step-button">
+                                            Devam Et <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    ) : (
+                                        <Button type="button" className="h-12 px-7 text-base" onClick={payMethod === "transfer" ? startBankTransfer : startPayment} disabled={submitting || paying} data-testid="wizard-pay-button">
+                                            {submitting || paying ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    {submitting ? "Başvuru kaydediliyor…" : payMethod === "transfer" ? "Hazırlanıyor…" : "Ödeme sayfası açılıyor…"}
+                                                </>
+                                            ) : payMethod === "transfer" ? (
+                                                <>
+                                                    <Landmark className="mr-2 h-4 w-4" /> Havale bilgilerini al
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Lock className="mr-2 h-4 w-4" /> Ödemeye geç
+                                                </>
+                                            )}
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </motion.div>
 

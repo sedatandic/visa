@@ -13,6 +13,7 @@ const LINKS = [
     { to: "/gelismeler", label: "Gelişmeler" },
     { to: "/sss", label: "S.S.S." },
     { to: "/takip", label: "Başvuru Takip" },
+    { to: "/hesabim", label: "Başvurularım" },
     { to: "/iletisim", label: "İletişim" },
 ];
 

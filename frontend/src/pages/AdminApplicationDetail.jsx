@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+    AlertTriangle,
     ArrowLeft,
     Baby,
     Banknote,
+    BellRing,
     Download,
     ExternalLink,
     FileCheck2,
@@ -105,6 +107,45 @@ export default function AdminApplicationDetail() {
     const [status, setStatus] = useState("");
     const [note, setNote] = useState("");
     const [visaMessage, setVisaMessage] = useState("");
+    const [missingDocs, setMissingDocs] = useState(null);
+    const [remindering, setRemindering] = useState(false);
+
+    const loadMissing = useCallback(async () => {
+        try {
+            const { data: res } = await api.get(`/admin/applications/${id}/missing-documents`);
+            setMissingDocs(res);
+        } catch {
+            setMissingDocs({ missing: [], reminder_count: 0, last_sent_at: null });
+        }
+    }, [id]);
+
+    useEffect(() => {
+        loadMissing();
+    }, [loadMissing]);
+
+    const sendReminder = async () => {
+        setRemindering(true);
+        try {
+            const { data: res } = await api.post(`/admin/applications/${id}/send-document-reminder`, {
+                origin_url: window.location.origin,
+            });
+            if (res.application) {
+                setData((d) => ({ ...d, application: res.application }));
+                setStatus(res.application.status);
+            }
+            await loadMissing();
+            const emailStatus = res.result?.email?.status || res.result?.status;
+            toast.success(
+                emailStatus === "sent"
+                    ? "Hatırlatma e-postası müşteriye gönderildi."
+                    : "Hatırlatma kaydedildi. E-posta servisi yapılandırılmadığı için gönderim atlandı."
+            );
+        } catch (err) {
+            toast.error(apiError(err, "Hatırlatma gönderilemedi."));
+        } finally {
+            setRemindering(false);
+        }
+    };
 
     useEffect(() => {
         setMeta("Başvuru Detayı | VizeAtlas Dubai", "Başvuru detayı, belge görüntüleyici ve vize teslimi.");
@@ -434,6 +475,59 @@ export default function AdminApplicationDetail() {
                     </div>
 
                     <div className="space-y-6">
+                        {/* MISSING DOCUMENTS */}
+                        <div className="card-surface p-6" data-testid="admin-missing-documents-panel">
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="h-4.5 w-4.5 text-[hsl(var(--status-warning))]" />
+                                <h2 className="font-heading text-base font-bold">Eksik belgeler</h2>
+                            </div>
+                            {missingDocs === null ? (
+                                <p className="mt-3 text-sm text-muted-foreground">Kontrol ediliyor…</p>
+                            ) : missingDocs.missing.length === 0 ? (
+                                <p className="mt-3 text-sm text-muted-foreground" data-testid="admin-no-missing-documents">
+                                    Bu başvuruda eksik belge yok.
+                                </p>
+                            ) : (
+                                <>
+                                    <ul className="mt-3 space-y-2">
+                                        {missingDocs.missing.map((m) => (
+                                            <li
+                                                key={`${m.key}-${m.traveler_id || "app"}`}
+                                                className="flex items-start gap-2 text-sm"
+                                                data-testid={`admin-missing-doc-${m.key}`}
+                                            >
+                                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[hsl(var(--status-warning))]" />
+                                                <span>
+                                                    {m.label}
+                                                    {m.traveler_name ? (
+                                                        <span className="text-muted-foreground"> — {m.traveler_name}</span>
+                                                    ) : null}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                                        Gönderilen hatırlatma: {missingDocs.reminder_count} / 3
+                                        {missingDocs.last_sent_at
+                                            ? ` · Son: ${formatDateTime(missingDocs.last_sent_at)}`
+                                            : ""}
+                                    </p>
+                                    <Button
+                                        onClick={sendReminder}
+                                        disabled={remindering}
+                                        className="mt-4 h-10 w-full"
+                                        data-testid="send-document-reminder-button"
+                                    >
+                                        {remindering ? (
+                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gönderiliyor…</>
+                                        ) : (
+                                            <><BellRing className="mr-2 h-4 w-4" /> Hatırlatma e-postası gönder</>
+                                        )}
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+
                         {/* VISA DELIVERY */}
                         <div className="card-surface p-6" data-testid="admin-visa-delivery-panel">
                             <div className="flex items-center gap-2">

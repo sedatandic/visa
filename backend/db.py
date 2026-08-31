@@ -25,6 +25,8 @@ articles_col = db["articles"]
 testimonials_col = db["testimonials"]
 settings_col = db["site_settings"]
 notifications_col = db["notifications"]
+login_codes_col = db["login_codes"]
+drafts_col = db["application_drafts"]
 
 
 def serialize_doc(doc):

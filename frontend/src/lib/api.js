@@ -6,12 +6,35 @@ export const API = `${BACKEND_URL}/api`;
 export const api = axios.create({ baseURL: API });
 
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("dv_admin_token");
-    if (token && config.url && config.url.startsWith("/admin")) {
-        config.headers.Authorization = `Bearer ${token}`;
+    const url = config.url || "";
+    const adminToken = localStorage.getItem("dv_admin_token");
+    if (adminToken && url.startsWith("/admin")) {
+        config.headers.Authorization = `Bearer ${adminToken}`;
+        return config;
+    }
+    const customerToken = localStorage.getItem("dv_customer_token");
+    if (customerToken && url.startsWith("/account")) {
+        config.headers.Authorization = `Bearer ${customerToken}`;
     }
     return config;
 });
+
+export const customerAuth = {
+    get token() {
+        return localStorage.getItem("dv_customer_token");
+    },
+    get email() {
+        return localStorage.getItem("dv_customer_email");
+    },
+    save(token, email) {
+        localStorage.setItem("dv_customer_token", token);
+        if (email) localStorage.setItem("dv_customer_email", email);
+    },
+    clear() {
+        localStorage.removeItem("dv_customer_token");
+        localStorage.removeItem("dv_customer_email");
+    },
+};
 
 export const fileUrl = (fileId) => `${API}/files/${fileId}`;
 

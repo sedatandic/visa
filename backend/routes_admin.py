@@ -31,8 +31,17 @@ from db import (
     testimonials_col,
     uploads_col,
     visa_types_col,
+    login_codes_col,
 )
 from content import BANK_TRANSFER, COMPANY
+from doc_reminders import (
+    missing_documents,
+    pending_applications,
+    run_reminder_sweep,
+    send_document_reminder,
+)
+from fx import apply_fx_to_list, apply_fx_to_visa, get_fx, update_fx_settings
+from visa_guides import build_guide, guide_index
 from emailer import payment_received_html, send_email, status_change_html, visa_ready_html
 from models import (
     AdminLogin,
@@ -671,19 +680,194 @@ async def admin_delete_article(article_id: str, admin=Depends(require_admin)):
 @router.get("/admin/visa-types")
 async def admin_visa_types(admin=Depends(require_admin)):
     docs = await visa_types_col.find({}).sort("order", 1).to_list(100)
-    return serialize_doc(docs)
+    items = await apply_fx_to_list(serialize_doc(docs))
+    return items
 
 
 @router.patch("/admin/visa-types/{visa_type_id}")
 async def admin_update_visa_type(visa_type_id: str, payload: dict, admin=Depends(require_admin)):
-    allowed = {"price", "processing_days", "active", "popular", "description", "name", "guide"}
+    allowed = {
+        "price",
+        "price_usd",
+        "processing_days",
+        "active",
+        "popular",
+        "description",
+        "name",
+        "guide",
+    }
     update = {k: v for k, v in payload.items() if k in allowed}
     if not update:
         raise HTTPException(400, "Guncellenecek gecerli alan yok.")
-    if "price" in update:
-        update["price"] = float(update["price"])
+    for key in ("price", "price_usd"):
+        if key in update:
+            update[key] = float(update[key])
     res = await visa_types_col.update_one({"id": visa_type_id}, {"$set": update})
     if res.matched_count == 0:
         raise HTTPException(404, "Vize tipi bulunamadi.")
     doc = await visa_types_col.find_one({"id": visa_type_id})
-    return serialize_doc(doc)
+    return await apply_fx_to_visa(serialize_doc(doc))
+
+
+# ------------------------------------------------- eksik belge hatirlatmalari
+@router.get("/admin/applications/{application_id}/missing-documents")
+async def admin_missing_documents(application_id: str, admin=Depends(require_admin)):
+    doc = await applications_col.find_one({"id": application_id})
+    if not doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    state = doc.get("document_reminder") or {}
+    return {
+        "missing": missing_documents(doc),
+        "reminder_count": int(state.get("count") or 0),
+        "last_sent_at": serialize_doc(state.get("last_sent_at")),
+    }
+
+
+@router.post("/admin/applications/{application_id}/send-document-reminder")
+async def admin_send_document_reminder(
+    application_id: str, request: Request, payload: Optional[dict] = None, admin=Depends(require_admin)
+):
+    doc = await applications_col.find_one({"id": application_id})
+    if not doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    missing = missing_documents(doc)
+    if not missing:
+        raise HTTPException(400, "Bu basvuruda eksik belge yok.")
+    origin = _resolve_origin((payload or {}).get("origin_url"), request)
+    result = await send_document_reminder(doc, origin, missing)
+    fresh = await applications_col.find_one({"id": application_id})
+    return {"result": serialize_doc(result), "application": serialize_doc(fresh)}
+
+
+@router.get("/admin/document-reminders/pending")
+async def admin_pending_reminders(admin=Depends(require_admin)):
+    items = await pending_applications()
+    return {"items": items, "total": len(items), "due": sum(1 for i in items if i["due"])}
+
+
+@router.post("/admin/document-reminders/run")
+async def admin_run_reminders(
+    request: Request, payload: Optional[dict] = None, admin=Depends(require_admin)
+):
+    body = payload or {}
+    origin = _resolve_origin(body.get("origin_url"), request)
+    summary = await run_reminder_sweep(origin, force=bool(body.get("force")))
+    return summary
+
+
+# --------------------------------------------------------- vize rehberi yonetimi
+GUIDE_TEXT_FIELDS = ("h1", "seo_title", "seo_description")
+GUIDE_LIST_FIELDS = ("intro", "who_for", "highlights", "tips", "keywords")
+
+
+def _clean_guide_payload(payload: dict) -> dict:
+    """Admin panelinden gelen rehber override verisini normalize eder."""
+    data = {}
+    for field in GUIDE_TEXT_FIELDS:
+        value = payload.get(field)
+        if isinstance(value, str) and value.strip():
+            data[field] = value.strip()
+    for field in GUIDE_LIST_FIELDS:
+        value = payload.get(field)
+        if isinstance(value, list):
+            items = [str(v).strip() for v in value if str(v).strip()]
+            if items:
+                data[field] = items
+    faqs = payload.get("faqs")
+    if isinstance(faqs, list):
+        cleaned = [
+            {"q": str(f.get("q", "")).strip(), "a": str(f.get("a", "")).strip()}
+            for f in faqs
+            if isinstance(f, dict) and str(f.get("q", "")).strip() and str(f.get("a", "")).strip()
+        ]
+        if cleaned:
+            data["faqs"] = cleaned
+    if not data:
+        raise HTTPException(400, "Kaydedilecek gecerli rehber alani yok.")
+    return data
+
+
+@router.get("/admin/visa-guides")
+async def admin_list_visa_guides(admin=Depends(require_admin)):
+    docs = await visa_types_col.find({}).to_list(100)
+    overrides = {d.get("slug"): bool(d.get("guide")) for d in docs}
+    items = []
+    for item in guide_index():
+        items.append({**item, "has_override": overrides.get(item["slug"], False)})
+    return {"items": items}
+
+
+@router.get("/admin/visa-guides/{slug}")
+async def admin_get_visa_guide(slug: str, admin=Depends(require_admin)):
+    doc = await visa_types_col.find_one({"slug": slug})
+    visa_override = serialize_doc(doc) if doc else None
+    guide_override = (visa_override or {}).pop("guide", None) if visa_override else None
+    effective = build_guide(slug, visa_override=visa_override, guide_override=guide_override)
+    if not effective:
+        raise HTTPException(404, "Vize rehberi bulunamadi.")
+    defaults = build_guide(slug)
+    return {
+        "slug": slug,
+        "effective": effective,
+        "defaults": defaults,
+        "override": guide_override or {},
+        "has_override": bool(guide_override),
+    }
+
+
+@router.put("/admin/visa-guides/{slug}")
+async def admin_update_visa_guide(slug: str, payload: dict, admin=Depends(require_admin)):
+    if not build_guide(slug):
+        raise HTTPException(404, "Vize rehberi bulunamadi.")
+    data = _clean_guide_payload(payload)
+    res = await visa_types_col.update_one(
+        {"slug": slug},
+        {"$set": {"guide": data, "guide_updated_at": datetime.now(timezone.utc)}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "Vize tipi bulunamadi.")
+    return await admin_get_visa_guide(slug, admin=admin)
+
+
+@router.delete("/admin/visa-guides/{slug}")
+async def admin_reset_visa_guide(slug: str, admin=Depends(require_admin)):
+    if not build_guide(slug):
+        raise HTTPException(404, "Vize rehberi bulunamadi.")
+    await visa_types_col.update_one(
+        {"slug": slug}, {"$unset": {"guide": "", "guide_updated_at": ""}}
+    )
+    return await admin_get_visa_guide(slug, admin=admin)
+
+
+# ----------------------------------------------------------------- kur (USD/TRY)
+@router.get("/admin/fx")
+async def admin_get_fx(refresh: bool = False, admin=Depends(require_admin)):
+    return await get_fx(force_refresh=refresh)
+
+
+@router.put("/admin/fx")
+async def admin_update_fx(payload: dict, admin=Depends(require_admin)):
+    manual = payload.get("manual_rate")
+    margin = payload.get("margin_pct")
+    try:
+        return await update_fx_settings(manual_rate=manual, margin_pct=margin)
+    except (TypeError, ValueError):
+        raise HTTPException(400, "Gecersiz kur veya marj degeri.")
+
+
+@router.get("/admin/login-codes")
+async def admin_login_codes(email: Optional[str] = None, admin=Depends(require_admin)):
+    """E-posta gonderimi yapilandirilmadan once destek amacli giris kodu goruntuleme."""
+    query = {"email": email.strip().lower()} if email else {}
+    docs = await login_codes_col.find(query).sort("created_at", -1).limit(20).to_list(20)
+    return {
+        "items": [
+            {
+                "email": d.get("email"),
+                "code": d.get("code_plain"),
+                "expires_at": serialize_doc(d.get("expires_at")),
+                "attempts": d.get("attempts", 0),
+            }
+            for d in docs
+        ]
+    }

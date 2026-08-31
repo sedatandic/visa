@@ -25,174 +25,165 @@
 - **SEO büyüme hedefi (tamamlandı):**
   - Her vize tipi için Google’dan müşteri çekecek **Vize Rehberi (SEO landing)** sayfaları.
   - Sayfa bazlı meta/canonical/OG + JSON-LD + sitemap/robots.
+- **Operasyonel verim + dönüşüm (tamamlandı):**
+  - **Eksik belge hatırlatma otomasyonu** (otomatik + admin’den manuel tetikleme) ile belge toplama süresini kısaltmak.
+  - **Rehber içerik yönetimi**: Vize rehber metinleri ve SSS’leri admin panelinden düzenlenebilir hale getirmek.
+- **Yeni hedefler (tamamlandı):**
+  - **Müşteri Hesabı + Taslak**: müşterinin e-posta ile giriş yapıp başvurularını görmesi, yarım kalan başvuruya devam etmesi ve eski başvurudan kopyalayarak yeni başvuru başlatması.
+  - **TL tahsilat + USD baz fiyat**: 30 gün 110$ baz alınarak tüm fiyatların canlı kurla TL’ye çevrilmesi (admin kur payı ve manuel kur kontrolü ile).
 
 ---
 
 ## 2. Implementation Steps
 
-### Phase 1 — Core POC (izole test; ilerlemeden önce çalışır hale getir)
+### Phase 1 — Core POC (Tamamlandı)
 **Amaç:** En riskli entegrasyonları tek dosyada uçtan uca doğrulamak.
-
-**POC User Stories (min 5)**
-1. MongoDB’ye örnek başvuru kaydedip geri okuyabilmek.
-2. Pasaport/foto yükleyip objstore’a yazıp geri indirerek bayt bazında doğrulayabilmek.
-3. Stripe sandbox oluşturup ürün/fiyat kataloğunu idempotent kurabilmek.
-4. Checkout session oluşturup geçerli bir Stripe Checkout URL’i alabilmek.
-5. Webhook veya polling ile ödeme durumunu “paid” olarak DB’ye işleyebilmek.
-6. RESEND_API_KEY yoksa e-posta gönderiminin kırmadan “skipped” kaydedilmesi.
-
-**Adımlar**
-- `backend/scripts/test_core.py`:
-  - Mongo insert/find + datetime serialize.
-  - Object Storage: put/get + content-type/size check.
-  - Stripe: checkout oluşturma + status doğrulama.
-  - Email: Resend varsa gönder, yoksa `email_outbox.status=skipped`.
-- Çıkış kriteri: Script tek komutla çalışır, tüm adımlar PASS/log üretir.
 
 ---
 
-### Phase 2 — V1 App Development (POC kanıtlı çekirdek üzerine)
+### Phase 2 — V1 App Development (Tamamlandı)
 **Frontend:** React + router + Tailwind + shadcn/ui. **Backend:** FastAPI `/api` + Motor + servisler.
-
-**V1 User Stories (min 5)**
-1. Ana sayfada fiyatları ve “Başvuru Yap” CTA’yı net görmek.
-2. Vize tiplerini karşılaştırıp birini seçerek başvuruya başlayabilmek.
-3. Çok adımlı formu mobilde rahat doldurup evrakları yüklemek.
-4. Stripe ile ödemeyi tamamlayıp “ödeme onaylandı” sayfasında doğrulanmış sonucu görmek.
-5. Takip kodu ile başvuruyu görüntüleyip gerekirse ödemeyi sonradan tamamlamak.
-6. Admin olarak giriş yapıp başvuruları listeleyip detayda dosyaları görüntülemek ve durum güncellemek.
-
-**Backend (FastAPI)**
-- Koleksiyonlar:
-  - `visa_types`, `applications`, `uploads`, `payment_transactions` (varsa), `contact_messages`, `email_outbox`, `admin_users`.
-- API:
-  - Public: `GET /api/visa-types`, `GET /api/content/site`.
-  - Uploads: `POST /api/uploads`, `GET /api/files/{file_id}`.
-  - Applications: `POST /api/applications`, `GET /api/applications/track?code=&last_name=`.
-  - Payments: `POST /api/payments/checkout`, `GET /api/payments/status/{session_id}`, `POST /api/webhook/stripe`.
-  - Admin: `POST /api/admin/login`, `GET /api/admin/applications`, `GET /api/admin/applications/{id}`, `PATCH /api/admin/applications/{id}`.
-  - Contact: `POST /api/contact`.
-- Email:
-  - Başvuru alındı + ödeme alındı + admin bildirimleri.
-  - `RESEND_API_KEY` yoksa outbox’a `skipped`.
-- Güvenlik:
-  - Input validation, dosya tip/limit (jpg/png/webp/pdf; max 10MB).
-  - Admin endpoint JWT guard.
-
-**Frontend (React)**
-- Sayfalar:
-  - `/` Landing (hero, süreç, güven alanı, WhatsApp buton).
-  - `/vize-tipleri` (hizmet bedelleri / pricing).
-  - `/basvuru` (multi-step wizard).
-  - `/payment/success`, `/payment/cancel`.
-  - `/takip`.
-  - `/admin/giris`, `/admin`, `/admin/basvurular/:id`.
 
 ---
 
 ### Phase 3 — Aile Başvurusu + Admin Vize PDF (Tamamlandı)
-**Amaç:** Çoklu yolcu başvurusu + otomatik fiyatlandırma ve admin’in vize PDF gönderim operasyonunu tamamlamak.
-
-**Çıktılar**
-- `compute_pricing` + `POST /api/pricing/quote`.
-- Başvuru şeması `travelers[]`.
-- Admin vize akışı: PDF upload + müşteriye gönderim.
-
-**Test**
-- `testing_agent_v3` (iteration_2.json): %100 PASS.
 
 ---
 
 ### Phase 4 — Marka/Tema Yenileme + Sosyal Kanıt (Tamamlandı; koyu mod kaldırıldı)
-**Amaç:** Görsel dili güçlendirmek, “AI şablonu” hissini kırmak, BAE bayrak renkleriyle özgün kurumsal kimlik + sosyal kanıt.
 
 ---
 
 ### Phase 5 — Operasyonel içerik yönetimi + SEO Blog + WhatsApp + AI Pasaport Okuma (Tamamlandı)
-**Amaç:** Operasyonu hızlandırmak (admin araçları), arama motoru görünürlüğü (SEO blog), müşteri iletişimi (WhatsApp), form doldurmayı hızlandırmak (AI pasaport okuma).
 
 ---
 
 ### Phase 6 — Rakip boşluk kapatma + Havale/EFT + Yasal sayfalar + Dribbble Hero (Tamamlandı)
-**Amaç:** Ödeme yöntemini genişletmek, yasal şeffaflık eklemek, özel vize tiplerini tamamlamak ve hero’yu modernleştirmek.
 
 ---
 
 ### Phase 7 — Ürün sadeleştirme + Admin banka/acente yönetimi + UX düzeltmeleri (Tamamlandı)
-**Amaç:** Sadece vize hizmetine odaklanmak, kritik UI/validasyon sorunlarını gidermek, banka ve acente bilgilerini yönetilebilir yapmak.
 
 ---
 
 ### Phase 8 — Kod Kalitesi + Güvenlik Sertleştirme (Tamamlandı)
-**Amaç:** Code review bulgularını uygulamak; runtime crash riskini azaltmak, güvenli token üretimi sağlamak ve refactor sonrası regresyon olmadığını kanıtlamak.
 
 ---
 
 ### Phase 9 — Güven Şeridi + GDRFA Referansı (Tamamlandı)
-**Amaç:** Otorite/güven algısını artırmak.
-
-**Adımlar / Çıktılar**
-- Frontend:
-  - `GdrfaBadge.jsx`: GDRFA Dubai temsili rozet.
-  - `AuthorityStrip.jsx`: Ana sayfada “Yetkili Merciler” şeridi (GDRFA + ICP + TÜRSAB).
-  - Footer: TÜRSAB rozetinin yanına GDRFA rozeti eklendi.
-- Not: Telif riski nedeniyle **resmî logo yerine temsili SVG** kullanıldı; resmî dosya sağlanırsa değiştirilebilir.
-
-**Test / Doğrulama**
-- Screenshot tool: şerit ve footer rozeti görsel olarak doğrulandı.
 
 ---
 
 ### Phase 10 — Vize Rehberi SEO Sayfaları (Tamamlandı)
-**Amaç:** Her vize tipi için arama motorlarında sıralanacak, dönüşüm odaklı rehber sayfaları üretmek.
-
-**Kapsam (Hedef URL’ler)**
-- `/dubai-vizesi/:slug` (örn. `/dubai-vizesi/30-gun-tek-giris`) — toplam 9 vize tipi.
-
-**Çıktılar**
-- Backend:
-  - `GET /api/visa-guides` (liste)
-  - `GET /api/visa-guides/{slug}` (detay)
-  - Admin override: `PATCH /api/admin/visa-types/{id}` içinde `guide` alanı desteklenir.
-- Frontend:
-  - `VisaGuide.jsx` rehber sayfası
-  - Route: `/dubai-vizesi/:slug`
-  - İç linkler: Home + /vize-tipleri + Footer + vize kartlarından “Detaylı rehberi oku”
-- SEO:
-  - `setMeta` + `setJsonLd` ile JSON-LD: `Service`, `FAQPage`, `BreadcrumbList`
-  - `public/sitemap.xml` + `public/robots.txt`
-
-**Test / Doğrulama**
-- `testing_agent_v3` (iteration_10.json): Rehber sayfaları + endpointler + SEO + linkleme %100 PASS.
+- Backend: `/api/visa-guides`, `/api/visa-guides/{slug}`
+- Frontend: `VisaGuide.jsx`, route `/dubai-vizesi/:slug`
+- SEO: JSON-LD + sitemap + robots
 
 ---
 
 ### Phase 11 — Zorunlu Seyahat Belgeleri + Kart Tıklama Davranışı (Tamamlandı)
-**Amaç:** Evrak standardını netleştirmek ve kullanıcı deneyiminde yanlış yönlendirmeyi önlemek.
+- Uçak bileti + otel zorunlu (frontend+backend)
+- Kart gövde tıklaması başvuruya yönlendirmez (sadece buton/link)
 
-**Kapsam / Değişiklikler**
-1) **Uçak bileti + otel rezervasyonu artık zorunlu**
+---
+
+### Phase 12 — Eksik Belge Hatırlatma Otomasyonu + Rehber İçerik Yönetimi (Tamamlandı)
+**Amaç:** Eksik evrak nedeniyle bekleyen başvuruları hızla tamamlatmak ve SEO rehberlerini admin panelinden yönetilebilir hale getirmek.
+
+#### A) Belge Hatırlatma (otomatik + manuel) — **DONE**
 - Backend:
-  - `content.py` içinde `REQUIRED_DOCUMENTS`: `ticket` ve `hotel` `required=True`.
-  - `POST /api/applications`: `extra_documents.ticket_file_id` ve `extra_documents.hotel_file_id` yoksa **400**.
-  - Dosya ID doğrulaması: ticket/hotel file_id DB’de yoksa **400**.
+  - `backend/doc_reminders.py`: `missing_documents`, `send_document_reminder`, `pending_applications`, `run_reminder_sweep`, 6 saatlik scheduler loop.
+  - `routes_public.py`:
+    - `GET /api/applications/track` cevabına `missing_documents` eklendi.
+    - `POST /api/applications/{code}/documents` ile müşteri eksik belgeleri takip sayfasından yükleyebiliyor (soyad doğrulamalı). Eksikler bitince status `reviewing`.
+  - `routes_admin.py`:
+    - `GET /api/admin/applications/{id}/missing-documents`
+    - `POST /api/admin/applications/{id}/send-document-reminder`
+    - `GET /api/admin/document-reminders/pending`
+    - `POST /api/admin/document-reminders/run`
+  - `emailer.py`: `document_reminder_html` + müşteri belge yükledi admin bildirimi.
 - Frontend:
-  - `Apply.jsx` (Evraklar adımı) validasyon: ticket/hotel yoksa hata gösterir ve adım ilerlemez.
-  - UI metinleri “zorunlu” olarak güncellendi.
+  - `Track.jsx`: eksik belge paneli + upload + gönder.
+  - `AdminApplicationDetail.jsx`: eksik belgeler paneli + hatırlatma butonu.
 
-2) **Vize kartları: gövde tıklaması başvuruya götürmez**
-- `VisaTypeCard`:
-  - Bilgilendirme sayfalarında (Home, /vize-tipleri) kart gövdesi tıklanınca yönlendirme yok.
-  - Sadece **“Başvuruya başla”** butonu ve **“Detaylı rehberi oku”** linki yönlendirir.
-  - Başvuru formundaki seçim modunda (`onSelect` varken) kart tıklaması vize seçmeye devam eder.
+#### B) Rehber Yönetimi — **DONE**
+- Backend:
+  - `GET/PUT/DELETE /api/admin/visa-guides/{slug}` override kaydet/sıfırla.
+- Frontend:
+  - Yeni admin sayfası: `/admin/vize-rehberleri` (`AdminVisaGuides.jsx`).
+  - Menü linki eklendi.
 
 **Test / Doğrulama**
-- `testing_agent_v3` (iteration_11.json): backend 6/6 + frontend 8/8 PASS.
+- `testing_agent_v3` (iteration_12.json): belge otomasyonu + rehber yönetimi PASS (backend+frontend).
+
+---
+
+### Phase 13 — Müşteri Hesabı + Taslak (Tamamlandı)
+**Amaç:** Müşterinin aynı e-posta ile başvurularını görmesi, yarım kalan başvuruya devam etmesi ve tekrar başvuru yapabilmesi.
+
+**Backend (routes_account.py)**
+- Müşteri giriş:
+  - `POST /api/account/request-code` (6 haneli kod)
+  - `POST /api/account/verify-code` (token üretir)
+  - `POST /api/account/login-lastname` (e-posta + soyad ile giriş)
+- Hesap:
+  - `GET /api/account/me` (başvurular + taslaklar)
+  - `GET /api/account/applications/{id}` (kendi başvurusu)
+  - `GET/DELETE /api/account/drafts/{id}`
+- Taslak:
+  - `POST /api/drafts` (taslak kaydet/güncelle; resume_code üretir)
+  - `GET /api/drafts/{draft_id}?code=...` (devam)
+- E-posta şablonları:
+  - `emailer.py`: `login_code_html`, `draft_saved_html`
+- Resend gelene kadar admin destek:
+  - `GET /api/admin/login-codes?email=` (admin-only; kodu görüp kullanıcıya iletmek için)
+
+**Frontend**
+- Yeni sayfa: `/hesabim` (`MyAccount.jsx`)
+  - İki giriş yöntemi (e-posta+soyad / e-posta kodu)
+  - Başvuru listesi, eksik belge uyarısı, “Bu bilgilerle yeni başvuru”
+  - Taslak listesi, “kaldığım yerden devam et”, taslak sil
+- Başvuru formu (`Apply.jsx`):
+  - “Kaydet, sonra devam et” butonu
+  - `?taslak={id}&kod={resume_code}` ile taslaktan devam
+  - `?kopya={application_id}` ile önceki başvurudan kopyalama (belgeler hariç)
+- Navbar: “Başvurularım” linki eklendi.
+
+**Test / Doğrulama**
+- `testing_agent_v3` (iteration_12.json): müşteri hesap + taslak akışları PASS.
+
+---
+
+### Phase 14 — USD Bazlı Fiyat + Canlı Kur (Tamamlandı)
+**Amaç:** TL tahsilat devam ederken fiyatları USD bazlı yönetmek; 30 gün için 110$ baz alınarak tüm fiyatları canlı kurla TL’ye çevirmek.
+
+**Backend**
+- `content.py`:
+  - `price_usd` alanları eklendi (30 gün tek giriş = **110$**; diğerleri oransal).
+  - `compute_pricing(..., addon_prices=...)` desteği.
+- `fx.py`:
+  - Canlı kur (open.er-api.com; fallback exchangerate.host)
+  - 24 saatlik lazy refresh
+  - Varsayılan kur payı %2
+  - Manuel sabit kur
+  - TL 10’luk yuvarlama
+- Fiyatın geçtiği tüm yerler USD→TL bağlı:
+  - `GET /api/visa-types`, `GET /api/visa-guides`, `GET /api/visa-guides/{slug}`, `POST /api/pricing/quote`, `GET /api/content/site` addons.
+
+**Admin**
+- `GET/PUT /api/admin/fx`
+- `AdminVisaTypes.jsx`: kur kartı + USD fiyat düzenleme (`price_usd`) + TL ön izleme.
+
+**UI**
+- Kartlarda ve rehber sayfasında TL fiyatın altında: **“≈ 110 $ · güncel kurla TL tahsil edilir”** notu.
+
+**Test / Doğrulama**
+- `testing_agent_v3` (iteration_12.json): FX + pricing %100 PASS.
 
 ---
 
 ## 3. Next Actions
-1. **Canlı E-posta Testi (Resend) — BEKLEMEDE**
+1. **Canlı E-posta Testi (Resend) — BEKLEMEDE (P0)**
    - Gerekli env:
      - `RESEND_API_KEY` (kullanıcı sağlayacak)
      - `SENDER_EMAIL` (domain doğrulanmış adres önerilir)
@@ -201,13 +192,15 @@
      - `bank_transfer_instructions`
      - `payment_received`
      - `visa_delivered`
-   - Anahtar gelene kadar sistem “skipped” outbox davranışını sürdürür.
-2. **(Opsiyonel) Stripe prod geçişi**
+     - `document_reminder`
+     - `login_code`
+     - `draft_saved`
+2. **Stripe prod geçişi (opsiyonel) — P1**
    - Canlı anahtarlar + webhook secret + success/cancel URL’leri.
-3. **İçerik onayı ve gerçek veriler**
+3. **İçerik onayı ve gerçek veriler — P1**
    - Banka bilgileri (`/admin/banka`) gerçek değerlerle.
    - TÜRSAB/acente ticari bilgiler (`/admin/acente`) gerçek değerlerle.
-4. **Operasyonel güvenlik (opsiyonel)**
+4. **Operasyonel güvenlik (opsiyonel) — P2**
    - Admin şifresi değişimi, rate limit/bot koruması.
 
 ---
@@ -230,6 +223,18 @@
   - Rehberden `/basvuru?vize=...` ile doğru vize ön-seçimi yapılır.
 - **Kart tıklama UX**:
   - Home ve /vize-tipleri sayfalarında kart gövdesi tıklaması yanlışlıkla başvuruya yönlendirmez.
+- **Eksik belge hatırlatma**:
+  - Admin manuel hatırlatma gönderir; arka plan scheduler sweep çalışır.
+  - Müşteri takip sayfasından eksikleri yükler; tamamlanınca status `reviewing` olur ve admin bilgilendirilir.
+- **Rehber yönetimi**:
+  - Admin rehber içeriklerini düzenler/sıfırlar; frontend rehber sayfasında override içerik görünür.
+- **Müşteri hesabı + taslak**:
+  - `/hesabim` üzerinden giriş (kod veya soyad) çalışır; başvurular ve taslaklar listelenir.
+  - Başvurudan kopyalayarak yeni başvuru başlatma çalışır.
+  - Taslak kaydetme ve devam etme çalışır.
+- **USD baz fiyat + canlı kur**:
+  - 30 gün tek giriş = 110 USD baz; TL fiyatlar canlı kurla hesaplanır.
+  - Admin kur payı / manuel kur ile fiyat kontrolü yapabilir.
 - `RESEND_API_KEY` yokken hiçbir kritik akış kırılmaz; tüm “atlanan” mailler `email_outbox`’a kaydolur.
 - Canlı Resend anahtarı verildiğinde e-postalar gerçek adrese gider ve outbox “sent” olarak kaydolur.
 
@@ -244,8 +249,13 @@
 - Phase 6: TAMAMLANDI.
 - Phase 7: TAMAMLANDI.
 - Phase 8: TAMAMLANDI.
-- Phase 9: TAMAMLANDI (GDRFA/Yetkili Merciler şeridi + footer rozeti).
-- Phase 10: **TAMAMLANDI** (Vize Rehberi SEO Sayfaları) — iteration_10.json PASS.
-- Phase 11: **TAMAMLANDI** (Zorunlu Seyahat Belgeleri + Kart Tıklama Davranışı) — iteration_11.json PASS.
+- Phase 9: TAMAMLANDI.
+- Phase 10: **TAMAMLANDI** — iteration_10.json PASS.
+- Phase 11: **TAMAMLANDI** — iteration_11.json PASS.
+- Phase 12: **TAMAMLANDI** — belge hatırlatma + rehber yönetimi.
+- Phase 13: **TAMAMLANDI** — müşteri hesabı + taslak + kopyalayarak yeni başvuru.
+- Phase 14: **TAMAMLANDI** — USD baz fiyat + canlı kur + admin kur kartı.
+
+Test: `testing_agent_v3` iteration_12.json — backend 30/30 PASS, frontend %95 (kritik bug yok; uzun testte admin oturum zaman aşımı beklenen davranış).
 
 Kalan opsiyonel işler: **RESEND_API_KEY ile canlı e-posta doğrulaması**, Stripe prod geçişi, içerik/hukuk onayı, gerçek banka/acente bilgileri, operasyonel güvenlik ayarları.
