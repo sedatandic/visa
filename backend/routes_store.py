@@ -18,7 +18,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 
-from content import BANK_TRANSFER
+from content import BANK_TRANSFER, BUNDLE_DISCOUNT, bundle_discount_amount
 from db import orders_col, products_col, serialize_doc, settings_col
 from emailer import order_admin_html, order_received_html, send_email
 from fx import get_fx, try_price
@@ -199,7 +199,7 @@ async def get_products(kind: Optional[str] = None):
     if kind and kind not in KIND_LABELS:
         raise HTTPException(400, "Gecersiz urun tipi.")
     items = await product_list(kind)
-    return {"items": items, "fx": await get_fx()}
+    return {"items": items, "fx": await get_fx(), "bundle": BUNDLE_DISCOUNT}
 
 
 @router.post("/orders")
@@ -238,6 +238,7 @@ async def create_order(payload: OrderCreateIn):
         )
 
     now = datetime.now(timezone.utc)
+    bundle_discount = bundle_discount_amount(lines)
     doc = {
         "id": str(uuid.uuid4()),
         "reference_code": new_order_reference(),
@@ -246,7 +247,10 @@ async def create_order(payload: OrderCreateIn):
         "travel_start": payload.travel_start,
         "travel_end": payload.travel_end,
         "note": payload.note,
-        "price": round(total, 2),
+        "items_total": round(total, 2),
+        "bundle_discount": bundle_discount,
+        "bundle_discount_rate": float(BUNDLE_DISCOUNT["rate"]) if bundle_discount else 0.0,
+        "price": round(total - bundle_discount, 2),
         "currency": "TRY",
         "fx_rate": (await get_fx())["effective_rate"],
         "status": "pending",
@@ -311,6 +315,7 @@ async def create_application_order(app_doc: dict, lines: list) -> dict:
         }
         for line in lines
     ]
+    bundle_discount = bundle_discount_amount(items)
     doc = {
         "id": str(uuid.uuid4()),
         "reference_code": new_order_reference(),
@@ -330,7 +335,10 @@ async def create_application_order(app_doc: dict, lines: list) -> dict:
         "source": "visa_application",
         "application_id": app_doc.get("id"),
         "application_reference": app_doc.get("reference_code"),
-        "price": round(sum(i["total"] for i in items), 2),
+        "price": round(sum(i["total"] for i in items) - bundle_discount, 2),
+        "items_total": round(sum(i["total"] for i in items), 2),
+        "bundle_discount": bundle_discount,
+        "bundle_discount_rate": float(BUNDLE_DISCOUNT["rate"]) if bundle_discount else 0.0,
         "currency": "TRY",
         "fx_rate": (await get_fx())["effective_rate"],
         "status": "pending",

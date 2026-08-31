@@ -275,3 +275,11 @@
 Test:
 - `testing_agent_v3` iteration_13.json — backend **46/46 PASS**, frontend **%100 PASS**.
 - `testing_agent_v3` iteration_14.json — backend **38/40 (kritik yok)**, frontend **%100**; kalan 2 senaryo manuel doğrulandı.
+
+
+### Phase 19 — Akıllı Paket Önerisi + Seyahat Paketi İndirimi (%10) — **COMPLETED (2026-08-31)**
+Kullanıcı kararları: indirim %10 (ek ürün toplamı), hem başvuru içinde hem mağaza sepetinde geçerli, öneri "Sizin için önerilen" etiketi + "Önerilenleri ekle" butonu (otomatik seçim yok).
+- Backend: `content.BUNDLE_DISCOUNT` + `bundle_discount_amount()`; `compute_pricing` çıktısına `bundle_discount / bundle_discount_rate / bundle_discount_title`; `/api/products` yanıtına `bundle`; mağaza siparişlerinde (`/api/orders`) ve başvuruya bağlı siparişte `items_total`, `bundle_discount`, indirimli `price`; e-postalarda indirim satırı. Stripe tahsilatı indirimli tutarı kullanıyor.
+- Frontend: `Apply.jsx` paket promosyon kutusu (`bundle-promo-box`), seyahat süresine göre en uygun paket için `Sizin için önerilen` etiketi, `Önerilenleri ekle` butonu, indirim satırları (iki özet alanında). `StoreCheckout.jsx` çapraz satış bölümü (diğer kategori ürünleri) + indirim satırı; `OrderStatus`, `AdminOrders`, `AdminApplicationDetail` indirim/tarih gösterimi.
+- Öneri algoritması: seyahat süresini karşılayan en ekonomik paket; hiçbiri karşılamıyorsa en uzun süreli paket.
+- Test: E2E script (mağaza siparişi 1720→1548 ₺, tek kategori indirimsiz, başvuru toplamı 6958 ₺, bağlı sipariş 1548 ₺) **PASS** + canlı UI doğrulaması (screenshot).

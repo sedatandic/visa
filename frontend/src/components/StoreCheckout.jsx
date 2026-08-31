@@ -37,7 +37,8 @@ const validate = (contact, quantities) => {
  * kind: "esim" | "insurance"
  */
 export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
-    const [products, setProducts] = useState([]);
+    const [allProducts, setAllProducts] = useState([]);
+    const [bundle, setBundle] = useState(null);
     const [loading, setLoading] = useState(true);
     const [quantities, setQuantities] = useState({});
     const [contact, setContact] = useState(emptyContact);
@@ -48,11 +49,18 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        api.get("/products", { params: { kind } })
-            .then(({ data }) => setProducts(data.items || []))
+        api.get("/products")
+            .then(({ data }) => {
+                setAllProducts(data.items || []);
+                setBundle(data.bundle || null);
+            })
             .catch((err) => toast.error(apiError(err, "Paketler yüklenemedi.")))
             .finally(() => setLoading(false));
     }, [kind]);
+
+    const products = useMemo(() => allProducts.filter((p) => p.kind === kind), [allProducts, kind]);
+    const crossProducts = useMemo(() => allProducts.filter((p) => p.kind !== kind), [allProducts, kind]);
+    const crossLabel = kind === "esim" ? "Seyahat sağlık sigortası" : "Dubai eSIM (internet paketi)";
 
     const setQty = (id, delta) =>
         setQuantities((q) => {
@@ -65,16 +73,23 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
 
     const lines = useMemo(
         () =>
-            products
+            allProducts
                 .filter((p) => quantities[p.id])
                 .map((p) => ({
                     ...p,
                     quantity: quantities[p.id],
                     lineTotal: p.price * quantities[p.id],
                 })),
-        [products, quantities]
+        [allProducts, quantities]
     );
-    const total = lines.reduce((sum, l) => sum + l.lineTotal, 0);
+    const itemsTotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
+    const bundleRate = Number(bundle?.rate) || 0.1;
+    const bundleActive = useMemo(() => {
+        const kinds = new Set(lines.map((l) => l.kind));
+        return kinds.has("esim") && kinds.has("insurance");
+    }, [lines]);
+    const bundleDiscount = bundleActive ? Math.round(itemsTotal * bundleRate * 100) / 100 : 0;
+    const total = Math.round((itemsTotal - bundleDiscount) * 100) / 100;
 
     const submit = async () => {
         const errs = validate(contact, quantities);
@@ -211,6 +226,85 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
                         })}
                     </div>
                 )}
+
+                {/* PAKET FIRSATI: diger kategoriyi de sepete ekle */}
+                {!loading && crossProducts.length > 0 && (
+                    <div
+                        className="mt-8 rounded-2xl border-2 border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.06)] p-6"
+                        data-testid="store-bundle-section"
+                    >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="max-w-xl">
+                                <p className="font-heading text-base font-bold">
+                                    {bundle?.title || "Seyahat paketi indirimi"} · {crossLabel}
+                                </p>
+                                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                                    {bundle?.note ||
+                                        "Seyahat sigortası ve Dubai eSIM'i birlikte alın, sepet toplamınızda %10 indirim otomatik uygulanır."}
+                                </p>
+                            </div>
+                            {bundleActive && (
+                                <span
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--brand-green))] px-3 py-1 text-xs font-bold text-white"
+                                    data-testid="store-bundle-active-badge"
+                                >
+                                    <Check className="h-3.5 w-3.5" /> %{Math.round(bundleRate * 100)} indirim aktif
+                                </span>
+                            )}
+                        </div>
+                        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                            {crossProducts.map((p) => {
+                                const qty = quantities[p.id] || 0;
+                                return (
+                                    <div
+                                        key={p.id}
+                                        className={`rounded-xl border bg-card p-5 ${qty ? "border-primary" : "border-border"}`}
+                                        data-testid={`cross-product-card-${p.id}`}
+                                    >
+                                        <p className="font-heading text-sm font-bold">{p.name}</p>
+                                        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{p.summary}</p>
+                                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                                            <div>
+                                                <p className="font-heading text-lg font-bold" data-testid={`cross-product-price-${p.id}`}>
+                                                    {formatMoney(p.price, p.currency)}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {formatUsd(p.price_usd)} · {p.kind === "esim" ? "paket başı" : "kişi başı"}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    className="h-9 w-9 border border-border p-0"
+                                                    onClick={() => setQty(p.id, -1)}
+                                                    disabled={!qty}
+                                                    aria-label="Adet azalt"
+                                                    data-testid={`cross-qty-minus-${p.id}`}
+                                                >
+                                                    <Minus className="h-4 w-4" />
+                                                </Button>
+                                                <span className="min-w-7 text-center font-heading text-base font-bold" data-testid={`cross-qty-value-${p.id}`}>
+                                                    {qty}
+                                                </span>
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    className="h-9 w-9 border border-border p-0"
+                                                    onClick={() => setQty(p.id, 1)}
+                                                    aria-label="Adet arttır"
+                                                    data-testid={`cross-qty-plus-${p.id}`}
+                                                >
+                                                    <Plus className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* CHECKOUT */}
@@ -238,11 +332,19 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
                     </ul>
                 )}
 
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                    <span className="text-sm font-semibold">Toplam</span>
-                    <span className="font-heading text-2xl font-extrabold" data-testid="store-total">
-                        {formatMoney(total, "TRY")}
-                    </span>
+                <div className="mt-4 border-t border-border pt-4">
+                    {bundleDiscount > 0 && (
+                        <div className="mb-3 flex items-center justify-between text-sm text-[hsl(var(--brand-green))]" data-testid="store-bundle-discount">
+                            <span>Paket indirimi (%{Math.round(bundleRate * 100)})</span>
+                            <span className="font-semibold">- {formatMoney(bundleDiscount, "TRY")}</span>
+                        </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold">Toplam</span>
+                        <span className="font-heading text-2xl font-extrabold" data-testid="store-total">
+                            {formatMoney(total, "TRY")}
+                        </span>
+                    </div>
                 </div>
                 <div className="mt-1">
                     <FxNote variant="inline" />

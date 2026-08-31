@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError, API } from "../lib/api";
-import { formatDateTime, formatMoney, setMeta } from "../lib/site";
+import { formatDate, formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -162,16 +162,30 @@ export default function OrderStatus() {
                                         >
                                             <span className="text-muted-foreground">
                                                 {i.name} <span className="font-semibold text-foreground">x{i.quantity}</span>
+                                                {i.starts_on && (
+                                                    <span className="block text-xs">
+                                                        {formatDate(i.starts_on)}
+                                                        {i.ends_on ? ` – ${formatDate(i.ends_on)}` : " itibaren"} geçerli
+                                                    </span>
+                                                )}
                                             </span>
                                             <span className="font-semibold">{formatMoney(i.total, order.currency)}</span>
                                         </li>
                                     ))}
                                 </ul>
-                                <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                                    <span className="text-sm font-semibold">Toplam</span>
-                                    <span className="font-heading text-2xl font-extrabold" data-testid="order-total">
-                                        {formatMoney(order.price, order.currency)}
-                                    </span>
+                                <div className="mt-4 border-t border-border pt-4">
+                                    {order.bundle_discount > 0 && (
+                                        <div className="mb-3 flex items-center justify-between text-sm text-[hsl(var(--brand-green))]" data-testid="order-bundle-discount">
+                                            <span>Paket indirimi (%{Math.round((order.bundle_discount_rate || 0) * 100)})</span>
+                                            <span className="font-semibold">- {formatMoney(order.bundle_discount, order.currency)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-semibold">Toplam</span>
+                                        <span className="font-heading text-2xl font-extrabold" data-testid="order-total">
+                                            {formatMoney(order.price, order.currency)}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 

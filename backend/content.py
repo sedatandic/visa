@@ -620,6 +620,26 @@ def family_discount_rate(traveler_count: int) -> float:
     return 0.0
 
 
+# Sigorta + eSIM birlikte alindiginda ek urun toplamina uygulanan indirim
+BUNDLE_DISCOUNT = {
+    "rate": 0.10,
+    "title": "Seyahat paketi indirimi",
+    "badge": "Sigorta + eSIM = %10 indirim",
+    "note": "Seyahat sigortası ve Dubai eSIM'i birlikte alın, ek ürün toplamınızda %10 indirim otomatik uygulanır.",
+    "kinds": ["insurance", "esim"],
+}
+
+
+def bundle_discount_amount(store_lines) -> float:
+    """Sigorta + eSIM birlikte secildiyse ek urun toplamina indirim uygular."""
+    lines = list(store_lines or [])
+    kinds = {(line.get("kind") or "") for line in lines}
+    if not set(BUNDLE_DISCOUNT["kinds"]).issubset(kinds):
+        return 0.0
+    total = sum(float(line.get("total") or 0) for line in lines)
+    return round(total * float(BUNDLE_DISCOUNT["rate"]), 2)
+
+
 def compute_pricing(
     visa_prices,
     addons: dict,
@@ -651,7 +671,8 @@ def compute_pricing(
     addons_total = round(addons_total, 2)
     store_lines = list(store_lines or [])
     store_total = round(sum(float(line.get("total") or 0) for line in store_lines), 2)
-    total = round(subtotal - discount + addons_total + store_total, 2)
+    bundle_discount = bundle_discount_amount(store_lines)
+    total = round(subtotal - discount + addons_total + store_total - bundle_discount, 2)
     return {
         "traveler_count": count,
         "subtotal": subtotal,
@@ -661,6 +682,9 @@ def compute_pricing(
         "addons_total": addons_total,
         "store_items": store_lines,
         "store_total": store_total,
+        "bundle_discount": bundle_discount,
+        "bundle_discount_rate": float(BUNDLE_DISCOUNT["rate"]) if bundle_discount else 0.0,
+        "bundle_discount_title": BUNDLE_DISCOUNT["title"],
         "total": total,
         "currency": currency,
     }

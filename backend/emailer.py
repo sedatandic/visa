@@ -139,6 +139,13 @@ def _pricing_block(app_doc: dict) -> str:
             label += f" ({_tr_date(s['starts_on'])}"
             label += f" - {_tr_date(s['ends_on'])})" if s.get("ends_on") else " itibaren)"
         lines.append(_row(label, money(s["total"], p.get("currency", "TRY"))))
+    if p.get("bundle_discount"):
+        lines.append(
+            _row(
+                f"{p.get('bundle_discount_title') or 'Seyahat paketi indirimi'} (%{int(round(p.get('bundle_discount_rate', 0) * 100))})",
+                "- " + money(p["bundle_discount"], p.get("currency", "TRY")),
+            )
+        )
     lines.append(_row("<strong>Toplam</strong>", "<strong>" + money(p.get("total", 0), p.get("currency", "TRY")) + "</strong>"))
     return "".join(lines)
 
@@ -474,6 +481,7 @@ def order_received_html(order: dict, bank: dict | None = None) -> str:
     <div style="margin-top:16px;border-top:1px solid #E2E8F0;padding-top:8px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         {_order_items_rows(order)}
+        {_row('Seyahat paketi indirimi (%10)', '- ' + f"{order.get('bundle_discount',0):,.0f} TL") if order.get('bundle_discount') else ''}
         <tr><td style="padding:10px 0 0;font-size:14px;font-weight:bold;border-top:1px solid #E2E8F0;">Toplam</td>
         <td style="padding:10px 0 0;font-size:14px;font-weight:bold;text-align:right;border-top:1px solid #E2E8F0;">{order.get('price',0):,.0f} TL</td></tr>
       </table>

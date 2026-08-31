@@ -119,6 +119,11 @@ const OrderRow = ({ order, onUpdate }) => {
                     <p className="font-heading text-xl font-extrabold">
                         {formatMoney(order.price, order.currency)}
                     </p>
+                    {order.bundle_discount > 0 && (
+                        <p className="mt-0.5 text-xs font-semibold text-[hsl(var(--brand-green))]" data-testid={`order-bundle-discount-${order.reference_code}`}>
+                            Paket indirimi: - {formatMoney(order.bundle_discount, order.currency)}
+                        </p>
+                    )}
                     <p className="mt-1 text-xs font-semibold text-muted-foreground">
                         {PAYMENT_LABEL[order.payment?.status] || "-"}
                     </p>

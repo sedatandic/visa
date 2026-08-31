@@ -151,6 +151,7 @@ export default function Apply() {
     const [addons, setAddons] = useState({ express: false, insurance: false });
     // Vize basvurusu icinde satilan ek urunler (magaza katalogundan)
     const [storeProducts, setStoreProducts] = useState([]);
+    const [bundleInfo, setBundleInfo] = useState(null);
     const [insurancePick, setInsurancePick] = useState(null);
     const [esimQty, setEsimQty] = useState({});
     const [extraDocs, setExtraDocs] = useState({ ticket: null, hotel: null, other: null });
@@ -322,7 +323,10 @@ export default function Apply() {
     // Magaza urunleri (eSIM + seyahat sigortasi) basvuru icinde de satilir
     useEffect(() => {
         api.get("/products")
-            .then(({ data }) => setStoreProducts(data.items || []))
+            .then(({ data }) => {
+                setStoreProducts(data.items || []);
+                if (data.bundle) setBundleInfo(data.bundle);
+            })
             .catch(() => {});
     }, []);
 
@@ -376,6 +380,52 @@ export default function Apply() {
             </div>
         );
     };
+
+    // Akilli oneri: seyahat suresini karsilayan en uygun (en ekonomik) paket
+    const bestFit = (list) => {
+        if (!tripDays || !list.length) return null;
+        const covering = list.filter((p) => Number(p.validity_days) >= tripDays);
+        if (covering.length) {
+            return covering.reduce((best, p) => (Number(p.price_usd) < Number(best.price_usd) ? p : best)).id;
+        }
+        return list.reduce((best, p) =>
+            Number(p.validity_days) > Number(best.validity_days) ? p : best
+        ).id;
+    };
+
+    const recommendedInsuranceId = useMemo(
+        () => bestFit(insuranceProducts),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [insuranceProducts, tripDays]
+    );
+    const recommendedEsimId = useMemo(
+        () => bestFit(esimProducts),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [esimProducts, tripDays]
+    );
+
+    const bundleActive = Boolean(insurancePick) && Object.values(esimQty).some((q) => q > 0);
+
+    const applyRecommended = () => {
+        if (!travelDatesReady) {
+            toast.error("Önce giriş (gidiş) tarihinizi seçin.");
+            return;
+        }
+        if (recommendedInsuranceId) setInsurancePick(recommendedInsuranceId);
+        if (recommendedEsimId) {
+            setEsimQty({ [recommendedEsimId]: Math.min(Math.max(travelerCount, 1), 10) });
+        }
+        toast.success("Seyahat sürenize en uygun sigorta ve eSIM paketi eklendi. %10 paket indirimi uygulandı.");
+    };
+
+    const RecommendedBadge = ({ testId }) => (
+        <span
+            className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--brand-green)/0.12)] px-2 py-0.5 text-[11px] font-semibold text-[hsl(var(--brand-green))]"
+            data-testid={testId}
+        >
+            <Sparkles className="h-3 w-3" aria-hidden="true" /> Sizin için önerilen
+        </span>
+    );
 
     const TravelDatesRequiredNote = ({ testId }) => (
         <div
@@ -1117,6 +1167,53 @@ export default function Apply() {
                                         </div>
                                     </div>
 
+                                    {/* AKILLI PAKET ONERISI + PAKET INDIRIMI */}
+                                    {(insuranceProducts.length > 0 || esimProducts.length > 0) && (
+                                        <div
+                                            className="mt-10 rounded-xl border border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.06)] p-5"
+                                            data-testid="bundle-promo-box"
+                                        >
+                                            <div className="flex flex-wrap items-start justify-between gap-4">
+                                                <div className="max-w-xl">
+                                                    <p className="flex items-center gap-2 font-heading text-sm font-bold">
+                                                        <Sparkles className="h-4 w-4 text-[hsl(var(--brand-green))]" aria-hidden="true" />
+                                                        {bundleInfo?.title || "Seyahat paketi indirimi"}
+                                                    </p>
+                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                                                        {bundleInfo?.note ||
+                                                            "Seyahat sigortası ve Dubai eSIM'i birlikte alın, ek ürün toplamınızda %10 indirim otomatik uygulanır."}
+                                                    </p>
+                                                    {tripDays && (
+                                                        <p className="mt-2 text-sm text-muted-foreground" data-testid="bundle-trip-days">
+                                                            Seyahatiniz <strong className="text-foreground">{tripDays} gün</strong>; sürenize
+                                                            en uygun paketleri <strong className="text-foreground">"Sizin için önerilen"</strong> etiketiyle işaretledik.
+                                                        </p>
+                                                    )}
+                                                    {quote?.bundle_discount > 0 && (
+                                                        <p
+                                                            className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--brand-green))]"
+                                                            data-testid="bundle-discount-applied"
+                                                        >
+                                                            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                                                            Paket indirimi uygulandı: - {formatMoney(quote.bundle_discount, quote.currency)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    className="h-10 border border-border"
+                                                    onClick={applyRecommended}
+                                                    disabled={!travelDatesReady || bundleActive}
+                                                    data-testid="apply-recommended-bundle-button"
+                                                >
+                                                    <Sparkles className="mr-2 h-4 w-4" />
+                                                    {bundleActive ? "Paket eklendi" : "Önerilenleri ekle"}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* SEYAHAT SIGORTASI (magaza katalogu) */}
                                     {insuranceProducts.length > 0 && (
                                         <div className="mt-10" data-testid="apply-insurance-section">
@@ -1150,6 +1247,11 @@ export default function Apply() {
                                                                     <p className="font-heading text-sm font-bold">{p.name}</p>
                                                                     {p.coverage && (
                                                                         <p className="mt-1 text-xs font-semibold text-muted-foreground">{p.coverage}</p>
+                                                                    )}
+                                                                    {recommendedInsuranceId === p.id && (
+                                                                        <div className="mt-2">
+                                                                            <RecommendedBadge testId={`insurance-recommended-${p.id}`} />
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                                 {selected ? (
@@ -1218,6 +1320,9 @@ export default function Apply() {
                                                                             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
                                                                                 En çok tercih edilen
                                                                             </span>
+                                                                        )}
+                                                                        {recommendedEsimId === p.id && (
+                                                                            <RecommendedBadge testId={`esim-recommended-${p.id}`} />
                                                                         )}
                                                                     </div>
                                                                     <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{p.summary}</p>
@@ -1476,6 +1581,12 @@ export default function Apply() {
                                                             value={formatMoney(s.total, quote.currency)}
                                                         />
                                                     ))}
+                                                    {quote.bundle_discount > 0 && (
+                                                        <SummaryRow
+                                                            label={`${quote.bundle_discount_title || "Seyahat paketi indirimi"} (%${Math.round((quote.bundle_discount_rate || 0) * 100)})`}
+                                                            value={`- ${formatMoney(quote.bundle_discount, quote.currency)}`}
+                                                        />
+                                                    )}
                                                     <SummaryRow label="Toplam" value={formatMoney(quote.total, quote.currency)} strong />
                                                 </div>
                                             </div>
@@ -1654,6 +1765,12 @@ export default function Apply() {
                                                 <span className="font-semibold">{formatMoney(s.total, quote.currency)}</span>
                                             </div>
                                         ))}
+                                        {quote.bundle_discount > 0 && (
+                                            <div className="flex justify-between text-[hsl(var(--brand-green))]" data-testid="summary-bundle-discount">
+                                                <span>Paket indirimi (%{Math.round((quote.bundle_discount_rate || 0) * 100)})</span>
+                                                <span className="font-semibold">- {formatMoney(quote.bundle_discount, quote.currency)}</span>
+                                            </div>
+                                        )}
                                         <div className="flex items-end justify-between border-t border-border pt-3">
                                             <span className="text-sm font-semibold">Toplam</span>
                                             <span className="font-heading text-2xl font-bold" data-testid="summary-total-price">

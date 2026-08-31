@@ -418,6 +418,12 @@ export default function AdminApplicationDetail() {
                                     {a.linked_order_reference && (
                                         <Row label="Bağlı sipariş (teslimat)" value={a.linked_order_reference} />
                                     )}
+                                    {pricing.bundle_discount > 0 && (
+                                        <Row
+                                            label={`${pricing.bundle_discount_title || "Seyahat paketi indirimi"} (%${Math.round((pricing.bundle_discount_rate || 0) * 100)})`}
+                                            value={`- ${formatMoney(pricing.bundle_discount, pricing.currency)}`}
+                                        />
+                                    )}
                                     <Row label="Toplam" value={formatMoney(pricing.total, pricing.currency)} />
                                 </div>
                             ) : (
