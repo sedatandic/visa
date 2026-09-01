@@ -1,26 +1,26 @@
 [
   {
-    "content": "Backend: models.py StoreItemIn + store_items alanları",
+    "content": "Backend: zami.py - mapping deposu, payload builder, handoff token",
     "status": "completed"
   },
   {
-    "content": "Backend: compute_pricing store_lines desteği (content.py)",
+    "content": "Backend: /api/admin/zami/* endpointleri + public handoff/bookmarklet",
     "status": "completed"
   },
   {
-    "content": "Backend: /pricing/quote + /applications store ürün fiyatlama & bağlı sipariş oluşturma",
+    "content": "Frontend: /admin/zami sayfasi (alan esleme, bookmarklet, robot oturumu, kayitlar)",
     "status": "completed"
   },
   {
-    "content": "Backend: ödeme onayında bağlı siparişi paid yap",
+    "content": "Frontend: Basvuru detayinda 'Zami'ye aktar' paneli",
     "status": "completed"
   },
   {
-    "content": "Frontend: Apply.jsx eSIM/sigorta seçim kartları + özet & payload",
+    "content": "Backend B: Playwright kurulumu + captcha/OTP oturumu + form doldurma",
     "status": "completed"
   },
   {
-    "content": "Test: backend fiyat/sipariş + E2E ödeme senkron testi",
+    "content": "Test: API + bookmarklet + admin UI dogrulamasi",
     "status": "completed"
   }
 ]

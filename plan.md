@@ -20,13 +20,18 @@
 - **SEO büyüme hedefi (tamamlandı):** Vize rehber (SEO landing) sayfaları, sitemap/robots, JSON-LD.
 - **Operasyonel verim + dönüşüm (tamamlandı):** Eksik belge hatırlatma, taslak hatırlatma, hesap/draft, aile profili.
 - **Fiyatlandırma (tamamlandı):** USD baz fiyat + canlı kurla TL tahsilat + kur şeffaflığı.
-- **Ek ürün satışları (kısmen tamamlandı):**
-  - Mağaza sayfaları üzerinden **eSIM** ve **seyahat sigortası** satışı: **DONE**.
-  - Yeni hedef (P0): **Vize başvurusu içinde** (Apply.jsx) eSIM + sigortayı **gerçek ürün kataloğundan** seçtirerek upsell.
-  - Kullanıcı kararı:
-    - Sigorta **yolcu başına** (fiyat × yolcu sayısı), tek plan seçilir (Temel vs Geniş).
-    - eSIM: **adet seçilebilir**; varsayılan adet **yolcu sayısı**.
-    - Form içinde **tüm eSIM paketleri** listelenir.
+- **Ek ürün satışları (tamamlandı & geliştirildi):**
+  - Mağaza sayfaları üzerinden **eSIM** ve **seyahat sigortası** satışı.
+  - Vize başvurusu içinde eSIM + sigorta upsell (tek formda).
+  - Ek ürünler seyahat tarihine bağlandı (başlangıç/bitiş).
+  - **Akıllı paket önerisi** + **%10 seyahat paketi indirimi** (sigorta+eSIM birlikte) hem başvuruda hem mağazada.
+- **Yeni hedef (P0): Zami Tours (visa.zamitours.ae) portalına başvuru aktarımı**
+  - Kullanıcı kararı: **A + B**
+    - **A) Bookmarklet/Browser Helper ile tek tık form doldurma (kullanıcı captcha+OTP’yi kendisi geçer)**
+    - **B) Sunucuda Playwright ile yarı-otomatik oturum/RPA (captcha+OTP insan onayı ile, cookie saklanır)**
+  - Teknik engeller: girişte **CAPTCHA** + **OTP** olduğu için tam otomatik login mümkün değil.
+  - Gereksinim: Zami form alanları bilinmediği için **admin “alan eşleme (mapping)”** ekranı ile konfigüre edilebilir entegrasyon.
+  - Güvenlik: Kullanıcı şifresi sohbet içinde paylaşıldı; **saklanmadı** ve **değiştirilmesi önerildi**. Kimlik bilgileri (varsa) admin panelinden şifreli/korumalı şekilde saklanacak.
 
 ---
 
@@ -106,127 +111,110 @@
 
 ---
 
-### Phase 17 — Vize Başvurusu İçinde eSIM + Sigorta Upsell — **COMPLETED**
-**Amaç:** Vize başvurusu (Apply.jsx) içinde eSIM ve sigorta satın aldırmak; fiyatlama/ödeme/teslimatın admin sipariş akışıyla uyumlu olması.
+### Phase 17 — Vize Başvurusu İçinde eSIM + Sigorta Upsell — **COMPLETED (2026-08-31)**
+- Backend: `StoreItemIn` + `store_items` (quote & application), `compute_pricing(store_lines=...)`, `resolve_store_lines()`, `create_application_order()` (source=visa_application), `sync_application_order_payment()` (kart/havale/admin mark-paid).
+- Frontend: `Apply.jsx` adım 2'de sigorta planı (yolcu başına, tek seçim) + tüm eSIM paketleri (adet stepper, varsayılan adet yolcu sayısı); özet satırları + canlı FX toplam.
+- Admin: AdminOrders’da “Vize başvurusu ile alındı” etiketi; AdminApplicationDetail’de store satırları + bağlı sipariş kodu.
+- Test: iteration_15.json backend 51/52 (kritik yok) + E2E başvuru→bağlı sipariş→havale→admin mark-paid senkronu PASS.
 
-#### A) Backend Model & Şema Genişletme — **TODO**
-1) `backend/models.py`
-- `StoreItemIn`:
-  - `product_id: str`
-  - `quantity: int` (1..MAX_QTY)
-- `ApplicationCreate` içine:
-  - `store_items: List[StoreItemIn] = []` (vize başvurusu içinde alınan ürünler)
-- `QuoteRequest` içine:
-  - `store_items: List[StoreItemIn] = []`
+---
 
-2) DB kaydı
-- `applications` dokümanına:
-  - `store_items` (ürün satırları: id, kind, name, qty, unit_price_try, unit_price_usd, total_try, fx_rate)
-  - `linked_order_id` veya `linked_order_reference` (opsiyonel)
+### Phase 18 — Ek Ürün Geçerlilik Tarihlerinin Seyahat Tarihine Bağlanması — **COMPLETED (2026-08-31)**
+- Backend: `resolve_store_lines(items, arrival_date, departure_date)` → satırlarda `validity_days`, `starts_on`, `ends_on`, `trip_days`, `covers_trip`.
+- Frontend: giriş tarihi yoksa seçim kapalı; kartlarda geçerlilik penceresi ve “paket seyahat süresinden kısa” uyarısı; özet satırlarında tarih aralığı.
+- Admin + email + order status: tarih aralığı görünür.
+- Test: canlı UI doğrulaması + E2E date script PASS.
 
-#### B) Otoritatif Fiyatlama — **TODO**
-1) `backend/content.py` / `compute_pricing`
-- Mevcut: `visa_prices + addons`
-- Yeni: `store_lines` desteği:
-  - Ürün satırları store kataloğundan fiyatlanır (USD→TRY live FX).
-  - Çıktıya eklenir:
-    - `store_items` (line list)
-    - `store_total`
-    - `total = visa_subtotal - discount + addons_total + store_total`
+---
 
-2) Ürün fiyat kaynağı
-- `routes_store.product_list()` katalog kaynağı olarak kullanılacak.
-- Tekilleştirme: Form içindeki ürünler **store_products** ile aynı ID’leri kullanmalı.
-
-#### C) Public API’lerde store_items desteği — **TODO**
-1) `POST /api/pricing/quote`
-- Payload: `visa_type_ids`, `addons`, `store_items`
-- Response: mevcut quote + `store_items/store_total` satırları.
-
-2) `POST /api/applications`
-- Payload: `contact, travelers, travel, addons, extra_documents, store_items, kvkk_accepted`
-- Server doğrulama:
-  - Product_id katalogda var mı?
-  - Qty limitleri
-- Başvuru dokümanına fiyat satırlarını kaydet.
-
-#### D) “Başvuruya Bağlı Sipariş” Oluşturma — **TODO**
-**Hedef:** Admin’in zaten kullandığı `/admin/orders` teslimat paneli ile uyumlu olsun.
-- `POST /api/applications` sırasında eğer `store_items` doluysa:
-  - `orders_col` (store_orders) içinde bir sipariş oluştur:
-    - `reference_code: SV-...`
-    - `items: ...`
-    - `contact` (başvurudaki)
-    - `source: "visa_application"`
-    - `application_id: ...`
-    - `payment` başlangıçta `pending`
-  - `applications` dokümanına `linked_order_id` yaz.
-
-#### E) Ödeme Senkronizasyonu — **TODO**
-1) Kart ödemesi (Stripe)
-- `routes_payments.py` içinde uygulama ödeme webhook’unda:
-  - Application `paid` olduğunda bağlı order varsa onu da `paid/processing` yap.
-
-2) Havale
-- Admin “mark paid” akışı (mevcut) uygulama ve order için uyumlu hale getirilecek:
-  - Uygulama havale onayında bağlı order da `paid` olsun.
-
-#### F) Frontend (Apply.jsx) — Ek Hizmetler Adımı UI/UX — **TODO**
-**Mevcut durum:** Ek hizmetler (addons) toggle listesi var ama sadece metadata üzerinden; eSIM/sigorta ürün kataloğu & adet seçimi yok.
-
-1) Veri çekimi
-- `GET /api/products?kind=esim` ile tüm eSIM paketlerini çek.
-- Sigorta planları için iki seçenek:
-  - ya store katalogdan `kind=insurance` çek,
-  - ya legacy addon kartlarını koruyup store’a bağlayacak mapping (önerilmez).
-  - Bu fazda: **store katalogdan çekmek** tercih.
-
-2) UI kuralları
-- Sigorta:
-  - Radyo seçim: `Temel` vs `Geniş`.
-  - Fiyat gösterimi: `+ ₺... / kişi`.
-  - Quantity otomatik: `traveler_count`.
-- eSIM:
-  - Paket kart listesi (tüm paketler).
-  - Seçilen paket için quantity stepper:
-    - Default: `traveler_count`
-    - Kullanıcı artır/azalt (1..MAX_QTY)
-
-3) Özet (Summary)
-- Quote response içindeki `store_items` satırlarını da göster:
-  - `eSIM 10GB x3` gibi
-  - Sigorta planı `x{traveler_count}`
-- Toplam: `quote.total`
-
-4) Submit payload
-- `addons` (express vb.) + `store_items` birlikte gönderilecek.
-
-#### G) Test / Doğrulama — **TODO**
+### Phase 19 — Akıllı Paket Önerisi + %10 Seyahat Paketi İndirimi — **COMPLETED (2026-08-31)**
+Kullanıcı kararları: indirim **%10** (ek ürün toplamı), hem başvuru hem mağaza, öneri otomatik seçmez; etiket + “Önerilenleri ekle”.
 - Backend:
-  - Quote: 2 yolcu + insurance_plus + esim_unlimited qty=2 → totals doğru.
-  - Application create: store order oluşuyor mu? application.linked_order_id set mi?
-  - Payment paid: order paid oluyor mu?
+  - `content.BUNDLE_DISCOUNT` + `bundle_discount_amount()`
+  - `compute_pricing` → `bundle_discount`, `bundle_discount_rate`, `bundle_discount_title`
+  - `/api/products` → `bundle`
+  - Mağaza siparişi (`/api/orders`) + bağlı sipariş: `items_total`, `bundle_discount`, indirimli `price`
+  - E-postalar: indirim satırı
 - Frontend:
-  - Apply.jsx ek hizmetler adımı görsel doğrulama (kartlar/stepper/radio).
-  - Toplam güncelleme (traveler sayısı değişince sigorta qty otomatik güncellenir).
-  - Başvuru gönderimi: backend’e store_items gidiyor mu?
+  - `Apply.jsx`: promosyon kutusu + önerilen etiketler + buton + indirim satırları
+  - `StoreCheckout.jsx`: çapraz satış bölümü (diğer kategori) + indirim satırı
+  - `OrderStatus`, `AdminOrders`, `AdminApplicationDetail`: indirim/tarih gösterimi
+- Test: E2E bundle script PASS + canlı UI screenshot PASS.
+
+---
+
+### Phase 20 — Zami Tours Portalına Başvuru Aktarımı (visa.zamitours.ae) — **PLANNED / NOT STARTED**
+**Amaç:** Bizde toplanan başvuru verilerini Zami Tours “meter system” (portal) içine hızlı ve hatasız şekilde aktarmak.
+
+#### 20A) Entegrasyon Yaklaşımı (A + B)
+1) **A — Bookmarklet / Browser Helper (Client-side Autofill)**
+- Kullanıcı Zami portalına kendi tarayıcısından giriş yapar (CAPTCHA + OTP’yi kendisi geçer).
+- Zami’de başvuru formu sayfasında “VizeAtlas → Formu Doldur” butonu / bookmarklet çalıştırılır.
+- Bizim sistemimizden alınan başvuru `reference_code` veya `application_id` ile veriler çekilir.
+- JavaScript, DOM alanlarına mapping’e göre değer yazar; dosya upload alanlarına mümkün olan en iyi şekilde yardım eder:
+  - Tarayıcı güvenliği nedeniyle dosya inputlarına doğrudan set her zaman mümkün değildir → kullanıcıya “tıkla-yükle” yönlendirmesi + otomatik scroll.
+
+2) **B — Playwright RPA (Server-side, Human-in-the-loop Login)**
+- Admin panelinden bir “RPA Oturumu” başlatılır.
+- Sistem login ekranını açar; CAPTCHA görseli + OTP alanı admin arayüzünde gösterilir.
+- İnsan captcha/OTP’yi girer; sistem session cookie’yi güvenli şekilde saklar (Zami’nin device setting’lerine bağlı olarak 1 ay).
+- Sonrasında başvuru formu otomatik doldurulur ve submit edilir.
+- Oturum süresi dolunca tekrar insan onayı gerekir.
+
+#### 20B) Admin “Alan Eşleme (Mapping)” Altyapısı (kritik)
+- Zami form alan adları bilinmediği için konfigüre edilebilir mapping şart.
+- Admin ekranı:
+  - Zami başvuru formu HTML’i yapıştırma (veya “field list” JSON yükleme)
+  - Sistem `input/select/textarea` alanlarını parse eder (name/id/type/label).
+  - Bizim şema alanlarımızla eşleme yapılır (contact/travel/travelers/store_items/addons vs.).
+  - Mapping versiyonlanır ve “test et” butonu ile doğrulanır.
+- Hem bookmarklet hem Playwright RPA aynı mapping kaydını kullanır.
+
+#### 20C) Kimlik Bilgileri ve Güvenlik
+- Kullanıcı şifresi sohbetten alınmayacak; mevcut paylaşılan şifre **saklanmadı**.
+- Admin panelinde “Zami Portal Ayarları”:
+  - username (email)
+  - password (şifreli saklama; en azından env/secret veya DB’de şifreli alan)
+  - portal base URL
+  - “cookie storage” politikası (TTL, manuel sıfırlama)
+- Audit log:
+  - Hangi başvuru ne zaman aktarılmış, kim başlatmış, sonuç ne.
+
+#### 20D) Yeni API’ler / Ekranlar
+- Backend:
+  - `GET /api/admin/zami/mapping` + `PUT /api/admin/zami/mapping`
+  - `POST /api/admin/zami/session/start` (RPA)
+  - `POST /api/admin/zami/session/solve` (captcha/otp input)
+  - `POST /api/admin/zami/apply/{application_id}` (RPA ile doldur+gönder)
+  - `GET /api/admin/zami/logs`
+- Frontend (Admin):
+  - `/admin/zami` sekmesi: Mapping editor + session yönetimi + job kuyruğu/loglar
+  - Application detay sayfasında: “Zami’ye gönder” butonu + durum.
+- Frontend (Client):
+  - `/hesabim` veya tracking sayfasında: “Zami için doldur” bookmarklet linki + yönergeler.
+
+#### 20E) Test / Doğrulama
+- CAPTCHA/OTP nedeniyle tam otomasyon testi sınırlı:
+  - Mapping parse unit testleri
+  - Bookmarklet: sahte bir HTML form üzerinde e2e DOM fill testi
+  - Playwright: staging’de login ekranına kadar otomasyon + insan adımı sonrası form doldurma smoke test
+  - Üretimde: “dry-run” modu (sadece doldur, submit etme) + ekran görüntüsü kaydı.
 
 ---
 
 ## 3. Next Actions
 
-### P0 — Phase 17’yi Tamamla: Vize İçinde Upsell (eSIM + Sigorta)
-1) Backend model ve API genişletme (models, quote, applications)
-2) Fiyat motoru: compute_pricing store_lines
-3) Başvuruya bağlı order oluşturma + ödeme senkronizasyonu
-4) Frontend Apply.jsx: ürün listeleri + adet seçimi + özet
-5) Backend+Frontend testleri (testing agent + screenshot)
+### P0 — Phase 20: Zami Portal Aktarımı
+1) Admin mapping ekranı (HTML parse + field mapping + versiyon)
+2) Bookmarklet üretimi (mapping + application fetch)
+3) Playwright RPA servisinin eklenmesi (human-in-loop login + cookie store)
+4) Admin job/log ekranı + uygulama detayında “Zami’ye gönder”
+5) Dry-run + canlı pilot test (1-2 başvuru)
 
 ### P0 — Canlı E-posta Testi (Resend) — BEKLEMEDE
 - Gerekli env:
   - `RESEND_API_KEY`
   - `SENDER_EMAIL` (domain doğrulanmış)
-- E2E doğrulanacak mailler: application/order lifecycle + reminder + login/draft.
 
 ### P1 — Stripe prod geçişi (opsiyonel)
 - Canlı anahtarlar + webhook secret + success/cancel URL’leri.
@@ -242,44 +230,37 @@
 
 ## 4. Success Criteria
 - POC/V1/SEO/Account/Drafts/FX/Reminders/Storefront akışları: mevcut kriterler **korunur**.
-- **Phase 17 (yeni) başarı kriterleri:**
-  1) Apply.jsx içinde:
-     - Sigorta planı seçilebilir (Temel/Geniş), otomatik `qty = yolcu sayısı`.
-     - eSIM paketleri listelenir, paket seçimi + adet stepper çalışır (default yolcu sayısı).
-     - Özet satırları ve toplam fiyat canlı güncellenir.
-  2) Backend:
-     - `POST /api/pricing/quote` store_items ile doğru fiyat satırlarını döner.
-     - `POST /api/applications` store_items ile uygulama oluşturur ve fiyatları authoritative hesaplar.
-     - Store ürünleri için `orders_col` kaydı otomatik oluşur (admin teslimat panelinde görünür).
-  3) Ödeme:
-     - Kart ödemesi: application paid → linked order paid/processing.
-     - Havale: admin onayı → linked order paid.
-  4) Teslimat:
-     - Admin sipariş ekranından eSIM QR / poliçe PDF yükleyebilir.
-     - Müşteri e-postası + hesap/sipariş sayfası üzerinden dosyaları indirebilir.
+- Phase 17–19 ek ürün akışları:
+  - Ek ürün tarihleri doğru, öneri + indirim doğru, hem başvuru hem mağaza akışı sorunsuz.
+- **Phase 20 başarı kriterleri (Zami aktarımı):**
+  1) Admin mapping ile Zami form alanları eşlenebilir ve değişime dayanıklı olur.
+  2) Bookmarklet ile kullanıcı Zami formunu tek tıkla doldurabilir (captcha/OTP kendisi).
+  3) Playwright RPA ile admin, insan onayıyla login olup başvuruyu otomatik doldurup gönderebilir.
+  4) Aktarım kayıtları (log) ve hata ayıklama çıktıları admin panelinde görünür.
+  5) Kimlik bilgileri güvenli saklanır; şifre sohbetten/istemciden loglanmaz.
 
 ---
 
-## DURUM (2026-08-31)
+## DURUM (2026-09-01)
 - Phase 1–16: **TAMAMLANDI**.
-- Phase 17: **TAMAMLANDI** (2026-08-31).
-  - Backend: `StoreItemIn` + `store_items` (quote & application), `compute_pricing(store_lines=...)`, `resolve_store_lines()`, `create_application_order()` (source=visa_application), `sync_application_order_payment()` (kart/havale/admin mark-paid).
-  - Frontend: `Apply.jsx` adım 2'de sigorta planı (yolcu başına, tek seçim) + tüm eSIM paketleri (adet stepper, varsayılan yolcu sayısı); özet satırları + canlı FX toplam. AdminOrders'da 'Vize başvurusu ile alındı' etiketi; AdminApplicationDetail fiyat dökümünde store satırları + bağlı sipariş kodu.
-  - Test: iteration_15.json backend 51/52 (kritik yok) + kendi E2E scriptim: başvuru + bağlı sipariş + havale + admin mark-paid senkronu **PASS**.
-
-### Phase 18 — Ek Ürün Geçerlilik Tarihlerinin Seyahat Tarihine Bağlanması — **COMPLETED (2026-08-31)**
-- Backend: `resolve_store_lines(items, arrival_date, departure_date)` → her satırda `validity_days`, `starts_on`, `ends_on`, `trip_days`, `covers_trip`. `QuoteRequest`e `arrival_date/departure_date` eklendi; `/applications` seyahat tarihlerini kullanıyor. Bağlı sipariş ve standalone mağaza siparişi item'larına da `starts_on/ends_on` yazılıyor. E-postalarda tarih aralığı görünüyor.
-- Frontend: `Apply.jsx` — giriş tarihi girilmeden eSIM/sigorta seçimi kapalı (bilgilendirme notu), her kartta "10 Ekim 2026 tarihinde başlar · 24 Ekim 2026 tarihine kadar geçerli" bilgisi, seyahat süresi paketten uzunsa uyarı; özet satırlarında tarih aralığı. AdminOrders ve AdminApplicationDetail'de tarih aralığı gösterimi.
-- Test: canlı UI doğrulaması (screenshot) + E2E script: başvuru/sipariş/mağaza satırlarında tarihler **PASS**.
+- Phase 17: **TAMAMLANDI**.
+- Phase 18: **TAMAMLANDI**.
+- Phase 19: **TAMAMLANDI**.
+- Phase 20: **PLANLANDI / NOT STARTED** (CAPTCHA + OTP nedeniyle human-in-loop yaklaşımı onaylandı: A + B).
 
 Test:
 - `testing_agent_v3` iteration_13.json — backend **46/46 PASS**, frontend **%100 PASS**.
-- `testing_agent_v3` iteration_14.json — backend **38/40 (kritik yok)**, frontend **%100**; kalan 2 senaryo manuel doğrulandı.
+- `testing_agent_v3` iteration_14.json — backend **38/40 (kritik yok)**, frontend **%100**.
+- `testing_agent_v3` iteration_15.json — backend **51/52 PASS**, frontend kısmi; kritik yok.
+- Ek E2E scriptler: tarih + paket indirimi + ödeme senkronu **PASS**.
 
 
-### Phase 19 — Akıllı Paket Önerisi + Seyahat Paketi İndirimi (%10) — **COMPLETED (2026-08-31)**
-Kullanıcı kararları: indirim %10 (ek ürün toplamı), hem başvuru içinde hem mağaza sepetinde geçerli, öneri "Sizin için önerilen" etiketi + "Önerilenleri ekle" butonu (otomatik seçim yok).
-- Backend: `content.BUNDLE_DISCOUNT` + `bundle_discount_amount()`; `compute_pricing` çıktısına `bundle_discount / bundle_discount_rate / bundle_discount_title`; `/api/products` yanıtına `bundle`; mağaza siparişlerinde (`/api/orders`) ve başvuruya bağlı siparişte `items_total`, `bundle_discount`, indirimli `price`; e-postalarda indirim satırı. Stripe tahsilatı indirimli tutarı kullanıyor.
-- Frontend: `Apply.jsx` paket promosyon kutusu (`bundle-promo-box`), seyahat süresine göre en uygun paket için `Sizin için önerilen` etiketi, `Önerilenleri ekle` butonu, indirim satırları (iki özet alanında). `StoreCheckout.jsx` çapraz satış bölümü (diğer kategori ürünleri) + indirim satırı; `OrderStatus`, `AdminOrders`, `AdminApplicationDetail` indirim/tarih gösterimi.
-- Öneri algoritması: seyahat süresini karşılayan en ekonomik paket; hiçbiri karşılamıyorsa en uzun süreli paket.
-- Test: E2E script (mağaza siparişi 1720→1548 ₺, tek kategori indirimsiz, başvuru toplamı 6958 ₺, bağlı sipariş 1548 ₺) **PASS** + canlı UI doğrulaması (screenshot).
+### Phase 20 — Zami Tours Portalına Başvuru Aktarımı (A + B) — **COMPLETED (2026-09-01)**
+Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik login mümkün değil. Bu yüzden iki yol birlikte kuruldu.
+- **A) Tarayıcı yardımcısı (bookmarklet)**: `GET /api/zami/bookmarklet.js` (BASE'i currentScript.src'den alır → https güvenli). Admin başvuru detayında "Aktarım kodu oluştur" → 45 dk geçerli tek kullanımlık token; Zami formunda bookmarklet çalıştırılıp kod yapıştırılınca alanlar dolar, belgeler indirme linkleriyle listelenir (dosya inputları tarayıcı güvenliği nedeniyle otomatik dolmaz).
+- **B) Robot oturumu (Playwright)**: `/api/admin/zami/session/start` login sayfasını açıp CAPTCHA görselini admin paneline gönderir; captcha (+ gerekiyorsa OTP) girilince oturum `storage_state` olarak saklanır. `/api/admin/zami/transfer/{id}` kayıtlı oturumla formu doldurur; "Güvenli mod" açıkken göndermez, ekran görüntüsü döner.
+- **Alan eşleme ekranı** (`/admin/zami`): Zami form HTML'i yapıştırılır → `parse_form_fields` (BeautifulSoup) input/select/textarea alanlarını çıkarır; bizim alanlar (17 genel + 17 yolcu alanı, çoklu tarih formatları) Zami seçicileriyle eşlenir. Yolcu alanlarında `{i}` / `{n}` desteği. Eşleme hem bookmarklet hem robot tarafından kullanılır.
+- Yeni dosyalar: `backend/zami.py`, `backend/zami_rpa.py`, `backend/routes_zami.py`, `frontend/src/pages/AdminZami.jsx`; koleksiyonlar: `zami_logs`, `zami_handoffs`. Bağımlılık: `playwright==1.62.0`, `beautifulsoup4`.
+- Güvenlik: sohbette paylaşılan portal şifresi hiçbir yere kaydedilmedi; kullanıcıya şifre değiştirme önerildi. Portal bilgileri yalnızca admin panelinden `site_settings`e yazılır.
+- Test: API uçları (parse/mapping/handoff/logs/hata yolları) + gerçek portalda Playwright captcha yakalama + sahte Zami formunda bookmarklet doldurma (5/5 alan) **PASS**; admin UI ekran görüntüleriyle doğrulandı.
+- Kullanıcıdan beklenen: (1) Zami yeni başvuru formunun HTML'i → alan eşlemesi, (2) robot modu için portal kullanıcı/şifresinin admin panelinden girilmesi.

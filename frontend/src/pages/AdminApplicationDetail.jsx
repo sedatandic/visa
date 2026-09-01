@@ -109,6 +109,9 @@ export default function AdminApplicationDetail() {
     const [visaMessage, setVisaMessage] = useState("");
     const [missingDocs, setMissingDocs] = useState(null);
     const [remindering, setRemindering] = useState(false);
+    const [zamiBusy, setZamiBusy] = useState(false);
+    const [zamiHandoff, setZamiHandoff] = useState(null);
+    const [zamiResult, setZamiResult] = useState(null);
 
     const loadMissing = useCallback(async () => {
         try {
@@ -299,6 +302,42 @@ export default function AdminApplicationDetail() {
     const a = data.application;
     const travelers = a.travelers || [];
     const pricing = a.pricing;
+
+    const createZamiHandoff = async () => {
+        setZamiBusy(true);
+        try {
+            const { data: res } = await api.post(`/admin/zami/handoff/${a.id}`);
+            setZamiHandoff(res);
+            toast.success("Aktarım kodu oluşturuldu. Zami formunda tarayıcı yardımcısına yapıştırın.");
+        } catch (e) {
+            toast.error(apiError(e, "Aktarım kodu oluşturulamadı."));
+        } finally {
+            setZamiBusy(false);
+        }
+    };
+
+    const runZamiTransfer = async (dryRun) => {
+        setZamiBusy(true);
+        setZamiResult(null);
+        try {
+            const { data: res } = await api.post(`/admin/zami/transfer/${a.id}`, { dry_run: dryRun });
+            setZamiResult(res);
+            if (res.ok) {
+                toast.success(
+                    res.submitted
+                        ? `Form dolduruldu ve gönderildi (${res.filled_count} alan).`
+                        : `Form dolduruldu, gönderilmedi (${res.filled_count} alan).`
+                );
+            } else {
+                toast.error(res.error || "Aktarım yapılamadı.");
+            }
+        } catch (e) {
+            toast.error(apiError(e, "Aktarım yapılamadı."));
+        } finally {
+            setZamiBusy(false);
+        }
+    };
+
     const extra = a.extra_documents || {};
     const visa = a.visa_result;
 
@@ -545,6 +584,89 @@ export default function AdminApplicationDetail() {
                                         )}
                                     </Button>
                                 </>
+                            )}
+                        </div>
+
+                        {/* ZAMI TRANSFER */}
+                        <div className="card-surface p-6" data-testid="admin-zami-panel">
+                            <div className="flex items-center gap-2">
+                                <Send className="h-4.5 w-4.5 text-primary" />
+                                <h2 className="font-heading text-base font-bold">Zami Tours portalına aktar</h2>
+                            </div>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                Zami portalında başvuru formunu açın ve tarayıcı yardımcısını çalıştırıp aşağıdaki
+                                aktarım kodunu yapıştırın; alanlar otomatik dolar. Alternatif olarak robot oturumu
+                                açıksa aktarımı sunucu üzerinden de yapabilirsiniz.
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-3">
+                                <Button
+                                    type="button"
+                                    onClick={createZamiHandoff}
+                                    disabled={zamiBusy}
+                                    data-testid="zami-handoff-button"
+                                >
+                                    {zamiBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                    Aktarım kodu oluştur
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="border border-border"
+                                    onClick={() => runZamiTransfer(true)}
+                                    disabled={zamiBusy}
+                                    data-testid="zami-rpa-dry-button"
+                                >
+                                    Robotla doldur (göndermeden)
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="border border-border"
+                                    onClick={() => runZamiTransfer(false)}
+                                    disabled={zamiBusy}
+                                    data-testid="zami-rpa-submit-button"
+                                >
+                                    Robotla doldur ve gönder
+                                </Button>
+                            </div>
+                            {zamiHandoff && (
+                                <div className="mt-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4" data-testid="zami-handoff-box">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                        Aktarım kodu ({zamiHandoff.expires_in_minutes} dk geçerli)
+                                    </p>
+                                    <p className="mt-1 break-all font-mono text-sm font-bold" data-testid="zami-handoff-token">
+                                        {zamiHandoff.token}
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        className="mt-3 h-9 border border-border"
+                                        onClick={() => {
+                                            navigator.clipboard?.writeText(zamiHandoff.token);
+                                            toast.success("Kod kopyalandı.");
+                                        }}
+                                        data-testid="zami-handoff-copy"
+                                    >
+                                        Kodu kopyala
+                                    </Button>
+                                </div>
+                            )}
+                            {zamiResult && (
+                                <div className="mt-4 rounded-xl border border-border p-4" data-testid="zami-rpa-result">
+                                    <p className="text-sm">
+                                        {zamiResult.ok
+                                            ? `${zamiResult.filled_count} alan dolduruldu${zamiResult.submitted ? " ve form gönderildi" : " (gönderilmedi)"}.`
+                                            : zamiResult.error}
+                                    </p>
+                                    {zamiResult.screenshot && (
+                                        <img
+                                            src={zamiResult.screenshot}
+                                            alt="Zami ekran görüntüsü"
+                                            className="mt-3 w-full rounded-lg border border-border"
+                                            data-testid="zami-rpa-screenshot-app"
+                                        />
+                                    )}
+                                </div>
                             )}
                         </div>
 

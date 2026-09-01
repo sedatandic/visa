@@ -35,6 +35,7 @@ import AdminTestimonials from "./pages/AdminTestimonials";
 import AdminArticles from "./pages/AdminArticles";
 import AdminBankTransfer from "./pages/AdminBankTransfer";
 import AdminCompany from "./pages/AdminCompany";
+import AdminZami from "./pages/AdminZami";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -88,6 +89,7 @@ function App() {
                     <Route path="/admin/yazilar" element={<RequireAdmin><AdminArticles /></RequireAdmin>} />
                     <Route path="/admin/banka" element={<RequireAdmin><AdminBankTransfer /></RequireAdmin>} />
                     <Route path="/admin/acente" element={<RequireAdmin><AdminCompany /></RequireAdmin>} />
+                    <Route path="/admin/zami" element={<RequireAdmin><AdminZami /></RequireAdmin>} />
 
                     <Route path="*" element={<Site><NotFound /></Site>} />
                 </Routes>

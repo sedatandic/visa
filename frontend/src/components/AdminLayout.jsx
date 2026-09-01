@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, NavLink, Navigate, useNavigate } from "react-router-dom";
-import { BookOpen, Package, Building2, FileText, Landmark, LayoutDashboard, LogOut, Mail, MessageSquare, Star, Tag } from "lucide-react";
+import { BookOpen, Package, Building2, FileText, Landmark, LayoutDashboard, LogOut, Mail, MessageSquare, Send, Star, Tag } from "lucide-react";
 import { Button } from "./ui/button";
 import { BrandMark } from "./BrandMark";
 
@@ -15,6 +15,7 @@ const NAV = [
     { to: "/admin/yazilar", label: "Blog Yazıları", icon: FileText },
     { to: "/admin/banka", label: "Banka Bilgileri", icon: Landmark },
     { to: "/admin/acente", label: "Acente Bilgileri", icon: Building2 },
+    { to: "/admin/zami", label: "Zami Aktarımı", icon: Send },
 ];
 
 export const RequireAdmin = ({ children }) => {
@@ -47,7 +48,7 @@ export const AdminLayout = ({ children, title, description }) => {
                         </Button>
                     </div>
                 </div>
-                <div className="container-page flex gap-1 overflow-x-auto pb-2">
+                <div className="container-page flex flex-wrap gap-1 overflow-x-auto pb-2">
                     {NAV.map(({ to, label, icon: Icon, end }) => (
                         <NavLink
                             key={to}

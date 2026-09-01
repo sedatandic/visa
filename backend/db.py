@@ -30,6 +30,8 @@ drafts_col = db["application_drafts"]
 saved_travelers_col = db["saved_travelers"]
 products_col = db["store_products"]
 orders_col = db["store_orders"]
+zami_logs_col = db["zami_logs"]
+zami_handoffs_col = db["zami_handoffs"]
 
 
 def serialize_doc(doc):
