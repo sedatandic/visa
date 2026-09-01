@@ -225,6 +225,7 @@ async def lifespan(app: FastAPI):
         logger.error("storage init failed: %s", exc)
 
     reminder_task = None
+    zami_task = None
     try:
         from doc_reminders import default_origin, reminder_loop
 
@@ -233,14 +234,23 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.error("reminder scheduler failed to start: %s", exc)
 
+    try:
+        from zami_status import status_loop
+
+        zami_task = asyncio.create_task(status_loop())
+        logger.info("zami status scheduler started")
+    except Exception as exc:
+        logger.error("zami status scheduler failed to start: %s", exc)
+
     yield
 
-    if reminder_task:
-        reminder_task.cancel()
-        try:
-            await reminder_task
-        except (asyncio.CancelledError, Exception):
-            pass
+    for task in (reminder_task, zami_task):
+        if task:
+            task.cancel()
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):
+                pass
     client.close()
 
 

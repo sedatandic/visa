@@ -85,6 +85,19 @@ DEFAULT_MAPPING = {
     "dry_run": True,
     "fields": {},
     "traveler_fields": {},
+    # --- durum takibi ---
+    "status_url": "",
+    "status_search_selector": "",
+    "status_result_selector": "",
+    "status_keywords": {
+        "approved": ["approved", "issued", "granted", "onay"],
+        "rejected": ["rejected", "declined", "refused", "red"],
+        "reviewing": ["processing", "in progress", "under process", "pending", "submitted"],
+        "cancelled": ["cancelled", "canceled"],
+    },
+    "auto_check_enabled": False,
+    "auto_check_hours": 6,
+    "auto_notify": True,
     "updated_at": None,
 }
 
@@ -194,6 +207,9 @@ async def get_mapping() -> dict:
 
 async def save_mapping(value: dict) -> dict:
     mapping = dict(DEFAULT_MAPPING)
+    keywords = value.get("status_keywords")
+    if not isinstance(keywords, dict) or not keywords:
+        keywords = DEFAULT_MAPPING["status_keywords"]
     mapping.update(
         {
             "form_url": (value.get("form_url") or "").strip(),
@@ -201,6 +217,16 @@ async def save_mapping(value: dict) -> dict:
             "dry_run": bool(value.get("dry_run", True)),
             "fields": {k: v for k, v in (value.get("fields") or {}).items() if v},
             "traveler_fields": {k: v for k, v in (value.get("traveler_fields") or {}).items() if v},
+            "status_url": (value.get("status_url") or "").strip(),
+            "status_search_selector": (value.get("status_search_selector") or "").strip(),
+            "status_result_selector": (value.get("status_result_selector") or "").strip(),
+            "status_keywords": {
+                k: [str(w).strip().lower() for w in (v or []) if str(w).strip()]
+                for k, v in keywords.items()
+            },
+            "auto_check_enabled": bool(value.get("auto_check_enabled", False)),
+            "auto_check_hours": max(1, min(int(value.get("auto_check_hours") or 6), 48)),
+            "auto_notify": bool(value.get("auto_notify", True)),
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
     )
@@ -208,6 +234,19 @@ async def save_mapping(value: dict) -> dict:
         {"key": MAPPING_KEY}, {"$set": {"key": MAPPING_KEY, "value": mapping}}, upsert=True
     )
     return mapping
+
+
+def match_status(raw_text: str, keywords: dict) -> str | None:
+    """Portaldan okunan metni bizim durum koduna cevirir."""
+    text = (raw_text or "").lower()
+    if not text.strip():
+        return None
+    # ret/onay gibi kesin ifadeler once denenir
+    for status in ("approved", "rejected", "cancelled", "reviewing"):
+        for word in keywords.get(status) or []:
+            if word and word in text:
+                return status
+    return None
 
 
 async def get_settings() -> dict:
@@ -245,6 +284,124 @@ async def raw_credentials() -> dict:
 
 
 # ------------------------------------------------- form HTML alan cikarimi
+CAPTURE_KEY = "zami_capture"
+
+# Otomatik eslesme icin anahtar kelimeler (alan adi/etiketinde aranir)
+GLOBAL_HINTS = [
+    ("contact.email", ["email", "e-mail", "eposta"]),
+    ("contact.phone", ["phone", "mobile", "tel", "contact_no", "whatsapp"]),
+    ("contact.full_name", ["client name", "client_name", "customer", "agent name", "contact name", "full name"]),
+    ("travel.arrival_date_dmy", ["arrival", "entry date", "travel date", "date of arrival", "from date"]),
+    ("travel.departure_date_dmy", ["departure", "exit date", "return", "to date"]),
+    ("travel.flight_no", ["flight"]),
+    ("travel.accommodation", ["hotel", "accommodation", "address in uae", "stay"]),
+    ("travel.purpose", ["purpose", "reason"]),
+    ("travel.notes", ["remark", "note", "comment"]),
+    ("visa_type_name", ["visa type", "visa_type", "service", "package"]),
+    ("reference_code", ["reference", "ref no", "booking"]),
+]
+
+TRAVELER_HINTS = [
+    ("first_name", ["first name", "firstname", "given name", "fname", "name_first"]),
+    ("last_name", ["last name", "lastname", "surname", "family name", "lname"]),
+    ("full_name", ["full name", "passenger name", "traveller name", "traveler name", "name"]),
+    ("passport_no", ["passport no", "passport number", "passportno", "passport_no", "passport"]),
+    ("passport_expiry_dmy", ["passport expiry", "expiry", "valid till", "valid until", "expiration"]),
+    ("birth_date_dmy", ["birth", "dob", "date of birth"]),
+    ("gender_label", ["gender", "sex"]),
+    ("nationality", ["nationality", "country"]),
+    ("national_id", ["national id", "id number", "tc", "identity"]),
+    ("applicant_type_label", ["applicant type", "pax type", "adult", "child", "type"]),
+]
+
+TRAVELER_MARKERS = ["pax", "passenger", "traveller", "traveler", "applicant", "person", "guest"]
+
+
+def _haystack(field: dict) -> str:
+    return " ".join(
+        str(field.get(k) or "").lower().replace("_", " ").replace("-", " ")
+        for k in ("label", "name", "id", "placeholder")
+    )
+
+
+def _traveler_template(selector: str) -> str | None:
+    """`pax[0][first_name]` gibi indeksli seciciyi `{i}` sablonuna cevirir."""
+    for pattern, repl in (
+        (re.compile(r"\[(0|1)\]"), "[{i}]"),
+        (re.compile(r"(_|-)(0|1)(?=\]|_|-|\"|$)"), r"\1{i}"),
+    ):
+        if pattern.search(selector):
+            return pattern.sub(repl, selector, count=1)
+    return None
+
+
+def suggest_mapping(captured: dict) -> dict:
+    """Yakalanan form alanlarindan otomatik eslesme onerisi uretir."""
+    form = (captured or {}).get("form") or {}
+    fields = form.get("fields") or []
+    suggestions = {"fields": {}, "traveler_fields": {}, "notes": []}
+    used = set()
+
+    for field in fields:
+        selector = field.get("selector")
+        if not selector or selector in used:
+            continue
+        hay = _haystack(field)
+        template = _traveler_template(selector)
+        is_traveler = bool(template) or any(m in hay for m in TRAVELER_MARKERS)
+
+        if is_traveler:
+            for key, words in TRAVELER_HINTS:
+                if key in suggestions["traveler_fields"]:
+                    continue
+                if any(w in hay for w in words):
+                    suggestions["traveler_fields"][key] = template or selector
+                    used.add(selector)
+                    break
+            continue
+
+        for key, words in GLOBAL_HINTS:
+            if key in suggestions["fields"]:
+                continue
+            if any(w in hay for w in words):
+                suggestions["fields"][key] = selector
+                used.add(selector)
+                break
+
+    if form.get("submit_selector"):
+        suggestions["submit_selector"] = form["submit_selector"]
+    if form.get("url"):
+        suggestions["form_url"] = form["url"]
+
+    status = (captured or {}).get("status") or {}
+    if status.get("url"):
+        suggestions["status_url"] = status["url"]
+    if status.get("search_selector"):
+        suggestions["status_search_selector"] = status["search_selector"]
+    if status.get("row_selector"):
+        suggestions["status_result_selector"] = status["row_selector"]
+
+    if not suggestions["fields"] and not suggestions["traveler_fields"]:
+        suggestions["notes"].append("Otomatik eşleşme bulunamadı; alanları elle seçmeniz gerekebilir.")
+    return suggestions
+
+
+async def get_capture() -> dict:
+    doc = await settings_col.find_one({"key": CAPTURE_KEY})
+    return (doc or {}).get("value") or {}
+
+
+async def save_capture(page_type: str, data: dict) -> dict:
+    current = await get_capture()
+    key = "status" if page_type == "status" else "form"
+    current[key] = data
+    current[f"{key}_captured_at"] = datetime.now(timezone.utc).isoformat()
+    await settings_col.update_one(
+        {"key": CAPTURE_KEY}, {"$set": {"key": CAPTURE_KEY, "value": current}}, upsert=True
+    )
+    return current
+
+
 def parse_form_fields(html: str) -> list:
     """Zami form HTML'inden doldurulabilir alanlari cikarir."""
     from bs4 import BeautifulSoup
@@ -290,6 +447,31 @@ def parse_form_fields(html: str) -> list:
 
 
 # ------------------------------------------------------ handoff (bookmarklet)
+async def create_capture_token(created_by: str, base_url: str) -> dict:
+    """Zami sayfasindan alan yakalamak icin tek kullanimlik kod."""
+    token = secrets.token_urlsafe(18)
+    now = datetime.now(timezone.utc)
+    await zami_handoffs_col.insert_one(
+        {
+            "id": str(uuid.uuid4()),
+            "token": token,
+            "kind": "capture",
+            "application_id": None,
+            "reference_code": None,
+            "created_by": created_by,
+            "created_at": now,
+            "expires_at": now + timedelta(minutes=HANDOFF_TTL_MINUTES),
+            "used_count": 0,
+            "base_url": (base_url or "").rstrip("/"),
+        }
+    )
+    return {
+        "token": token,
+        "expires_in_minutes": HANDOFF_TTL_MINUTES,
+        "capture_script_url": f"{base_url}/api/zami/capture.js",
+    }
+
+
 async def create_handoff(app_doc: dict, created_by: str, file_base_url: str) -> dict:
     token = secrets.token_urlsafe(24)
     now = datetime.now(timezone.utc)

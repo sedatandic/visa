@@ -12,13 +12,68 @@ Girişte CAPTCHA + OTP oldugu icin login adiminda insan onayi gerekir:
 import asyncio
 import base64
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 
 from db import settings_col
-from zami import SESSION_KEY, get_mapping, log_event, raw_credentials
+from zami import SESSION_KEY, get_mapping, log_event, match_status, raw_credentials
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_browser_path():
+    """Playwright tarayici dizinini bulur (ortam degiskeni tanimli degilse)."""
+    if os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+        return
+    for candidate in ("/pw-browsers", "/ms-playwright", os.path.expanduser("~/.cache/ms-playwright")):
+        try:
+            if os.path.isdir(candidate) and any(
+                name.startswith("chromium") for name in os.listdir(candidate)
+            ):
+                os.environ["PLAYWRIGHT_BROWSERS_PATH"] = candidate
+                logger.info("playwright browsers path set to %s", candidate)
+                return
+        except Exception:
+            continue
+
+
+_ensure_browser_path()
+
+BROWSER_MISSING_MSG = (
+    "Tarayıcı motoru (Chromium) sunucuda bulunamadı. Robot modu kullanılamıyor; "
+    "tarayıcı yardımcısı (bookmarklet) ile aktarım yapabilirsiniz."
+)
+
+
+def _chrome_executable() -> str | None:
+    """Sistemde hazir bulunan Chromium/Chrome yolunu dondurur (varsa)."""
+    import shutil
+
+    candidates = [
+        os.environ.get("PLAYWRIGHT_CHROME_EXECUTABLE_PATH"),
+        "/usr/local/bin/browser-use-chromium",
+        shutil.which("chromium"),
+        shutil.which("chromium-browser"),
+        shutil.which("google-chrome"),
+    ]
+    for path in candidates:
+        if path and os.path.exists(path):
+            return path
+    return None
+
+
+async def _launch_browser(pw):
+    """Once paketle gelen tarayiciyi, olmazsa sistem Chromium'unu kullanir."""
+    args = ["--no-sandbox", "--disable-dev-shm-usage"]
+    try:
+        return await pw.chromium.launch(headless=True, args=args)
+    except Exception as exc:
+        executable = _chrome_executable()
+        if not executable:
+            raise
+        logger.warning("bundled chromium unavailable (%s); using %s", exc, executable)
+        return await pw.chromium.launch(headless=True, args=args, executable_path=executable)
 
 _sessions: dict = {}
 SESSION_IDLE_LIMIT = 900  # 15 dk
@@ -35,9 +90,31 @@ def _now():
 async def _launch():
     from playwright.async_api import async_playwright
 
+    _ensure_browser_path()
     pw = await async_playwright().start()
-    browser = await pw.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"])
+    try:
+        browser = await _launch_browser(pw)
+    except Exception:
+        await pw.stop()
+        raise
     context = await browser.new_context(viewport={"width": 1400, "height": 900}, locale="en-US")
+    page = await context.new_page()
+    return pw, browser, context, page
+
+
+async def _launch_with_state(state: dict):
+    from playwright.async_api import async_playwright
+
+    _ensure_browser_path()
+    pw = await async_playwright().start()
+    try:
+        browser = await _launch_browser(pw)
+    except Exception:
+        await pw.stop()
+        raise
+    context = await browser.new_context(
+        storage_state=state, viewport={"width": 1400, "height": 1000}, locale="en-US"
+    )
     page = await context.new_page()
     return pw, browser, context, page
 
@@ -87,7 +164,12 @@ async def start_session(actor: str = "") -> dict:
     if not creds["username"] or not creds["password"]:
         return {"ok": False, "error": "Portal kullanıcı adı/şifresi kayıtlı değil. Önce Zami ayarlarını kaydedin."}
 
-    pw, browser, context, page = await _launch()
+    pw, browser, context, page = None, None, None, None
+    try:
+        pw, browser, context, page = await _launch()
+    except Exception as exc:
+        logger.error("browser launch failed: %s", exc)
+        return {"ok": False, "error": BROWSER_MISSING_MSG}
     try:
         await page.goto(creds["portal_url"].rstrip("/") + LOGIN_PATH, wait_until="domcontentloaded", timeout=45000)
     except Exception as exc:
@@ -224,6 +306,90 @@ async def clear_session() -> dict:
     return {"ok": True}
 
 
+async def check_status(app_doc: dict) -> dict:
+    """Zami portalinda basvurunun guncel durumunu okur.
+
+    Arama icin oncelikle `zami_reference` (portaldaki basvuru no), yoksa
+    bizim takip kodumuz ve ilk yolcunun pasaport numarasi denenir.
+    """
+    mapping = await get_mapping()
+    if not mapping.get("status_url"):
+        return {"ok": False, "error": "Durum sayfası adresi (status_url) tanımlı değil. Zami ekranından girin."}
+
+    doc = await settings_col.find_one({"key": SESSION_KEY})
+    state = ((doc or {}).get("value") or {}).get("storage_state")
+    if not state:
+        return {"ok": False, "error": "Kayıtlı portal oturumu yok. Önce RPA oturumu açın (captcha + OTP)."}
+
+    travelers = app_doc.get("travelers") or []
+    candidates = [
+        app_doc.get("zami_reference"),
+        app_doc.get("reference_code"),
+        (travelers[0].get("passport_no") if travelers else None),
+    ]
+    candidates = [c for c in candidates if c]
+    if not candidates:
+        return {"ok": False, "error": "Aranacak bir referans bulunamadı."}
+
+    try:
+        pw, browser, context, page = await _launch_with_state(state)
+    except Exception as exc:
+        logger.error("browser launch failed: %s", exc)
+        return {"ok": False, "error": BROWSER_MISSING_MSG}
+    try:
+        await page.goto(mapping["status_url"], wait_until="domcontentloaded", timeout=45000)
+        await asyncio.sleep(1.0)
+        if await page.locator('input[name="pw"]').count() > 0:
+            return {"ok": False, "error": "Portal oturumu sona ermiş. Yeni RPA oturumu açın.", "screenshot": await _shot(page)}
+
+        raw_text = ""
+        used_ref = ""
+        for ref in candidates:
+            used_ref = ref
+            if mapping.get("status_search_selector"):
+                try:
+                    box = page.locator(mapping["status_search_selector"]).first
+                    await box.fill(str(ref))
+                    await page.keyboard.press("Enter")
+                    await page.wait_for_load_state("domcontentloaded", timeout=30000)
+                    await asyncio.sleep(1.5)
+                except Exception:
+                    pass
+
+            if mapping.get("status_result_selector"):
+                selector = (
+                    mapping["status_result_selector"].replace("{ref}", str(ref)).replace("{reference}", str(ref))
+                )
+                try:
+                    loc = page.locator(selector).first
+                    if await loc.count() > 0:
+                        raw_text = (await loc.inner_text()).strip()
+                except Exception:
+                    raw_text = ""
+            if not raw_text:
+                body = await page.inner_text("body")
+                for line in body.splitlines():
+                    if str(ref).lower() in line.lower():
+                        raw_text = line.strip()
+                        break
+            if raw_text:
+                break
+
+        matched = match_status(raw_text, mapping.get("status_keywords") or {})
+        return {
+            "ok": True,
+            "reference_used": used_ref,
+            "raw_text": raw_text[:400],
+            "matched_status": matched,
+            "screenshot": await _shot(page),
+        }
+    except Exception as exc:
+        logger.error("zami status check failed: %s", exc)
+        return {"ok": False, "error": f"Durum kontrolü sırasında hata: {exc}"}
+    finally:
+        await _close({"pw": pw, "browser": browser, "context": context})
+
+
 async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, actor: str = "") -> dict:
     """Saklanan oturumla Zami basvuru formunu doldurur (ve dry_run kapaliysa gonderir)."""
     mapping = await get_mapping()
@@ -237,12 +403,11 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
     if not state:
         return {"ok": False, "error": "Kayıtlı portal oturumu yok. Önce RPA oturumu açın (captcha + OTP)."}
 
-    from playwright.async_api import async_playwright
-
-    pw = await async_playwright().start()
-    browser = await pw.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"])
-    context = await browser.new_context(storage_state=state, viewport={"width": 1400, "height": 1000}, locale="en-US")
-    page = await context.new_page()
+    try:
+        pw, browser, context, page = await _launch_with_state(state)
+    except Exception as exc:
+        logger.error("browser launch failed: %s", exc)
+        return {"ok": False, "error": BROWSER_MISSING_MSG}
     filled, missing = [], []
     try:
         await page.goto(mapping["form_url"], wait_until="domcontentloaded", timeout=45000)

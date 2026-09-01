@@ -33,6 +33,7 @@ import { AdminLayout } from "../components/AdminLayout";
 import { PaymentBadge, StatusBadge } from "../components/StatusBadge";
 import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
+import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
     Select,
@@ -112,6 +113,7 @@ export default function AdminApplicationDetail() {
     const [zamiBusy, setZamiBusy] = useState(false);
     const [zamiHandoff, setZamiHandoff] = useState(null);
     const [zamiResult, setZamiResult] = useState(null);
+    const [zamiRef, setZamiRef] = useState("");
 
     const loadMissing = useCallback(async () => {
         try {
@@ -161,6 +163,7 @@ export default function AdminApplicationDetail() {
             setData(res);
             setStatus(res.application.status);
             setNote(res.application.admin_notes || "");
+            setZamiRef(res.application.zami_reference || "");
         } catch (err) {
             if (err?.response?.status === 401) {
                 localStorage.removeItem("dv_admin_token");
@@ -302,6 +305,43 @@ export default function AdminApplicationDetail() {
     const a = data.application;
     const travelers = a.travelers || [];
     const pricing = a.pricing;
+
+    const saveZamiRef = async () => {
+        setZamiBusy(true);
+        try {
+            await api.put(`/admin/zami/reference/${a.id}`, { zami_reference: zamiRef });
+            toast.success("Zami başvuru numarası kaydedildi.");
+        } catch (e) {
+            toast.error(apiError(e, "Kaydedilemedi."));
+        } finally {
+            setZamiBusy(false);
+        }
+    };
+
+    const checkZamiStatus = async () => {
+        setZamiBusy(true);
+        setZamiResult(null);
+        try {
+            const { data: res } = await api.post(`/admin/zami/check-status/${a.id}`, { notify: true });
+            setZamiResult(res);
+            if (!res.ok) {
+                toast.error(res.error || "Durum okunamadı.");
+            } else if (res.status_changed) {
+                toast.success(`Durum güncellendi: ${res.new_status}. Müşteriye bilgi e-postası gönderildi.`);
+                load();
+            } else {
+                toast.info(
+                    res.matched_status
+                        ? `Portal durumu: ${res.matched_status} (değişiklik yok).`
+                        : "Portalda eşleşen durum bulunamadı."
+                );
+            }
+        } catch (e) {
+            toast.error(apiError(e, "Durum kontrolü başarısız."));
+        } finally {
+            setZamiBusy(false);
+        }
+    };
 
     const createZamiHandoff = async () => {
         setZamiBusy(true);
@@ -629,6 +669,49 @@ export default function AdminApplicationDetail() {
                                     Robotla doldur ve gönder
                                 </Button>
                             </div>
+                            <div className="mt-5 grid gap-3 border-t border-border pt-5 sm:grid-cols-[1fr_auto] sm:items-end">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium" htmlFor="zami-ref-input">
+                                        Zami başvuru numarası (durum takibi için)
+                                    </label>
+                                    <Input
+                                        id="zami-ref-input"
+                                        value={zamiRef}
+                                        onChange={(e) => setZamiRef(e.target.value)}
+                                        placeholder="Portaldaki başvuru no"
+                                        data-testid="zami-reference-input"
+                                    />
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        className="border border-border"
+                                        onClick={saveZamiRef}
+                                        disabled={zamiBusy}
+                                        data-testid="zami-reference-save"
+                                    >
+                                        Kaydet
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        className="border border-border"
+                                        onClick={checkZamiStatus}
+                                        disabled={zamiBusy}
+                                        data-testid="zami-status-check-button"
+                                    >
+                                        Durumu kontrol et
+                                    </Button>
+                                </div>
+                            </div>
+                            {a.zami_status_checked_at && (
+                                <p className="mt-3 text-sm text-muted-foreground" data-testid="zami-last-status">
+                                    Son kontrol: {formatDateTime(a.zami_status_checked_at)}
+                                    {a.zami_status ? ` · portal durumu: ${a.zami_status}` : " · eşleşme yok"}
+                                    {a.zami_status_raw ? ` (${a.zami_status_raw.slice(0, 80)})` : ""}
+                                </p>
+                            )}
                             {zamiHandoff && (
                                 <div className="mt-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4" data-testid="zami-handoff-box">
                                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

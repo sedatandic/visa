@@ -264,3 +264,22 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
 - Güvenlik: sohbette paylaşılan portal şifresi hiçbir yere kaydedilmedi; kullanıcıya şifre değiştirme önerildi. Portal bilgileri yalnızca admin panelinden `site_settings`e yazılır.
 - Test: API uçları (parse/mapping/handoff/logs/hata yolları) + gerçek portalda Playwright captcha yakalama + sahte Zami formunda bookmarklet doldurma (5/5 alan) **PASS**; admin UI ekran görüntüleriyle doğrulandı.
 - Kullanıcıdan beklenen: (1) Zami yeni başvuru formunun HTML'i → alan eşlemesi, (2) robot modu için portal kullanıcı/şifresinin admin panelinden girilmesi.
+
+
+### Phase 21 — Toplu Aktarım + Otomatik Durum Takibi — **COMPLETED (2026-09-01)**
+- **Toplu aktarım**: `GET /api/admin/zami/candidates` (aktarıma uygun başvurular), `POST /api/admin/zami/bulk-transfer` (max 20, sıralı, dry_run destekli, oturum yoksa erken durur). Admin'de "Toplu Aktarım" sekmesi: çoklu seçim tablosu + doldur/gönder + sonuç dökümü. Aktarılanlara `zami_transferred_at`, `zami_submitted` yazılır.
+- **Otomatik durum takibi**: `zami_rpa.check_status()` portal liste/durum sayfasında referansı arar (zami_reference → takip kodu → pasaport no), sonuç satırını okur; `zami.match_status()` anahtar kelimelerle bizim durum koduna çevirir. `zami_status.apply_status()` başvuru durumunu günceller, `status_history`'ye not düşer ve müşteriye `status_change` e-postası atar. `sweep_statuses()` toplu tarama, `status_loop()` arka planda (ayarlanan saat aralığında, admin'den aç/kapa) çalışır — `server.py` lifespan'e eklendi.
+- Yeni endpointler: `PUT /api/admin/zami/reference/{id}`, `POST /api/admin/zami/check-status/{id}`, `POST /api/admin/zami/check-status-all`.
+- Admin UI: "Durum Takibi" sekmesi (durum sayfası URL'i, arama/sonuç seçicileri, onay/ret/inceleme/iptal anahtar kelimeleri, otomatik kontrol + periyot + e-posta anahtarı, "Şimdi kontrol et"); başvuru detayında Zami başvuru no alanı + "Durumu kontrol et" + son kontrol bilgisi.
+- Playwright tarayıcı yolu otomatik bulunuyor (`PLAYWRIGHT_BROWSERS_PATH` yoksa /pw-browsers vb.); tarayıcı yoksa kullanıcıya anlaşılır hata dönüyor (bookmarklet yolu önerilir).
+- Test: sahte portal (localhost) ile uçtan uca — toplu aktarım 2/2 başvuru × 5 alan, tek başvuru durum kontrolü `Approved` → başvuru `approved` + müşteri e-postası, sweep `Processing` → `reviewing`, e-posta kayıtları oluştu. **PASS**
+- Kalan: Zami gerçek form/liste sayfalarının HTML'i alınmadan alan eşlemesi tamamlanamıyor (kullanıcıdan bekleniyor).
+
+
+### Phase 22 — Alan Eşlemesi Otomasyonu (yakalama + otomatik öneri) — **COMPLETED (2026-09-01)**
+Zami form HTML'i elde olmadığı için eşlemeyi kullanıcıya bırakmak yerine otomatikleştirildi:
+- **Yakalama yardımcısı**: `GET /api/zami/capture.js` bookmarklet'i Zami sayfasındaki tüm input/select/textarea alanlarını (name, id, label, placeholder, tip, submit/search seçicileri) okuyup token korumalı `POST /api/zami/capture/{token}`'a gönderir. Admin'de "Yakalama kodu oluştur" (45 dk) + yer imi bağlantısı; hem başvuru formu hem durum/liste sayfası ayrı ayrı yakalanır.
+- **Otomatik eşleme önerisi**: `zami.suggest_mapping()` etiket/isim anahtar kelimeleriyle bizim alanlara eşler; `pax[0][...]` gibi indeksli seçicileri `{i}` şablonuna çevirir; durum sayfasından `status_url`, arama alanı ve satır seçicisini önerir. `POST /api/admin/zami/apply-suggestions` önerileri eşlemeye işler. Mapping ekranındaki açılır listeler yakalanan alanlarla otomatik dolar (HTML yapıştırma artık opsiyonel).
+- **Tarayıcı motoru dayanıklılığı**: paketle gelen Chromium yoksa sistem Chromium'una (`/usr/local/bin/browser-use-chromium`, google-chrome) otomatik geçiş; hiçbiri yoksa anlaşılır hata + bookmarklet önerisi.
+- Test: gerçekçi sahte Zami formu (15 alan, tablo etiketli + pax[0] yolcu alanları) → yakalama 15 alan, otomatik eşleme **8 genel + 7 yolcu** alanı, `{i}` şablonu doğru; öneriler uygulanıp gerçek başvuruyla dry-run aktarımda **12 alan** doldu (yalnızca select seçenek eşleşmeyen 1 alan atlandı). Durum sayfası yakalamada `status_url` + arama seçicisi otomatik önerildi. **PASS**
+- Test verileri temizlendi (mapping/capture/session sıfırlandı), kullanıcı sıfırdan yapılandırabilir.
