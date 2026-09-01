@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { AlertTriangle, CreditCard, Download, FileCheck2, Loader2, Search, UploadCloud } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, CreditCard, Download, FileCheck2, Loader2, Search, UploadCloud, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError, API } from "../lib/api";
 import { STATUS_META, formatDate, formatDateTime, formatMoney, setMeta } from "../lib/site";
@@ -11,8 +11,100 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 
-export default function Track() {
-    const [searchParams] = useSearchParams();
+const StepIcon = ({ state, isResult, resultStatus }) => {
+    if (isResult && state === "done") {
+        return resultStatus === "approved" ? (
+            <CheckCircle2 className="h-5 w-5 text-[hsl(var(--brand-green))]" />
+        ) : (
+            <XCircle className="h-5 w-5 text-destructive" />
+        );
+    }
+    if (state === "done") return <CheckCircle2 className="h-5 w-5 text-[hsl(var(--brand-green))]" />;
+    if (state === "current") return <Clock className="h-5 w-5 text-primary" />;
+    return <span className="block h-2.5 w-2.5 rounded-full bg-border" />;
+};
+
+const CustomerTimeline = ({ timeline }) => {
+    if (!timeline?.steps?.length) return null;
+    const total = timeline.steps.length;
+    const doneCount = timeline.steps.filter((s) => s.state === "done").length;
+    const percent = Math.round((doneCount / total) * 100);
+    return (
+        <div className="card-surface p-6" data-testid="tracking-customer-timeline">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-heading text-lg font-bold">Başvurunuz nerede?</h2>
+                <span className="text-sm font-semibold text-muted-foreground" data-testid="timeline-progress-label">
+                    {doneCount}/{total} adım tamamlandı
+                </span>
+            </div>
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[hsl(var(--cloud))]">
+                <div
+                    className="h-full rounded-full bg-[hsl(var(--brand-green))] transition-transform duration-300"
+                    style={{ width: `${percent}%` }}
+                    data-testid="timeline-progress-bar"
+                />
+            </div>
+
+            <ol className="mt-6 space-y-1">
+                {timeline.steps.map((step, i) => {
+                    const isResult = step.key === "result";
+                    const active = step.state === "current";
+                    return (
+                        <li key={step.key} className="flex gap-4" data-testid={`timeline-step-${step.key}`}>
+                            <div className="flex flex-col items-center pt-1">
+                                <StepIcon state={step.state} isResult={isResult} resultStatus={timeline.current_status} />
+                                {i < total - 1 && (
+                                    <span
+                                        className={`mt-1 w-px flex-1 ${step.state === "done" ? "bg-[hsl(var(--brand-green)/0.45)]" : "bg-border"}`}
+                                    />
+                                )}
+                            </div>
+                            <div
+                                className={`mb-4 flex-1 rounded-xl border p-4 ${
+                                    active ? "border-primary bg-primary/5" : "border-transparent"
+                                }`}
+                            >
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <p
+                                        className={`font-heading text-sm font-bold ${
+                                            step.state === "pending" ? "text-muted-foreground" : ""
+                                        }`}
+                                    >
+                                        {isResult && step.state === "done"
+                                            ? timeline.current_status === "approved"
+                                                ? "Vizeniz onaylandı"
+                                                : STATUS_META[timeline.current_status]?.label || step.title
+                                            : step.title}
+                                    </p>
+                                    {active && (
+                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                                            Şu an burada
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="mt-1 text-sm leading-6 text-muted-foreground">{step.description}</p>
+                                {step.at && (
+                                    <p className="mt-1 text-xs text-muted-foreground" data-testid={`timeline-step-date-${step.key}`}>
+                                        {formatDateTime(step.at)}
+                                    </p>
+                                )}
+                            </div>
+                        </li>
+                    );
+                })}
+            </ol>
+
+            {timeline.last_portal_check && (
+                <p className="mt-2 text-xs text-muted-foreground" data-testid="timeline-last-check">
+                    Başvurunuz göçmenlik idaresi portalında en son {formatDateTime(timeline.last_portal_check)} tarihinde
+                    kontrol edildi. Durum değiştiğinde size e-posta ile bilgi veriyoruz.
+                </p>
+            )}
+        </div>
+    );
+};
+
+export default function Track() {    const [searchParams] = useSearchParams();
     const [code, setCode] = useState(searchParams.get("kod") || "");
     const [lastName, setLastName] = useState(searchParams.get("soyad") || "");
     const [loading, setLoading] = useState(false);
@@ -312,6 +404,8 @@ export default function Track() {
                                     </div>
                                 )}
                             </div>
+
+                            <CustomerTimeline timeline={result.timeline} />
 
                             <div className="card-surface p-6" data-testid="tracking-status-timeline">
                                 <h2 className="font-heading text-lg font-bold">Başvuru geçmişi</h2>

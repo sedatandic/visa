@@ -75,11 +75,90 @@ def generate_reference_code() -> str:
     return f"DV-{letters}{digits}"
 
 
+STEP_DEFS = [
+    ("received", "Başvurunuz alındı", "Bilgileriniz ve belgeleriniz sistemimize kaydedildi."),
+    ("payment", "Ödeme onaylandı", "Ödemeniz alındıktan sonra işleme başlıyoruz."),
+    ("documents", "Belgeler tamamlandı", "Pasaport, fotoğraf, uçak bileti ve otel rezervasyonu kontrol edildi."),
+    ("processing", "Göçmenlik idaresine iletildi", "Başvurunuz GDRFA/acente portalı üzerinden işleme alındı."),
+    ("result", "Vize sonucu", "Sonuç açıklandığında vizeniz e-postanıza gönderilir."),
+]
+
+
+def build_customer_timeline(doc: dict, missing: list | None = None) -> dict:
+    """Musteriye gosterilecek adim adim durum akisini uretir."""
+    history = {}
+    for entry in doc.get("status_history") or []:
+        status = entry.get("status")
+        at = entry.get("at")
+        if status and status not in history:
+            history[status] = at
+    status = doc.get("status") or "submitted"
+    payment = doc.get("payment") or {}
+    paid = payment.get("status") == "paid"
+    docs_ok = not (missing or [])
+    in_process = status in {"reviewing", "approved", "rejected"} or bool(doc.get("zami_transferred_at"))
+    final = status in {"approved", "rejected", "cancelled"}
+
+    # tamamlanan son adimin indeksi (0=alindi, 1=odeme, 2=belgeler, 3=islemde, 4=sonuc)
+    done_upto = 0
+    if paid:
+        done_upto = 1
+    if paid and docs_ok:
+        done_upto = 2
+    if in_process:
+        done_upto = max(done_upto, 3)
+    if final:
+        done_upto = 4
+
+    step_dates = {
+        "received": doc.get("created_at"),
+        "payment": payment.get("paid_at"),
+        "documents": None,
+        "processing": history.get("reviewing"),
+        "result": history.get("approved") or history.get("rejected") or history.get("cancelled"),
+    }
+
+    steps = []
+    for idx, (key, title, description) in enumerate(STEP_DEFS):
+        if idx <= done_upto:
+            state = "done"
+        elif idx == done_upto + 1:
+            state = "current"
+        else:
+            state = "pending"
+        at = step_dates.get(key)
+        steps.append(
+            {
+                "key": key,
+                "title": title,
+                "description": description,
+                "state": state,
+                "at": at.isoformat() if hasattr(at, "isoformat") else at,
+                "result": status if key == "result" and final else None,
+            }
+        )
+
+    return {
+        "steps": steps,
+        "current_status": status,
+        "is_final": final,
+        "last_portal_check": (
+            doc.get("zami_status_checked_at").isoformat()
+            if hasattr(doc.get("zami_status_checked_at"), "isoformat")
+            else doc.get("zami_status_checked_at")
+        ),
+        "portal_tracked": bool(doc.get("zami_transferred_at") or doc.get("zami_reference")),
+    }
+
+
 def public_application_view(doc: dict) -> dict:
     d = serialize_doc(doc)
     if not d:
         return d
     d.pop("admin_notes", None)
+    # portal ic bilgileri musteriye gosterilmez
+    for key in ("zami_status_raw", "zami_reference", "linked_order_id"):
+        d.pop(key, None)
     return d
 
 
@@ -623,6 +702,7 @@ async def track_application(code: str, last_name: str):
     doc = await _find_application_for_tracking(code, last_name)
     view = public_application_view(doc)
     view["missing_documents"] = missing_documents(doc)
+    view["timeline"] = build_customer_timeline(doc, view["missing_documents"])
     return view
 
 
@@ -689,6 +769,7 @@ async def submit_missing_documents(code: str, payload: DocumentSubmission):
 
     view = public_application_view(fresh)
     view["missing_documents"] = remaining
+    view["timeline"] = build_customer_timeline(fresh, remaining)
     return {"application": view, "missing_documents": remaining, "uploaded": uploaded_keys}
 
 

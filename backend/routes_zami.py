@@ -345,6 +345,85 @@ CAPTURE_JS = r"""
 """
 
 
+@router.get("/admin/zami/readiness")
+async def zami_readiness(admin=Depends(require_admin)):
+    """Ilk gercek aktarim oncesi hazirlik kontrolu."""
+    mapping = await zami.get_mapping()
+    session = await zami_rpa.session_status()
+    captured = await zami.get_capture()
+
+    critical_traveler = ["first_name", "last_name", "passport_no", "birth_date", "birth_date_dmy"]
+    traveler_keys = set((mapping.get("traveler_fields") or {}).keys())
+    has_name = bool(traveler_keys & {"first_name", "last_name", "full_name"})
+    has_passport = "passport_no" in traveler_keys
+    has_birth = bool(traveler_keys & {"birth_date", "birth_date_dmy", "birth_date_mdy"})
+    missing_critical = [k for k in critical_traveler if k not in traveler_keys]
+
+    browser = zami_rpa._chrome_executable() is not None or bool(os.environ.get("PLAYWRIGHT_BROWSERS_PATH"))
+
+    checks = [
+        {
+            "key": "captured",
+            "label": "Zami form alanları yakalandı",
+            "ok": bool((captured.get("form") or {}).get("fields")),
+            "detail": f"{len((captured.get('form') or {}).get('fields') or [])} alan"
+            if (captured.get("form") or {}).get("fields")
+            else "Yakalama yardımcısını Zami formunda çalıştırın",
+        },
+        {
+            "key": "form_url",
+            "label": "Başvuru formu adresi tanımlı",
+            "ok": bool(mapping.get("form_url")),
+            "detail": mapping.get("form_url") or "Alan Eşleme ekranından girin",
+        },
+        {
+            "key": "fields",
+            "label": "Genel alan eşlemesi",
+            "ok": len(mapping.get("fields") or {}) >= 3,
+            "detail": f"{len(mapping.get('fields') or {})} alan eşlendi",
+        },
+        {
+            "key": "traveler",
+            "label": "Yolcu alanları (ad, pasaport, doğum tarihi)",
+            "ok": has_name and has_passport and has_birth,
+            "detail": f"{len(traveler_keys)} alan eşlendi"
+            + (f" · eksik: {', '.join(missing_critical[:3])}" if missing_critical else ""),
+        },
+        {
+            "key": "submit",
+            "label": "Gönder butonu seçicisi (otomatik gönderim için)",
+            "ok": bool(mapping.get("submit_selector")),
+            "detail": mapping.get("submit_selector") or "Boşsa robot formu doldurur ama göndermez",
+        },
+        {
+            "key": "browser",
+            "label": "Sunucu tarayıcı motoru",
+            "ok": browser,
+            "detail": "Hazır" if browser else "Robot modu kullanılamaz; tarayıcı yardımcısını kullanın",
+        },
+        {
+            "key": "session",
+            "label": "Portal oturumu (captcha + OTP ile açılmış)",
+            "ok": bool(session.get("has_session")),
+            "detail": session.get("saved_at") or "Robot Oturumu sekmesinden giriş yapın",
+        },
+        {
+            "key": "status_url",
+            "label": "Durum takibi sayfası (opsiyonel)",
+            "ok": bool(mapping.get("status_url")),
+            "detail": mapping.get("status_url") or "Otomatik durum takibi için gerekli",
+        },
+    ]
+    required = {"form_url", "fields", "traveler"}
+    ready_bookmarklet = all(c["ok"] for c in checks if c["key"] in required)
+    ready_robot = ready_bookmarklet and all(c["ok"] for c in checks if c["key"] in {"browser", "session"})
+    return {
+        "checks": checks,
+        "ready_bookmarklet": ready_bookmarklet,
+        "ready_robot": ready_robot,
+    }
+
+
 # ------------------------------------------------- toplu aktarim & durum takibi
 @router.get("/admin/zami/candidates")
 async def zami_candidates(admin=Depends(require_admin)):

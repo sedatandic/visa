@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
     AlertTriangle,
+    CheckCircle2,
     ExternalLink,
+    ListChecks,
     Loader2,
     LogIn,
     RefreshCw,
@@ -68,6 +70,19 @@ export default function AdminZami() {
     const [captured, setCaptured] = useState(null);
     const [suggestions, setSuggestions] = useState(null);
     const [captureToken, setCaptureToken] = useState(null);
+    const [readiness, setReadiness] = useState(null);
+
+    const loadReadiness = async () => {
+        setBusy(true);
+        try {
+            const { data } = await api.get("/admin/zami/readiness");
+            setReadiness(data);
+        } catch (e) {
+            toast.error(apiError(e, "Hazırlık kontrolü yapılamadı."));
+        } finally {
+            setBusy(false);
+        }
+    };
     const [candidates, setCandidates] = useState([]);
     const [selected, setSelected] = useState({});
     const [bulkResults, setBulkResults] = useState(null);
@@ -410,10 +425,47 @@ export default function AdminZami() {
                                 >
                                     <Wand2 className="mr-2 h-4 w-4" /> Önerilen eşlemeyi uygula
                                 </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="border border-border"
+                                    onClick={loadReadiness}
+                                    disabled={busy}
+                                    data-testid="zami-readiness-button"
+                                >
+                                    <ListChecks className="mr-2 h-4 w-4" /> Hazırlık kontrolü
+                                </Button>
                                 <Button type="button" variant="secondary" className="border border-border" onClick={load} data-testid="zami-capture-refresh">
                                     <RefreshCw className="mr-2 h-4 w-4" /> Yenile
                                 </Button>
                             </div>
+
+                            {readiness && (
+                                <div className="mt-4 rounded-xl border border-border p-4" data-testid="zami-readiness-box">
+                                    <p className="font-heading text-sm font-bold">
+                                        {readiness.ready_robot
+                                            ? "Hazır: robotla otomatik aktarım yapabilirsiniz."
+                                            : readiness.ready_bookmarklet
+                                              ? "Hazır: tarayıcı yardımcısı ile aktarım yapabilirsiniz (robot için oturum gerekli)."
+                                              : "Eksikler var; aşağıdaki adımları tamamlayın."}
+                                    </p>
+                                    <ul className="mt-3 space-y-2">
+                                        {readiness.checks.map((c) => (
+                                            <li key={c.key} className="flex items-start gap-2 text-sm" data-testid={`zami-check-${c.key}`}>
+                                                {c.ok ? (
+                                                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--brand-green))]" />
+                                                ) : (
+                                                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--status-warning))]" />
+                                                )}
+                                                <span>
+                                                    <strong className="font-semibold">{c.label}</strong>
+                                                    <span className="block text-xs text-muted-foreground">{c.detail}</span>
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
 
                             {captureToken && (
                                 <div className="mt-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4" data-testid="zami-capture-token-box">

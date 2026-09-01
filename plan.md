@@ -283,3 +283,11 @@ Zami form HTML'i elde olmadığı için eşlemeyi kullanıcıya bırakmak yerine
 - **Tarayıcı motoru dayanıklılığı**: paketle gelen Chromium yoksa sistem Chromium'una (`/usr/local/bin/browser-use-chromium`, google-chrome) otomatik geçiş; hiçbiri yoksa anlaşılır hata + bookmarklet önerisi.
 - Test: gerçekçi sahte Zami formu (15 alan, tablo etiketli + pax[0] yolcu alanları) → yakalama 15 alan, otomatik eşleme **8 genel + 7 yolcu** alanı, `{i}` şablonu doğru; öneriler uygulanıp gerçek başvuruyla dry-run aktarımda **12 alan** doldu (yalnızca select seçenek eşleşmeyen 1 alan atlandı). Durum sayfası yakalamada `status_url` + arama seçicisi otomatik önerildi. **PASS**
 - Test verileri temizlendi (mapping/capture/session sıfırlandı), kullanıcı sıfırdan yapılandırabilir.
+
+
+### Phase 23 — Müşteri Durum Ekranı + Aktarım Hazırlık Kontrolü — **COMPLETED (2026-09-01)**
+- **Müşteri durum ekranı**: `build_customer_timeline()` (routes_public) 5 adımlı müşteri dostu akış üretir (Başvuru alındı → Ödeme → Belgeler → Göçmenlik idaresine iletildi → Vize sonucu); ödeme/belge/portal aktarımı/portal durumu verilerinden tek "şu an burada" adımı hesaplanır. `/api/applications/track` ve belge yükleme yanıtına `timeline` eklendi; portal iç bilgileri (`zami_status_raw`, `zami_reference`) müşteri yanıtından temizlendi.
+- **Track.jsx**: "Başvurunuz nerede?" kartı — ilerleme çubuğu (x/5 adım), dikey adım listesi, tamam/şu an/bekliyor durumları, onay/ret için özel ikon ve başlık, adım tarihleri ve "portalda en son ... kontrol edildi" notu.
+- **Aktarım hazırlık kontrolü**: `GET /api/admin/zami/readiness` — yakalama, form URL, genel/yolcu eşleme (ad-pasaport-doğum tarihi kritik), gönder seçicisi, sunucu tarayıcısı, portal oturumu ve durum sayfası kontrolleri + `ready_bookmarklet` / `ready_robot`. Admin ekranında "Hazırlık kontrolü" butonu ve maddeli kontrol listesi.
+- Test: 3 farklı başvuru durumu (submitted / paid+reviewing / approved) API ve UI'da doğru adım akışını gösterdi (1/5, 4/5, 5/5); readiness endpoint eksikleri doğru raporladı. **PASS**
+- Kalan (kullanıcı aksiyonu): Zami'de gerçek formda yakalama yardımcısını çalıştırmak, önerilen eşlemeyi uygulamak ve ilk gerçek aktarımı yapmak — captcha/OTP nedeniyle bizim tarafımızdan yapılamıyor.
