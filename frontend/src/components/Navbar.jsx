@@ -8,6 +8,7 @@ import { UaeFlag } from "./FlagIcons";
 
 const LINKS = [
     { to: "/vize-tipleri", label: "Hizmet Bedelleri" },
+    { to: "/on-degerlendirme", label: "Ön Değerlendirme" },
     { to: "/gerekli-belgeler", label: "Gerekli Belgeler" },
     { to: "/hizmetler", label: "Hizmetler" },
     { to: "/gelismeler", label: "Gelişmeler" },

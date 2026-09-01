@@ -424,6 +424,62 @@ async def zami_readiness(admin=Depends(require_admin)):
     }
 
 
+# ------------------------------------------------------------ WhatsApp bildirimi
+class WhatsAppSettingsIn(BaseModel):
+    enabled: Optional[bool] = None
+    provider: Optional[str] = None
+    template_text: Optional[str] = None
+    only_optin: Optional[bool] = None
+    meta_phone_number_id: Optional[str] = None
+    meta_access_token: Optional[str] = None
+    meta_template_name: Optional[str] = None
+    meta_template_language: Optional[str] = None
+    meta_api_version: Optional[str] = None
+    twilio_account_sid: Optional[str] = None
+    twilio_auth_token: Optional[str] = None
+    twilio_whatsapp_from: Optional[str] = None
+    twilio_content_sid: Optional[str] = None
+
+
+class WhatsAppSendIn(BaseModel):
+    status: Optional[str] = None
+    force: bool = True
+
+
+@router.get("/admin/whatsapp/settings")
+async def whatsapp_get_settings(admin=Depends(require_admin)):
+    import whatsapp
+
+    return {"settings": await whatsapp.get_settings()}
+
+
+@router.put("/admin/whatsapp/settings")
+async def whatsapp_save_settings(payload: WhatsAppSettingsIn, admin=Depends(require_admin)):
+    import whatsapp
+
+    return {"settings": await whatsapp.save_settings(payload.model_dump(exclude_none=True))}
+
+
+@router.post("/admin/whatsapp/send/{application_id}")
+async def whatsapp_send(application_id: str, payload: WhatsAppSendIn, request: Request, admin=Depends(require_admin)):
+    import whatsapp
+
+    app_doc = await applications_col.find_one({"id": application_id})
+    if not app_doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    status = payload.status or app_doc.get("status") or "approved"
+    return await whatsapp.notify_result(app_doc, status, _base_url(request), force=payload.force)
+
+
+@router.get("/admin/whatsapp/logs")
+async def whatsapp_logs(application_id: Optional[str] = None, admin=Depends(require_admin)):
+    import whatsapp
+
+    query = {"application_id": application_id} if application_id else {}
+    docs = await whatsapp.logs_col.find(query).sort("created_at", -1).limit(50).to_list(50)
+    return {"items": serialize_doc(docs)}
+
+
 # ------------------------------------------------- toplu aktarim & durum takibi
 @router.get("/admin/zami/candidates")
 async def zami_candidates(admin=Depends(require_admin)):

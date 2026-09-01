@@ -34,6 +34,7 @@ from db import (
     login_codes_col,
     orders_col,
     products_col,
+    pre_evaluations_col,
 )
 from content import BANK_TRANSFER, COMPANY
 from doc_reminders import (
@@ -196,7 +197,7 @@ async def admin_application_detail(application_id: str, admin=Depends(require_ad
 
 
 async def _notify_status_change(fresh: dict, previous_status: str, payload: StatusUpdate):
-    """Durum degistiyse musteriye bilgilendirme e-postasi gonderir."""
+    """Durum degistiyse musteriye bilgilendirme e-postasi (ve sonucta WhatsApp) gonderir."""
     to_email = (fresh.get("contact") or {}).get("email") or (fresh.get("applicant") or {}).get("email")
     if not (payload.notify and payload.status != previous_status and to_email):
         return None
@@ -207,6 +208,15 @@ async def _notify_status_change(fresh: dict, previous_status: str, payload: Stat
         kind="status_change",
         meta={"reference_code": fresh["reference_code"], "status": payload.status},
     )
+    if payload.status in {"approved", "rejected"}:
+        try:
+            import whatsapp
+
+            await whatsapp.notify_result(
+                fresh, payload.status, os.environ.get("PUBLIC_BASE_URL", "https://vizeatlas.com")
+            )
+        except Exception as exc:  # pragma: no cover
+            logger.error("whatsapp notify failed: %s", exc)
     return res.get("status")
 
 
@@ -1015,3 +1025,26 @@ async def admin_deliver_order(order_id: str, payload: dict, admin=Depends(requir
             meta={"order_id": order_id, "reference_code": fresh["reference_code"]},
         )
     return {"order": serialize_doc(fresh), "email": result}
+
+
+# ------------------------------------------------- on degerlendirme kayitlari
+@router.get("/admin/pre-evaluations")
+async def admin_pre_evaluations(
+    admin=Depends(require_admin),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=200),
+    only_leads: bool = Query(False),
+):
+    query = {"has_contact": True} if only_leads else {}
+    total = await pre_evaluations_col.count_documents(query)
+    leads = await pre_evaluations_col.count_documents({"has_contact": True})
+    docs = (
+        await pre_evaluations_col.find(query)
+        .sort("created_at", -1)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .to_list(limit)
+    )
+    items = serialize_doc(docs) or []
+    avg = round(sum(int(i.get("score") or 0) for i in items) / len(items), 1) if items else 0
+    return {"total": total, "leads": leads, "average_score": avg, "items": items}

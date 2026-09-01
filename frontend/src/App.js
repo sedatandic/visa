@@ -17,6 +17,7 @@ import Kvkk from "./pages/Kvkk";
 import LegalTerms from "./pages/LegalTerms";
 import Apply from "./pages/Apply";
 import Track from "./pages/Track";
+import PreEvaluationPage from "./pages/PreEvaluationPage";
 import MyAccount from "./pages/MyAccount";
 import Esim from "./pages/Esim";
 import Insurance from "./pages/Insurance";
@@ -36,6 +37,8 @@ import AdminArticles from "./pages/AdminArticles";
 import AdminBankTransfer from "./pages/AdminBankTransfer";
 import AdminCompany from "./pages/AdminCompany";
 import AdminZami from "./pages/AdminZami";
+import AdminWhatsApp from "./pages/AdminWhatsApp";
+import AdminPreEval from "./pages/AdminPreEval";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -70,6 +73,7 @@ function App() {
                     <Route path="/hizmet-sozlesmesi" element={<Site><LegalTerms variant="service" /></Site>} />
                     <Route path="/basvuru" element={<Site><Apply /></Site>} />
                     <Route path="/takip" element={<Site><Track /></Site>} />
+                    <Route path="/on-degerlendirme" element={<Site><PreEvaluationPage /></Site>} />
                     <Route path="/hesabim" element={<Site><MyAccount /></Site>} />
                     <Route path="/esim" element={<Site><Esim /></Site>} />
                     <Route path="/seyahat-sigortasi" element={<Site><Insurance /></Site>} />
@@ -90,6 +94,8 @@ function App() {
                     <Route path="/admin/banka" element={<RequireAdmin><AdminBankTransfer /></RequireAdmin>} />
                     <Route path="/admin/acente" element={<RequireAdmin><AdminCompany /></RequireAdmin>} />
                     <Route path="/admin/zami" element={<RequireAdmin><AdminZami /></RequireAdmin>} />
+                    <Route path="/admin/whatsapp" element={<RequireAdmin><AdminWhatsApp /></RequireAdmin>} />
+                    <Route path="/admin/on-degerlendirme" element={<RequireAdmin><AdminPreEval /></RequireAdmin>} />
 
                     <Route path="*" element={<Site><NotFound /></Site>} />
                 </Routes>

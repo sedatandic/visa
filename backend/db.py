@@ -32,6 +32,7 @@ products_col = db["store_products"]
 orders_col = db["store_orders"]
 zami_logs_col = db["zami_logs"]
 zami_handoffs_col = db["zami_handoffs"]
+pre_evaluations_col = db["pre_evaluations"]
 
 
 def serialize_doc(doc):

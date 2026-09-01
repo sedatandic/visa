@@ -137,7 +137,7 @@ export default function Apply() {
     const [addonMeta, setAddonMeta] = useState([]);
     const [maxTravelers, setMaxTravelers] = useState(10);
     const [step, setStep] = useState(0);
-    const [contact, setContact] = useState({ full_name: "", email: "", phone: "", address_city: "" });
+    const [contact, setContact] = useState({ full_name: "", email: "", phone: "", address_city: "", whatsapp_optin: false });
     const [travelers, setTravelers] = useState([newTraveler()]);
     const [travel, setTravel] = useState({
         arrival_date: "",
@@ -847,6 +847,18 @@ export default function Apply() {
                                                 <Input id="c-city" value={contact.address_city} onChange={setC("address_city")} placeholder="İstanbul" data-testid="input-contact-city" />
                                             </Field>
                                         </div>
+                                        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 text-sm transition-colors duration-200 hover:border-primary/50">
+                                            <Switch
+                                                checked={!!contact.whatsapp_optin}
+                                                onCheckedChange={(c) => setContact((s) => ({ ...s, whatsapp_optin: !!c }))}
+                                                data-testid="input-whatsapp-optin"
+                                            />
+                                            <span className="leading-6 text-muted-foreground">
+                                                <strong className="text-foreground">WhatsApp ile bilgilendirilmek istiyorum.</strong>{" "}
+                                                Vize sonucunuz çıktığında telefon numaranıza WhatsApp mesajı gönderiyoruz.
+                                                Onayınızı dilediğiniz zaman geri alabilirsiniz.
+                                            </span>
+                                        </label>
                                     </div>
 
                                     <div className="mt-8 flex flex-wrap items-center justify-between gap-3">

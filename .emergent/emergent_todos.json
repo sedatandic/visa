@@ -1,26 +1,26 @@
 [
   {
-    "content": "Backend: zami.py - mapping deposu, payload builder, handoff token",
+    "content": "backend/pre_eval.py skorlama motoru",
     "status": "completed"
   },
   {
-    "content": "Backend: /api/admin/zami/* endpointleri + public handoff/bookmarklet",
+    "content": "POST /api/pre-evaluation + pre_evaluations koleksiyonu",
     "status": "completed"
   },
   {
-    "content": "Frontend: /admin/zami sayfasi (alan esleme, bookmarklet, robot oturumu, kayitlar)",
+    "content": "GET /api/admin/pre-evaluations lead listesi",
     "status": "completed"
   },
   {
-    "content": "Frontend: Basvuru detayinda 'Zami'ye aktar' paneli",
+    "content": "frontend PreEvaluation.jsx wizard + Home entegrasyonu + /on-degerlendirme route",
     "status": "completed"
   },
   {
-    "content": "Backend B: Playwright kurulumu + captcha/OTP oturumu + form doldurma",
+    "content": "AdminPreEval.jsx + admin menü",
     "status": "completed"
   },
   {
-    "content": "Test: API + bookmarklet + admin UI dogrulamasi",
-    "status": "completed"
+    "content": "Test (testing_agent: backend + frontend)",
+    "status": "in_progress"
   }
 ]

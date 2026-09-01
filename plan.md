@@ -1,37 +1,36 @@
 # plan.md
 
 ## 1. Objectives
-- Türkçe, modern, **sade** ve güven veren bir Dubai/UAE vize başvuru sitesi (kopya değil; benzer bilgi mimarisi/UX, özgün marka/renk).
+- Türkçe, modern, **sade** ve güven veren bir Dubai/UAE vize başvuru sitesi (özgün marka/renk; kopya UX değil).
 - Vize tipleri + fiyatlar + genel bilgilendirme + **rehber içerikler** + hızlı başvuru akışı.
 - Çekirdek iş akışı: **başvuru oluşturma → dosya yükleme → ödeme (kart / havale) → takip kodu**.
 - Başvuruları MongoDB’ye kaydetme, admin panelde listeleme/detay/güncelleme.
 - E-posta bildirimleri (başvuru sahibine + admin’e):
   - **RESEND_API_KEY yoksa akışı bozmadan “skipped” olarak outbox’a yaz**.
-  - **Canlı Resend anahtarı ile gerçek e-posta gönderimini E2E doğrulama** (beklemede: anahtar gerekli).
+  - Canlı Resend anahtarı ile gerçek e-posta gönderimini E2E doğrulama (**beklemede: anahtar gerekli**).
 - Güven ve “insan eliyle tasarlanmış” kurumsal görünüm:
   - **BAE bayrak paleti** (yeşil/kırmızı/siyah/beyaz) — kırmızı vurgu belirgin.
-  - **Tipografi**: **Montserrat (başlık)** + **Figtree (gövde)**.
-  - **Koyu mod yok**.
+  - Tipografi ve UI dili tasarım kılavuzuna uygun.
   - Gerçek görseller / kurumsal bloklar / sosyal kanıt / örnek vize görselleri.
   - **TÜRSAB + acente şeffaflığı** ve **GDRFA rozeti**.
 - **Başvuru evrak standardı (güncel)**:
   - **Her yolcu:** Pasaport + vesikalık fotoğraf.
-  - **Tüm başvuru:** **Uçak bileti/rezervasyon** + **otel/konaklama rezervasyonu**.
-- **SEO büyüme hedefi (tamamlandı):** Vize rehber (SEO landing) sayfaları, sitemap/robots, JSON-LD.
-- **Operasyonel verim + dönüşüm (tamamlandı):** Eksik belge hatırlatma, taslak hatırlatma, hesap/draft, aile profili.
-- **Fiyatlandırma (tamamlandı):** USD baz fiyat + canlı kurla TL tahsilat + kur şeffaflığı.
-- **Ek ürün satışları (tamamlandı & geliştirildi):**
+  - **Tüm başvuru:** Uçak bileti/rezervasyon + otel/konaklama rezervasyonu.
+- SEO büyüme hedefi (tamamlandı): vize rehber sayfaları, sitemap/robots, JSON-LD.
+- Operasyonel verim + dönüşüm (tamamlandı): eksik belge hatırlatma, taslak hatırlatma, hesap/draft, aile profili.
+- Fiyatlandırma (tamamlandı): USD baz fiyat + canlı kurla TL tahsilat + kur şeffaflığı.
+- Ek ürün satışları (tamamlandı & geliştirildi):
   - Mağaza sayfaları üzerinden **eSIM** ve **seyahat sigortası** satışı.
   - Vize başvurusu içinde eSIM + sigorta upsell (tek formda).
   - Ek ürünler seyahat tarihine bağlandı (başlangıç/bitiş).
   - **Akıllı paket önerisi** + **%10 seyahat paketi indirimi** (sigorta+eSIM birlikte) hem başvuruda hem mağazada.
-- **Yeni hedef (P0): Zami Tours (visa.zamitours.ae) portalına başvuru aktarımı**
-  - Kullanıcı kararı: **A + B**
-    - **A) Bookmarklet/Browser Helper ile tek tık form doldurma (kullanıcı captcha+OTP’yi kendisi geçer)**
-    - **B) Sunucuda Playwright ile yarı-otomatik oturum/RPA (captcha+OTP insan onayı ile, cookie saklanır)**
-  - Teknik engeller: girişte **CAPTCHA** + **OTP** olduğu için tam otomatik login mümkün değil.
-  - Gereksinim: Zami form alanları bilinmediği için **admin “alan eşleme (mapping)”** ekranı ile konfigüre edilebilir entegrasyon.
-  - Güvenlik: Kullanıcı şifresi sohbet içinde paylaşıldı; **saklanmadı** ve **değiştirilmesi önerildi**. Kimlik bilgileri (varsa) admin panelinden şifreli/korumalı şekilde saklanacak.
+- Zami Tours otomasyonu (tamamlandı, **canlı doğrulama bekliyor**):
+  - Playwright RPA + yakalama (capture) + alan eşleme + toplu aktarım + durum polling + kullanıcı takip zaman çizelgesi.
+  - **P0: “İlk Gerçek Aktarım”** canlı Zami portalında doğrulama (**BLOCKED: kullanıcı Zami giriş bilgileri yok**).
+- WhatsApp bildirimleri: **manuel mod** (wa.me link üretimi) tamam; otomatik sağlayıcı (Twilio/Meta) **beklemede**.
+- **Yeni büyüme hedefi (P1): Ücretsiz Ön Değerlendirme Sihirbazı**
+  - Ana sayfada 3 soruluk wizard → “onay olasılığı” skoru + öneriler + başvuru CTA.
+  - Lead toplama (opsiyonel iletişim bilgisi) + admin panelde listeleme.
 
 ---
 
@@ -113,118 +112,121 @@
 
 ### Phase 17 — Vize Başvurusu İçinde eSIM + Sigorta Upsell — **COMPLETED (2026-08-31)**
 - Backend: `StoreItemIn` + `store_items` (quote & application), `compute_pricing(store_lines=...)`, `resolve_store_lines()`, `create_application_order()` (source=visa_application), `sync_application_order_payment()` (kart/havale/admin mark-paid).
-- Frontend: `Apply.jsx` adım 2'de sigorta planı (yolcu başına, tek seçim) + tüm eSIM paketleri (adet stepper, varsayılan adet yolcu sayısı); özet satırları + canlı FX toplam.
+- Frontend: `Apply.jsx` adım 2'de sigorta planı (yolcu başına, tek seçim) + eSIM paketleri (adet stepper, varsayılan adet yolcu sayısı); özet + canlı FX toplam.
 - Admin: AdminOrders’da “Vize başvurusu ile alındı” etiketi; AdminApplicationDetail’de store satırları + bağlı sipariş kodu.
-- Test: iteration_15.json backend 51/52 (kritik yok) + E2E başvuru→bağlı sipariş→havale→admin mark-paid senkronu PASS.
 
 ---
 
 ### Phase 18 — Ek Ürün Geçerlilik Tarihlerinin Seyahat Tarihine Bağlanması — **COMPLETED (2026-08-31)**
 - Backend: `resolve_store_lines(items, arrival_date, departure_date)` → satırlarda `validity_days`, `starts_on`, `ends_on`, `trip_days`, `covers_trip`.
-- Frontend: giriş tarihi yoksa seçim kapalı; kartlarda geçerlilik penceresi ve “paket seyahat süresinden kısa” uyarısı; özet satırlarında tarih aralığı.
-- Admin + email + order status: tarih aralığı görünür.
-- Test: canlı UI doğrulaması + E2E date script PASS.
+- Frontend: giriş tarihi yoksa seçim kapalı; kartlarda geçerlilik penceresi ve uyarılar; özet satırlarında tarih aralığı.
 
 ---
 
 ### Phase 19 — Akıllı Paket Önerisi + %10 Seyahat Paketi İndirimi — **COMPLETED (2026-08-31)**
-Kullanıcı kararları: indirim **%10** (ek ürün toplamı), hem başvuru hem mağaza, öneri otomatik seçmez; etiket + “Önerilenleri ekle”.
-- Backend:
-  - `content.BUNDLE_DISCOUNT` + `bundle_discount_amount()`
-  - `compute_pricing` → `bundle_discount`, `bundle_discount_rate`, `bundle_discount_title`
-  - `/api/products` → `bundle`
-  - Mağaza siparişi (`/api/orders`) + bağlı sipariş: `items_total`, `bundle_discount`, indirimli `price`
-  - E-postalar: indirim satırı
-- Frontend:
-  - `Apply.jsx`: promosyon kutusu + önerilen etiketler + buton + indirim satırları
-  - `StoreCheckout.jsx`: çapraz satış bölümü (diğer kategori) + indirim satırı
-  - `OrderStatus`, `AdminOrders`, `AdminApplicationDetail`: indirim/tarih gösterimi
-- Test: E2E bundle script PASS + canlı UI screenshot PASS.
+- Backend: `bundle_discount_amount()`, `compute_pricing` indirim satırları, store order & bağlı order indirimli fiyat, e-posta satırları.
+- Frontend: `Apply.jsx` promosyon kutusu + önerilen etiketler; `StoreCheckout.jsx` çapraz satış; OrderStatus/Admin ekranlarında indirim/tarih gösterimi.
 
 ---
 
-### Phase 20 — Zami Tours Portalına Başvuru Aktarımı (visa.zamitours.ae) — **PLANNED / NOT STARTED**
-**Amaç:** Bizde toplanan başvuru verilerini Zami Tours “meter system” (portal) içine hızlı ve hatasız şekilde aktarmak.
+### Phase 20 — Zami Tours Portalına Başvuru Aktarımı (visa.zamitours.ae) — **COMPLETED (2026-09-01) / LIVE VERIFICATION PENDING**
+Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik login sınırlı. Bu yüzden iki yol birlikte kuruldu.
+- **A) Tarayıcı yardımcısı (bookmarklet)**
+  - `GET /api/zami/bookmarklet.js` (BASE’i `currentScript.src`’den alır).
+  - Admin başvuru detayında “Aktarım kodu oluştur” → 45 dk tek kullanımlık token.
+  - Zami formunda bookmarklet çalıştır → token gir → alanlar mapping’e göre dolar; dosyalar için indirme linkleri listelenir (file input set sınırlı → kullanıcı yönlendirilir).
+- **B) Robot oturumu (Playwright RPA)**
+  - Oturum `storage_state` ile saklanır; transfer “güvenli mod/dry-run” ile screenshot döndürebilir.
+  - Kritik: Playwright chromium yolu **`/usr/local/bin/browser-use-chromium`** korunur.
+- **Admin alan eşleme ekranı (`/admin/zami`)**
+  - HTML yapıştırma opsiyonu + yakalama (capture) ile field listesi.
+  - Genel + yolcu alanlarında `{i}` şablonu (multi-passenger).
+  - Mapping hem bookmarklet hem RPA tarafından ortak kullanılır.
 
-#### 20A) Entegrasyon Yaklaşımı (A + B)
-1) **A — Bookmarklet / Browser Helper (Client-side Autofill)**
-- Kullanıcı Zami portalına kendi tarayıcısından giriş yapar (CAPTCHA + OTP’yi kendisi geçer).
-- Zami’de başvuru formu sayfasında “VizeAtlas → Formu Doldur” butonu / bookmarklet çalıştırılır.
-- Bizim sistemimizden alınan başvuru `reference_code` veya `application_id` ile veriler çekilir.
-- JavaScript, DOM alanlarına mapping’e göre değer yazar; dosya upload alanlarına mümkün olan en iyi şekilde yardım eder:
-  - Tarayıcı güvenliği nedeniyle dosya inputlarına doğrudan set her zaman mümkün değildir → kullanıcıya “tıkla-yükle” yönlendirmesi + otomatik scroll.
+**Kalan (P0): İlk Gerçek Aktarım (LIVE)**
+- Canlı portal DOM/selectors farklı olabilir → gerçek yakalama ve gerçek transfer koşusu gerekli.
+- **BLOCKED:** kullanıcı Zami portal e-posta/şifre paylaşmadı/vermedi; bu olmadan canlı aktarım yapılamaz.
 
-2) **B — Playwright RPA (Server-side, Human-in-the-loop Login)**
-- Admin panelinden bir “RPA Oturumu” başlatılır.
-- Sistem login ekranını açar; CAPTCHA görseli + OTP alanı admin arayüzünde gösterilir.
-- İnsan captcha/OTP’yi girer; sistem session cookie’yi güvenli şekilde saklar (Zami’nin device setting’lerine bağlı olarak 1 ay).
-- Sonrasında başvuru formu otomatik doldurulur ve submit edilir.
-- Oturum süresi dolunca tekrar insan onayı gerekir.
+---
 
-#### 20B) Admin “Alan Eşleme (Mapping)” Altyapısı (kritik)
-- Zami form alan adları bilinmediği için konfigüre edilebilir mapping şart.
-- Admin ekranı:
-  - Zami başvuru formu HTML’i yapıştırma (veya “field list” JSON yükleme)
-  - Sistem `input/select/textarea` alanlarını parse eder (name/id/type/label).
-  - Bizim şema alanlarımızla eşleme yapılır (contact/travel/travelers/store_items/addons vs.).
-  - Mapping versiyonlanır ve “test et” butonu ile doğrulanır.
-- Hem bookmarklet hem Playwright RPA aynı mapping kaydını kullanır.
+### Phase 21 — Toplu Aktarım + Otomatik Durum Takibi — **COMPLETED (2026-09-01)**
+- Toplu aktarım API + admin UI.
+- Otomatik status polling (`zami_status.py`) → bizim status’e çevirme + status_history + e-posta tetikleme.
+- Not: gerçek portal doğrulaması Phase 20 P0 ile birlikte yapılacak.
 
-#### 20C) Kimlik Bilgileri ve Güvenlik
-- Kullanıcı şifresi sohbetten alınmayacak; mevcut paylaşılan şifre **saklanmadı**.
-- Admin panelinde “Zami Portal Ayarları”:
-  - username (email)
-  - password (şifreli saklama; en azından env/secret veya DB’de şifreli alan)
-  - portal base URL
-  - “cookie storage” politikası (TTL, manuel sıfırlama)
-- Audit log:
-  - Hangi başvuru ne zaman aktarılmış, kim başlatmış, sonuç ne.
+---
 
-#### 20D) Yeni API’ler / Ekranlar
-- Backend:
-  - `GET /api/admin/zami/mapping` + `PUT /api/admin/zami/mapping`
-  - `POST /api/admin/zami/session/start` (RPA)
-  - `POST /api/admin/zami/session/solve` (captcha/otp input)
-  - `POST /api/admin/zami/apply/{application_id}` (RPA ile doldur+gönder)
-  - `GET /api/admin/zami/logs`
-- Frontend (Admin):
-  - `/admin/zami` sekmesi: Mapping editor + session yönetimi + job kuyruğu/loglar
-  - Application detay sayfasında: “Zami’ye gönder” butonu + durum.
-- Frontend (Client):
-  - `/hesabim` veya tracking sayfasında: “Zami için doldur” bookmarklet linki + yönergeler.
+### Phase 22 — Alan Eşlemesi Otomasyonu (yakalama + otomatik öneri) — **COMPLETED (2026-09-01)**
+- `GET /api/zami/capture.js` bookmarklet’i alanları okuyup token korumalı capture endpoint’e gönderir.
+- `zami.suggest_mapping()` etiket/isim anahtar kelimeleriyle öneri çıkarır; `{i}` şablonlaştırır.
+- Dayanıklılık: sistem chromium fallback; yoksa anlaşılır hata + bookmarklet önerisi.
 
-#### 20E) Test / Doğrulama
-- CAPTCHA/OTP nedeniyle tam otomasyon testi sınırlı:
-  - Mapping parse unit testleri
-  - Bookmarklet: sahte bir HTML form üzerinde e2e DOM fill testi
-  - Playwright: staging’de login ekranına kadar otomasyon + insan adımı sonrası form doldurma smoke test
-  - Üretimde: “dry-run” modu (sadece doldur, submit etme) + ekran görüntüsü kaydı.
+---
+
+### Phase 23 — Müşteri Durum Ekranı + Aktarım Hazırlık Kontrolü — **COMPLETED (2026-09-01)**
+- `build_customer_timeline()` 5 adımlı görsel takip akışı.
+- `GET /api/admin/zami/readiness` ile mapping/oturum/tarayıcı/durum sayfası kontrolleri.
+
+---
+
+### Phase 24 — WhatsApp Bildirimleri (Manuel Mod) + Admin Ayarları — **COMPLETED (2026-09-01)**
+- Admin WhatsApp ayarları paneli.
+- Durum değişimlerinde admin’e/operasyona **wa.me** linki üreten manuel bildirim akışı.
+- Otomatik sağlayıcı (Twilio/Meta) entegrasyonu **beklemede: API anahtarları yok**.
+
+---
+
+### Phase 25 — Ücretsiz Ön Değerlendirme Sihirbazı (3 Soru) — **COMPLETED (2026-09-01)**
+**Amaç:** Dönüşüm/lead artırmak: ana sayfadan 30–60 sn’de “ön değerlendirme” sonucu göster.
+
+**Backend**
+- `backend/pre_eval.py`: skorlama motoru
+  - Girdiler (örnek): pasaport geçerliliği, önceki vize geçmişi, red geçmişi
+  - Çıktılar: olasılık %, seviye (low/medium/high), öneriler, önerilen vize tipi
+- DB: `pre_evaluations` koleksiyonu
+- `routes_public.py`: `POST /api/pre-evaluation`
+  - Sonucu döner
+  - Opsiyonel iletişim bilgisi ile lead kaydeder
+- `routes_admin.py`: `GET /api/admin/pre-evaluations` lead listesi
+
+**Frontend**
+- `components/PreEvaluation.jsx`: 3 adımlı wizard + sonuç kartı (olasılık göstergesi, öneriler, CTA → `/basvuru`)
+- `Home.jsx` içine bölüm olarak ekleme
+- Yeni route: `/on-degerlendirme`
+- Admin: `pages/AdminPreEval.jsx` + Admin menüsüne ekleme
+
+**Test**
+- `curl` ile endpoint testi
+- `testing_agent` regresyon + yeni flow testi
 
 ---
 
 ## 3. Next Actions
 
-### P0 — Phase 20: Zami Portal Aktarımı
-1) Admin mapping ekranı (HTML parse + field mapping + versiyon)
-2) Bookmarklet üretimi (mapping + application fetch)
-3) Playwright RPA servisinin eklenmesi (human-in-loop login + cookie store)
-4) Admin job/log ekranı + uygulama detayında “Zami’ye gönder”
-5) Dry-run + canlı pilot test (1-2 başvuru)
+### P0 — “İlk Gerçek Aktarım” (Zami Live Verification) — **BLOCKED**
+**Gerekenler:**
+1) Kullanıcıdan Zami portal e-posta/şifre (veya kullanıcı tarafında ekran paylaşımı ile doğrulama)
+2) Gerçek form sayfasında `capture.js` çalıştırma
+3) Admin `/admin/zami` önerilen mapping’i uygulama
+4) 1 test başvuru ile `dry-run` (submit yok) → screenshot + log
+5) Onay sonrası 1 gerçek submit
 
-### P0 — Canlı E-posta Testi (Resend) — BEKLEMEDE
-- Gerekli env:
+### P1 — Phase 25: Ücretsiz Ön Değerlendirme Sihirbazı (tamamlama)
+1) Backend skorlama + endpoint + DB
+2) Frontend wizard + Home entegrasyonu + ayrı sayfa
+3) Admin lead listesi
+4) Test + deploy
+
+### P1 — Canlı E-posta Testi (Resend) — BEKLEMEDE
+- Env:
   - `RESEND_API_KEY`
   - `SENDER_EMAIL` (domain doğrulanmış)
 
-### P1 — Stripe prod geçişi (opsiyonel)
+### P1 — Stripe prod geçişi (opsiyonel) — BEKLEMEDE
 - Canlı anahtarlar + webhook secret + success/cancel URL’leri.
 
-### P1 — İçerik onayı ve gerçek veriler
-- Banka bilgileri (`/admin/banka`)
-- TÜRSAB/acente ticari bilgiler (`/admin/acente`)
-
-### P2 — Operasyonel güvenlik (opsiyonel)
-- Admin şifresi değişimi, rate limit/bot koruması.
+### P2 — WhatsApp Otomatik Sağlayıcı (Twilio/Meta) — BEKLEMEDE
+- Sağlayıcı seçimi + API anahtarları.
 
 ---
 
@@ -232,62 +234,29 @@ Kullanıcı kararları: indirim **%10** (ek ürün toplamı), hem başvuru hem m
 - POC/V1/SEO/Account/Drafts/FX/Reminders/Storefront akışları: mevcut kriterler **korunur**.
 - Phase 17–19 ek ürün akışları:
   - Ek ürün tarihleri doğru, öneri + indirim doğru, hem başvuru hem mağaza akışı sorunsuz.
-- **Phase 20 başarı kriterleri (Zami aktarımı):**
+- Zami entegrasyonu (Phase 20–23) başarı kriterleri:
   1) Admin mapping ile Zami form alanları eşlenebilir ve değişime dayanıklı olur.
-  2) Bookmarklet ile kullanıcı Zami formunu tek tıkla doldurabilir (captcha/OTP kendisi).
-  3) Playwright RPA ile admin, insan onayıyla login olup başvuruyu otomatik doldurup gönderebilir.
-  4) Aktarım kayıtları (log) ve hata ayıklama çıktıları admin panelinde görünür.
-  5) Kimlik bilgileri güvenli saklanır; şifre sohbetten/istemciden loglanmaz.
+  2) Bookmarklet ile kullanıcı Zami formunu doldurabilir (captcha/OTP kendisi).
+  3) Playwright RPA ile admin, insan onayıyla login olup başvuruyu doldurabilir (dry-run + submit).
+  4) Aktarım kayıtları/loglar ve hata ayıklama çıktıları admin panelinde görünür.
+  5) Canlı portalda en az **1 dry-run + 1 gerçek submit** ile doğrulama yapılır (**P0**).
+- WhatsApp (Phase 24):
+  - Manuel modda wa.me linkleri doğru mesaj şablonlarıyla üretilir ve operasyon akışına uygun olur.
+- Ön değerlendirme sihirbazı (Phase 25):
+  1) 3 adımda sonuç üretir (%, seviye, öneriler).
+  2) CTA ile başvuruya dönüşüm sağlar.
+  3) Opsiyonel lead kaydı admin panelde listelenir.
 
 ---
 
 ## DURUM (2026-09-01)
-- Phase 1–16: **TAMAMLANDI**.
-- Phase 17: **TAMAMLANDI**.
-- Phase 18: **TAMAMLANDI**.
-- Phase 19: **TAMAMLANDI**.
-- Phase 20: **PLANLANDI / NOT STARTED** (CAPTCHA + OTP nedeniyle human-in-loop yaklaşımı onaylandı: A + B).
+- Phase 1–19: **TAMAMLANDI**.
+- Phase 20–23 (Zami RPA + yakalama + mapping + status + tracking): **TAMAMLANDI**, ancak **İlk Gerçek Aktarım canlı doğrulaması P0 ve BLOCKED** (kullanıcı Zami kimlik bilgileri yok).
+- Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
+- Phase 25 (Ücretsiz Ön Değerlendirme): **TAMAMLANDI** — iteration_16.json: backend 60/61, frontend 24/24, admin 7/7 (kritik hata yok).
 
 Test:
 - `testing_agent_v3` iteration_13.json — backend **46/46 PASS**, frontend **%100 PASS**.
 - `testing_agent_v3` iteration_14.json — backend **38/40 (kritik yok)**, frontend **%100**.
 - `testing_agent_v3` iteration_15.json — backend **51/52 PASS**, frontend kısmi; kritik yok.
 - Ek E2E scriptler: tarih + paket indirimi + ödeme senkronu **PASS**.
-
-
-### Phase 20 — Zami Tours Portalına Başvuru Aktarımı (A + B) — **COMPLETED (2026-09-01)**
-Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik login mümkün değil. Bu yüzden iki yol birlikte kuruldu.
-- **A) Tarayıcı yardımcısı (bookmarklet)**: `GET /api/zami/bookmarklet.js` (BASE'i currentScript.src'den alır → https güvenli). Admin başvuru detayında "Aktarım kodu oluştur" → 45 dk geçerli tek kullanımlık token; Zami formunda bookmarklet çalıştırılıp kod yapıştırılınca alanlar dolar, belgeler indirme linkleriyle listelenir (dosya inputları tarayıcı güvenliği nedeniyle otomatik dolmaz).
-- **B) Robot oturumu (Playwright)**: `/api/admin/zami/session/start` login sayfasını açıp CAPTCHA görselini admin paneline gönderir; captcha (+ gerekiyorsa OTP) girilince oturum `storage_state` olarak saklanır. `/api/admin/zami/transfer/{id}` kayıtlı oturumla formu doldurur; "Güvenli mod" açıkken göndermez, ekran görüntüsü döner.
-- **Alan eşleme ekranı** (`/admin/zami`): Zami form HTML'i yapıştırılır → `parse_form_fields` (BeautifulSoup) input/select/textarea alanlarını çıkarır; bizim alanlar (17 genel + 17 yolcu alanı, çoklu tarih formatları) Zami seçicileriyle eşlenir. Yolcu alanlarında `{i}` / `{n}` desteği. Eşleme hem bookmarklet hem robot tarafından kullanılır.
-- Yeni dosyalar: `backend/zami.py`, `backend/zami_rpa.py`, `backend/routes_zami.py`, `frontend/src/pages/AdminZami.jsx`; koleksiyonlar: `zami_logs`, `zami_handoffs`. Bağımlılık: `playwright==1.62.0`, `beautifulsoup4`.
-- Güvenlik: sohbette paylaşılan portal şifresi hiçbir yere kaydedilmedi; kullanıcıya şifre değiştirme önerildi. Portal bilgileri yalnızca admin panelinden `site_settings`e yazılır.
-- Test: API uçları (parse/mapping/handoff/logs/hata yolları) + gerçek portalda Playwright captcha yakalama + sahte Zami formunda bookmarklet doldurma (5/5 alan) **PASS**; admin UI ekran görüntüleriyle doğrulandı.
-- Kullanıcıdan beklenen: (1) Zami yeni başvuru formunun HTML'i → alan eşlemesi, (2) robot modu için portal kullanıcı/şifresinin admin panelinden girilmesi.
-
-
-### Phase 21 — Toplu Aktarım + Otomatik Durum Takibi — **COMPLETED (2026-09-01)**
-- **Toplu aktarım**: `GET /api/admin/zami/candidates` (aktarıma uygun başvurular), `POST /api/admin/zami/bulk-transfer` (max 20, sıralı, dry_run destekli, oturum yoksa erken durur). Admin'de "Toplu Aktarım" sekmesi: çoklu seçim tablosu + doldur/gönder + sonuç dökümü. Aktarılanlara `zami_transferred_at`, `zami_submitted` yazılır.
-- **Otomatik durum takibi**: `zami_rpa.check_status()` portal liste/durum sayfasında referansı arar (zami_reference → takip kodu → pasaport no), sonuç satırını okur; `zami.match_status()` anahtar kelimelerle bizim durum koduna çevirir. `zami_status.apply_status()` başvuru durumunu günceller, `status_history`'ye not düşer ve müşteriye `status_change` e-postası atar. `sweep_statuses()` toplu tarama, `status_loop()` arka planda (ayarlanan saat aralığında, admin'den aç/kapa) çalışır — `server.py` lifespan'e eklendi.
-- Yeni endpointler: `PUT /api/admin/zami/reference/{id}`, `POST /api/admin/zami/check-status/{id}`, `POST /api/admin/zami/check-status-all`.
-- Admin UI: "Durum Takibi" sekmesi (durum sayfası URL'i, arama/sonuç seçicileri, onay/ret/inceleme/iptal anahtar kelimeleri, otomatik kontrol + periyot + e-posta anahtarı, "Şimdi kontrol et"); başvuru detayında Zami başvuru no alanı + "Durumu kontrol et" + son kontrol bilgisi.
-- Playwright tarayıcı yolu otomatik bulunuyor (`PLAYWRIGHT_BROWSERS_PATH` yoksa /pw-browsers vb.); tarayıcı yoksa kullanıcıya anlaşılır hata dönüyor (bookmarklet yolu önerilir).
-- Test: sahte portal (localhost) ile uçtan uca — toplu aktarım 2/2 başvuru × 5 alan, tek başvuru durum kontrolü `Approved` → başvuru `approved` + müşteri e-postası, sweep `Processing` → `reviewing`, e-posta kayıtları oluştu. **PASS**
-- Kalan: Zami gerçek form/liste sayfalarının HTML'i alınmadan alan eşlemesi tamamlanamıyor (kullanıcıdan bekleniyor).
-
-
-### Phase 22 — Alan Eşlemesi Otomasyonu (yakalama + otomatik öneri) — **COMPLETED (2026-09-01)**
-Zami form HTML'i elde olmadığı için eşlemeyi kullanıcıya bırakmak yerine otomatikleştirildi:
-- **Yakalama yardımcısı**: `GET /api/zami/capture.js` bookmarklet'i Zami sayfasındaki tüm input/select/textarea alanlarını (name, id, label, placeholder, tip, submit/search seçicileri) okuyup token korumalı `POST /api/zami/capture/{token}`'a gönderir. Admin'de "Yakalama kodu oluştur" (45 dk) + yer imi bağlantısı; hem başvuru formu hem durum/liste sayfası ayrı ayrı yakalanır.
-- **Otomatik eşleme önerisi**: `zami.suggest_mapping()` etiket/isim anahtar kelimeleriyle bizim alanlara eşler; `pax[0][...]` gibi indeksli seçicileri `{i}` şablonuna çevirir; durum sayfasından `status_url`, arama alanı ve satır seçicisini önerir. `POST /api/admin/zami/apply-suggestions` önerileri eşlemeye işler. Mapping ekranındaki açılır listeler yakalanan alanlarla otomatik dolar (HTML yapıştırma artık opsiyonel).
-- **Tarayıcı motoru dayanıklılığı**: paketle gelen Chromium yoksa sistem Chromium'una (`/usr/local/bin/browser-use-chromium`, google-chrome) otomatik geçiş; hiçbiri yoksa anlaşılır hata + bookmarklet önerisi.
-- Test: gerçekçi sahte Zami formu (15 alan, tablo etiketli + pax[0] yolcu alanları) → yakalama 15 alan, otomatik eşleme **8 genel + 7 yolcu** alanı, `{i}` şablonu doğru; öneriler uygulanıp gerçek başvuruyla dry-run aktarımda **12 alan** doldu (yalnızca select seçenek eşleşmeyen 1 alan atlandı). Durum sayfası yakalamada `status_url` + arama seçicisi otomatik önerildi. **PASS**
-- Test verileri temizlendi (mapping/capture/session sıfırlandı), kullanıcı sıfırdan yapılandırabilir.
-
-
-### Phase 23 — Müşteri Durum Ekranı + Aktarım Hazırlık Kontrolü — **COMPLETED (2026-09-01)**
-- **Müşteri durum ekranı**: `build_customer_timeline()` (routes_public) 5 adımlı müşteri dostu akış üretir (Başvuru alındı → Ödeme → Belgeler → Göçmenlik idaresine iletildi → Vize sonucu); ödeme/belge/portal aktarımı/portal durumu verilerinden tek "şu an burada" adımı hesaplanır. `/api/applications/track` ve belge yükleme yanıtına `timeline` eklendi; portal iç bilgileri (`zami_status_raw`, `zami_reference`) müşteri yanıtından temizlendi.
-- **Track.jsx**: "Başvurunuz nerede?" kartı — ilerleme çubuğu (x/5 adım), dikey adım listesi, tamam/şu an/bekliyor durumları, onay/ret için özel ikon ve başlık, adım tarihleri ve "portalda en son ... kontrol edildi" notu.
-- **Aktarım hazırlık kontrolü**: `GET /api/admin/zami/readiness` — yakalama, form URL, genel/yolcu eşleme (ad-pasaport-doğum tarihi kritik), gönder seçicisi, sunucu tarayıcısı, portal oturumu ve durum sayfası kontrolleri + `ready_bookmarklet` / `ready_robot`. Admin ekranında "Hazırlık kontrolü" butonu ve maddeli kontrol listesi.
-- Test: 3 farklı başvuru durumu (submitted / paid+reviewing / approved) API ve UI'da doğru adım akışını gösterdi (1/5, 4/5, 5/5); readiness endpoint eksikleri doğru raporladı. **PASS**
-- Kalan (kullanıcı aksiyonu): Zami'de gerçek formda yakalama yardımcısını çalıştırmak, önerilen eşlemeyi uygulamak ve ilk gerçek aktarımı yapmak — captcha/OTP nedeniyle bizim tarafımızdan yapılamıyor.

@@ -1,0 +1,89 @@
+{
+  "summary": "Phase 25 Pre-Evaluation Wizard (Ön Değerlendirme Sihirbazı) - Complete E2E testing completed successfully. All backend APIs and frontend UI components working correctly.",
+  "backend_issues": {
+    "critical_bugs": [],
+    "flaky_endpoints": [],
+    "minor_issues": [
+      {
+        "endpoint": "/api/applications",
+        "issue": "Returns 400 when using dummy file IDs in test",
+        "impact": "Test-only issue - production flow requires valid uploaded files",
+        "fix_priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "Backend: GET /api/pre-evaluation/questions - Returns 4 questions (3 mandatory + 1 optional)",
+    "Backend: POST /api/pre-evaluation - Best scenario returns high score (95%)",
+    "Backend: POST /api/pre-evaluation - Worst scenario returns low score (8%) with blockers",
+    "Backend: POST /api/pre-evaluation - Invalid enum values rejected (422)",
+    "Backend: POST /api/pre-evaluation - Missing required fields rejected (422)",
+    "Backend: POST /api/pre-evaluation - With lead information (name/email/phone) works",
+    "Backend: GET /api/admin/pre-evaluations - Lists all evaluations with stats",
+    "Backend: GET /api/admin/pre-evaluations?only_leads=true - Filters correctly",
+    "Backend: Admin authentication required (401 without token)",
+    "Frontend: Home page landing-pre-evaluation section visible",
+    "Frontend: Navbar link to /on-degerlendirme present and working",
+    "Frontend: /on-degerlendirme page loads correctly",
+    "Frontend: Wizard displays all 4 questions step-by-step",
+    "Frontend: Question navigation (forward/back) works",
+    "Frontend: Optional question skip button works",
+    "Frontend: Result display with score dial (95%)",
+    "Frontend: Level badge, factors, tips, recommended visa all visible",
+    "Frontend: Lead form submission works with success message",
+    "Frontend: Restart button resets wizard to first question",
+    "Admin: /admin/on-degerlendirme page loads with statistics",
+    "Admin: Statistics cards show total, leads, average score",
+    "Admin: Filter buttons (All / Leads only) work correctly",
+    "Admin: Evaluation items list displays with all details",
+    "Admin: Refresh button works",
+    "Regression: /api/visa-types, /api/pricing/quote, /api/content/site working",
+    "Regression: FX transparency, document reminders, customer account features intact",
+    "Regression: Store items, visa guides, drafts features working"
+  ],
+  "test_report_links": [
+    "/app/backend_test.py",
+    "/tmp/backend_test_output.txt"
+  ],
+  "success_percentage": {
+    "backend": "98.4% (60/61 tests passed)",
+    "frontend": "100% (24/24 tests passed)",
+    "admin_panel": "100% (7/7 tests passed)",
+    "overall": "99% (91/92 tests passed)"
+  },
+  "updated_files": [
+    "/app/backend_test.py"
+  ],
+  "action_item_for_main_agent": "",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": false,
+  "detailed_findings": {
+    "new_feature_status": "✅ FULLY WORKING",
+    "scoring_engine": {
+      "base_score": 55,
+      "score_range": "8-96 (clamped correctly)",
+      "best_scenario": "95% (6_plus/recent/none/tourism)",
+      "worst_scenario": "8% (expired/none/uae)",
+      "blockers": "Working correctly for invalid scenarios"
+    },
+    "frontend_wizard": {
+      "step_navigation": "✅ Working",
+      "back_button": "✅ Working",
+      "skip_optional": "✅ Working",
+      "result_display": "✅ All components visible",
+      "lead_form": "✅ Validation and submission working",
+      "restart": "✅ Resets wizard correctly"
+    },
+    "admin_panel": {
+      "statistics": "✅ Total, leads, average score displayed",
+      "filtering": "✅ All/Leads filter working",
+      "list_display": "✅ Shows all evaluation details"
+    },
+    "regression_status": "✅ All previous features working correctly"
+  }
+}

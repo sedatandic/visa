@@ -962,6 +962,271 @@ class APITester:
                             else:
                                 self.log(f"   ⚠️  Guide may not have reset correctly", Colors.YELLOW)
 
+    def test_pre_evaluation(self):
+        """Test Pre-Evaluation Wizard"""
+        self.log("\n" + "="*60, Colors.YELLOW)
+        self.log("FEATURE 9: PRE-EVALUATION WIZARD (ÖN DEĞERLENDİRME)", Colors.YELLOW)
+        self.log("="*60, Colors.YELLOW)
+        
+        headers = {'Authorization': f'Bearer {self.admin_token}'}
+        
+        # Test 1: GET /api/pre-evaluation/questions - Get questions
+        success, questions_response = self.test(
+            "GET /api/pre-evaluation/questions - Get 4 questions",
+            "GET",
+            "/pre-evaluation/questions",
+            200
+        )
+        
+        if success:
+            questions = questions_response.get('questions', [])
+            self.log(f"   Found {len(questions)} questions", Colors.BLUE)
+            
+            if len(questions) == 4:
+                self.log(f"   ✅ Correct number of questions (4)", Colors.GREEN)
+            else:
+                self.log(f"   ❌ Expected 4 questions, got {len(questions)}", Colors.RED)
+            
+            # Check required fields in questions
+            required_fields = ['key', 'title', 'options']
+            for q in questions:
+                key = q.get('key')
+                self.log(f"   Question: {key}", Colors.BLUE)
+                for field in required_fields:
+                    if field not in q:
+                        self.log(f"     ❌ Missing field: {field}", Colors.RED)
+                
+                # Check if optional field is present for purpose question
+                if key == 'purpose' and q.get('optional') == True:
+                    self.log(f"     ✅ Purpose question marked as optional", Colors.GREEN)
+                elif key != 'purpose' and not q.get('optional'):
+                    self.log(f"     ✅ {key} is mandatory", Colors.GREEN)
+        
+        # Test 2: POST /api/pre-evaluation - Best scenario (high score)
+        success, best_result = self.test(
+            "POST /api/pre-evaluation - Best scenario (6_plus/recent/none/tourism)",
+            "POST",
+            "/pre-evaluation",
+            200,
+            data={
+                'passport_validity': '6_plus',
+                'visa_history': 'recent',
+                'refusal_history': 'none',
+                'purpose': 'tourism'
+            }
+        )
+        
+        if success:
+            score = best_result.get('score')
+            level = best_result.get('level')
+            level_title = best_result.get('level_title')
+            factors = best_result.get('factors', [])
+            tips = best_result.get('tips', [])
+            blockers = best_result.get('blockers', [])
+            can_apply = best_result.get('can_apply')
+            recommended_visa_type_id = best_result.get('recommended_visa_type_id')
+            recommended_visa = best_result.get('recommended_visa')
+            disclaimer = best_result.get('disclaimer')
+            result_id = best_result.get('id')
+            
+            self.log(f"   Score: {score}%", Colors.BLUE)
+            self.log(f"   Level: {level} ({level_title})", Colors.BLUE)
+            self.log(f"   Factors: {len(factors)}", Colors.BLUE)
+            self.log(f"   Tips: {len(tips)}", Colors.BLUE)
+            self.log(f"   Blockers: {len(blockers)}", Colors.BLUE)
+            self.log(f"   Can apply: {can_apply}", Colors.BLUE)
+            self.log(f"   Recommended visa: {recommended_visa_type_id}", Colors.BLUE)
+            self.log(f"   Result ID: {result_id}", Colors.BLUE)
+            
+            # Check score is in valid range (8-96)
+            if 8 <= score <= 96:
+                self.log(f"   ✅ Score in valid range (8-96)", Colors.GREEN)
+            else:
+                self.log(f"   ❌ Score out of range: {score}", Colors.RED)
+            
+            # Best scenario should have high score
+            if score >= 75:
+                self.log(f"   ✅ Best scenario has high score (>= 75)", Colors.GREEN)
+            else:
+                self.log(f"   ⚠️  Expected high score for best scenario, got {score}", Colors.YELLOW)
+            
+            # Check required fields
+            if level and level_title and disclaimer and result_id:
+                self.log(f"   ✅ All required fields present", Colors.GREEN)
+            
+            # Check recommended visa
+            if recommended_visa:
+                self.log(f"   ✅ Recommended visa object present", Colors.GREEN)
+                self.log(f"     Name: {recommended_visa.get('name')}", Colors.BLUE)
+                self.log(f"     Price: {recommended_visa.get('price')} TRY", Colors.BLUE)
+            
+            # Best scenario should have no blockers
+            if len(blockers) == 0:
+                self.log(f"   ✅ No blockers for best scenario", Colors.GREEN)
+            
+            if can_apply == True:
+                self.log(f"   ✅ can_apply is True for best scenario", Colors.GREEN)
+        
+        # Test 3: POST /api/pre-evaluation - Worst scenario (low score)
+        success, worst_result = self.test(
+            "POST /api/pre-evaluation - Worst scenario (expired/none/uae)",
+            "POST",
+            "/pre-evaluation",
+            200,
+            data={
+                'passport_validity': 'expired',
+                'visa_history': 'none',
+                'refusal_history': 'uae',
+                'purpose': ''
+            }
+        )
+        
+        if success:
+            score = worst_result.get('score')
+            level = worst_result.get('level')
+            blockers = worst_result.get('blockers', [])
+            can_apply = worst_result.get('can_apply')
+            
+            self.log(f"   Score: {score}%", Colors.BLUE)
+            self.log(f"   Level: {level}", Colors.BLUE)
+            self.log(f"   Blockers: {len(blockers)}", Colors.BLUE)
+            self.log(f"   Can apply: {can_apply}", Colors.BLUE)
+            
+            # Worst scenario should have low score
+            if score <= 30:
+                self.log(f"   ✅ Worst scenario has low score (<= 30)", Colors.GREEN)
+            else:
+                self.log(f"   ⚠️  Expected low score for worst scenario, got {score}", Colors.YELLOW)
+            
+            # Should have blockers
+            if len(blockers) > 0:
+                self.log(f"   ✅ Blockers present for worst scenario", Colors.GREEN)
+                for blocker in blockers:
+                    self.log(f"     - {blocker}", Colors.BLUE)
+            
+            if can_apply == False:
+                self.log(f"   ✅ can_apply is False for worst scenario", Colors.GREEN)
+        
+        # Test 4: POST /api/pre-evaluation - Invalid enum values (should return 422)
+        success, invalid = self.test(
+            "POST /api/pre-evaluation - Invalid enum values (should fail)",
+            "POST",
+            "/pre-evaluation",
+            422,
+            data={
+                'passport_validity': 'invalid_value',
+                'visa_history': 'recent',
+                'refusal_history': 'none'
+            }
+        )
+        
+        if success:
+            self.log(f"   ✅ Invalid enum values correctly rejected (422)", Colors.GREEN)
+        
+        # Test 5: POST /api/pre-evaluation - Missing required fields (should return 422)
+        success, missing = self.test(
+            "POST /api/pre-evaluation - Missing required fields (should fail)",
+            "POST",
+            "/pre-evaluation",
+            422,
+            data={
+                'passport_validity': '6_plus'
+                # Missing visa_history and refusal_history
+            }
+        )
+        
+        if success:
+            self.log(f"   ✅ Missing required fields correctly rejected (422)", Colors.GREEN)
+        
+        # Test 6: POST /api/pre-evaluation - With lead information
+        test_email = f"preeval{int(time.time())}@test.com"
+        success, lead_result = self.test(
+            "POST /api/pre-evaluation - With lead information (name/email/phone)",
+            "POST",
+            "/pre-evaluation",
+            200,
+            data={
+                'passport_validity': 'under_6',
+                'visa_history': 'old',
+                'refusal_history': 'other_country',
+                'purpose': 'business',
+                'name': 'Test User',
+                'email': test_email,
+                'phone': '+905551234567'
+            }
+        )
+        
+        if success:
+            result_id = lead_result.get('id')
+            self.log(f"   ✅ Pre-evaluation with lead info created", Colors.GREEN)
+            self.log(f"   Result ID: {result_id}", Colors.BLUE)
+        
+        # Test 7: GET /api/admin/pre-evaluations - List all (admin)
+        success, admin_list = self.test(
+            "GET /api/admin/pre-evaluations - List all evaluations (admin)",
+            "GET",
+            "/admin/pre-evaluations",
+            200,
+            headers=headers
+        )
+        
+        if success:
+            total = admin_list.get('total', 0)
+            leads = admin_list.get('leads', 0)
+            average_score = admin_list.get('average_score', 0)
+            items = admin_list.get('items', [])
+            
+            self.log(f"   Total evaluations: {total}", Colors.BLUE)
+            self.log(f"   Leads (with contact): {leads}", Colors.BLUE)
+            self.log(f"   Average score: {average_score}%", Colors.BLUE)
+            self.log(f"   Items returned: {len(items)}", Colors.BLUE)
+            
+            if total > 0:
+                self.log(f"   ✅ Evaluations found", Colors.GREEN)
+            
+            # Check required fields in response
+            required_fields = ['total', 'leads', 'average_score', 'items']
+            for field in required_fields:
+                if field in admin_list:
+                    self.log(f"   ✅ Field present: {field}", Colors.GREEN)
+                else:
+                    self.log(f"   ❌ Missing field: {field}", Colors.RED)
+        
+        # Test 8: GET /api/admin/pre-evaluations?only_leads=true - Filter leads only
+        success, leads_only = self.test(
+            "GET /api/admin/pre-evaluations?only_leads=true - Filter leads only",
+            "GET",
+            "/admin/pre-evaluations",
+            200,
+            headers=headers,
+            params={'only_leads': True}
+        )
+        
+        if success:
+            items = leads_only.get('items', [])
+            self.log(f"   Leads only: {len(items)} items", Colors.BLUE)
+            
+            # All items should have contact info
+            all_have_contact = all(
+                item.get('email') or item.get('phone') 
+                for item in items
+            )
+            if all_have_contact:
+                self.log(f"   ✅ All items have contact info", Colors.GREEN)
+            else:
+                self.log(f"   ⚠️  Some items missing contact info", Colors.YELLOW)
+        
+        # Test 9: GET /api/admin/pre-evaluations - Without token (should fail)
+        success, no_auth = self.test(
+            "GET /api/admin/pre-evaluations - Without token (should fail)",
+            "GET",
+            "/admin/pre-evaluations",
+            401
+        )
+        
+        if success:
+            self.log(f"   ✅ Correctly requires admin authentication", Colors.GREEN)
+
     def test_store_items_in_application(self):
         """Test eSIM and insurance products in visa application"""
         self.log("\n" + "="*60, Colors.YELLOW)
@@ -1146,7 +1411,7 @@ def main():
     
     print(f"\n{Colors.BLUE}{'='*60}")
     print("VizeAtlas Dubai Backend API Test Suite")
-    print(f"Testing 8 Features (Iteration 15 - Store Items)")
+    print(f"Testing 9 Features (Iteration 25 - Pre-Evaluation Wizard)")
     print(f"Base URL: {BASE_URL}")
     print(f"{'='*60}{Colors.END}\n")
     
@@ -1164,6 +1429,7 @@ def main():
     tester.test_drafts()
     tester.test_visa_guides()
     tester.test_store_items_in_application()
+    tester.test_pre_evaluation()
     
     # Print summary
     return tester.print_summary()

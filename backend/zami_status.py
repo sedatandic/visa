@@ -66,6 +66,21 @@ async def apply_status(app_doc: dict, result: dict, notify: bool = True, actor: 
             )
             email_status = res.get("status", "skipped")
 
+    whatsapp_status = "skipped"
+    if changed and matched in {"approved", "rejected"}:
+        try:
+            import os
+
+            import whatsapp
+
+            fresh = await applications_col.find_one({"id": app_doc["id"]})
+            out = await whatsapp.notify_result(
+                fresh, matched, os.environ.get("PUBLIC_BASE_URL", "https://vizeatlas.com")
+            )
+            whatsapp_status = out.get("status", "skipped")
+        except Exception as exc:  # pragma: no cover
+            logger.error("whatsapp notify failed: %s", exc)
+
     await log_event(
         app_doc.get("id"),
         app_doc.get("reference_code"),
@@ -75,13 +90,14 @@ async def apply_status(app_doc: dict, result: dict, notify: bool = True, actor: 
             + (f" · başvuru {previous} → {matched} olarak güncellendi" if changed else "")
         ),
         actor=actor,
-        extra={"raw": raw, "email": email_status},
+        extra={"raw": raw, "email": email_status, "whatsapp": whatsapp_status},
     )
     return {
         "status_changed": changed,
         "new_status": matched if changed else previous,
         "previous_status": previous,
         "email_notification": email_status,
+        "whatsapp_notification": whatsapp_status,
     }
 
 

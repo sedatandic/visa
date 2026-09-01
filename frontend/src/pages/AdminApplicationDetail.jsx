@@ -114,6 +114,8 @@ export default function AdminApplicationDetail() {
     const [zamiHandoff, setZamiHandoff] = useState(null);
     const [zamiResult, setZamiResult] = useState(null);
     const [zamiRef, setZamiRef] = useState("");
+    const [waBusy, setWaBusy] = useState(false);
+    const [waResult, setWaResult] = useState(null);
 
     const loadMissing = useCallback(async () => {
         try {
@@ -305,6 +307,22 @@ export default function AdminApplicationDetail() {
     const a = data.application;
     const travelers = a.travelers || [];
     const pricing = a.pricing;
+
+    const sendWhatsAppResult = async (status) => {
+        setWaBusy(true);
+        setWaResult(null);
+        try {
+            const { data: res } = await api.post(`/admin/whatsapp/send/${a.id}`, { status, force: true });
+            setWaResult(res);
+            if (res.status === "sent") toast.success("WhatsApp mesajı gönderildi.");
+            else if (res.status === "manual") toast.info("Hazır WhatsApp bağlantısı oluşturuldu, aşağıdan açıp gönderin.");
+            else toast.error(res.reason || res.detail || "Gönderilemedi.");
+        } catch (e) {
+            toast.error(apiError(e, "WhatsApp bildirimi başarısız."));
+        } finally {
+            setWaBusy(false);
+        }
+    };
 
     const saveZamiRef = async () => {
         setZamiBusy(true);
@@ -748,6 +766,62 @@ export default function AdminApplicationDetail() {
                                             className="mt-3 w-full rounded-lg border border-border"
                                             data-testid="zami-rpa-screenshot-app"
                                         />
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* WHATSAPP */}
+                        <div className="card-surface p-6" data-testid="admin-whatsapp-panel">
+                            <div className="flex items-center gap-2">
+                                <MessageCircle className="h-4.5 w-4.5 text-primary" />
+                                <h2 className="font-heading text-base font-bold">WhatsApp ile sonucu bildir</h2>
+                            </div>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                Müşteri WhatsApp onayı: {a.whatsapp_optin ? "verildi" : "verilmedi"}. Manuel modda
+                                hazır metinli WhatsApp bağlantısı açılır; API modu açıksa mesaj otomatik gönderilir.
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-3">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="border border-border"
+                                    onClick={() => sendWhatsAppResult("approved")}
+                                    disabled={waBusy}
+                                    data-testid="whatsapp-send-approved"
+                                >
+                                    {waBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-2 h-4 w-4" />}
+                                    Onay mesajı
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="border border-border"
+                                    onClick={() => sendWhatsAppResult("rejected")}
+                                    disabled={waBusy}
+                                    data-testid="whatsapp-send-rejected"
+                                >
+                                    Ret mesajı
+                                </Button>
+                            </div>
+                            {waResult && (
+                                <div className="mt-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4" data-testid="whatsapp-result">
+                                    <p className="text-sm text-muted-foreground">{waResult.reason || waResult.detail || "Gönderildi."}</p>
+                                    {waResult.message && (
+                                        <p className="mt-2 rounded-lg bg-card p-3 text-sm" data-testid="whatsapp-message-preview">
+                                            {waResult.message}
+                                        </p>
+                                    )}
+                                    {waResult.link && (
+                                        <a
+                                            href={waResult.link}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="mt-3 inline-flex font-heading text-sm font-bold text-primary underline"
+                                            data-testid="whatsapp-manual-link"
+                                        >
+                                            WhatsApp'ta aç ve gönder
+                                        </a>
                                     )}
                                 </div>
                             )}

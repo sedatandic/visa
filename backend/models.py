@@ -8,6 +8,7 @@ class ContactIn(BaseModel):
     email: EmailStr
     phone: str = Field(..., min_length=7, max_length=25)
     address_city: Optional[str] = Field(default="", max_length=60)
+    whatsapp_optin: bool = False
 
 
 class TravelerIn(BaseModel):
@@ -188,3 +189,16 @@ class WhatsAppRequest(BaseModel):
     template: str = Field(default="visa_ready", max_length=40)
     message: Optional[str] = Field(default="", max_length=1000)
     origin_url: Optional[str] = None
+
+
+class PreEvaluationIn(BaseModel):
+    passport_validity: str = Field(..., pattern="^(6_plus|under_6|expired)$")
+    visa_history: str = Field(..., pattern="^(recent|old|none)$")
+    refusal_history: str = Field(..., pattern="^(none|other_country|uae)$")
+    purpose: Optional[str] = Field(
+        default="", pattern="^(tourism|family|business|long_stay|transit|)$"
+    )
+    # Opsiyonel lead bilgileri
+    name: Optional[str] = Field(default="", max_length=120)
+    email: Optional[str] = Field(default="", max_length=160)
+    phone: Optional[str] = Field(default="", max_length=30)

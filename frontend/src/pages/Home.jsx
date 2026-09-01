@@ -9,6 +9,7 @@ import {
     Clock,
     FileCheck2,
     FileText,
+    Gauge,
     HeadphonesIcon,
     IdCard,
     Image as ImageIcon,
@@ -33,6 +34,7 @@ import { SampleVisa } from "../components/SampleVisa";
 import { RouteFlags } from "../components/FlagIcons";
 import { AuthorityStrip } from "../components/AuthorityStrip";
 import { VisaGuideLinks } from "../components/VisaGuideLinks";
+import { PreEvaluation } from "../components/PreEvaluation";
 import { FxNote } from "../components/FxNote";
 import {
     Accordion,
@@ -235,6 +237,40 @@ export default function Home() {
 
             {/* AUTHORITIES / TRUST STRIP */}
             <AuthorityStrip />
+
+            {/* PRE-EVALUATION WIZARD */}
+            <section className="section" data-testid="landing-pre-evaluation">
+                <div className="container-page grid items-start gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+                    <div>
+                        <span className="eyebrow">
+                            <Gauge className="h-3.5 w-3.5" /> Ücretsiz Ön Değerlendirme
+                        </span>
+                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
+                            Vizeniz onaylanır mı? 30 saniyede öğrenin
+                        </h2>
+                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                            3 kısa soruyu yanıtlayın; pasaport geçerliliği, vize geçmişi ve red kaydınıza göre
+                            tahmini onay olasılığınızı, size uygun vize tipini ve onay şansınızı artıracak
+                            adımları anında görün. Kayıt veya ödeme gerekmez.
+                        </p>
+                        <ul className="mt-6 grid gap-3">
+                            {[
+                                { icon: Gauge, text: "Tahmini onay olasılığı ve gerekçeleri" },
+                                { icon: BadgeCheck, text: "Size en uygun vize tipi önerisi" },
+                                { icon: FileCheck2, text: "Eksiklerinizi kapatacak somut adımlar" },
+                            ].map(({ icon: Icon, text }) => (
+                                <li key={text} className="flex items-start gap-2.5">
+                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                                        <Icon className="h-4 w-4 text-primary" />
+                                    </span>
+                                    <span className="pt-1.5 text-sm text-muted-foreground">{text}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <PreEvaluation />
+                </div>
+            </section>
 
             {/* PRICING TABS */}
             <section className="section" data-testid="landing-pricing">

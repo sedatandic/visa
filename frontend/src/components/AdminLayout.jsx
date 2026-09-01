@@ -1,12 +1,13 @@
 import React from "react";
 import { Link, NavLink, Navigate, useNavigate } from "react-router-dom";
-import { BookOpen, Package, Building2, FileText, Landmark, LayoutDashboard, LogOut, Mail, MessageSquare, Send, Star, Tag } from "lucide-react";
+import { BookOpen, Package, Building2, FileText, Gauge, Landmark, LayoutDashboard, LogOut, Mail, MessageCircle, MessageSquare, Send, Star, Tag } from "lucide-react";
 import { Button } from "./ui/button";
 import { BrandMark } from "./BrandMark";
 
 const NAV = [
     { to: "/admin", label: "Başvurular", icon: LayoutDashboard, end: true },
     { to: "/admin/mesajlar", label: "Mesajlar", icon: MessageSquare },
+    { to: "/admin/on-degerlendirme", label: "Ön Değerlendirme", icon: Gauge },
     { to: "/admin/e-postalar", label: "E-postalar", icon: Mail },
     { to: "/admin/vize-tipleri", label: "Vize Tipleri", icon: Tag },
     { to: "/admin/vize-rehberleri", label: "Vize Rehberleri", icon: BookOpen },
@@ -16,6 +17,7 @@ const NAV = [
     { to: "/admin/banka", label: "Banka Bilgileri", icon: Landmark },
     { to: "/admin/acente", label: "Acente Bilgileri", icon: Building2 },
     { to: "/admin/zami", label: "Zami Aktarımı", icon: Send },
+    { to: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle },
 ];
 
 export const RequireAdmin = ({ children }) => {
