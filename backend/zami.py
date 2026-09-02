@@ -105,10 +105,14 @@ DEFAULT_MAPPING = {
 def _fmt(value: str | None, style: str) -> str:
     """ISO tarihi istenen formata cevirir; cevrilemezse orijinali dondurur."""
     raw = (value or "").strip()[:10]
+    parsed: datetime | None = None
     try:
-        d = datetime.strptime(raw, "%Y-%m-%d")
+        parsed = datetime.strptime(raw, "%Y-%m-%d")
     except Exception:
         return raw
+    if parsed is None:  # pragma: no cover - defensive
+        return raw
+    d = parsed
     if style == "dmy":
         return d.strftime("%d/%m/%Y")
     if style == "mdy":

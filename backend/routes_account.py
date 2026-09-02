@@ -62,6 +62,7 @@ def _create_session_token(email: str) -> str:
 async def require_customer(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> str:
     if not creds:
         raise HTTPException(401, "Oturum bulunamadi. Lutfen tekrar giris yapin.")
+    payload: dict = {}
     try:
         payload = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGO])
     except jwt.PyJWTError:
@@ -145,7 +146,7 @@ class DraftIn(BaseModel):
 
 # ---------------------------------------------------------------------- giris
 @router.post("/account/request-code")
-async def request_login_code(payload: EmailIn, request: Request):
+async def request_login_code(payload: EmailIn, request: Request) -> dict:
     """E-postaya 6 haneli giris kodu gonderir."""
     email = _norm_email(payload.email)
     code = f"{secrets.randbelow(900000) + 100000}"
@@ -182,7 +183,7 @@ async def request_login_code(payload: EmailIn, request: Request):
 
 
 @router.post("/account/verify-code")
-async def verify_login_code(payload: CodeVerifyIn):
+async def verify_login_code(payload: CodeVerifyIn) -> dict:
     email = _norm_email(payload.email)
     doc = await login_codes_col.find_one({"email": email})
     if not doc:
@@ -203,7 +204,7 @@ async def verify_login_code(payload: CodeVerifyIn):
 
 
 @router.post("/account/login-lastname")
-async def login_with_last_name(payload: LastNameLoginIn):
+async def login_with_last_name(payload: LastNameLoginIn) -> dict:
     """Mevcut basvurusu olan musteriler icin e-posta + soyad dogrulamasi."""
     email = _norm_email(payload.email)
     last_name = payload.last_name.strip().lower()
@@ -220,7 +221,7 @@ async def login_with_last_name(payload: LastNameLoginIn):
 
 # ------------------------------------------------------------- hesap ozetleri
 @router.get("/account/me")
-async def account_overview(email: str = Depends(require_customer)):
+async def account_overview(email: str = Depends(require_customer)) -> dict:
     applications = await _applications_for_email(email)
     drafts = [
         _draft_summary(d)
@@ -241,7 +242,7 @@ async def account_application_detail(application_id: str, email: str = Depends(r
 
 
 @router.get("/account/orders")
-async def account_orders(email: str = Depends(require_customer)):
+async def account_orders(email: str = Depends(require_customer)) -> dict:
     """eSIM / sigorta siparisleri."""
     from db import orders_col
 
@@ -261,7 +262,7 @@ async def account_draft_detail(draft_id: str, email: str = Depends(require_custo
 
 
 @router.delete("/account/drafts/{draft_id}")
-async def account_delete_draft(draft_id: str, email: str = Depends(require_customer)):
+async def account_delete_draft(draft_id: str, email: str = Depends(require_customer)) -> dict:
     res = await drafts_col.delete_one({"id": draft_id, "email": email})
     if res.deleted_count == 0:
         raise HTTPException(404, "Taslak bulunamadi.")
@@ -270,7 +271,7 @@ async def account_delete_draft(draft_id: str, email: str = Depends(require_custo
 
 # ------------------------------------------------------------------- taslaklar
 @router.post("/drafts")
-async def save_draft(payload: DraftIn, request: Request):
+async def save_draft(payload: DraftIn, request: Request) -> dict:
     """Yarim kalan basvuruyu kaydeder; devam kodu ile geri donulebilir."""
     email = _norm_email(payload.email)
     now = datetime.now(timezone.utc)
@@ -402,7 +403,7 @@ async def upsert_saved_travelers(email: str, travelers: list) -> int:
 
 
 @router.get("/account/travelers")
-async def list_saved_travelers(email: str = Depends(require_customer)):
+async def list_saved_travelers(email: str = Depends(require_customer)) -> dict:
     docs = await saved_travelers_col.find({"email": email}).sort("updated_at", -1).to_list(50)
     return {"items": [_saved_traveler_view(d) for d in docs]}
 
@@ -435,7 +436,7 @@ async def save_traveler(payload: SavedTravelerIn, email: str = Depends(require_c
 
 
 @router.delete("/account/travelers/{traveler_id}")
-async def delete_saved_traveler(traveler_id: str, email: str = Depends(require_customer)):
+async def delete_saved_traveler(traveler_id: str, email: str = Depends(require_customer)) -> dict:
     res = await saved_travelers_col.delete_one({"id": traveler_id, "email": email})
     if res.deleted_count == 0:
         raise HTTPException(404, "Kayitli yolcu bulunamadi.")

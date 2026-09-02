@@ -90,7 +90,7 @@ def create_token(email: str) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
 
 
-async def require_admin(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+async def require_admin(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> dict:
     if not creds or not creds.credentials:
         raise HTTPException(401, "Yetkisiz erisim. Lutfen giris yapin.")
     data: dict = {}
@@ -106,7 +106,7 @@ async def require_admin(creds: Optional[HTTPAuthorizationCredentials] = Depends(
 
 
 @router.post("/admin/login")
-async def admin_login(payload: AdminLogin):
+async def admin_login(payload: AdminLogin) -> dict:
     email = (payload.email or "").strip().lower()
     user = ADMIN_USERS.get(email)
     if not user or user["password"] != payload.password:
@@ -115,12 +115,12 @@ async def admin_login(payload: AdminLogin):
 
 
 @router.get("/admin/me")
-async def admin_me(admin=Depends(require_admin)):
+async def admin_me(admin: dict = Depends(require_admin)) -> dict:
     return {"email": admin["sub"], "role": admin["role"]}
 
 
 @router.get("/admin/stats")
-async def admin_stats(admin=Depends(require_admin)):
+async def admin_stats(admin: dict = Depends(require_admin)) -> dict:
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     total = await applications_col.count_documents({})
     today_count = await applications_col.count_documents({"created_at": {"$gte": today}})
@@ -147,13 +147,13 @@ async def admin_stats(admin=Depends(require_admin)):
 
 @router.get("/admin/applications")
 async def admin_applications(
-    admin=Depends(require_admin),
+    admin: dict = Depends(require_admin),
     status: Optional[str] = None,
     payment_status: Optional[str] = None,
     q: Optional[str] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
-):
+) -> dict:
     query: dict = {}
     if status and status != "all":
         query["status"] = status
@@ -188,7 +188,7 @@ async def admin_applications(
 
 
 @router.get("/admin/applications/{application_id}")
-async def admin_application_detail(application_id: str, admin=Depends(require_admin)):
+async def admin_application_detail(application_id: str, admin: dict = Depends(require_admin)) -> dict:
     doc = await applications_col.find_one({"id": application_id})
     if not doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
@@ -221,7 +221,7 @@ async def _notify_status_change(fresh: dict, previous_status: str, payload: Stat
 
 
 @router.patch("/admin/applications/{application_id}")
-async def admin_update_application(application_id: str, payload: StatusUpdate, admin=Depends(require_admin)):
+async def admin_update_application(application_id: str, payload: StatusUpdate, admin: dict = Depends(require_admin)) -> dict:
     if payload.status not in STATUS_LABELS:
         raise HTTPException(400, "Gecersiz durum.")
     doc = await applications_col.find_one({"id": application_id})
@@ -244,34 +244,52 @@ async def admin_update_application(application_id: str, payload: StatusUpdate, a
 
 
 # ------------------------------------------------- approved visa document
+VISA_DOC_EXT = {"pdf", "jpg", "jpeg", "png"}
+VISA_DOC_MAX_BYTES = 15 * 1024 * 1024
+
+
+def _validate_visa_document(filename: str, data: bytes) -> str:
+    """Vize belgesi uzanti/boyut dogrulamasi; gecerli uzantiyi dondurur."""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in VISA_DOC_EXT:
+        raise HTTPException(400, "Vize belgesi PDF, JPG veya PNG olmalidir.")
+    if not data:
+        raise HTTPException(400, "Dosya bos gorunuyor.")
+    if len(data) > VISA_DOC_MAX_BYTES:
+        raise HTTPException(400, "Dosya boyutu en fazla 15 MB olabilir.")
+    return ext
+
+
+def _put_visa_document(path: str, data: bytes, content_type: str) -> dict:
+    try:
+        result = put_object(path, data, content_type)
+    except Exception as exc:
+        logger.error("visa upload failed: %s", exc)
+        raise HTTPException(502, "Dosya yuklenemedi. Lutfen tekrar deneyin.") from exc
+    if not (result or {}).get("path"):
+        raise HTTPException(502, "Dosya yuklenemedi. Lutfen tekrar deneyin.")
+    return result
+
+
 @router.post("/admin/applications/{application_id}/visa-document")
 async def admin_upload_visa_document(
     application_id: str,
     file: UploadFile = File(...),
-    admin=Depends(require_admin),
-):
+    admin: dict = Depends(require_admin),
+) -> dict:
     app_doc = await applications_col.find_one({"id": application_id})
     if not app_doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
 
     filename = file.filename or "vize.pdf"
-    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-    if ext not in {"pdf", "jpg", "jpeg", "png"}:
-        raise HTTPException(400, "Vize belgesi PDF, JPG veya PNG olmalidir.")
     data = await file.read()
-    if not data:
-        raise HTTPException(400, "Dosya bos gorunuyor.")
-    if len(data) > 15 * 1024 * 1024:
-        raise HTTPException(400, "Dosya boyutu en fazla 15 MB olabilir.")
+    ext = _validate_visa_document(filename, data)
 
     file_id = str(uuid.uuid4())
     content_type = MIME_TYPES.get(ext, file.content_type or "application/octet-stream")
     path = f"{APP_NAME}/visas/{application_id}/{file_id}.{ext}"
-    try:
-        result = put_object(path, data, content_type)
-    except Exception as exc:
-        logger.error("visa upload failed: %s", exc)
-        raise HTTPException(502, "Dosya yuklenemedi. Lutfen tekrar deneyin.")
+    result = _put_visa_document(path, data, content_type)
+    size = result.get("size", len(data))
 
     now = datetime.now(timezone.utc)
     await uploads_col.insert_one(
@@ -281,7 +299,7 @@ async def admin_upload_visa_document(
             "storage_path": result["path"],
             "original_filename": filename,
             "content_type": content_type,
-            "size": result.get("size", len(data)),
+            "size": size,
             "is_deleted": False,
             "created_at": now,
         }
@@ -290,7 +308,7 @@ async def admin_upload_visa_document(
         "file_id": file_id,
         "filename": filename,
         "content_type": content_type,
-        "size": result.get("size", len(data)),
+        "size": size,
         "uploaded_at": now,
         "sent_at": None,
         "send_status": None,
@@ -305,7 +323,7 @@ async def admin_upload_visa_document(
 
 
 @router.delete("/admin/applications/{application_id}/visa-document")
-async def admin_delete_visa_document(application_id: str, admin=Depends(require_admin)):
+async def admin_delete_visa_document(application_id: str, admin: dict = Depends(require_admin)) -> dict:
     app_doc = await applications_col.find_one({"id": application_id})
     if not app_doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
@@ -348,8 +366,8 @@ async def admin_send_visa(
     application_id: str,
     payload: SendVisaRequest,
     request: Request,
-    admin=Depends(require_admin),
-):
+    admin: dict = Depends(require_admin),
+) -> dict:
     app_doc = await applications_col.find_one({"id": application_id})
     if not app_doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
@@ -395,7 +413,7 @@ async def admin_send_visa(
 
 
 @router.get("/admin/contact-messages")
-async def admin_contact_messages(admin=Depends(require_admin), page: int = Query(1, ge=1), limit: int = Query(50, ge=1, le=100)):
+async def admin_contact_messages(admin: dict = Depends(require_admin), page: int = Query(1, ge=1), limit: int = Query(50, ge=1, le=100)) -> dict:
     total = await contact_col.count_documents({})
     docs = (
         await contact_col.find({}).sort("created_at", -1).skip((page - 1) * limit).limit(limit).to_list(limit)
@@ -404,7 +422,7 @@ async def admin_contact_messages(admin=Depends(require_admin), page: int = Query
 
 
 @router.patch("/admin/contact-messages/{message_id}/read")
-async def admin_mark_read(message_id: str, admin=Depends(require_admin)):
+async def admin_mark_read(message_id: str, admin: dict = Depends(require_admin)) -> dict:
     res = await contact_col.update_one({"id": message_id}, {"$set": {"is_read": True}})
     if res.matched_count == 0:
         raise HTTPException(404, "Mesaj bulunamadi.")
@@ -412,14 +430,14 @@ async def admin_mark_read(message_id: str, admin=Depends(require_admin)):
 
 
 @router.get("/admin/emails")
-async def admin_emails(admin=Depends(require_admin), limit: int = Query(50, ge=1, le=200)):
+async def admin_emails(admin: dict = Depends(require_admin), limit: int = Query(50, ge=1, le=200)) -> dict:
     docs = await email_outbox_col.find({}).sort("created_at", -1).limit(limit).to_list(limit)
     configured = bool((os.environ.get("RESEND_API_KEY") or "").strip())
     return {"email_configured": configured, "items": serialize_doc(docs)}
 
 
 @router.post("/admin/applications/{application_id}/mark-paid")
-async def admin_mark_paid(application_id: str, admin=Depends(require_admin)):
+async def admin_mark_paid(application_id: str, admin: dict = Depends(require_admin)) -> dict:
     """Havale/EFT ile odemesi hesaba gecen basvuruyu odendi olarak isaretler."""
     app_doc = await applications_col.find_one({"id": application_id})
     if not app_doc:
@@ -473,13 +491,13 @@ async def admin_mark_paid(application_id: str, admin=Depends(require_admin)):
 
 # ------------------------------------------------------- Acente bilgileri
 @router.get("/admin/company")
-async def admin_get_company(admin=Depends(require_admin)):
+async def admin_get_company(admin: dict = Depends(require_admin)) -> dict:
     doc = await settings_col.find_one({"key": "company_info"})
     return {**COMPANY, **((doc or {}).get("value") or {})}
 
 
 @router.put("/admin/company")
-async def admin_update_company(payload: CompanyInfoIn, admin=Depends(require_admin)):
+async def admin_update_company(payload: CompanyInfoIn, admin: dict = Depends(require_admin)) -> dict:
     value = {k: v for k, v in payload.model_dump().items() if v not in (None, "")}
     await settings_col.update_one(
         {"key": "company_info"},
@@ -491,13 +509,13 @@ async def admin_update_company(payload: CompanyInfoIn, admin=Depends(require_adm
 
 # ------------------------------------------------------- Banka bilgileri
 @router.get("/admin/bank-transfer")
-async def admin_get_bank_transfer(admin=Depends(require_admin)):
+async def admin_get_bank_transfer(admin: dict = Depends(require_admin)):
     doc = await settings_col.find_one({"key": "bank_transfer"})
     return (doc or {}).get("value") or BANK_TRANSFER
 
 
 @router.put("/admin/bank-transfer")
-async def admin_update_bank_transfer(payload: BankTransferIn, admin=Depends(require_admin)):
+async def admin_update_bank_transfer(payload: BankTransferIn, admin: dict = Depends(require_admin)):
     value = payload.model_dump()
     value["steps"] = [s for s in (value.get("steps") or []) if s.strip()] or BANK_TRANSFER["steps"]
     await settings_col.update_one(
@@ -560,8 +578,8 @@ async def admin_whatsapp_link(
     application_id: str,
     payload: WhatsAppRequest,
     request: Request,
-    admin=Depends(require_admin),
-):
+    admin: dict = Depends(require_admin),
+) -> dict:
     """Musteriye WhatsApp'tan gonderilecek hazir mesaji ve wa.me linkini uretir."""
     app_doc = await applications_col.find_one({"id": application_id})
     if not app_doc:
@@ -597,7 +615,7 @@ async def admin_whatsapp_link(
 
 # --------------------------------------------------------- musteri yorumlari
 @router.get("/admin/testimonials")
-async def admin_list_testimonials(admin=Depends(require_admin)):
+async def admin_list_testimonials(admin: dict = Depends(require_admin)) -> dict:
     docs = await testimonials_col.find({}).sort("order", 1).to_list(200)
     summary = await settings_col.find_one({"key": "review_summary"})
     return {
@@ -607,7 +625,7 @@ async def admin_list_testimonials(admin=Depends(require_admin)):
 
 
 @router.post("/admin/testimonials")
-async def admin_create_testimonial(payload: TestimonialIn, admin=Depends(require_admin)):
+async def admin_create_testimonial(payload: TestimonialIn, admin: dict = Depends(require_admin)):
     now = datetime.now(timezone.utc)
     doc = payload.model_dump()
     if not doc.get("initials"):
@@ -620,7 +638,7 @@ async def admin_create_testimonial(payload: TestimonialIn, admin=Depends(require
 
 @router.put("/admin/testimonials/{testimonial_id}")
 async def admin_update_testimonial(
-    testimonial_id: str, payload: TestimonialIn, admin=Depends(require_admin)
+    testimonial_id: str, payload: TestimonialIn, admin: dict = Depends(require_admin)
 ):
     update = payload.model_dump()
     update["updated_at"] = datetime.now(timezone.utc)
@@ -632,7 +650,7 @@ async def admin_update_testimonial(
 
 
 @router.delete("/admin/testimonials/{testimonial_id}")
-async def admin_delete_testimonial(testimonial_id: str, admin=Depends(require_admin)):
+async def admin_delete_testimonial(testimonial_id: str, admin: dict = Depends(require_admin)) -> dict:
     res = await testimonials_col.delete_one({"id": testimonial_id})
     if res.deleted_count == 0:
         raise HTTPException(404, "Yorum bulunamadi.")
@@ -640,7 +658,7 @@ async def admin_delete_testimonial(testimonial_id: str, admin=Depends(require_ad
 
 
 @router.put("/admin/review-summary")
-async def admin_update_review_summary(payload: ReviewSummaryIn, admin=Depends(require_admin)):
+async def admin_update_review_summary(payload: ReviewSummaryIn, admin: dict = Depends(require_admin)):
     value = payload.model_dump()
     await settings_col.update_one(
         {"key": "review_summary"},
@@ -659,13 +677,13 @@ def _slugify(text: str) -> str:
 
 
 @router.get("/admin/articles")
-async def admin_list_articles(admin=Depends(require_admin)):
+async def admin_list_articles(admin: dict = Depends(require_admin)) -> dict:
     docs = await articles_col.find({}).sort("date", -1).to_list(200)
     return {"items": serialize_doc(docs)}
 
 
 @router.post("/admin/articles")
-async def admin_create_article(payload: ArticleIn, admin=Depends(require_admin)):
+async def admin_create_article(payload: ArticleIn, admin: dict = Depends(require_admin)):
     now = datetime.now(timezone.utc)
     doc = payload.model_dump()
     doc["slug"] = _slugify(doc.get("slug") or doc["title"])
@@ -679,7 +697,7 @@ async def admin_create_article(payload: ArticleIn, admin=Depends(require_admin))
 
 
 @router.put("/admin/articles/{article_id}")
-async def admin_update_article(article_id: str, payload: ArticleIn, admin=Depends(require_admin)):
+async def admin_update_article(article_id: str, payload: ArticleIn, admin: dict = Depends(require_admin)):
     existing = await articles_col.find_one({"id": article_id})
     if not existing:
         raise HTTPException(404, "Yazi bulunamadi.")
@@ -697,7 +715,7 @@ async def admin_update_article(article_id: str, payload: ArticleIn, admin=Depend
 
 
 @router.delete("/admin/articles/{article_id}")
-async def admin_delete_article(article_id: str, admin=Depends(require_admin)):
+async def admin_delete_article(article_id: str, admin: dict = Depends(require_admin)) -> dict:
     res = await articles_col.delete_one({"id": article_id})
     if res.deleted_count == 0:
         raise HTTPException(404, "Yazi bulunamadi.")
@@ -705,14 +723,14 @@ async def admin_delete_article(article_id: str, admin=Depends(require_admin)):
 
 
 @router.get("/admin/visa-types")
-async def admin_visa_types(admin=Depends(require_admin)):
+async def admin_visa_types(admin: dict = Depends(require_admin)):
     docs = await visa_types_col.find({}).sort("order", 1).to_list(100)
     items = await apply_fx_to_list(serialize_doc(docs))
     return items
 
 
 @router.patch("/admin/visa-types/{visa_type_id}")
-async def admin_update_visa_type(visa_type_id: str, payload: dict, admin=Depends(require_admin)):
+async def admin_update_visa_type(visa_type_id: str, payload: dict, admin: dict = Depends(require_admin)):
     allowed = {
         "price",
         "price_usd",
@@ -738,7 +756,7 @@ async def admin_update_visa_type(visa_type_id: str, payload: dict, admin=Depends
 
 # ------------------------------------------------- eksik belge hatirlatmalari
 @router.get("/admin/applications/{application_id}/missing-documents")
-async def admin_missing_documents(application_id: str, admin=Depends(require_admin)):
+async def admin_missing_documents(application_id: str, admin: dict = Depends(require_admin)) -> dict:
     doc = await applications_col.find_one({"id": application_id})
     if not doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
@@ -752,8 +770,8 @@ async def admin_missing_documents(application_id: str, admin=Depends(require_adm
 
 @router.post("/admin/applications/{application_id}/send-document-reminder")
 async def admin_send_document_reminder(
-    application_id: str, request: Request, payload: Optional[dict] = None, admin=Depends(require_admin)
-):
+    application_id: str, request: Request, payload: Optional[dict] = None, admin: dict = Depends(require_admin)
+) -> dict:
     doc = await applications_col.find_one({"id": application_id})
     if not doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
@@ -767,14 +785,14 @@ async def admin_send_document_reminder(
 
 
 @router.get("/admin/document-reminders/pending")
-async def admin_pending_reminders(admin=Depends(require_admin)):
+async def admin_pending_reminders(admin: dict = Depends(require_admin)) -> dict:
     items = await pending_applications()
     return {"items": items, "total": len(items), "due": sum(1 for i in items if i["due"])}
 
 
 @router.post("/admin/document-reminders/run")
 async def admin_run_reminders(
-    request: Request, payload: Optional[dict] = None, admin=Depends(require_admin)
+    request: Request, payload: Optional[dict] = None, admin: dict = Depends(require_admin)
 ):
     body = payload or {}
     origin = _resolve_origin(body.get("origin_url"), request)
@@ -787,35 +805,59 @@ GUIDE_TEXT_FIELDS = ("h1", "seo_title", "seo_description")
 GUIDE_LIST_FIELDS = ("intro", "who_for", "highlights", "tips", "keywords")
 
 
-def _clean_guide_payload(payload: dict) -> dict:
-    """Admin panelinden gelen rehber override verisini normalize eder."""
-    data = {}
+def _clean_guide_text_fields(payload: dict) -> dict:
+    """Metin alanlarini kirpar; bos olanlari atar."""
+    out = {}
     for field in GUIDE_TEXT_FIELDS:
         value = payload.get(field)
         if isinstance(value, str) and value.strip():
-            data[field] = value.strip()
+            out[field] = value.strip()
+    return out
+
+
+def _clean_guide_list_fields(payload: dict) -> dict:
+    """Liste alanlarindaki bos elemanlari temizler."""
+    out = {}
     for field in GUIDE_LIST_FIELDS:
         value = payload.get(field)
-        if isinstance(value, list):
-            items = [str(v).strip() for v in value if str(v).strip()]
-            if items:
-                data[field] = items
+        if not isinstance(value, list):
+            continue
+        items = [str(v).strip() for v in value if str(v).strip()]
+        if items:
+            out[field] = items
+    return out
+
+
+def _clean_guide_faqs(payload: dict) -> dict:
+    """Soru-cevap listesini normalize eder; eksik kayitlari atar."""
     faqs = payload.get("faqs")
-    if isinstance(faqs, list):
-        cleaned = [
-            {"q": str(f.get("q", "")).strip(), "a": str(f.get("a", "")).strip()}
-            for f in faqs
-            if isinstance(f, dict) and str(f.get("q", "")).strip() and str(f.get("a", "")).strip()
-        ]
-        if cleaned:
-            data["faqs"] = cleaned
+    if not isinstance(faqs, list):
+        return {}
+    cleaned = []
+    for faq in faqs:
+        if not isinstance(faq, dict):
+            continue
+        question = str(faq.get("q", "")).strip()
+        answer = str(faq.get("a", "")).strip()
+        if question and answer:
+            cleaned.append({"q": question, "a": answer})
+    return {"faqs": cleaned} if cleaned else {}
+
+
+def _clean_guide_payload(payload: dict) -> dict:
+    """Admin panelinden gelen rehber override verisini normalize eder."""
+    data = {
+        **_clean_guide_text_fields(payload),
+        **_clean_guide_list_fields(payload),
+        **_clean_guide_faqs(payload),
+    }
     if not data:
         raise HTTPException(400, "Kaydedilecek gecerli rehber alani yok.")
     return data
 
 
 @router.get("/admin/visa-guides")
-async def admin_list_visa_guides(admin=Depends(require_admin)):
+async def admin_list_visa_guides(admin: dict = Depends(require_admin)) -> dict:
     docs = await visa_types_col.find({}).to_list(100)
     overrides = {d.get("slug"): bool(d.get("guide")) for d in docs}
     items = []
@@ -825,7 +867,7 @@ async def admin_list_visa_guides(admin=Depends(require_admin)):
 
 
 @router.get("/admin/visa-guides/{slug}")
-async def admin_get_visa_guide(slug: str, admin=Depends(require_admin)):
+async def admin_get_visa_guide(slug: str, admin: dict = Depends(require_admin)) -> dict:
     doc = await visa_types_col.find_one({"slug": slug})
     visa_override = serialize_doc(doc) if doc else None
     guide_override = (visa_override or {}).pop("guide", None) if visa_override else None
@@ -843,7 +885,7 @@ async def admin_get_visa_guide(slug: str, admin=Depends(require_admin)):
 
 
 @router.put("/admin/visa-guides/{slug}")
-async def admin_update_visa_guide(slug: str, payload: dict, admin=Depends(require_admin)):
+async def admin_update_visa_guide(slug: str, payload: dict, admin: dict = Depends(require_admin)):
     if not build_guide(slug):
         raise HTTPException(404, "Vize rehberi bulunamadi.")
     data = _clean_guide_payload(payload)
@@ -857,7 +899,7 @@ async def admin_update_visa_guide(slug: str, payload: dict, admin=Depends(requir
 
 
 @router.delete("/admin/visa-guides/{slug}")
-async def admin_reset_visa_guide(slug: str, admin=Depends(require_admin)):
+async def admin_reset_visa_guide(slug: str, admin: dict = Depends(require_admin)):
     if not build_guide(slug):
         raise HTTPException(404, "Vize rehberi bulunamadi.")
     await visa_types_col.update_one(
@@ -868,12 +910,12 @@ async def admin_reset_visa_guide(slug: str, admin=Depends(require_admin)):
 
 # ----------------------------------------------------------------- kur (USD/TRY)
 @router.get("/admin/fx")
-async def admin_get_fx(refresh: bool = False, admin=Depends(require_admin)):
+async def admin_get_fx(refresh: bool = False, admin: dict = Depends(require_admin)):
     return await get_fx(force_refresh=refresh)
 
 
 @router.put("/admin/fx")
-async def admin_update_fx(payload: dict, admin=Depends(require_admin)):
+async def admin_update_fx(payload: dict, admin: dict = Depends(require_admin)):
     manual = payload.get("manual_rate")
     margin = payload.get("margin_pct")
     try:
@@ -883,7 +925,7 @@ async def admin_update_fx(payload: dict, admin=Depends(require_admin)):
 
 
 @router.get("/admin/login-codes")
-async def admin_login_codes(email: Optional[str] = None, admin=Depends(require_admin)):
+async def admin_login_codes(email: Optional[str] = None, admin: dict = Depends(require_admin)) -> dict:
     """E-posta gonderimi yapilandirilmadan once destek amacli giris kodu goruntuleme."""
     query = {"email": email.strip().lower()} if email else {}
     docs = await login_codes_col.find(query).sort("created_at", -1).limit(20).to_list(20)
@@ -902,14 +944,14 @@ async def admin_login_codes(email: Optional[str] = None, admin=Depends(require_a
 
 # --------------------------------------------------- taslak (sepeti kurtarma)
 @router.get("/admin/draft-reminders/pending")
-async def admin_pending_draft_reminders(admin=Depends(require_admin)):
+async def admin_pending_draft_reminders(admin: dict = Depends(require_admin)) -> dict:
     items = await pending_drafts()
     return {"items": items, "total": len(items), "due": sum(1 for i in items if i["due"])}
 
 
 @router.post("/admin/draft-reminders/run")
 async def admin_run_draft_reminders(
-    request: Request, payload: Optional[dict] = None, admin=Depends(require_admin)
+    request: Request, payload: Optional[dict] = None, admin: dict = Depends(require_admin)
 ):
     body = payload or {}
     origin = _resolve_origin(body.get("origin_url"), request)
@@ -918,13 +960,13 @@ async def admin_run_draft_reminders(
 
 # ------------------------------------------------ magaza: urunler ve siparisler
 @router.get("/admin/products")
-async def admin_products(admin=Depends(require_admin)):
+async def admin_products(admin: dict = Depends(require_admin)) -> dict:
     items = await product_list(include_inactive=True)
     return {"items": items}
 
 
 @router.patch("/admin/products/{product_id}")
-async def admin_update_product(product_id: str, payload: dict, admin=Depends(require_admin)):
+async def admin_update_product(product_id: str, payload: dict, admin: dict = Depends(require_admin)):
     allowed = {"price_usd", "name", "summary", "active", "popular", "data_amount", "coverage", "validity_days"}
     update = {k: v for k, v in payload.items() if k in allowed}
     if not update:
@@ -941,14 +983,14 @@ async def admin_update_product(product_id: str, payload: dict, admin=Depends(req
 
 
 @router.get("/admin/orders")
-async def admin_orders(status: Optional[str] = None, admin=Depends(require_admin)):
+async def admin_orders(status: Optional[str] = None, admin: dict = Depends(require_admin)) -> dict:
     query = {"status": status} if status else {}
     docs = await orders_col.find(query).sort("created_at", -1).to_list(200)
     return {"items": serialize_doc(docs), "total": len(docs)}
 
 
 @router.get("/admin/orders/{order_id}")
-async def admin_order_detail(order_id: str, admin=Depends(require_admin)):
+async def admin_order_detail(order_id: str, admin: dict = Depends(require_admin)):
     doc = await orders_col.find_one({"id": order_id})
     if not doc:
         raise HTTPException(404, "Siparis bulunamadi.")
@@ -956,7 +998,7 @@ async def admin_order_detail(order_id: str, admin=Depends(require_admin)):
 
 
 @router.patch("/admin/orders/{order_id}")
-async def admin_update_order(order_id: str, payload: dict, admin=Depends(require_admin)):
+async def admin_update_order(order_id: str, payload: dict, admin: dict = Depends(require_admin)):
     doc = await orders_col.find_one({"id": order_id})
     if not doc:
         raise HTTPException(404, "Siparis bulunamadi.")
@@ -978,7 +1020,7 @@ async def admin_update_order(order_id: str, payload: dict, admin=Depends(require
 
 
 @router.post("/admin/orders/{order_id}/deliver")
-async def admin_deliver_order(order_id: str, payload: dict, admin=Depends(require_admin)):
+async def admin_deliver_order(order_id: str, payload: dict, admin: dict = Depends(require_admin)) -> dict:
     """eSIM QR kodu / police PDF'ini musteriye e-posta ile gonderir."""
     doc = await orders_col.find_one({"id": order_id})
     if not doc:
@@ -1030,11 +1072,11 @@ async def admin_deliver_order(order_id: str, payload: dict, admin=Depends(requir
 # ------------------------------------------------- on degerlendirme kayitlari
 @router.get("/admin/pre-evaluations")
 async def admin_pre_evaluations(
-    admin=Depends(require_admin),
+    admin: dict = Depends(require_admin),
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),
     only_leads: bool = Query(False),
-):
+) -> dict:
     query = {"has_contact": True} if only_leads else {}
     total = await pre_evaluations_col.count_documents(query)
     leads = await pre_evaluations_col.count_documents({"has_contact": True})

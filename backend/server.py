@@ -28,7 +28,7 @@ logging.basicConfig(
 logger = logging.getLogger("dubaivize")
 
 
-async def seed_visa_types():
+async def seed_visa_types() -> None:
     """Upsert catalogue: content fields are always refreshed, while price/active/\n    popular are preserved once an admin has edited them."""
     known_ids = []
     for vt in VISA_TYPES:
@@ -65,7 +65,7 @@ async def seed_visa_types():
     logger.info("visa types upserted (%d active)", len(known_ids))
 
 
-async def seed_products():
+async def seed_products() -> None:
     """eSIM ve sigorta urunlerini bir kez olusturur; fiyatlar admin tarafindan yonetilir."""
     from routes_store import DEFAULT_PRODUCTS
 
@@ -84,7 +84,7 @@ async def seed_products():
     logger.info("store products seeded (%d)", len(DEFAULT_PRODUCTS))
 
 
-async def backfill_saved_travelers():
+async def backfill_saved_travelers() -> None:
     """Mevcut basvurulardaki yolculari bir kez aile profiline aktarir."""
     flag = await settings_col.find_one({"key": "saved_travelers_backfilled"})
     if flag:
@@ -106,7 +106,7 @@ async def backfill_saved_travelers():
     logger.info("saved travelers backfilled (%d)", total)
 
 
-async def migrate_legacy_applications():
+async def migrate_legacy_applications() -> None:
     """Convert single-applicant applications (v1 schema) to the multi-traveller schema."""
     cursor = applications_col.find({"travelers": {"$exists": False}, "applicant": {"$exists": True}})
     migrated = 0
@@ -158,7 +158,7 @@ async def migrate_legacy_applications():
         logger.info("migrated %d legacy applications to multi-traveller schema", migrated)
 
 
-async def seed_content_collections():
+async def seed_content_collections() -> None:
     """Blog yazilari, musteri yorumlari ve puan ozetini ilk kurulumda tohumlar."""
     if await articles_col.count_documents({}) == 0:
         now = datetime.now(timezone.utc)
@@ -260,12 +260,12 @@ api_router = APIRouter(prefix="/api")
 
 
 @api_router.get("/")
-async def root():
+async def root() -> dict:
     return {"service": "VizeAtlas Dubai API", "status": "ok"}
 
 
 @api_router.get("/health")
-async def health():
+async def health() -> dict:
     return {
         "status": "ok",
         "email_configured": bool((os.environ.get("RESEND_API_KEY") or "").strip()),

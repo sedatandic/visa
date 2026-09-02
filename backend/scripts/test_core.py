@@ -29,7 +29,7 @@ load_dotenv(ROOT / ".env")
 RESULTS = []
 
 
-def rec(name, ok, detail=""):
+def rec(name, ok, detail="") -> None:
     RESULTS.append((name, ok, detail))
     print(f"[{'PASS' if ok else 'FAIL'}] {name} :: {detail}")
 
@@ -300,7 +300,7 @@ def test_stripe_status():
 
 
 # ---------------------------------------------------------------- 4. EMAIL
-async def send_email_safe(to, subject, html):
+async def send_email_safe(to, subject, html) -> dict:
     """Never raises. Returns dict with status: sent | skipped | error."""
     api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
     sender = os.environ.get("SENDER_EMAIL") or "onboarding@resend.dev"
@@ -342,7 +342,7 @@ def test_email():
         return False
 
 
-def main():
+def main() -> None:
     print("=" * 70)
     print("DUBAI VISA APP - CORE POC")
     print("=" * 70)

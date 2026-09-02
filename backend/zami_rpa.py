@@ -92,11 +92,15 @@ async def _launch():
 
     _ensure_browser_path()
     pw = await async_playwright().start()
+    browser = None
     try:
         browser = await _launch_browser(pw)
     except Exception:
         await pw.stop()
         raise
+    if browser is None:  # pragma: no cover - defensive
+        await pw.stop()
+        raise RuntimeError("Tarayici baslatilamadi.")
     context = await browser.new_context(viewport={"width": 1400, "height": 900}, locale="en-US")
     page = await context.new_page()
     return pw, browser, context, page
@@ -107,11 +111,15 @@ async def _launch_with_state(state: dict):
 
     _ensure_browser_path()
     pw = await async_playwright().start()
+    browser = None
     try:
         browser = await _launch_browser(pw)
     except Exception:
         await pw.stop()
         raise
+    if browser is None:  # pragma: no cover - defensive
+        await pw.stop()
+        raise RuntimeError("Tarayici baslatilamadi.")
     context = await browser.new_context(
         storage_state=state, viewport={"width": 1400, "height": 1000}, locale="en-US"
     )

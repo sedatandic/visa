@@ -86,7 +86,7 @@ class StatusCheckIn(BaseModel):
 
 # ------------------------------------------------------------ admin: ayarlar
 @router.get("/admin/zami/config")
-async def zami_config(admin=Depends(require_admin)):
+async def zami_config(admin: dict = Depends(require_admin)) -> dict:
     captured = await zami.get_capture()
     return {
         "settings": await zami.get_settings(),
@@ -112,19 +112,19 @@ async def zami_config(admin=Depends(require_admin)):
 
 
 @router.put("/admin/zami/settings")
-async def zami_save_settings(payload: SettingsIn, admin=Depends(require_admin)):
+async def zami_save_settings(payload: SettingsIn, admin: dict = Depends(require_admin)) -> dict:
     return {"settings": await zami.save_settings(payload.model_dump(exclude_none=True))}
 
 
 @router.put("/admin/zami/mapping")
-async def zami_save_mapping(payload: MappingIn, admin=Depends(require_admin)):
+async def zami_save_mapping(payload: MappingIn, admin: dict = Depends(require_admin)) -> dict:
     mapping = await zami.save_mapping(payload.model_dump())
     await zami.log_event(None, None, "mapping_saved", "Alan eslemesi guncellendi", actor=admin.get("sub", ""))
     return {"mapping": mapping}
 
 
 @router.post("/admin/zami/parse-form")
-async def zami_parse_form(payload: ParseHtmlIn, admin=Depends(require_admin)):
+async def zami_parse_form(payload: ParseHtmlIn, admin: dict = Depends(require_admin)) -> dict:
     fields = zami.parse_form_fields(payload.html)
     if not fields:
         raise HTTPException(400, "HTML icinde doldurulabilir form alani bulunamadi.")
@@ -133,7 +133,7 @@ async def zami_parse_form(payload: ParseHtmlIn, admin=Depends(require_admin)):
 
 # ------------------------------------------------- admin: bookmarklet handoff
 @router.post("/admin/zami/handoff/{application_id}")
-async def zami_handoff(application_id: str, request: Request, admin=Depends(require_admin)):
+async def zami_handoff(application_id: str, request: Request, admin: dict = Depends(require_admin)):
     app_doc = await applications_col.find_one({"id": application_id})
     if not app_doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
@@ -144,7 +144,7 @@ async def zami_handoff(application_id: str, request: Request, admin=Depends(requ
 
 
 @router.get("/admin/zami/payload/{application_id}")
-async def zami_payload(application_id: str, request: Request, admin=Depends(require_admin)):
+async def zami_payload(application_id: str, request: Request, admin: dict = Depends(require_admin)):
     app_doc = await applications_col.find_one({"id": application_id})
     if not app_doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
@@ -152,7 +152,7 @@ async def zami_payload(application_id: str, request: Request, admin=Depends(requ
 
 
 @router.get("/admin/zami/logs")
-async def zami_log_list(application_id: Optional[str] = None, admin=Depends(require_admin)):
+async def zami_log_list(application_id: Optional[str] = None, admin: dict = Depends(require_admin)) -> dict:
     query = {"application_id": application_id} if application_id else {}
     docs = await zami_logs_col.find(query).sort("created_at", -1).limit(100).to_list(100)
     return {"items": serialize_doc(docs)}
@@ -169,12 +169,12 @@ class CaptureIn(BaseModel):
 
 
 @router.post("/admin/zami/capture-token")
-async def zami_capture_token(request: Request, admin=Depends(require_admin)):
+async def zami_capture_token(request: Request, admin: dict = Depends(require_admin)):
     return await zami.create_capture_token(admin.get("sub", ""), _base_url(request))
 
 
 @router.post("/admin/zami/apply-suggestions")
-async def zami_apply_suggestions(admin=Depends(require_admin)):
+async def zami_apply_suggestions(admin: dict = Depends(require_admin)) -> dict:
     """Yakalanan alanlardan uretilen onerileri mevcut eslemeye uygular."""
     captured = await zami.get_capture()
     suggestions = zami.suggest_mapping(captured)
@@ -197,7 +197,7 @@ async def zami_apply_suggestions(admin=Depends(require_admin)):
 
 
 @router.post("/zami/capture/{token}")
-async def zami_capture(token: str, payload: CaptureIn):
+async def zami_capture(token: str, payload: CaptureIn) -> dict:
     """Zami sayfasindan gonderilen alan bilgilerini kaydeder (token korumali)."""
     doc = await zami.consume_handoff(token)
     if not doc or doc.get("kind") != "capture":
@@ -346,7 +346,7 @@ CAPTURE_JS = r"""
 
 
 @router.get("/admin/zami/readiness")
-async def zami_readiness(admin=Depends(require_admin)):
+async def zami_readiness(admin: dict = Depends(require_admin)) -> dict:
     """Ilk gercek aktarim oncesi hazirlik kontrolu."""
     mapping = await zami.get_mapping()
     session = await zami_rpa.session_status()
@@ -447,21 +447,21 @@ class WhatsAppSendIn(BaseModel):
 
 
 @router.get("/admin/whatsapp/settings")
-async def whatsapp_get_settings(admin=Depends(require_admin)):
+async def whatsapp_get_settings(admin: dict = Depends(require_admin)) -> dict:
     import whatsapp
 
     return {"settings": await whatsapp.get_settings()}
 
 
 @router.put("/admin/whatsapp/settings")
-async def whatsapp_save_settings(payload: WhatsAppSettingsIn, admin=Depends(require_admin)):
+async def whatsapp_save_settings(payload: WhatsAppSettingsIn, admin: dict = Depends(require_admin)) -> dict:
     import whatsapp
 
     return {"settings": await whatsapp.save_settings(payload.model_dump(exclude_none=True))}
 
 
 @router.post("/admin/whatsapp/send/{application_id}")
-async def whatsapp_send(application_id: str, payload: WhatsAppSendIn, request: Request, admin=Depends(require_admin)):
+async def whatsapp_send(application_id: str, payload: WhatsAppSendIn, request: Request, admin: dict = Depends(require_admin)):
     import whatsapp
 
     app_doc = await applications_col.find_one({"id": application_id})
@@ -472,7 +472,7 @@ async def whatsapp_send(application_id: str, payload: WhatsAppSendIn, request: R
 
 
 @router.get("/admin/whatsapp/logs")
-async def whatsapp_logs(application_id: Optional[str] = None, admin=Depends(require_admin)):
+async def whatsapp_logs(application_id: Optional[str] = None, admin: dict = Depends(require_admin)) -> dict:
     import whatsapp
 
     query = {"application_id": application_id} if application_id else {}
@@ -482,7 +482,7 @@ async def whatsapp_logs(application_id: Optional[str] = None, admin=Depends(requ
 
 # ------------------------------------------------- toplu aktarim & durum takibi
 @router.get("/admin/zami/candidates")
-async def zami_candidates(admin=Depends(require_admin)):
+async def zami_candidates(admin: dict = Depends(require_admin)) -> dict:
     """Zami'ye aktarilmaya uygun basvurular (odemesi alinmis / inceleme asamasinda)."""
     query = {"status": {"$in": ["submitted", "payment_pending", "documents_pending", "reviewing"]}}
     docs = await applications_col.find(query).sort("created_at", -1).limit(100).to_list(100)
@@ -509,7 +509,7 @@ async def zami_candidates(admin=Depends(require_admin)):
 
 
 @router.post("/admin/zami/bulk-transfer")
-async def zami_bulk_transfer(payload: BulkTransferIn, request: Request, admin=Depends(require_admin)):
+async def zami_bulk_transfer(payload: BulkTransferIn, request: Request, admin: dict = Depends(require_admin)) -> dict:
     """Secilen basvurulari sirayla Zami formuna doldurur (dry_run kapaliysa gonderir)."""
     base = _base_url(request)
     results = []
@@ -554,7 +554,7 @@ async def zami_bulk_transfer(payload: BulkTransferIn, request: Request, admin=De
 
 
 @router.put("/admin/zami/reference/{application_id}")
-async def zami_set_reference(application_id: str, payload: ZamiReferenceIn, admin=Depends(require_admin)):
+async def zami_set_reference(application_id: str, payload: ZamiReferenceIn, admin: dict = Depends(require_admin)) -> dict:
     res = await applications_col.update_one(
         {"id": application_id},
         {"$set": {"zami_reference": payload.zami_reference.strip(), "updated_at": datetime.now(timezone.utc)}},
@@ -565,7 +565,7 @@ async def zami_set_reference(application_id: str, payload: ZamiReferenceIn, admi
 
 
 @router.post("/admin/zami/check-status/{application_id}")
-async def zami_check_status(application_id: str, payload: StatusCheckIn, admin=Depends(require_admin)):
+async def zami_check_status(application_id: str, payload: StatusCheckIn, admin: dict = Depends(require_admin)):
     app_doc = await applications_col.find_one({"id": application_id})
     if not app_doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
@@ -577,7 +577,7 @@ async def zami_check_status(application_id: str, payload: StatusCheckIn, admin=D
 
 
 @router.post("/admin/zami/check-status-all")
-async def zami_check_status_all(admin=Depends(require_admin)):
+async def zami_check_status_all(admin: dict = Depends(require_admin)):
     from zami_status import sweep_statuses
 
     return await sweep_statuses(actor=admin.get("sub", ""), force=True)
@@ -592,29 +592,29 @@ async def apply_status_result(app_doc: dict, result: dict, notify: bool = True, 
 
 # ------------------------------------------------------------- admin: RPA (B)
 @router.post("/admin/zami/session/start")
-async def zami_session_start(admin=Depends(require_admin)):
+async def zami_session_start(admin: dict = Depends(require_admin)):
     return await zami_rpa.start_session(actor=admin.get("sub", ""))
 
 
 @router.post("/admin/zami/session/captcha")
-async def zami_session_captcha(payload: LoginIn, admin=Depends(require_admin)):
+async def zami_session_captcha(payload: LoginIn, admin: dict = Depends(require_admin)):
     return await zami_rpa.refresh_captcha(payload.session_id)
 
 
 @router.post("/admin/zami/session/login")
-async def zami_session_login(payload: LoginIn, admin=Depends(require_admin)):
+async def zami_session_login(payload: LoginIn, admin: dict = Depends(require_admin)):
     return await zami_rpa.submit_login(
         payload.session_id, payload.captcha or "", payload.otp or "", actor=admin.get("sub", "")
     )
 
 
 @router.delete("/admin/zami/session")
-async def zami_session_clear(admin=Depends(require_admin)):
+async def zami_session_clear(admin: dict = Depends(require_admin)):
     return await zami_rpa.clear_session()
 
 
 @router.post("/admin/zami/transfer/{application_id}")
-async def zami_transfer(application_id: str, payload: TransferIn, request: Request, admin=Depends(require_admin)):
+async def zami_transfer(application_id: str, payload: TransferIn, request: Request, admin: dict = Depends(require_admin)):
     app_doc = await applications_col.find_one({"id": application_id})
     if not app_doc:
         raise HTTPException(404, "Basvuru bulunamadi.")

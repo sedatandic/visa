@@ -228,7 +228,7 @@ async def run_reminder_sweep(origin: str, force: bool = False) -> dict:
     return {"sent": sent, "skipped": skipped, "details": details, "ran_at": now.isoformat()}
 
 
-async def reminder_loop(origin: str):
+async def reminder_loop(origin: str) -> None:
     """Arka planda periyodik hatirlatma dongusu."""
     await asyncio.sleep(60)  # servis acilisinda hemen calismasin
     while True:

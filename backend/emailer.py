@@ -119,34 +119,53 @@ def _travelers_table(app_doc: dict) -> str:
     )
 
 
+def _discount_row(title: str, amount: float, rate: float, currency: str) -> str:
+    """Indirim satiri (yuzde etiketi + negatif tutar)."""
+    pct = int(round((rate or 0) * 100))
+    return _row(f"{title} (%{pct})", "- " + money(amount, currency))
+
+
+def _store_item_label(item: dict) -> str:
+    """Ek urun satirinin etiketi; gecerlilik tarihleri varsa ekler."""
+    label = f"{item['name']} x{item['quantity']}"
+    if not item.get("starts_on"):
+        return label
+    label += f" ({_tr_date(item['starts_on'])}"
+    label += f" - {_tr_date(item['ends_on'])})" if item.get("ends_on") else " itibaren)"
+    return label
+
+
 def _pricing_block(app_doc: dict) -> str:
     p = app_doc.get("pricing") or {}
     if not p:
         return _row("Tutar", money(app_doc.get("price", 0), app_doc.get("currency", "TRY")))
-    lines = [_row("Vize bedelleri", money(p.get("subtotal", 0), p.get("currency", "TRY")))]
+    currency = p.get("currency", "TRY")
+
+    lines = [_row("Vize bedelleri", money(p.get("subtotal", 0), currency))]
     if p.get("family_discount"):
         lines.append(
-            _row(
-                f"Aile indirimi (%{int(round(p.get('family_discount_rate', 0) * 100))})",
-                "- " + money(p["family_discount"], p.get("currency", "TRY")),
-            )
+            _discount_row("Aile indirimi", p["family_discount"], p.get("family_discount_rate", 0), currency)
         )
-    for a in p.get("addons") or []:
-        lines.append(_row(f"{a['name']} x{a['quantity']}", money(a["total"], p.get("currency", "TRY"))))
-    for s in p.get("store_items") or []:
-        label = f"{s['name']} x{s['quantity']}"
-        if s.get("starts_on"):
-            label += f" ({_tr_date(s['starts_on'])}"
-            label += f" - {_tr_date(s['ends_on'])})" if s.get("ends_on") else " itibaren)"
-        lines.append(_row(label, money(s["total"], p.get("currency", "TRY"))))
+    lines += [
+        _row(f"{a['name']} x{a['quantity']}", money(a["total"], currency))
+        for a in p.get("addons") or []
+    ]
+    lines += [
+        _row(_store_item_label(s), money(s["total"], currency))
+        for s in p.get("store_items") or []
+    ]
     if p.get("bundle_discount"):
         lines.append(
-            _row(
-                f"{p.get('bundle_discount_title') or 'Seyahat paketi indirimi'} (%{int(round(p.get('bundle_discount_rate', 0) * 100))})",
-                "- " + money(p["bundle_discount"], p.get("currency", "TRY")),
+            _discount_row(
+                p.get("bundle_discount_title") or "Seyahat paketi indirimi",
+                p["bundle_discount"],
+                p.get("bundle_discount_rate", 0),
+                currency,
             )
         )
-    lines.append(_row("<strong>Toplam</strong>", "<strong>" + money(p.get("total", 0), p.get("currency", "TRY")) + "</strong>"))
+    lines.append(
+        _row("<strong>Toplam</strong>", "<strong>" + money(p.get("total", 0), currency) + "</strong>")
+    )
     return "".join(lines)
 
 

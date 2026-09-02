@@ -1,26 +1,30 @@
 [
   {
-    "content": "backend/pre_eval.py skorlama motoru",
+    "content": "Kritik: undefined variable riskleri",
     "status": "completed"
   },
   {
-    "content": "POST /api/pre-evaluation + pre_evaluations koleksiyonu",
+    "content": "Literal identity karşılaştırması düzeltmesi",
     "status": "completed"
   },
   {
-    "content": "GET /api/admin/pre-evaluations lead listesi",
+    "content": "Karmaşıklık: routes_public refactor",
     "status": "completed"
   },
   {
-    "content": "frontend PreEvaluation.jsx wizard + Home entegrasyonu + /on-degerlendirme route",
+    "content": "Karmaşıklık: routes_admin refactor",
     "status": "completed"
   },
   {
-    "content": "AdminPreEval.jsx + admin menü",
+    "content": "Karmaşıklık: routes_payments + emailer refactor",
     "status": "completed"
   },
   {
-    "content": "Test (testing_agent: backend + frontend)",
-    "status": "in_progress"
+    "content": "Type hints: db/server/routes_zami/routes_admin ve diğerleri",
+    "status": "completed"
+  },
+  {
+    "content": "Doğrulama: import/compile + testing_agent regresyon (iteration_17)",
+    "status": "completed"
   }
 ]

@@ -92,14 +92,23 @@ STEP_DEFS = [
 ]
 
 
-def build_customer_timeline(doc: dict, missing: list | None = None) -> dict:
-    """Musteriye gosterilecek adim adim durum akisini uretir."""
-    history = {}
+def _iso_or_none(value):
+    """Datetime/date degerini ISO string'e cevirir; digerlerini oldugu gibi dondurur."""
+    return value.isoformat() if hasattr(value, "isoformat") else value
+
+
+def _first_status_dates(doc: dict) -> dict:
+    """status_history icindeki her durum icin ilk gerceklesme zamanini dondurur."""
+    history: dict = {}
     for entry in doc.get("status_history") or []:
         status = entry.get("status")
-        at = entry.get("at")
         if status and status not in history:
-            history[status] = at
+            history[status] = entry.get("at")
+    return history
+
+
+def _timeline_progress_index(doc: dict, missing: list | None) -> int:
+    """Tamamlanan son adimin indeksi (0=alindi, 1=odeme, 2=belgeler, 3=islemde, 4=sonuc)."""
     status = doc.get("status") or "submitted"
     payment = doc.get("payment") or {}
     paid = payment.get("status") == "paid"
@@ -107,7 +116,6 @@ def build_customer_timeline(doc: dict, missing: list | None = None) -> dict:
     in_process = status in {"reviewing", "approved", "rejected"} or bool(doc.get("zami_transferred_at"))
     final = status in {"approved", "rejected", "cancelled"}
 
-    # tamamlanan son adimin indeksi (0=alindi, 1=odeme, 2=belgeler, 3=islemde, 4=sonuc)
     done_upto = 0
     if paid:
         done_upto = 1
@@ -117,8 +125,14 @@ def build_customer_timeline(doc: dict, missing: list | None = None) -> dict:
         done_upto = max(done_upto, 3)
     if final:
         done_upto = 4
+    return done_upto
 
-    step_dates = {
+
+def _timeline_step_dates(doc: dict) -> dict:
+    """Her adim icin gosterilecek tarihleri toplar."""
+    history = _first_status_dates(doc)
+    payment = doc.get("payment") or {}
+    return {
         "received": doc.get("created_at"),
         "payment": payment.get("paid_at"),
         "documents": None,
@@ -126,35 +140,39 @@ def build_customer_timeline(doc: dict, missing: list | None = None) -> dict:
         "result": history.get("approved") or history.get("rejected") or history.get("cancelled"),
     }
 
-    steps = []
-    for idx, (key, title, description) in enumerate(STEP_DEFS):
-        if idx <= done_upto:
-            state = "done"
-        elif idx == done_upto + 1:
-            state = "current"
-        else:
-            state = "pending"
-        at = step_dates.get(key)
-        steps.append(
-            {
-                "key": key,
-                "title": title,
-                "description": description,
-                "state": state,
-                "at": at.isoformat() if hasattr(at, "isoformat") else at,
-                "result": status if key == "result" and final else None,
-            }
-        )
+
+def _timeline_step_state(idx: int, done_upto: int) -> str:
+    if idx <= done_upto:
+        return "done"
+    if idx == done_upto + 1:
+        return "current"
+    return "pending"
+
+
+def build_customer_timeline(doc: dict, missing: list | None = None) -> dict:
+    """Musteriye gosterilecek adim adim durum akisini uretir."""
+    status = doc.get("status") or "submitted"
+    final = status in {"approved", "rejected", "cancelled"}
+    done_upto = _timeline_progress_index(doc, missing)
+    step_dates = _timeline_step_dates(doc)
+
+    steps = [
+        {
+            "key": key,
+            "title": title,
+            "description": description,
+            "state": _timeline_step_state(idx, done_upto),
+            "at": _iso_or_none(step_dates.get(key)),
+            "result": status if key == "result" and final else None,
+        }
+        for idx, (key, title, description) in enumerate(STEP_DEFS)
+    ]
 
     return {
         "steps": steps,
         "current_status": status,
         "is_final": final,
-        "last_portal_check": (
-            doc.get("zami_status_checked_at").isoformat()
-            if hasattr(doc.get("zami_status_checked_at"), "isoformat")
-            else doc.get("zami_status_checked_at")
-        ),
+        "last_portal_check": _iso_or_none(doc.get("zami_status_checked_at")),
         "portal_tracked": bool(doc.get("zami_transferred_at") or doc.get("zami_reference")),
     }
 
@@ -188,7 +206,7 @@ async def get_visa_types():
 
 
 @router.get("/visa-guides")
-async def list_visa_guides():
+async def list_visa_guides() -> dict:
     """Vize rehberi (SEO) sayfalarinin listesi. Fiyatlar DB'den guncellenir."""
     docs = await visa_types_col.find({"active": True}).to_list(100)
     by_slug = {d.get("slug"): d for d in docs}
@@ -215,8 +233,11 @@ async def list_visa_guides():
 @router.get("/visa-guides/{slug}")
 async def get_visa_guide(slug: str):
     doc = await visa_types_col.find_one({"slug": slug})
-    if doc is not None and doc.get("active") is False:
-        raise HTTPException(404, "Vize rehberi bulunamadi.")
+    if doc is not None:
+        active_flag = doc.get("active", True)
+        # Yalnizca acik sekilde pasife alinmis (falsy ama None olmayan) kayitlari gizle.
+        if active_flag is not None and not active_flag:
+            raise HTTPException(404, "Vize rehberi bulunamadi.")
     visa_override = serialize_doc(doc) if doc else None
     guide_override = (visa_override or {}).pop("guide", None) if visa_override else None
     guide = build_guide(slug, visa_override=visa_override, guide_override=guide_override)
@@ -230,7 +251,7 @@ async def get_visa_guide(slug: str):
 
 
 @router.get("/fx")
-async def public_fx():
+async def public_fx() -> dict:
     """Musteriye gosterilen guncel USD/TRY kuru (seffaflik icin)."""
     fx = await get_fx()
     return {
@@ -242,7 +263,7 @@ async def public_fx():
 
 
 @router.get("/content/site")
-async def get_site_content():
+async def get_site_content() -> dict:
     testimonials = await testimonials_col.find({"published": True}).sort("order", 1).to_list(50)
     summary_doc = await settings_col.find_one({"key": "review_summary"})
     article_docs = (
@@ -296,7 +317,7 @@ async def get_site_content():
 
 
 @router.get("/content/legal")
-async def get_legal_content():
+async def get_legal_content() -> dict:
     return {"refund_terms": REFUND_TERMS, "service_terms": SERVICE_TERMS}
 
 
@@ -309,7 +330,7 @@ async def list_articles(limit: int = 50):
 
 
 @router.get("/articles/{slug}")
-async def get_article(slug: str):
+async def get_article(slug: str) -> dict:
     doc = await articles_col.find_one({"slug": slug, "published": True})
     if not doc:
         fallback = next((a for a in ARTICLES if a["slug"] == slug), None)
@@ -342,6 +363,39 @@ def trip_day_count(arrival: str | None, departure: str | None) -> int | None:
     return (end - start).days + 1
 
 
+def _store_line_validity(start: date | None, validity_days: int, trip_days: int | None) -> dict:
+    """Ek urunun gecerlilik penceresini ve seyahati kapsayip kapsamadigini hesaplar."""
+    starts_on = start.isoformat() if start else None
+    ends_on = None
+    if start and validity_days > 0:
+        ends_on = (start + timedelta(days=validity_days - 1)).isoformat()
+    covers_trip = None
+    if trip_days and validity_days:
+        covers_trip = trip_days <= validity_days
+    return {
+        "validity_days": validity_days,
+        "starts_on": starts_on,
+        "ends_on": ends_on,
+        "trip_days": trip_days,
+        "covers_trip": covers_trip,
+    }
+
+
+def _store_line(product: dict, quantity: int, validity: dict) -> dict:
+    unit_price = float(product["price"])
+    return {
+        "product_id": product["id"],
+        "kind": product.get("kind", ""),
+        "kind_label": product.get("kind_label", ""),
+        "name": product["name"],
+        "quantity": quantity,
+        "unit_price": unit_price,
+        "unit_price_usd": float(product.get("price_usd") or 0),
+        "total": round(unit_price * quantity, 2),
+        **validity,
+    }
+
+
 async def resolve_store_lines(items, arrival_date: str | None = None, departure_date: str | None = None) -> list:
     """Basvuru icinde secilen eSIM / sigorta urunlerini magaza katalogundan fiyatlar.
 
@@ -354,35 +408,15 @@ async def resolve_store_lines(items, arrival_date: str | None = None, departure_
     catalog = {p["id"]: p for p in await product_list()}
     start = _parse_iso_date(arrival_date)
     trip_days = trip_day_count(arrival_date, departure_date)
+
     lines = []
     for item in items:
         product = catalog.get(item.product_id)
         if not product:
             raise HTTPException(400, "Secilen ek urun bulunamadi veya satista degil.")
         quantity = max(1, min(int(item.quantity), MAX_QTY))
-        unit_price = float(product["price"])
-        validity_days = int(product.get("validity_days") or 0)
-        starts_on = start.isoformat() if start else None
-        ends_on = None
-        if start and validity_days > 0:
-            ends_on = (start + timedelta(days=validity_days - 1)).isoformat()
-        lines.append(
-            {
-                "product_id": product["id"],
-                "kind": product.get("kind", ""),
-                "kind_label": product.get("kind_label", ""),
-                "name": product["name"],
-                "quantity": quantity,
-                "unit_price": unit_price,
-                "unit_price_usd": float(product.get("price_usd") or 0),
-                "total": round(unit_price * quantity, 2),
-                "validity_days": validity_days,
-                "starts_on": starts_on,
-                "ends_on": ends_on,
-                "trip_days": trip_days,
-                "covers_trip": None if (not trip_days or not validity_days) else trip_days <= validity_days,
-            }
-        )
+        validity = _store_line_validity(start, int(product.get("validity_days") or 0), trip_days)
+        lines.append(_store_line(product, quantity, validity))
     return lines
 
 
@@ -408,23 +442,20 @@ async def pricing_quote(payload: QuoteRequest):
 
 
 # ---------------------------------------------------------------- uploads
-@router.post("/uploads")
-async def upload_document(file: UploadFile = File(...), doc_type: str = Form("passport")):
-    filename = file.filename or "dosya"
+def _validate_upload(filename: str, data: bytes) -> str:
+    """Uzanti ve boyut dogrulamasi yapar; gecerli uzantiyi dondurur."""
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if ext not in ALLOWED_EXT:
         raise HTTPException(400, "Sadece JPG, PNG, WEBP veya PDF dosyalari yuklenebilir.")
-    data = await file.read()
     if len(data) == 0:
         raise HTTPException(400, "Dosya bos gorunuyor. Lutfen tekrar deneyin.")
     if len(data) > MAX_FILE_BYTES:
         raise HTTPException(400, "Dosya boyutu en fazla 10 MB olabilir.")
+    return ext
 
-    file_id = str(uuid.uuid4())
-    content_type = MIME_TYPES.get(ext, file.content_type or "application/octet-stream")
-    safe_type = "".join(c for c in doc_type if c.isalnum() or c in "-_") or "other"
-    path = f"{APP_NAME}/uploads/{safe_type}/{file_id}.{ext}"
-    result: dict = {}
+
+def _store_upload(path: str, data: bytes, content_type: str) -> dict:
+    """Dosyayi object storage'a yazar; hatalari kullanici dostu mesaja cevirir."""
     try:
         result = put_object(path, data, content_type)
     except Exception as exc:
@@ -432,8 +463,22 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
         raise HTTPException(
             502, "Dosya yuklenemedi. Lutfen birkac saniye sonra tekrar deneyin."
         ) from exc
-    if not result.get("path"):
+    if not (result or {}).get("path"):
         raise HTTPException(502, "Dosya yuklenemedi. Lutfen tekrar deneyin.")
+    return result
+
+
+@router.post("/uploads")
+async def upload_document(file: UploadFile = File(...), doc_type: str = Form("passport")) -> dict:
+    filename = file.filename or "dosya"
+    data = await file.read()
+    ext = _validate_upload(filename, data)
+
+    file_id = str(uuid.uuid4())
+    content_type = MIME_TYPES.get(ext, file.content_type or "application/octet-stream")
+    safe_type = "".join(c for c in doc_type if c.isalnum() or c in "-_") or "other"
+    path = f"{APP_NAME}/uploads/{safe_type}/{file_id}.{ext}"
+    result = _store_upload(path, data, content_type)
 
     record = {
         "id": file_id,
@@ -457,7 +502,7 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
 
 
 @router.post("/passport/read")
-async def read_passport_document(file_id: str = Form(...)):
+async def read_passport_document(file_id: str = Form(...)) -> dict:
     """Yuklenen pasaport goruntusunu yapay zeka ile okuyup form alanlarini doldurur."""
     record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
     if not record:
@@ -527,28 +572,34 @@ async def get_file(file_id: str, download: int = 0):
 
 
 # ----------------------------------------------------------- applications
-@router.post("/applications")
-async def create_application(payload: ApplicationCreate):
-    extra = payload.extra_documents
-    if not extra.ticket_file_id:
-        raise HTTPException(400, "Donus ucak bileti veya rezervasyon belgesi zorunludur.")
-    if not extra.hotel_file_id:
-        raise HTTPException(400, "Otel/konaklama rezervasyon belgesi zorunludur.")
-    for fid in (extra.ticket_file_id, extra.hotel_file_id):
+async def _ensure_uploads_exist(*file_ids: str | None) -> None:
+    """Verilen upload id'lerinin gercekten var oldugunu dogrular."""
+    for fid in file_ids:
+        if not fid:
+            continue
         exists = await uploads_col.find_one({"id": fid, "is_deleted": False})
         if not exists:
             raise HTTPException(400, "Yuklenen belgeler bulunamadi. Lutfen belgeleri tekrar yukleyin.")
 
-    travelers = []
-    prices = []
-    for t in payload.travelers:
+
+async def _validate_extra_documents(extra) -> None:
+    """Basvuru geneli icin zorunlu bilet/otel belgelerini kontrol eder."""
+    if not extra.ticket_file_id:
+        raise HTTPException(400, "Donus ucak bileti veya rezervasyon belgesi zorunludur.")
+    if not extra.hotel_file_id:
+        raise HTTPException(400, "Otel/konaklama rezervasyon belgesi zorunludur.")
+    await _ensure_uploads_exist(extra.ticket_file_id, extra.hotel_file_id)
+
+
+async def _build_travelers(traveler_inputs) -> tuple[list, list]:
+    """Yolcu girdilerini vize bilgileri ile zenginlestirir; (travelers, prices) dondurur."""
+    travelers: list = []
+    prices: list = []
+    for t in traveler_inputs:
         visa = await get_visa_type(t.visa_type_id)
         if not visa:
             raise HTTPException(400, "Gecersiz vize tipi secildi.")
-        for fid in (t.passport_file_id, t.photo_file_id):
-            exists = await uploads_col.find_one({"id": fid, "is_deleted": False})
-            if not exists:
-                raise HTTPException(400, "Yuklenen belgeler bulunamadi. Lutfen belgeleri tekrar yukleyin.")
+        await _ensure_uploads_exist(t.passport_file_id, t.photo_file_id)
         data = t.model_dump()
         data.update(
             {
@@ -566,25 +617,32 @@ async def create_application(payload: ApplicationCreate):
         )
         travelers.append(data)
         prices.append(float(visa["price"]))
+    return travelers, prices
 
-    store_lines = await resolve_store_lines(
-        payload.store_items,
-        payload.travel.arrival_date,
-        payload.travel.departure_date,
-    )
-    pricing = compute_pricing(
-        prices,
-        payload.addons.model_dump(),
-        addon_prices=await addon_prices_try(),
-        store_lines=store_lines,
-    )
 
+async def _unique_reference_code() -> str:
     reference_code = generate_reference_code()
     while await applications_col.find_one({"reference_code": reference_code}):
         reference_code = generate_reference_code()
+    return reference_code
 
-    now = datetime.now(timezone.utc)
-    doc = {
+
+def _visa_summary_name(travelers: list) -> str:
+    if len(travelers) == 1:
+        return travelers[0]["visa_type_name"]
+    return f"{travelers[0]['visa_short_name']} + {len(travelers) - 1} yolcu"
+
+
+def _build_application_doc(
+    payload: ApplicationCreate,
+    travelers: list,
+    store_lines: list,
+    pricing: dict,
+    reference_code: str,
+    now: datetime,
+) -> dict:
+    """Kaydedilecek basvuru dokumanini olusturur."""
+    return {
         "id": str(uuid.uuid4()),
         "reference_code": reference_code,
         "status": "submitted",
@@ -602,11 +660,7 @@ async def create_application(payload: ApplicationCreate):
         "price": pricing["total"],
         "currency": pricing["currency"],
         "processing_days": "24 saat" if payload.addons.express else travelers[0].get("processing_days", ""),
-        "visa_type_name": (
-            travelers[0]["visa_type_name"]
-            if len(travelers) == 1
-            else f"{travelers[0]['visa_short_name']} + {len(travelers) - 1} yolcu"
-        ),
+        "visa_type_name": _visa_summary_name(travelers),
         "payment": {
             "status": "pending",
             "session_id": None,
@@ -621,29 +675,33 @@ async def create_application(payload: ApplicationCreate):
         "created_at": now,
         "updated_at": now,
     }
-    await applications_col.insert_one(dict(doc))
 
-    # basvuru icinde alinan eSIM / sigorta urunleri icin teslimat siparisi olustur
-    if store_lines:
-        try:
-            from routes_store import create_application_order
 
-            linked = await create_application_order(doc, store_lines)
-            doc["linked_order_id"] = linked["id"]
-            doc["linked_order_reference"] = linked["reference_code"]
-            await applications_col.update_one(
-                {"id": doc["id"]},
-                {
-                    "$set": {
-                        "linked_order_id": linked["id"],
-                        "linked_order_reference": linked["reference_code"],
-                    }
-                },
-            )
-        except Exception as exc:  # pragma: no cover
-            logger.error("linked store order creation failed: %s", exc)
+async def _link_store_order(doc: dict, store_lines: list) -> None:
+    """Basvuru icinde alinan eSIM/sigorta urunleri icin teslimat siparisi olusturur."""
+    if not store_lines:
+        return
+    try:
+        from routes_store import create_application_order
 
-    # aile profili: yolcular bir sonraki basvuruda tek tikla eklenebilsin
+        linked = await create_application_order(doc, store_lines)
+        doc["linked_order_id"] = linked["id"]
+        doc["linked_order_reference"] = linked["reference_code"]
+        await applications_col.update_one(
+            {"id": doc["id"]},
+            {
+                "$set": {
+                    "linked_order_id": linked["id"],
+                    "linked_order_reference": linked["reference_code"],
+                }
+            },
+        )
+    except Exception as exc:  # pragma: no cover
+        logger.error("linked store order creation failed: %s", exc)
+
+
+async def _after_application_created(doc: dict, travelers: list) -> None:
+    """Aile profili guncelleme ve taslak temizligi gibi yan islemler."""
     try:
         from routes_account import upsert_saved_travelers
 
@@ -651,7 +709,6 @@ async def create_application(payload: ApplicationCreate):
     except Exception as exc:  # pragma: no cover
         logger.warning("saved travelers upsert failed: %s", exc)
 
-    # basvuru olustugu icin varsa bekleyen taslaklar temizlenir
     try:
         await drafts_col.delete_many(
             {"email": {"$regex": f"^{re.escape(doc['contact']['email'])}$", "$options": "i"}}
@@ -659,10 +716,15 @@ async def create_application(payload: ApplicationCreate):
     except Exception as exc:  # pragma: no cover
         logger.warning("draft cleanup failed: %s", exc)
 
+
+async def _send_application_emails(doc: dict, traveler_count: int) -> dict:
+    """Basvuru sahibine ve admine bilgilendirme e-postalari gonderir."""
+    reference_code = doc["reference_code"]
+    view = serialize_doc(doc)
     email_result = await send_email(
         doc["contact"]["email"],
         f"Dubai vize basvurunuz alindi - {reference_code}",
-        applicant_received_html(serialize_doc(doc)),
+        applicant_received_html(view),
         kind="application_received",
         meta={"reference_code": reference_code},
     )
@@ -670,11 +732,40 @@ async def create_application(payload: ApplicationCreate):
     if admin_email:
         await send_email(
             admin_email,
-            f"Yeni basvuru: {reference_code} ({len(travelers)} yolcu)",
-            admin_notify_html(serialize_doc(doc)),
+            f"Yeni basvuru: {reference_code} ({traveler_count} yolcu)",
+            admin_notify_html(view),
             kind="admin_new_application",
             meta={"reference_code": reference_code},
         )
+    return email_result
+
+
+@router.post("/applications")
+async def create_application(payload: ApplicationCreate):
+    await _validate_extra_documents(payload.extra_documents)
+    travelers, prices = await _build_travelers(payload.travelers)
+
+    store_lines = await resolve_store_lines(
+        payload.store_items,
+        payload.travel.arrival_date,
+        payload.travel.departure_date,
+    )
+    pricing = compute_pricing(
+        prices,
+        payload.addons.model_dump(),
+        addon_prices=await addon_prices_try(),
+        store_lines=store_lines,
+    )
+
+    reference_code = await _unique_reference_code()
+    doc = _build_application_doc(
+        payload, travelers, store_lines, pricing, reference_code, datetime.now(timezone.utc)
+    )
+    await applications_col.insert_one(dict(doc))
+
+    await _link_store_order(doc, store_lines)
+    await _after_application_created(doc, travelers)
+    email_result = await _send_application_emails(doc, len(travelers))
 
     result = public_application_view(doc)
     result["email_notification"] = email_result.get("status")
@@ -716,7 +807,7 @@ async def track_application(code: str, last_name: str):
 
 
 @router.post("/applications/{code}/documents")
-async def submit_missing_documents(code: str, payload: DocumentSubmission):
+async def submit_missing_documents(code: str, payload: DocumentSubmission) -> dict:
     """Musterinin takip sayfasindan eksik belgelerini yuklemesi."""
     doc = await _find_application_for_tracking(code, payload.last_name)
     updates = {}
@@ -784,7 +875,7 @@ async def submit_missing_documents(code: str, payload: DocumentSubmission):
 
 # ---------------------------------------------------------------- contact
 @router.post("/contact")
-async def create_contact(payload: ContactCreate):
+async def create_contact(payload: ContactCreate) -> dict:
     msg = payload.model_dump()
     msg.update(
         {
@@ -807,7 +898,7 @@ async def create_contact(payload: ContactCreate):
 
 # ------------------------------------------------- on degerlendirme (pre-eval)
 @router.get("/pre-evaluation/questions")
-async def pre_evaluation_questions():
+async def pre_evaluation_questions() -> dict:
     return {"questions": pre_eval_questions()}
 
 

@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, date
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -35,7 +36,7 @@ zami_handoffs_col = db["zami_handoffs"]
 pre_evaluations_col = db["pre_evaluations"]
 
 
-def serialize_doc(doc):
+def serialize_doc(doc: Any) -> Any:
     """Recursively convert a Mongo document into a JSON-serializable structure."""
     if doc is None:
         return None
@@ -62,7 +63,7 @@ def serialize_doc(doc):
     return doc
 
 
-async def ensure_indexes():
+async def ensure_indexes() -> None:
     await applications_col.create_index("id", unique=True)
     await applications_col.create_index("reference_code", unique=True)
     await applications_col.create_index("created_at")

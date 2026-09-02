@@ -201,6 +201,22 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
 
 ---
 
+### Phase 26 — Kod Kalitesi Raporu Uygulamasi (Refactor) — **COMPLETED (2026-09-02)**
+Kod inceleme raporundaki bulgular uygulandi (davranis birebir korunarak):
+- **Undefined variable sertlestirme:** `zami_rpa._launch/_launch_with_state` (browser), `zami._fmt` (d), `routes_payments` (session), `routes_account.require_customer` (payload).
+- **Literal identity:** `get_visa_guide` icindeki `active is False` kontrolu, `None` guvenli falsy kontrolune cevrildi. (Not: `is None` / `is not None` karsilastirmalari PEP 8 geregi dogru oldugu icin korundu.)
+- **Karmasiklik azaltma:**
+  - `routes_public.create_application` → `_validate_extra_documents`, `_ensure_uploads_exist`, `_build_travelers`, `_unique_reference_code`, `_build_application_doc`, `_link_store_order`, `_after_application_created`, `_send_application_emails` (150 satir → ~30).
+  - `build_customer_timeline` → `_first_status_dates`, `_timeline_progress_index`, `_timeline_step_dates`, `_timeline_step_state`, `_iso_or_none`.
+  - `resolve_store_lines` → `_store_line_validity`, `_store_line`; `upload_document` → `_validate_upload`, `_store_upload`.
+  - `routes_admin._clean_guide_payload` → `_clean_guide_text_fields`, `_clean_guide_list_fields`, `_clean_guide_faqs`; `admin_upload_visa_document` → `_validate_visa_document`, `_put_visa_document`.
+  - `routes_payments._mark_paid` → `_claim_transaction`, `_apply_application_payment`, `_notify_application_payment`; `create_checkout` → `_checkout_origin`, `_application_metadata`, `_open_checkout_session` (siparis checkout'u da ayni yardimciyi kullanir).
+  - `emailer._pricing_block` → `_discount_row`, `_store_item_label` (HTML cikti birebir dogrulandi).
+- **Tip ipuclari:** `db.py`, `server.py`, `routes_zami.py`, `routes_admin.py`, `routes_public.py`, `routes_account.py`, `routes_store.py`, `doc_reminders.py`, `whatsapp.py`, `scripts/test_core.py` icin donus tipleri; `admin: dict = Depends(require_admin)` (72 imza).
+- **Test:** iteration_17.json — backend 38/42 (basarisiz 4 kayit gecersiz slug beklentisi kaynakli, regresyon degil), frontend 9/9, kritik hata yok.
+
+---
+
 ## 3. Next Actions
 
 ### P0 — “İlk Gerçek Aktarım” (Zami Live Verification) — **BLOCKED**
@@ -253,6 +269,7 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
 - Phase 1–19: **TAMAMLANDI**.
 - Phase 20–23 (Zami RPA + yakalama + mapping + status + tracking): **TAMAMLANDI**, ancak **İlk Gerçek Aktarım canlı doğrulaması P0 ve BLOCKED** (kullanıcı Zami kimlik bilgileri yok).
 - Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
+- Phase 26 (Kod kalitesi refactor): **TAMAMLANDI** — iteration_17.json, kritik hata yok.
 - Phase 25 (Ücretsiz Ön Değerlendirme): **TAMAMLANDI** — iteration_16.json: backend 60/61, frontend 24/24, admin 7/7 (kritik hata yok).
 
 Test:

@@ -124,7 +124,7 @@ def wa_link(phone: str, text: str) -> str:
     return f"https://wa.me/{phone.lstrip('+')}?text={quote(text)}"
 
 
-async def _log(app_doc: dict, status: str, provider: str, result: str, detail: str = "", link: str = ""):
+async def _log(app_doc: dict, status: str, provider: str, result: str, detail: str = "", link: str = "") -> None:
     try:
         await logs_col.insert_one(
             {

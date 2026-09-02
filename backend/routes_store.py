@@ -195,7 +195,7 @@ class OrderCreateIn(BaseModel):
 
 # ------------------------------------------------------------------ endpointler
 @router.get("/products")
-async def get_products(kind: Optional[str] = None):
+async def get_products(kind: Optional[str] = None) -> dict:
     if kind and kind not in KIND_LABELS:
         raise HTTPException(400, "Gecersiz urun tipi.")
     items = await product_list(kind)
@@ -203,7 +203,7 @@ async def get_products(kind: Optional[str] = None):
 
 
 @router.post("/orders")
-async def create_order(payload: OrderCreateIn):
+async def create_order(payload: OrderCreateIn) -> dict:
     catalog = {p["id"]: p for p in await product_list()}
     lines = []
     total = 0.0
@@ -376,7 +376,7 @@ async def sync_application_order_payment(application_id: str, status: str, metho
 
 
 @router.get("/orders/{reference}")
-async def get_order(reference: str, email: str):
+async def get_order(reference: str, email: str) -> dict:
     doc = await orders_col.find_one({"reference_code": (reference or "").strip().upper()})
     if not doc:
         raise HTTPException(404, "Siparis bulunamadi.")
