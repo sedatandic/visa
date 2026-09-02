@@ -30,6 +30,7 @@ import { api, apiError, customerAuth } from "../lib/api";
 import { COMPANY, PURPOSES, PURPOSE_LABELS, formatDate, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
+import { DateField, fromISODate } from "../components/DateField";
 import { FxNote } from "../components/FxNote";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -876,9 +877,6 @@ export default function Apply() {
                                             <Field label="Telefon Numaranız" required htmlFor="c-phone" error={errors.phone}>
                                                 <Input id="c-phone" value={contact.phone} onChange={setC("phone")} placeholder="0555 111 22 33" data-testid="input-contact-phone" />
                                             </Field>
-                                            <Field label="Yaşadığınız şehir" htmlFor="c-city">
-                                                <Input id="c-city" value={contact.address_city} onChange={setC("address_city")} placeholder="İstanbul" data-testid="input-contact-city" />
-                                            </Field>
                                         </div>
                                         <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 text-sm transition-colors duration-200 hover:border-primary/50">
                                             <Switch
@@ -1047,7 +1045,15 @@ export default function Apply() {
                                                             <Input value={t.last_name} onChange={(e) => updateTraveler(t.key, { last_name: e.target.value })} placeholder="YILMAZ" data-testid={`traveler-${idx}-last-name`} />
                                                         </Field>
                                                         <Field label="Doğum tarihi" required error={te.birth_date}>
-                                                            <Input type="date" value={t.birth_date} onChange={(e) => updateTraveler(t.key, { birth_date: e.target.value })} data-testid={`traveler-${idx}-birth-date`} />
+                                                            <DateField
+                                                                value={t.birth_date}
+                                                                onChange={(iso) => updateTraveler(t.key, { birth_date: iso })}
+                                                                maxDate={new Date()}
+                                                                fromYear={new Date().getFullYear() - 100}
+                                                                toYear={new Date().getFullYear()}
+                                                                invalid={!!te.birth_date}
+                                                                data-testid={`traveler-${idx}-birth-date`}
+                                                            />
                                                         </Field>
                                                         <Field label="Cinsiyet" required error={te.gender}>
                                                             <Select value={t.gender} onValueChange={(v) => updateTraveler(t.key, { gender: v })}>
@@ -1064,7 +1070,15 @@ export default function Apply() {
                                                             <Input value={t.passport_no} onChange={(e) => updateTraveler(t.key, { passport_no: e.target.value })} placeholder="U12345678" data-testid={`traveler-${idx}-passport-no`} />
                                                         </Field>
                                                         <Field label="Pasaport geçerlilik tarihi" required error={te.passport_expiry}>
-                                                            <Input type="date" value={t.passport_expiry} onChange={(e) => updateTraveler(t.key, { passport_expiry: e.target.value })} data-testid={`traveler-${idx}-passport-expiry`} />
+                                                            <DateField
+                                                                value={t.passport_expiry}
+                                                                onChange={(iso) => updateTraveler(t.key, { passport_expiry: iso })}
+                                                                minDate={new Date()}
+                                                                fromYear={new Date().getFullYear()}
+                                                                toYear={new Date().getFullYear() + 15}
+                                                                invalid={!!te.passport_expiry}
+                                                                data-testid={`traveler-${idx}-passport-expiry`}
+                                                            />
                                                         </Field>
                                                         <Field label="T.C. Kimlik No">
                                                             <Input value={t.national_id} onChange={(e) => updateTraveler(t.key, { national_id: e.target.value })} placeholder="11 haneli kimlik numarası" data-testid={`traveler-${idx}-national-id`} />
@@ -1157,10 +1171,26 @@ export default function Apply() {
                                             </Select>
                                         </Field>
                                         <Field label="Giriş (gidiş) tarihi" required error={errors.arrival_date}>
-                                            <Input type="date" value={travel.arrival_date} onChange={setT("arrival_date")} data-testid="input-arrival-date" />
+                                            <DateField
+                                                value={travel.arrival_date}
+                                                onChange={(iso) => setTravel((t) => ({ ...t, arrival_date: iso }))}
+                                                minDate={new Date()}
+                                                fromYear={new Date().getFullYear()}
+                                                toYear={new Date().getFullYear() + 3}
+                                                invalid={!!errors.arrival_date}
+                                                data-testid="input-arrival-date"
+                                            />
                                         </Field>
                                         <Field label="Dönüş tarihi" required error={errors.departure_date}>
-                                            <Input type="date" value={travel.departure_date} onChange={setT("departure_date")} data-testid="input-departure-date" />
+                                            <DateField
+                                                value={travel.departure_date}
+                                                onChange={(iso) => setTravel((t) => ({ ...t, departure_date: iso }))}
+                                                minDate={fromISODate(travel.arrival_date) || new Date()}
+                                                fromYear={new Date().getFullYear()}
+                                                toYear={new Date().getFullYear() + 3}
+                                                invalid={!!errors.departure_date}
+                                                data-testid="input-departure-date"
+                                            />
                                         </Field>
                                         <Field label="Uçuş numarası">
                                             <Input value={travel.flight_no} onChange={setT("flight_no")} placeholder="Örn. TK760" data-testid="input-flight-no" />

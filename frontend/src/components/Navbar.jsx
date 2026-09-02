@@ -12,7 +12,6 @@ import {
     Phone,
     Search,
     Smartphone,
-    Sparkles,
     UserRound,
     Wrench,
 } from "lucide-react";
@@ -33,7 +32,6 @@ import { UaeFlag } from "./FlagIcons";
 /** Ust seviyede gorunen ana linkler (donusum odakli). */
 const PRIMARY_LINKS = [
     { to: "/vize-tipleri", label: "Hizmet Bedelleri", icon: FileCheck2 },
-    { to: "/on-degerlendirme", label: "Ön Değerlendirme", icon: Sparkles },
     { to: "/takip", label: "Başvuru Takip", icon: Search },
 ];
 

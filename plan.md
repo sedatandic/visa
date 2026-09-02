@@ -236,6 +236,41 @@ Bilinen kozmetik madde: native `type="date"` alanlari tarayici yereline gore `mm
 
 ---
 
+### Phase 28 — Turkce Tarih Secici + Ana Sayfa Vitrini — **COMPLETED (2026-09-02)**
+Kullanici secimleri: "Turkce Tarih Secici" ve "Ana Sayfa Vitrini". ("Zami Canli Aktarim" secildi ancak portal kimlik bilgileri beklendigi icin BLOCKED.)
+
+1) **Turkce tarih secici** — yeni `components/DateField.jsx`
+   - `gg.aa.yyyy` maskeli metin girisi (yazarken otomatik nokta) + Popover/Calendar (react-day-picker, `tr` locale, Pt-Pz hafta basi).
+   - Deger sozlesmesi korundu: `value`/`onChange` her zaman `YYYY-MM-DD`. ISO yapistirma ve programatik doldurma (Playwright `fill`) da destekleniyor.
+   - Gecersiz tarih (orn. 31.02.1990) icin inline hata; `minDate`/`maxDate` ile takvimde disabled gunler (dogum tarihi gelecege kapali, donus tarihi gidisten once secilemez).
+   - Shadcn Calendar'in gorsel-gizli etiket sorunu (`rdp-vhidden`) ve kirmizi "bugun" vurgusu kendi `classNames` override'imizla duzeltildi.
+   - Uygulanan 8 alan: Apply (dogum tarihi, pasaport gecerlilik, gidis, donus), StoreCheckout (gidis/donus), AdminArticles, AdminTestimonials. Projede artik hic `type="date"` yok.
+
+2) **Ana sayfa vitrini** — `Home.jsx` hero'su sinematik hale getirildi
+   - Tam genislikte Dubai silueti gorseli + navy scrim (koyu zemin, beyaz tipografi), noise overlay.
+   - Yeni baslik "Dubai vizeniz 3 is gununde hazir", 3 CTA (Basvuruya Basla / Hizmet Bedelleri / ucretsiz on degerlendirme linki).
+   - Cam efektli guven seridi, Burj Al Arab + gece silueti gorsel vitrini, puan karti ve 7+ yil deneyim rozeti.
+   - Yeni `hero-stats-bar`: 4.500+ basvuru / %98 onay / 3 gun / 7+ yil.
+   - Tum eski testid'ler korundu; yeni: `hero-pre-eval-link`, `hero-stats-bar`.
+
+Test: iteration_19.json — 26/26 test PASS, sifir hata (tarih alanlari, ISO uyumlulugu, Turkce takvim, validasyon, hero gorselleri, 375/768/1440 responsive, regresyon). Ek olarak Adim 1 → Adim 2 gecisi manuel dogrulandi.
+
+---
+
+### Phase 29 — Sehir Alani ve On Degerlendirme Kaldirildi — **COMPLETED (2026-09-02)**
+Kullanici istegi: "yasadigi sehri kaldir" + "ucretsiz on degerlendirme kaldir".
+- **Sehir alani:** `Apply.jsx` 1. adimdaki "Yasadiginiz sehir" input'u kaldirildi (`input-contact-city`). Iletisim bilgileri artik Ad Soyad / E-posta / Telefon. Backend `contact.address_city` alani opsiyonel oldugu icin sozlesme degismedi (bos gonderiliyor), eski kayitlar etkilenmedi.
+- **On degerlendirme (public):** ana sayfadaki `landing-pre-evaluation` bolumu, hero'daki `hero-pre-eval-link`, navbar linki, `/on-degerlendirme` route'u ve `PreEvaluationPage.jsx` + `PreEvaluation.jsx` dosyalari kaldirildi. `/on-degerlendirme` artik 404 sayfasina dusuyor.
+- **Korunanlar (bilincli):** `/admin/on-degerlendirme` sayfasi ve `/api/pre-evaluation*` uclari, daha once toplanan lead kayitlari kaybolmasin diye biraktildi. Kullanici isterse bunlar da kaldirilabilir.
+- Dogrulama: esbuild temiz; ana sayfa/basvuru ekran goruntuleriyle alanlarin kalktigi ve 404 davranisi teyit edildi.
+
+### Zami Canli Aktarim — **BLOCKED (sifre bekleniyor)**
+Hazir olanlar: Playwright/Chromium **hazir**, portal adresi + kullanici adi (`s.andic@mediterra.com.tr`) kaydedildi, test basvurusu olusturuldu: **DV-CV681445**. Mod: `dry_run=true` (formu doldur, gondermeden dur, ekran goruntusu).
+Eksik: portal sifresi + giris ekranindaki captcha/OTP adimi (insan mudahalesi gerekebilir).
+Yardimci script: `/app/scripts/make_zami_test_application.py`
+
+---
+
 ## 3. Next Actions
 
 ### P0 — “İlk Gerçek Aktarım” (Zami Live Verification) — **BLOCKED**
@@ -288,6 +323,8 @@ Bilinen kozmetik madde: native `type="date"` alanlari tarayici yereline gore `mm
 - Phase 1–19: **TAMAMLANDI**.
 - Phase 20–23 (Zami RPA + yakalama + mapping + status + tracking): **TAMAMLANDI**, ancak **İlk Gerçek Aktarım canlı doğrulaması P0 ve BLOCKED** (kullanıcı Zami kimlik bilgileri yok).
 - Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
+- Phase 29 (Sehir alani + on degerlendirme kaldirma): **TAMAMLANDI**.
+- Phase 28 (Turkce tarih secici + ana sayfa vitrini): **TAMAMLANDI** — iteration_19.json 26/26 PASS.
 - Phase 27 (Tum site arayuz yenilemesi): **TAMAMLANDI** — iteration_18.json, frontend %98, kritik hata yok.
 - Phase 26 (Kod kalitesi refactor): **TAMAMLANDI** — iteration_17.json, kritik hata yok.
 - Phase 25 (Ücretsiz Ön Değerlendirme): **TAMAMLANDI** — iteration_16.json: backend 60/61, frontend 24/24, admin 7/7 (kritik hata yok).

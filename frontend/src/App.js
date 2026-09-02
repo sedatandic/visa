@@ -17,7 +17,6 @@ import Kvkk from "./pages/Kvkk";
 import LegalTerms from "./pages/LegalTerms";
 import Apply from "./pages/Apply";
 import Track from "./pages/Track";
-import PreEvaluationPage from "./pages/PreEvaluationPage";
 import MyAccount from "./pages/MyAccount";
 import Esim from "./pages/Esim";
 import Insurance from "./pages/Insurance";
@@ -73,7 +72,6 @@ function App() {
                     <Route path="/hizmet-sozlesmesi" element={<Site><LegalTerms variant="service" /></Site>} />
                     <Route path="/basvuru" element={<Site><Apply /></Site>} />
                     <Route path="/takip" element={<Site><Track /></Site>} />
-                    <Route path="/on-degerlendirme" element={<Site><PreEvaluationPage /></Site>} />
                     <Route path="/hesabim" element={<Site><MyAccount /></Site>} />
                     <Route path="/esim" element={<Site><Esim /></Site>} />
                     <Route path="/seyahat-sigortasi" element={<Site><Insurance /></Site>} />

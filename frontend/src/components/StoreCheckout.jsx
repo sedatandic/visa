@@ -16,6 +16,7 @@ import { formatMoney, formatUsd } from "../lib/site";
 import { FxNote } from "./FxNote";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { DateField, fromISODate } from "./DateField";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Skeleton } from "./ui/skeleton";
@@ -403,21 +404,25 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="store-start">Gidiş tarihi</Label>
-                            <Input
+                            <DateField
                                 id="store-start"
-                                type="date"
                                 value={dates.travel_start}
-                                onChange={(e) => setDates((d) => ({ ...d, travel_start: e.target.value }))}
+                                onChange={(iso) => setDates((d) => ({ ...d, travel_start: iso }))}
+                                minDate={new Date()}
+                                fromYear={new Date().getFullYear()}
+                                toYear={new Date().getFullYear() + 3}
                                 data-testid="store-start-input"
                             />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="store-end">Dönüş tarihi</Label>
-                            <Input
+                            <DateField
                                 id="store-end"
-                                type="date"
                                 value={dates.travel_end}
-                                onChange={(e) => setDates((d) => ({ ...d, travel_end: e.target.value }))}
+                                onChange={(iso) => setDates((d) => ({ ...d, travel_end: iso }))}
+                                minDate={fromISODate(dates.travel_start) || new Date()}
+                                fromYear={new Date().getFullYear()}
+                                toYear={new Date().getFullYear() + 3}
                                 data-testid="store-end-input"
                             />
                         </div>

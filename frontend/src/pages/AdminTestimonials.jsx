@@ -5,6 +5,7 @@ import { api, apiError } from "../lib/api";
 import { AdminLayout } from "../components/AdminLayout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { DateField } from "../components/DateField";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Switch } from "../components/ui/switch";
@@ -286,7 +287,7 @@ export default function AdminTestimonials() {
                             </div>
                             <div>
                                 <Label>Tarih</Label>
-                                <Input type="date" value={(form.date || "").slice(0, 10)} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} data-testid="testimonial-date-input" />
+                                <DateField value={(form.date || "").slice(0, 10)} onChange={(iso) => setForm((f) => ({ ...f, date: iso }))} data-testid="testimonial-date-input" />
                             </div>
                             <div>
                                 <Label>Puan (1-5)</Label>

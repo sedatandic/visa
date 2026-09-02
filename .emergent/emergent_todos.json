@@ -1,30 +1,22 @@
 [
   {
-    "content": "Kritik: undefined variable riskleri",
+    "content": "Türkçe tarih seçici: DateField bileşeni (gg.aa.yyyy + takvim)",
     "status": "completed"
   },
   {
-    "content": "Literal identity karşılaştırması düzeltmesi",
+    "content": "DateField'ı Apply (4), StoreCheckout (2), Admin (2) alanlarında uygula",
     "status": "completed"
   },
   {
-    "content": "Karmaşıklık: routes_public refactor",
+    "content": "Ana sayfa vitrini: sinematik hero + Dubai görselleri + istatistik şeridi",
     "status": "completed"
   },
   {
-    "content": "Karmaşıklık: routes_admin refactor",
-    "status": "completed"
+    "content": "Test: testing_agent regresyon (tarih alanları + hero + başvuru akışı)",
+    "status": "in_progress"
   },
   {
-    "content": "Karmaşıklık: routes_payments + emailer refactor",
-    "status": "completed"
-  },
-  {
-    "content": "Type hints: db/server/routes_zami/routes_admin ve diğerleri",
-    "status": "completed"
-  },
-  {
-    "content": "Doğrulama: import/compile + testing_agent regresyon (iteration_17)",
-    "status": "completed"
+    "content": "Zami canlı aktarım: kullanıcıdan portal kimlik bilgileri talebi",
+    "status": "pending"
   }
 ]

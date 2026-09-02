@@ -6,6 +6,7 @@ import { formatDate } from "../lib/site";
 import { AdminLayout } from "../components/AdminLayout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { DateField } from "../components/DateField";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Switch } from "../components/ui/switch";
@@ -171,7 +172,7 @@ export default function AdminArticles() {
                             </div>
                             <div>
                                 <Label>Yayın tarihi</Label>
-                                <Input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} data-testid="article-date-input" />
+                                <DateField value={form.date} onChange={(iso) => setForm((f) => ({ ...f, date: iso }))} data-testid="article-date-input" />
                             </div>
                         </div>
                         <div>
