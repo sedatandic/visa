@@ -34,7 +34,6 @@ from db import (
     login_codes_col,
     orders_col,
     products_col,
-    pre_evaluations_col,
 )
 from content import BANK_TRANSFER, COMPANY
 from doc_reminders import (
@@ -1068,25 +1067,3 @@ async def admin_deliver_order(order_id: str, payload: dict, admin: dict = Depend
         )
     return {"order": serialize_doc(fresh), "email": result}
 
-
-# ------------------------------------------------- on degerlendirme kayitlari
-@router.get("/admin/pre-evaluations")
-async def admin_pre_evaluations(
-    admin: dict = Depends(require_admin),
-    page: int = Query(1, ge=1),
-    limit: int = Query(50, ge=1, le=200),
-    only_leads: bool = Query(False),
-) -> dict:
-    query = {"has_contact": True} if only_leads else {}
-    total = await pre_evaluations_col.count_documents(query)
-    leads = await pre_evaluations_col.count_documents({"has_contact": True})
-    docs = (
-        await pre_evaluations_col.find(query)
-        .sort("created_at", -1)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .to_list(limit)
-    )
-    items = serialize_doc(docs) or []
-    avg = round(sum(int(i.get("score") or 0) for i in items) / len(items), 1) if items else 0
-    return {"total": total, "leads": leads, "average_score": avg, "items": items}

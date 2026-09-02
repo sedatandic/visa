@@ -46,7 +46,6 @@ from db import (
     uploads_col,
     visa_types_col,
     drafts_col,
-    pre_evaluations_col,
 )
 from emailer import (
     admin_notify_html,
@@ -55,14 +54,7 @@ from emailer import (
     documents_completed_admin_html,
     send_email,
 )
-from models import (
-    ApplicationCreate,
-    ContactCreate,
-    DocumentSubmission,
-    PreEvaluationIn,
-    QuoteRequest,
-)
-from pre_eval import evaluate as pre_eval_evaluate, question_set as pre_eval_questions
+from models import ApplicationCreate, ContactCreate, DocumentSubmission, QuoteRequest
 from doc_reminders import missing_documents
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
 from passport_ai import read_passport
@@ -895,57 +887,3 @@ async def create_contact(payload: ContactCreate) -> dict:
         )
     return {"ok": True, "message": "Mesajiniz alindi. En kisa surede size donus yapacagiz."}
 
-
-# ------------------------------------------------- on degerlendirme (pre-eval)
-@router.get("/pre-evaluation/questions")
-async def pre_evaluation_questions() -> dict:
-    return {"questions": pre_eval_questions()}
-
-
-@router.post("/pre-evaluation")
-async def create_pre_evaluation(payload: PreEvaluationIn):
-    answers = {
-        "passport_validity": payload.passport_validity,
-        "visa_history": payload.visa_history,
-        "refusal_history": payload.refusal_history,
-        "purpose": payload.purpose or "",
-    }
-    result = pre_eval_evaluate(answers)
-
-    recommended = None
-    try:
-        visa = await get_visa_type(result["recommended_visa_type_id"])
-        if visa:
-            recommended = {
-                "id": visa.get("id"),
-                "slug": visa.get("slug"),
-                "name": visa.get("name"),
-                "short_name": visa.get("short_name"),
-                "price": visa.get("price"),
-                "price_usd": visa.get("price_usd"),
-                "price_try": visa.get("price_try"),
-                "processing_days": visa.get("processing_days"),
-            }
-    except Exception as exc:  # pragma: no cover - defensive
-        logger.warning("pre-eval visa lookup failed: %s", exc)
-
-    record = {
-        "id": str(uuid.uuid4()),
-        "answers": answers,
-        "score": result["score"],
-        "level": result["level"],
-        "recommended_visa_type_id": result["recommended_visa_type_id"],
-        "name": (payload.name or "").strip(),
-        "email": (payload.email or "").strip().lower(),
-        "phone": (payload.phone or "").strip(),
-        "has_contact": bool((payload.email or "").strip() or (payload.phone or "").strip()),
-        "created_at": datetime.now(timezone.utc),
-    }
-    try:
-        await pre_evaluations_col.insert_one(dict(record))
-    except Exception as exc:  # pragma: no cover - kayit hatasi akisi bozmasin
-        logger.warning("pre-eval save failed: %s", exc)
-
-    result["id"] = record["id"]
-    result["recommended_visa"] = recommended
-    return result

@@ -37,7 +37,6 @@ import AdminBankTransfer from "./pages/AdminBankTransfer";
 import AdminCompany from "./pages/AdminCompany";
 import AdminZami from "./pages/AdminZami";
 import AdminWhatsApp from "./pages/AdminWhatsApp";
-import AdminPreEval from "./pages/AdminPreEval";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -93,7 +92,6 @@ function App() {
                     <Route path="/admin/acente" element={<RequireAdmin><AdminCompany /></RequireAdmin>} />
                     <Route path="/admin/zami" element={<RequireAdmin><AdminZami /></RequireAdmin>} />
                     <Route path="/admin/whatsapp" element={<RequireAdmin><AdminWhatsApp /></RequireAdmin>} />
-                    <Route path="/admin/on-degerlendirme" element={<RequireAdmin><AdminPreEval /></RequireAdmin>} />
 
                     <Route path="*" element={<Site><NotFound /></Site>} />
                 </Routes>

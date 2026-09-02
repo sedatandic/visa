@@ -261,7 +261,8 @@ Test: iteration_19.json — 26/26 test PASS, sifir hata (tarih alanlari, ISO uyu
 Kullanici istegi: "yasadigi sehri kaldir" + "ucretsiz on degerlendirme kaldir".
 - **Sehir alani:** `Apply.jsx` 1. adimdaki "Yasadiginiz sehir" input'u kaldirildi (`input-contact-city`). Iletisim bilgileri artik Ad Soyad / E-posta / Telefon. Backend `contact.address_city` alani opsiyonel oldugu icin sozlesme degismedi (bos gonderiliyor), eski kayitlar etkilenmedi.
 - **On degerlendirme (public):** ana sayfadaki `landing-pre-evaluation` bolumu, hero'daki `hero-pre-eval-link`, navbar linki, `/on-degerlendirme` route'u ve `PreEvaluationPage.jsx` + `PreEvaluation.jsx` dosyalari kaldirildi. `/on-degerlendirme` artik 404 sayfasina dusuyor.
-- **Korunanlar (bilincli):** `/admin/on-degerlendirme` sayfasi ve `/api/pre-evaluation*` uclari, daha once toplanan lead kayitlari kaybolmasin diye biraktildi. Kullanici isterse bunlar da kaldirilabilir.
+- **Tam kaldirma (ikinci tur):** `/admin/on-degerlendirme` sayfasi + admin menu ogesi, `AdminPreEval.jsx`, `pre_eval.py`, `PreEvaluationIn` modeli, `pre_evaluations_col` referansi ve `GET/POST /api/pre-evaluation*` + `GET /api/admin/pre-evaluations` uclari kaldirildi. Uclar artik 404 donuyor; admin menusunde 12 oge kaldi.
+- **Veri:** MongoDB `pre_evaluations` koleksiyonu SILINMEDI (mevcut kayitlar duruyor, sadece kod referansi kalkti) — istenirse geri getirilebilir.
 - Dogrulama: esbuild temiz; ana sayfa/basvuru ekran goruntuleriyle alanlarin kalktigi ve 404 davranisi teyit edildi.
 
 ### Zami Canli Aktarim — **BLOCKED (sifre bekleniyor)**

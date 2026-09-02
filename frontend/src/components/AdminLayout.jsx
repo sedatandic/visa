@@ -4,7 +4,6 @@ import {
     BookOpen,
     Building2,
     FileText,
-    Gauge,
     Landmark,
     LayoutDashboard,
     LogOut,
@@ -34,7 +33,6 @@ const NAV_GROUPS = [
         label: "Müşteri İletişimi",
         items: [
             { to: "/admin/mesajlar", label: "Mesajlar", icon: MessageSquare },
-            { to: "/admin/on-degerlendirme", label: "Ön Değerlendirme", icon: Gauge },
             { to: "/admin/e-postalar", label: "E-postalar", icon: Mail },
             { to: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle },
         ],

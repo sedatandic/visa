@@ -1,22 +1,14 @@
 [
   {
-    "content": "Türkçe tarih seçici: DateField bileşeni (gg.aa.yyyy + takvim)",
-    "status": "completed"
-  },
-  {
-    "content": "DateField'ı Apply (4), StoreCheckout (2), Admin (2) alanlarında uygula",
-    "status": "completed"
-  },
-  {
-    "content": "Ana sayfa vitrini: sinematik hero + Dubai görselleri + istatistik şeridi",
-    "status": "completed"
-  },
-  {
-    "content": "Test: testing_agent regresyon (tarih alanları + hero + başvuru akışı)",
+    "content": "Admin: ön değerlendirme sayfasını ve menü öğesini kaldır",
     "status": "in_progress"
   },
   {
-    "content": "Zami canlı aktarım: kullanıcıdan portal kimlik bilgileri talebi",
+    "content": "Backend: /api/pre-evaluation* uçları, pre_eval.py ve model kaldır",
+    "status": "pending"
+  },
+  {
+    "content": "Doğrulama: import/compile + uç kontrolü (404) + admin sayfaları sağlam",
     "status": "pending"
   }
 ]
