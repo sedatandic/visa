@@ -8,6 +8,7 @@ import {
     Baby,
     CalendarDays,
     CheckCircle2,
+    ChevronDown,
     CreditCard,
     FileText,
     Loader2,
@@ -36,6 +37,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
 import { Progress } from "../components/ui/progress";
 import { Checkbox } from "../components/ui/checkbox";
 import { Switch } from "../components/ui/switch";
@@ -140,6 +142,8 @@ export default function Apply() {
     const [step, setStep] = useState(0);
     const [contact, setContact] = useState({ full_name: "", email: "", phone: "", address_city: "", whatsapp_optin: false });
     const [travelers, setTravelers] = useState([newTraveler()]);
+    const [optionalOpen, setOptionalOpen] = useState(false);
+    const [openNationalId, setOpenNationalId] = useState({});
     const [travel, setTravel] = useState({
         arrival_date: "",
         departure_date: "",
@@ -1080,9 +1084,22 @@ export default function Apply() {
                                                                 data-testid={`traveler-${idx}-passport-expiry`}
                                                             />
                                                         </Field>
-                                                        <Field label="T.C. Kimlik No">
-                                                            <Input value={t.national_id} onChange={(e) => updateTraveler(t.key, { national_id: e.target.value })} placeholder="11 haneli kimlik numarası" data-testid={`traveler-${idx}-national-id`} />
-                                                        </Field>
+                                                        {t.national_id || openNationalId[t.key] ? (
+                                                            <Field label="T.C. Kimlik No (isteğe bağlı)">
+                                                                <Input value={t.national_id} onChange={(e) => updateTraveler(t.key, { national_id: e.target.value })} placeholder="11 haneli kimlik numarası" data-testid={`traveler-${idx}-national-id`} />
+                                                            </Field>
+                                                        ) : (
+                                                            <div className="flex items-end">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setOpenNationalId((s) => ({ ...s, [t.key]: true }))}
+                                                                    className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none"
+                                                                    data-testid={`traveler-${idx}-add-national-id`}
+                                                                >
+                                                                    <Plus className="h-3.5 w-3.5" /> T.C. kimlik no ekle (isteğe bağlı)
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             );
@@ -1158,18 +1175,6 @@ export default function Apply() {
                                                 </SelectContent>
                                             </Select>
                                         </Field>
-                                        <Field label="Seyahat amacı">
-                                            <Select value={travel.purpose} onValueChange={(v) => setTravel((f) => ({ ...f, purpose: v }))}>
-                                                <SelectTrigger data-testid="select-purpose">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {PURPOSES.map((p) => (
-                                                        <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </Field>
                                         <Field label="Giriş (gidiş) tarihi" required error={errors.arrival_date}>
                                             <DateField
                                                 value={travel.arrival_date}
@@ -1192,19 +1197,60 @@ export default function Apply() {
                                                 data-testid="input-departure-date"
                                             />
                                         </Field>
-                                        <Field label="Uçuş numarası">
-                                            <Input value={travel.flight_no} onChange={setT("flight_no")} placeholder="Örn. TK760" data-testid="input-flight-no" />
-                                        </Field>
-                                        <Field label="Otel / konaklama">
-                                            <Input value={travel.accommodation} onChange={setT("accommodation")} placeholder="Otel adı veya adres" data-testid="input-accommodation" />
-                                        </Field>
                                     </div>
 
-                                    <div className="mt-5">
-                                        <Field label="Eklemek istediğiniz not">
-                                            <Textarea rows={3} value={travel.notes} onChange={setT("notes")} placeholder="Danışmanımızın bilmesi gereken bir durum varsa yazın…" data-testid="input-notes" />
-                                        </Field>
-                                    </div>
+                                    <Collapsible open={optionalOpen} onOpenChange={setOptionalOpen} className="mt-6">
+                                        <CollapsibleTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border border-dashed border-border px-4 text-left transition-colors duration-150 hover:border-primary/50 hover:bg-muted/60 focus-visible:outline-none"
+                                                data-testid="optional-travel-toggle"
+                                            >
+                                                <span>
+                                                    <span className="block text-sm font-bold">İsteğe bağlı bilgiler</span>
+                                                    <span className="block text-xs text-muted-foreground">
+                                                        Seyahat amacı, uçuş no, otel ve not — bilmiyorsanız atlayabilirsiniz
+                                                    </span>
+                                                </span>
+                                                <ChevronDown
+                                                    className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
+                                                        optionalOpen ? "rotate-180" : ""
+                                                    }`}
+                                                    aria-hidden="true"
+                                                />
+                                            </button>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent
+                                            className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+                                            data-testid="optional-travel-fields"
+                                        >
+                                            <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                                                <Field label="Seyahat amacı">
+                                                    <Select value={travel.purpose} onValueChange={(v) => setTravel((f) => ({ ...f, purpose: v }))}>
+                                                        <SelectTrigger data-testid="select-purpose">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {PURPOSES.map((p) => (
+                                                                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </Field>
+                                                <Field label="Uçuş numarası">
+                                                    <Input value={travel.flight_no} onChange={setT("flight_no")} placeholder="Örn. TK760" data-testid="input-flight-no" />
+                                                </Field>
+                                                <Field label="Otel / konaklama">
+                                                    <Input value={travel.accommodation} onChange={setT("accommodation")} placeholder="Otel adı veya adres" data-testid="input-accommodation" />
+                                                </Field>
+                                                <div className="sm:col-span-2">
+                                                    <Field label="Eklemek istediğiniz not">
+                                                        <Textarea rows={3} value={travel.notes} onChange={setT("notes")} placeholder="Danışmanımızın bilmesi gereken bir durum varsa yazın…" data-testid="input-notes" />
+                                                    </Field>
+                                                </div>
+                                            </div>
+                                        </CollapsibleContent>
+                                    </Collapsible>
 
                                     {urgentTrip && (
                                         <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.11)] p-4" data-testid="urgent-trip-warning">

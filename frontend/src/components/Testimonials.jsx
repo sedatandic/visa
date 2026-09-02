@@ -104,3 +104,45 @@ export const TestimonialCard = ({ item }) => (
         </figcaption>
     </figure>
 );
+
+/** One cikan (buyuk) yorum karti — ana sayfa yorum bolumunun sol kolonu. */
+export const FeaturedTestimonial = ({ item }) => {
+    if (!item) return null;
+    return (
+        <figure
+            className="flex h-full flex-col justify-between rounded-2xl border border-[hsl(var(--brand-red)/0.28)] bg-card p-6 sm:p-7"
+            style={{ boxShadow: "var(--shadow-soft)" }}
+            data-testid="featured-testimonial"
+        >
+            <div>
+                <div className="flex items-start justify-between gap-3">
+                    <Stars rating={item.rating} size="h-4.5 w-4.5" />
+                    <Quote className="h-8 w-8 text-[hsl(var(--brand-red)/0.2)]" aria-hidden="true" />
+                </div>
+                <blockquote className="mt-4 font-heading text-lg font-semibold leading-8">
+                    “{item.text}”
+                </blockquote>
+            </div>
+            <figcaption className="mt-6 flex items-center gap-3 border-t border-border pt-5">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 font-heading text-sm font-bold text-primary">
+                    {item.initials || item.name?.slice(0, 2)}
+                </span>
+                <span className="min-w-0">
+                    <span className="flex items-center gap-1.5 text-sm font-bold">
+                        {item.name}
+                        {item.verified && (
+                            <BadgeCheck className="h-4 w-4 shrink-0 text-primary" aria-label="Doğrulanmış başvuru sahibi" />
+                        )}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                        {item.city}
+                        {item.visa ? ` · ${item.visa}` : ""}
+                    </span>
+                    {item.date && (
+                        <span className="block text-[11px] text-muted-foreground/80">{formatDate(item.date)}</span>
+                    )}
+                </span>
+            </figcaption>
+        </figure>
+    );
+};

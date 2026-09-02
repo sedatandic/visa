@@ -28,7 +28,8 @@ import { COMPANY, IMAGES, setMeta } from "../lib/site";
 import { Button } from "../components/ui/button";
 import { PricingTabs } from "../components/PricingTabs";
 import { ServiceCard } from "../components/IconCards";
-import { ReviewSummary, TestimonialCard } from "../components/Testimonials";
+import { FeaturedTestimonial, ReviewSummary, TestimonialCard } from "../components/Testimonials";
+import { ReviewSpotlight } from "../components/ReviewSpotlight";
 import { SampleVisa } from "../components/SampleVisa";
 import { RouteFlags } from "../components/FlagIcons";
 import { AuthorityStrip } from "../components/AuthorityStrip";
@@ -265,6 +266,9 @@ export default function Home() {
 
             {/* AUTHORITIES / TRUST STRIP */}
             <AuthorityStrip />
+
+            {/* MUSTERI YORUMU VITRINI (ust bolum) */}
+            <ReviewSpotlight summary={content?.review_summary} testimonials={content?.testimonials} />
 
             {/* PRICING TABS */}
             <section className="section" data-testid="landing-pricing">
@@ -521,7 +525,11 @@ export default function Home() {
             </section>
 
             {/* TESTIMONIALS */}
-            <section className="section" data-testid="landing-testimonials">
+            <section
+                id="landing-testimonials"
+                className="section scroll-mt-24 border-y border-border bg-[hsl(var(--cloud))]"
+                data-testid="landing-testimonials"
+            >
                 <div className="container-page">
                     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                         <div className="max-w-2xl">
@@ -543,11 +551,18 @@ export default function Home() {
                         <ReviewSummary summary={content?.review_summary} />
                     </div>
 
-                    <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {(content?.testimonials || []).map((t) => (
-                            <TestimonialCard key={t.name} item={t} />
-                        ))}
-                    </div>
+                    {(content?.testimonials || []).length > 0 && (
+                        <div className="mt-8 grid gap-6 lg:grid-cols-3" data-testid="testimonial-grid">
+                            <div className="lg:col-span-1">
+                                <FeaturedTestimonial item={content.testimonials[0]} />
+                            </div>
+                            <div className="grid gap-6 sm:grid-cols-2 lg:col-span-2">
+                                {content.testimonials.slice(1).map((t) => (
+                                    <TestimonialCard key={t.name} item={t} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* SOCIAL BAND */}
                     <div className="mt-12 flex flex-col items-start gap-5 rounded-2xl border border-border bg-[hsl(var(--navy))] p-7 sm:flex-row sm:items-center sm:justify-between">

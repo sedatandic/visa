@@ -272,6 +272,21 @@ Yardimci script: `/app/scripts/make_zami_test_application.py`
 
 ---
 
+### Phase 30 — Formu Kisaltma + Yorum Vitrini — **COMPLETED (2026-09-02)**
+
+1) **Formu kisaltma** (`Apply.jsx`)
+   - **T.C. Kimlik No** alani varsayilan olarak gizlendi. Pasaport OCR bu bilgiyi getirirse alan otomatik gorunur; getirmezse kullanici "T.C. kimlik no ekle (istege bagli)" linkiyle acabiliyor. Veri kaybi yok (model + Zami eslemesi aynen duruyor).
+   - **Istege bagli seyahat alanlari** (seyahat amaci, ucus no, otel/konaklama, not) `Collapsible` icine tasindi (`optional-travel-toggle`), varsayilan kapali. 2. adimda artik sadece 4 zorunlu alan gorunuyor: Vize turu, Dogum ulkesi, Giris tarihi, Donus tarihi.
+   - Sonuc: yolcu karti 8 alandan 6'ya, seyahat adimi 7 alandan 4 gorunur alana dustu; veri sozlesmesi (`YYYY-MM-DD`, bos string'ler) hic degismedi.
+
+2) **Yorum vitrini**
+   - Yeni `components/ReviewSpotlight.jsx`: ana sayfada yetkili merciler seridinin hemen altinda, ust bolumde kompakt sosyal kanit seridi — 4,8 ortalama + yildizlar + dogrulanmis yorum/basvuru sayisi + **otomatik donen** yorum karti (6 sn, fareyle durur), nokta navigasyonu, "Basvuruya Basla" CTA'si ve yorumlar bolumune ic link.
+   - `Testimonials.jsx` icine `FeaturedTestimonial` (buyuk one cikan yorum karti) eklendi; ana sayfadaki yorum bolumu tonlu arka plan (`--cloud`) + cerceve ile vurgulandi ve `id="landing-testimonials"` ile ic linklenebilir hale getirildi.
+
+Test: iteration_20.json — frontend %100, backend %100 (51/51; kaldirilan on degerlendirme uclari icin 10 beklenen 404), sifir hata. Uctan uca basvuru hem istege bagli alanlar kapali hem acik halde dogrulandi.
+
+---
+
 ## 3. Next Actions
 
 ### P0 — “İlk Gerçek Aktarım” (Zami Live Verification) — **BLOCKED**
@@ -324,6 +339,7 @@ Yardimci script: `/app/scripts/make_zami_test_application.py`
 - Phase 1–19: **TAMAMLANDI**.
 - Phase 20–23 (Zami RPA + yakalama + mapping + status + tracking): **TAMAMLANDI**, ancak **İlk Gerçek Aktarım canlı doğrulaması P0 ve BLOCKED** (kullanıcı Zami kimlik bilgileri yok).
 - Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
+- Phase 30 (Formu kisaltma + yorum vitrini): **TAMAMLANDI** — iteration_20.json %100.
 - Phase 29 (Sehir alani + on degerlendirme kaldirma): **TAMAMLANDI**.
 - Phase 28 (Turkce tarih secici + ana sayfa vitrini): **TAMAMLANDI** — iteration_19.json 26/26 PASS.
 - Phase 27 (Tum site arayuz yenilemesi): **TAMAMLANDI** — iteration_18.json, frontend %98, kritik hata yok.
