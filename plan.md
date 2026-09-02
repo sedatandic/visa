@@ -301,6 +301,19 @@ Test: iteration_22.json — frontend %100, regresyon %100, sifir hata. Uctan uca
 
 ---
 
+### Phase 32 — Pasaportla Tek Adim (Sifira Yakin Soru) — **COMPLETED (2026-09-02)**
+Kullanici istegi: "Pasaport fotografini en basa alip bilgileri otomatik doldurarak formu neredeyse sifir soruya indirelim".
+
+- **Pasaport kutusu adim 1'in merkezine alindi:** her yolcu kartinin en ustunde "Pasaportu yukleyin, gerisini biz dolduralim" alani; ayni dosya adim 3'teki pasaport belgesi olarak da kullaniliyor (ikinci yukleme yok).
+- **OCR eksiksiz okudugunda 6 alan DOM'dan kalkiyor** ve yerine salt-okunur "Pasaporttan okundu" ozet karti geliyor (`traveler-{idx}-passport-summary`): Ad Soyad, Dogum tarihi, Cinsiyet, Pasaport no, Gecerlilik, varsa T.C. kimlik no + "Duzenle" butonu (`traveler-{idx}-edit-fields`).
+- **Kosul:** `ocr.status === "done"` + 6 alan dolu + o yolcu icin validasyon hatasi yok + kullanici "Duzenle"ye basmamis. OCR basarisiz/eksik olursa veya PDF yuklenirse eski davranis (alanlar gorunur, elle doldurma) aynen korunuyor — guvenli geri donus.
+- **Sonuc:** adim 1'de kullaniciya sorulan tek sey 3 iletisim alani + pasaport fotografi. Yolcunun 6 kimlik alani artik hic sorulmuyor (yalnizca kontrol/duzeltme icin).
+- Test fixture: `/app/tests/fixtures/test_passport.png` (OCR bu gorseli %99 guvenle dogru okuyor).
+
+Test: iteration_23.json — backend 5/5, frontend 6/6, **%100**, sifir hata. Dogrulananlar: OCR → ozet kart, Duzenle akisi, OCR sonrasi elle hicbir yolcu alani doldurmadan uctan uca basvuru tamamlama (kayitli veriler dogru), tek yukleme, coklu yolcu, OCR basarisiz senaryosu, PDF senaryosu ve genel regresyon.
+
+---
+
 ## 3. Next Actions
 
 ### P0 — “İlk Gerçek Aktarım” (Zami Live Verification) — **BLOCKED**
@@ -353,6 +366,7 @@ Test: iteration_22.json — frontend %100, regresyon %100, sifir hata. Uctan uca
 - Phase 1–19: **TAMAMLANDI**.
 - Phase 20–23 (Zami RPA + yakalama + mapping + status + tracking): **TAMAMLANDI**, ancak **İlk Gerçek Aktarım canlı doğrulaması P0 ve BLOCKED** (kullanıcı Zami kimlik bilgileri yok).
 - Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
+- Phase 32 (Pasaportla tek adim): **TAMAMLANDI** — iteration_23.json %100.
 - Phase 31 (dubaivizeal tarzi kisa soru seti): **TAMAMLANDI** — iteration_22.json frontend %100.
 - Phase 30 (Formu kisaltma + yorum vitrini): **TAMAMLANDI** — iteration_20.json %100.
 - Phase 29 (Sehir alani + on degerlendirme kaldirma): **TAMAMLANDI**.

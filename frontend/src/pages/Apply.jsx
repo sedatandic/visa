@@ -11,6 +11,7 @@ import {
     CreditCard,
     FileText,
     Loader2,
+    Pencil,
     Landmark,
     Lock,
     Minus,
@@ -140,6 +141,7 @@ export default function Apply() {
     const [contact, setContact] = useState({ full_name: "", email: "", phone: "", address_city: "", whatsapp_optin: false });
     const [travelers, setTravelers] = useState([newTraveler()]);
     const [openNationalId, setOpenNationalId] = useState({});
+    const [fieldsOpen, setFieldsOpen] = useState({});
     const [travel, setTravel] = useState({
         arrival_date: "",
         departure_date: "",
@@ -951,6 +953,13 @@ export default function Apply() {
                                     <div className="mt-5 space-y-6">
                                         {travelers.map((t, idx) => {
                                             const te = errors[t.key] || {};
+                                            const passportRead = ocr[t.key]?.status === "done";
+                                            const passportComplete =
+                                                !!t.first_name && !!t.last_name && !!t.birth_date && !!t.gender && !!t.passport_no && !!t.passport_expiry;
+                                            // OCR bilgileri eksiksiz doldurduysa alanlari ozet karta cevir;
+                                            // hata varsa veya kullanici "Duzenle"ye bastiysa formu geri ac.
+                                            const passportSummaryVisible =
+                                                passportRead && passportComplete && !fieldsOpen[t.key] && Object.keys(te).length === 0;
                                             return (
                                                 <div key={t.key} className="rounded-xl border border-border p-5" data-testid={`traveler-card-${idx}`}>
                                                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -990,13 +999,13 @@ export default function Apply() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="mt-5 rounded-xl border border-dashed border-primary/40 bg-primary/[0.04] p-4" data-testid={`traveler-${idx}-ai-passport-box`}>
-                                                        <p className="flex items-center gap-2 text-sm font-bold">
-                                                            <Sparkles className="h-4 w-4 text-primary" />
-                                                            Pasaportu yükleyin, bilgiler otomatik dolsun
+                                                    <div className="mt-5 rounded-xl border border-primary/35 bg-primary/[0.05] p-4" data-testid={`traveler-${idx}-ai-passport-box`}>
+                                                        <p className="flex items-center gap-2 font-heading text-base font-bold">
+                                                            <Sparkles className="h-4.5 w-4.5 text-primary" />
+                                                            Pasaportu yükleyin, gerisini biz dolduralım
                                                         </p>
                                                         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                                            Fotoğrafı yükleyin; ad, soyad ve pasaport bilgileri otomatik dolsun.</p>
+                                                            Tek fotoğraf yeter; ad, soyad, tarih ve pasaport no otomatik dolar.</p>
                                                         <div className="mt-3">
                                                             <FileDropzone
                                                                 label="Pasaport kimlik sayfası"
@@ -1028,6 +1037,45 @@ export default function Apply() {
                                                         )}
                                                     </div>
 
+                                                    {passportSummaryVisible ? (
+                                                        <div
+                                                            className="mt-5 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.06)] p-4"
+                                                            data-testid={`traveler-${idx}-passport-summary`}
+                                                        >
+                                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                                <p className="flex items-center gap-2 text-sm font-bold text-[hsl(var(--brand-green))]">
+                                                                    <CheckCircle2 className="h-4 w-4" /> Pasaporttan okundu
+                                                                </p>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setFieldsOpen((o) => ({ ...o, [t.key]: true }))}
+                                                                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-bold text-foreground transition-colors duration-150 hover:bg-muted focus-visible:outline-none"
+                                                                    data-testid={`traveler-${idx}-edit-fields`}
+                                                                >
+                                                                    <Pencil className="h-3.5 w-3.5" /> Düzenle
+                                                                </button>
+                                                            </div>
+                                                            <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                                                                {[
+                                                                    ["Ad Soyad", `${t.first_name} ${t.last_name}`],
+                                                                    ["Doğum tarihi", formatDate(t.birth_date)],
+                                                                    ["Cinsiyet", t.gender === "female" ? "Kadın" : "Erkek"],
+                                                                    ["Pasaport no", t.passport_no],
+                                                                    ["Geçerlilik", formatDate(t.passport_expiry)],
+                                                                    ...(t.national_id ? [["T.C. kimlik no", t.national_id]] : []),
+                                                                ].map(([label, value]) => (
+                                                                    <div key={label} className="flex items-baseline justify-between gap-3 border-b border-border/60 pb-1.5">
+                                                                        <dt className="text-xs text-muted-foreground">{label}</dt>
+                                                                        <dd className="text-xs font-bold">{value}</dd>
+                                                                    </div>
+                                                                ))}
+                                                            </dl>
+                                                            <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
+                                                                Bilgiler pasaportunuzdan okundu. Hatalı bir şey görürseniz "Düzenle"ye
+                                                                dokunun.
+                                                            </p>
+                                                        </div>
+                                                    ) : (
                                                     <div className="mt-5 grid gap-5 sm:grid-cols-2">
                                                         <Field label="Ad" required error={te.first_name}>
                                                             <Input value={t.first_name} onChange={(e) => updateTraveler(t.key, { first_name: e.target.value })} placeholder="AHMET" data-testid={`traveler-${idx}-first-name`} />
@@ -1088,6 +1136,7 @@ export default function Apply() {
                                                             </div>
                                                         )}
                                                     </div>
+                                                    )}
                                                 </div>
                                             );
                                         })}
