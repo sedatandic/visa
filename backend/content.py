@@ -625,7 +625,7 @@ BUNDLE_DISCOUNT = {
     "rate": 0.10,
     "title": "Seyahat paketi indirimi",
     "badge": "Sigorta + eSIM = %10 indirim",
-    "note": "Seyahat sigortası ve Dubai eSIM'i birlikte alın, ek ürün toplamınızda %10 indirim otomatik uygulanır.",
+    "note": "Sigorta ve eSIM'i birlikte alın, %10 indirim otomatik uygulanır.",
     "kinds": ["insurance", "esim"],
 }
 

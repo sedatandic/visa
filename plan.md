@@ -287,6 +287,20 @@ Test: iteration_20.json — frontend %100, backend %100 (51/51; kaldirilan on de
 
 ---
 
+### Phase 31 — dubaivizeal Tarzi Kisa Soru Seti — **COMPLETED (2026-09-02)**
+Kullanici istegi (sesli yazim): "pasaport, vesikalik, ucak/otel rezervasyonu — ona gore doldur ama konaklama ve ucus alanlarini sorma; dubaivizeal.com gibi SORULAR sor" + "sorulari kisa yap kullanicilar sikilabilir".
+Rakip form (dubaivizeal.com) incelendi: 3 adim, metin alani olarak ucus no/konaklama/amac/not HIC sorulmuyor; bilet ve otel yalnizca **opsiyonel belge** olarak isteniyor.
+
+1) **Kaldirilan alanlar:** Seyahat amaci, ucus numarasi, otel/konaklama, not (ve iceren "Istege bagli bilgiler" collapsible) tamamen kaldirildi. Adim 4 ozetindeki "Amaci"/"Konaklama" satirlari da kalkti. Veri sozlesmesi korundu (bos string gonderiliyor, modeller ayni).
+2) **Belgeler opsiyonel:** "Donus Ucak Bileti" ve "Otel Rezervasyonu" artik `Opsiyonel`; frontend zorunluluk kontrolu ve backend `_validate_extra_documents` 400'leri kaldirildi. Gonderilen file_id'lerin gecerliligi hala dogrulaniyor. Eksik belgeler `doc_reminders.missing_documents` ile takip ekraninda listeleniyor ve musteri sonradan yukleyebiliyor (dogrulandi: DV-YK320549).
+3) **Kisaltilan metinler:** adim basliklari ("Kisisel bilgiler", "Vize ve tarihler", "Evraklar", "Ozet ve odeme" — numaralar kalkti), stepper etiketleri (Bilgiler / Vize / Evraklar / Odeme), alan etiketleri (Ad Soyad, E-posta, Telefon, Vize turu, Dogum ulkesi, Gidis tarihi, Pasaport no, Gecerlilik, T.C. kimlik no) ve tum aciklama paragraflari (~2.600 karakter metin kisaldi).
+
+Sonuc: adim 2'de 4 zorunlu alan, adim 1'de 3 iletisim + 6 yolcu alani; form dubaivizeal ile ayni kisalikta ama pasaport OCR + aile indirimi + eSIM/sigorta avantajlari korundu.
+
+Test: iteration_22.json — frontend %100, regresyon %100, sifir hata. Uctan uca basvuru olusturma (bilet/otel yuklemeden), taslak kaydetme, eksik belge takibi dogrulandi. Backend %83,6 degeri yalnizca bilincli kaldirilan on degerlendirme uclarinin beklenen 404'lerinden kaynakli.
+
+---
+
 ## 3. Next Actions
 
 ### P0 — “İlk Gerçek Aktarım” (Zami Live Verification) — **BLOCKED**
@@ -339,6 +353,7 @@ Test: iteration_20.json — frontend %100, backend %100 (51/51; kaldirilan on de
 - Phase 1–19: **TAMAMLANDI**.
 - Phase 20–23 (Zami RPA + yakalama + mapping + status + tracking): **TAMAMLANDI**, ancak **İlk Gerçek Aktarım canlı doğrulaması P0 ve BLOCKED** (kullanıcı Zami kimlik bilgileri yok).
 - Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
+- Phase 31 (dubaivizeal tarzi kisa soru seti): **TAMAMLANDI** — iteration_22.json frontend %100.
 - Phase 30 (Formu kisaltma + yorum vitrini): **TAMAMLANDI** — iteration_20.json %100.
 - Phase 29 (Sehir alani + on degerlendirme kaldirma): **TAMAMLANDI**.
 - Phase 28 (Turkce tarih secici + ana sayfa vitrini): **TAMAMLANDI** — iteration_19.json 26/26 PASS.

@@ -8,7 +8,6 @@ import {
     Baby,
     CalendarDays,
     CheckCircle2,
-    ChevronDown,
     CreditCard,
     FileText,
     Loader2,
@@ -28,7 +27,7 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { api, apiError, customerAuth } from "../lib/api";
-import { COMPANY, PURPOSES, PURPOSE_LABELS, formatDate, formatMoney, setMeta } from "../lib/site";
+import { COMPANY, formatDate, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { DateField, fromISODate } from "../components/DateField";
@@ -36,8 +35,6 @@ import { FxNote } from "../components/FxNote";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Textarea } from "../components/ui/textarea";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
 import { Progress } from "../components/ui/progress";
 import { Checkbox } from "../components/ui/checkbox";
 import { Switch } from "../components/ui/switch";
@@ -50,10 +47,10 @@ import {
 } from "../components/ui/select";
 
 const STEPS = [
-    { key: "people", label: "Kişisel Bilgiler", icon: Users },
-    { key: "visa", label: "Vize Detayları", icon: CalendarDays },
+    { key: "people", label: "Bilgiler", icon: Users },
+    { key: "visa", label: "Vize", icon: CalendarDays },
     { key: "docs", label: "Evraklar", icon: FileText },
-    { key: "summary", label: "Özet & Ödeme", icon: CreditCard },
+    { key: "summary", label: "Ödeme", icon: CreditCard },
 ];
 
 let travelerSeq = 0;
@@ -142,7 +139,6 @@ export default function Apply() {
     const [step, setStep] = useState(0);
     const [contact, setContact] = useState({ full_name: "", email: "", phone: "", address_city: "", whatsapp_optin: false });
     const [travelers, setTravelers] = useState([newTraveler()]);
-    const [optionalOpen, setOptionalOpen] = useState(false);
     const [openNationalId, setOpenNationalId] = useState({});
     const [travel, setTravel] = useState({
         arrival_date: "",
@@ -645,8 +641,6 @@ export default function Apply() {
                 if (!t.photoFile) te.photo = "Vesikalık fotoğraf zorunlu.";
                 if (Object.keys(te).length) e[t.key] = { ...(e[t.key] || {}), ...te };
             });
-            if (!extraDocs.ticket) e.ticket = "Dönüş uçak bileti veya rezervasyon belgesi zorunlu.";
-            if (!extraDocs.hotel) e.hotel = "Otel/konaklama rezervasyon belgesi zorunlu.";
         }
         setErrors(e);
         if (Object.keys(e).length) {
@@ -780,7 +774,7 @@ export default function Apply() {
             <PageHeader
                 eyebrow="Başvuru Formu"
                 title="Dubai vize başvurunuzu tamamlayın"
-                description="Tek formda birden fazla yolcu ekleyebilirsiniz. Çocuk vizesi indirimi ve aile indirimi otomatik hesaplanır."
+                description="Tek formda tüm aileniz için başvurun; indirimler otomatik hesaplanır."
             />
 
             <section className="section">
@@ -860,25 +854,22 @@ export default function Apply() {
                             {/* STEP 0 */}
                             {step === 0 && (
                                 <div data-testid="wizard-personal-info-form">
-                                    <h2 className="font-heading text-xl font-bold">1. Kişisel bilgiler</h2>
+                                    <h2 className="font-heading text-xl font-bold">Kişisel bilgiler</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        İlk olarak sizinle iletişim kuracağımız bilgileri, ardondan seyahat edecek
-                                        yolcuları ekleyin. Bilgileri pasaportta yazdığı gibi, Türkçe karakter
-                                        kullanmadan girin.
-                                    </p>
+                                        Bilgileri pasaportta yazdığı gibi, Türkçe karakter kullanmadan girin.</p>
 
                                     <div className="mt-6 rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
                                         <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
                                             İletişim bilgileri
                                         </h3>
                                         <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                                            <Field label="Adınız Soyadınız" required htmlFor="c-name" error={errors.full_name}>
+                                            <Field label="Ad Soyad" required htmlFor="c-name" error={errors.full_name}>
                                                 <Input id="c-name" value={contact.full_name} onChange={setC("full_name")} placeholder="AHMET YILMAZ" data-testid="input-contact-name" />
                                             </Field>
-                                            <Field label="E-Posta Adresi" required htmlFor="c-email" error={errors.email}>
+                                            <Field label="E-posta" required htmlFor="c-email" error={errors.email}>
                                                 <Input id="c-email" type="email" value={contact.email} onChange={setC("email")} placeholder="ornek@eposta.com" data-testid="input-contact-email" />
                                             </Field>
-                                            <Field label="Telefon Numaranız" required htmlFor="c-phone" error={errors.phone}>
+                                            <Field label="Telefon" required htmlFor="c-phone" error={errors.phone}>
                                                 <Input id="c-phone" value={contact.phone} onChange={setC("phone")} placeholder="0555 111 22 33" data-testid="input-contact-phone" />
                                             </Field>
                                         </div>
@@ -890,8 +881,7 @@ export default function Apply() {
                                             />
                                             <span className="leading-6 text-muted-foreground">
                                                 <strong className="text-foreground">WhatsApp ile bilgilendirilmek istiyorum.</strong>{" "}
-                                                Vize sonucunuz çıktığında telefon numaranıza WhatsApp mesajı gönderiyoruz.
-                                                Onayınızı dilediğiniz zaman geri alabilirsiniz.
+                                                Vize sonucunuz çıkınca mesaj gönderelim.
                                             </span>
                                         </label>
                                     </div>
@@ -1003,13 +993,10 @@ export default function Apply() {
                                                     <div className="mt-5 rounded-xl border border-dashed border-primary/40 bg-primary/[0.04] p-4" data-testid={`traveler-${idx}-ai-passport-box`}>
                                                         <p className="flex items-center gap-2 text-sm font-bold">
                                                             <Sparkles className="h-4 w-4 text-primary" />
-                                                            Pasaportunuzu yükleyin, bilgiler otomatik dolsun
+                                                            Pasaportu yükleyin, bilgiler otomatik dolsun
                                                         </p>
                                                         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                                            Pasaportunuzun kimlik sayfasının fotoğrafını yükleyin; ad, soyad,
-                                                            pasaport numarası ve tarihleri yapay zeka okuyup aşağıdaki alanlara
-                                                            yazsın. Yüklediğiniz dosya evrak adımında da kullanılır.
-                                                        </p>
+                                                            Fotoğrafı yükleyin; ad, soyad ve pasaport bilgileri otomatik dolsun.</p>
                                                         <div className="mt-3">
                                                             <FileDropzone
                                                                 label="Pasaport kimlik sayfası"
@@ -1070,10 +1057,10 @@ export default function Apply() {
                                                                 </SelectContent>
                                                             </Select>
                                                         </Field>
-                                                        <Field label="Pasaport numarası" required error={te.passport_no}>
+                                                        <Field label="Pasaport no" required error={te.passport_no}>
                                                             <Input value={t.passport_no} onChange={(e) => updateTraveler(t.key, { passport_no: e.target.value })} placeholder="U12345678" data-testid={`traveler-${idx}-passport-no`} />
                                                         </Field>
-                                                        <Field label="Pasaport geçerlilik tarihi" required error={te.passport_expiry}>
+                                                        <Field label="Geçerlilik" required error={te.passport_expiry}>
                                                             <DateField
                                                                 value={t.passport_expiry}
                                                                 onChange={(iso) => updateTraveler(t.key, { passport_expiry: iso })}
@@ -1085,8 +1072,8 @@ export default function Apply() {
                                                             />
                                                         </Field>
                                                         {t.national_id || openNationalId[t.key] ? (
-                                                            <Field label="T.C. Kimlik No (isteğe bağlı)">
-                                                                <Input value={t.national_id} onChange={(e) => updateTraveler(t.key, { national_id: e.target.value })} placeholder="11 haneli kimlik numarası" data-testid={`traveler-${idx}-national-id`} />
+                                                            <Field label="T.C. kimlik no">
+                                                                <Input value={t.national_id} onChange={(e) => updateTraveler(t.key, { national_id: e.target.value })} placeholder="11 hane" data-testid={`traveler-${idx}-national-id`} />
                                                             </Field>
                                                         ) : (
                                                             <div className="flex items-end">
@@ -1119,9 +1106,9 @@ export default function Apply() {
                             {/* STEP 1 */}
                             {step === 1 && (
                                 <div data-testid="wizard-visa-details-form">
-                                    <h2 className="font-heading text-xl font-bold">2. Vize ve seyahat bilgileri</h2>
+                                    <h2 className="font-heading text-xl font-bold">Vize ve tarihler</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        Her yolcu için vize türünü seçin, ardından seyahat tarihlerinizi girin.
+                                        Vize türünü ve seyahat tarihlerinizi seçin.
                                     </p>
 
                                     <div className="mt-6 space-y-4">
@@ -1143,7 +1130,7 @@ export default function Apply() {
                                                         )}
                                                     </div>
                                                     <div className="mt-4">
-                                                        <Field label="Vize Türü" required error={te.visa_type_id}>
+                                                        <Field label="Vize türü" required error={te.visa_type_id}>
                                                             <Select value={t.visa_type_id} onValueChange={(v) => updateTraveler(t.key, { visa_type_id: v })}>
                                                                 <SelectTrigger data-testid={`traveler-${idx}-visa-type`}>
                                                                     <SelectValue placeholder="Seçiniz" />
@@ -1164,7 +1151,7 @@ export default function Apply() {
                                     </div>
 
                                     <div className="mt-7 grid gap-5 sm:grid-cols-2">
-                                        <Field label="Doğum Ülkesi" required error={errors.birth_country}>
+                                        <Field label="Doğum ülkesi" required error={errors.birth_country}>
                                             <Select value={travel.birth_country} onValueChange={(v) => { setTravel((f) => ({ ...f, birth_country: v })); setErrors((p) => ({ ...p, birth_country: undefined })); }}>
                                                 <SelectTrigger data-testid="select-birth-country">
                                                     <SelectValue />
@@ -1175,7 +1162,7 @@ export default function Apply() {
                                                 </SelectContent>
                                             </Select>
                                         </Field>
-                                        <Field label="Giriş (gidiş) tarihi" required error={errors.arrival_date}>
+                                        <Field label="Gidiş tarihi" required error={errors.arrival_date}>
                                             <DateField
                                                 value={travel.arrival_date}
                                                 onChange={(iso) => setTravel((t) => ({ ...t, arrival_date: iso }))}
@@ -1199,59 +1186,6 @@ export default function Apply() {
                                         </Field>
                                     </div>
 
-                                    <Collapsible open={optionalOpen} onOpenChange={setOptionalOpen} className="mt-6">
-                                        <CollapsibleTrigger asChild>
-                                            <button
-                                                type="button"
-                                                className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border border-dashed border-border px-4 text-left transition-colors duration-150 hover:border-primary/50 hover:bg-muted/60 focus-visible:outline-none"
-                                                data-testid="optional-travel-toggle"
-                                            >
-                                                <span>
-                                                    <span className="block text-sm font-bold">İsteğe bağlı bilgiler</span>
-                                                    <span className="block text-xs text-muted-foreground">
-                                                        Seyahat amacı, uçuş no, otel ve not — bilmiyorsanız atlayabilirsiniz
-                                                    </span>
-                                                </span>
-                                                <ChevronDown
-                                                    className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
-                                                        optionalOpen ? "rotate-180" : ""
-                                                    }`}
-                                                    aria-hidden="true"
-                                                />
-                                            </button>
-                                        </CollapsibleTrigger>
-                                        <CollapsibleContent
-                                            className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
-                                            data-testid="optional-travel-fields"
-                                        >
-                                            <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                                                <Field label="Seyahat amacı">
-                                                    <Select value={travel.purpose} onValueChange={(v) => setTravel((f) => ({ ...f, purpose: v }))}>
-                                                        <SelectTrigger data-testid="select-purpose">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {PURPOSES.map((p) => (
-                                                                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </Field>
-                                                <Field label="Uçuş numarası">
-                                                    <Input value={travel.flight_no} onChange={setT("flight_no")} placeholder="Örn. TK760" data-testid="input-flight-no" />
-                                                </Field>
-                                                <Field label="Otel / konaklama">
-                                                    <Input value={travel.accommodation} onChange={setT("accommodation")} placeholder="Otel adı veya adres" data-testid="input-accommodation" />
-                                                </Field>
-                                                <div className="sm:col-span-2">
-                                                    <Field label="Eklemek istediğiniz not">
-                                                        <Textarea rows={3} value={travel.notes} onChange={setT("notes")} placeholder="Danışmanımızın bilmesi gereken bir durum varsa yazın…" data-testid="input-notes" />
-                                                    </Field>
-                                                </div>
-                                            </div>
-                                        </CollapsibleContent>
-                                    </Collapsible>
-
                                     {urgentTrip && (
                                         <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.11)] p-4" data-testid="urgent-trip-warning">
                                             <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[hsl(var(--status-warning))]" />
@@ -1264,7 +1198,7 @@ export default function Apply() {
 
                                     <div className="mt-8">
                                         <h3 className="font-heading text-base font-bold">Ek hizmetler</h3>
-                                        <p className="mt-1.5 text-sm text-muted-foreground">Ücretler yolcu başına eklenir.</p>
+                                        <p className="mt-1.5 text-sm text-muted-foreground">Yolcu başına eklenir.</p>
                                         <div className="mt-4 space-y-4">
                                             {addonMeta.map((a) => (
                                                 <label key={a.id} className="flex cursor-pointer items-start gap-4 rounded-xl border border-border bg-card p-5" data-testid={`addon-toggle-row-${a.id}`}>
@@ -1302,12 +1236,11 @@ export default function Apply() {
                                                     </p>
                                                     <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
                                                         {bundleInfo?.note ||
-                                                            "Seyahat sigortası ve Dubai eSIM'i birlikte alın, ek ürün toplamınızda %10 indirim otomatik uygulanır."}
+                                                            "Sigorta ve eSIM'i birlikte alın, %10 indirim otomatik uygulanır."}
                                                     </p>
                                                     {tripDays && (
                                                         <p className="mt-2 text-sm text-muted-foreground" data-testid="bundle-trip-days">
-                                                            Seyahatiniz <strong className="text-foreground">{tripDays} gün</strong>; sürenize
-                                                            en uygun paketleri <strong className="text-foreground">"Sizin için önerilen"</strong> etiketiyle işaretledik.
+                                                            Seyahatiniz <strong className="text-foreground">{tripDays} gün</strong> — size uygun paketleri işaretledik.
                                                         </p>
                                                     )}
                                                     {quote?.bundle_discount > 0 && (
@@ -1343,10 +1276,7 @@ export default function Apply() {
                                                 <h3 className="font-heading text-base font-bold">Seyahat sağlık sigortası</h3>
                                             </div>
                                             <p className="mt-1.5 text-sm text-muted-foreground">
-                                                BAE'de sağlık masrafları yüksektir. Poliçe bedeli yolcu başına hesaplanır
-                                                ({travelerCount} yolcu) ve poliçeniz <strong className="text-foreground">seyahatinizin
-                                                giriş tarihinde</strong> başlatılır. Poliçeniz ödeme sonrası PDF olarak e-postanıza gelir.
-                                            </p>
+                                                Poliçe yolcu başına hesaplanır ve <strong className="text-foreground">gidiş tarihinizde</strong> başlar; PDF olarak e-postanıza gelir.</p>
                                             {!travelDatesReady && <TravelDatesRequiredNote testId="insurance-dates-required" />}
                                             <div className="mt-4 grid gap-4 md:grid-cols-2">
                                                 {insuranceProducts.map((p) => {
@@ -1408,11 +1338,7 @@ export default function Apply() {
                                                 <h3 className="font-heading text-base font-bold">Dubai eSIM (internet paketi)</h3>
                                             </div>
                                             <p className="mt-1.5 text-sm text-muted-foreground">
-                                                Dubai'ye indiğiniz anda internetiniz hazır olsun. Paketiniz
-                                                <strong className="text-foreground"> giriş tarihinizde</strong> başlar; adet, yolcu
-                                                sayınıza göre otomatik seçilir ve dilediğiniz gibi değiştirebilirsiniz. QR kodunuz
-                                                ödeme sonrası e-postanıza gelir.
-                                            </p>
+                                                Paketiniz <strong className="text-foreground">gidiş tarihinizde</strong> başlar; QR kodunuz e-postanıza gelir.</p>
                                             {!travelDatesReady && <TravelDatesRequiredNote testId="esim-dates-required" />}
                                             <div className="mt-4 space-y-4">
                                                 {esimProducts.map((p) => {
@@ -1495,12 +1421,9 @@ export default function Apply() {
                             {/* STEP 2 */}
                             {step === 2 && (
                                 <div data-testid="wizard-document-upload-dropzone">
-                                    <h2 className="font-heading text-xl font-bold">3. Evrak yükleme</h2>
+                                    <h2 className="font-heading text-xl font-bold">Evraklar</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        Her yolcu için pasaport ve vesikalık fotoğraf, başvurunun tamamı için uçak
-                                        bileti ve otel rezervasyonu zorunludur. Belgeleriniz şifreli olarak saklanır
-                                        ve yalnızca başvurunuz için kullanılır.
-                                    </p>
+                                        Pasaport ve vesikalık zorunlu. Belgeleriniz şifreli saklanır.</p>
 
                                     <div className="mt-6 space-y-7">
                                         {travelers.map((t, idx) => {
@@ -1539,7 +1462,7 @@ export default function Apply() {
                                                                         Pasaport okundu: {ocr[t.key].name} {ocr[t.key].passport_no ? `· ${ocr[t.key].passport_no}` : ""}
                                                                     </p>
                                                                     <p className="mt-1 text-xs text-muted-foreground">
-                                                                        Boş alanlar otomatik dolduruldu. Lütfen 1. adımdaki bilgileri kontrol edin.
+                                                                        Boş alanlar dolduruldu, kontrol edin.
                                                                     </p>
                                                                 </div>
                                                             )}
@@ -1577,12 +1500,11 @@ export default function Apply() {
                                         <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
                                             <p className="font-heading text-sm font-bold">Seyahat belgeleri (tüm başvuru için)</p>
                                             <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
-                                                Uçak bileti ve otel rezervasyonu başvurunuz için zorunludur. Henüz
-                                                kesinleşmediyse rezervasyon (opsiyon) belgesi yüklemeniz yeterlidir.
+                                                Varsa yükleyin, yoksa sonra da ekleyebilirsiniz.
                                             </p>
                                             <div className="mt-5 grid gap-6 md:grid-cols-3">
                                                 <div>
-                                                    <FileDropzone label="Dönüş Uçak Bileti" hint="Zorunlu" docType="ticket" value={extraDocs.ticket} onChange={(f) => setExtraDocs((s) => ({ ...s, ticket: f }))} testId="ticket-upload-input" />
+                                                    <FileDropzone label="Dönüş Uçak Bileti" hint="Opsiyonel" docType="ticket" value={extraDocs.ticket} onChange={(f) => setExtraDocs((s) => ({ ...s, ticket: f }))} testId="ticket-upload-input" />
                                                     {errors.ticket && (
                                                         <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive" data-testid="ticket-upload-error">
                                                             <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {errors.ticket}
@@ -1590,7 +1512,7 @@ export default function Apply() {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <FileDropzone label="Otel Rezervasyonu" hint="Zorunlu" docType="hotel" value={extraDocs.hotel} onChange={(f) => setExtraDocs((s) => ({ ...s, hotel: f }))} testId="hotel-upload-input" />
+                                                    <FileDropzone label="Otel Rezervasyonu" hint="Opsiyonel" docType="hotel" value={extraDocs.hotel} onChange={(f) => setExtraDocs((s) => ({ ...s, hotel: f }))} testId="hotel-upload-input" />
                                                     {errors.hotel && (
                                                         <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive" data-testid="hotel-upload-error">
                                                             <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {errors.hotel}
@@ -1612,11 +1534,9 @@ export default function Apply() {
                             {/* STEP 3 */}
                             {step === 3 && (
                                 <div data-testid="wizard-summary-section">
-                                    <h2 className="font-heading text-xl font-bold">4. Özet ve ödeme</h2>
+                                    <h2 className="font-heading text-xl font-bold">Özet ve ödeme</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        Bilgilerinizi kontrol edin. "Ödemeye geç" butonuna bastığınızda başvurunuz
-                                        oluşturulur ve güvenli ödeme sayfasına yönlendirilirsiniz.
-                                    </p>
+                                        Bilgilerinizi kontrol edip ödemeye geçin.</p>
 
                                     {created && (
                                         <div className="mt-5 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.08)] p-4" data-testid="application-created-banner">
@@ -1672,8 +1592,6 @@ export default function Apply() {
                                             <div className="mt-3">
                                                 <SummaryRow label="Gidiş" value={formatDate(travel.arrival_date)} />
                                                 <SummaryRow label="Dönüş" value={formatDate(travel.departure_date)} />
-                                                <SummaryRow label="Amacı" value={PURPOSE_LABELS[travel.purpose]} />
-                                                <SummaryRow label="Konaklama" value={travel.accommodation} />
                                             </div>
                                         </div>
 
@@ -1908,7 +1826,7 @@ export default function Apply() {
                                     </div>
                                 ) : (
                                     <p className="mt-4 border-t border-border pt-4 text-sm text-muted-foreground">
-                                        Fiyat hesabı için her yolcu için vize türü seçin.
+                                        Fiyat için vize türü seçin.
                                     </p>
                                 )}
                             </div>
@@ -1919,18 +1837,16 @@ export default function Apply() {
                                     <h3 className="font-heading text-sm font-bold">Bilgileriniz güvende</h3>
                                 </div>
                                 <ul className="mt-3 space-y-2 text-xs leading-5 text-muted-foreground">
-                                    <li>• Kart bilgileriniz sunucularımıza kaydedilmez.</li>
-                                    <li>• Belgeleriniz yalnızca başvurunuz için kullanılır.</li>
-                                    <li>• Onaylanan vizeniz PDF olarak e-postanıza gönderilir.</li>
+                                    <li>• Kart bilgileri bizde saklanmaz.</li>
+                                    <li>• Belgeler yalnızca başvurunuzda kullanılır.</li>
+                                    <li>• Vizeniz PDF olarak e-postanıza gelir.</li>
                                 </ul>
                             </div>
 
                             <div className="rounded-xl border border-border bg-card p-5">
                                 <h3 className="font-heading text-sm font-bold">Yardıma mı ihtiyacınız var?</h3>
                                 <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                                    Formu doldururken takılırsanız WhatsApp butonundan yazın; danışmanımız
-                                    adım adım yardımcı olsun.
-                                </p>
+                                    Takılırsanız WhatsApp'tan yazın, hemen yardımcı olalım.</p>
                                 <Button type="button" variant="secondary" className="mt-4 h-10 w-full border border-border" onClick={() => navigate("/gerekli-belgeler")}>
                                     Gerekli belgeleri gör
                                 </Button>

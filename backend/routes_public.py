@@ -575,11 +575,11 @@ async def _ensure_uploads_exist(*file_ids: str | None) -> None:
 
 
 async def _validate_extra_documents(extra) -> None:
-    """Basvuru geneli icin zorunlu bilet/otel belgelerini kontrol eder."""
-    if not extra.ticket_file_id:
-        raise HTTPException(400, "Donus ucak bileti veya rezervasyon belgesi zorunludur.")
-    if not extra.hotel_file_id:
-        raise HTTPException(400, "Otel/konaklama rezervasyon belgesi zorunludur.")
+    """Basvuru geneli belgeleri dogrular.
+
+    Ucak bileti ve otel rezervasyonu OPSIYONELDIR (musteri henuz rezervasyon
+    yapmamis olabilir); gonderildiyse gecerli bir upload olmalidir.
+    """
     await _ensure_uploads_exist(extra.ticket_file_id, extra.hotel_file_id)
 
 
