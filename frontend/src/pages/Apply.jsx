@@ -161,6 +161,7 @@ export default function Apply() {
     const [kvkk, setKvkk] = useState(false);
     const [errors, setErrors] = useState({});
     const [ocr, setOcr] = useState({});
+    const [photoCheck, setPhotoCheck] = useState({});
     const [payMethod, setPayMethod] = useState("card");
     const [transferInfo, setTransferInfo] = useState(null);
     const [quote, setQuote] = useState(null);
@@ -588,6 +589,50 @@ export default function Apply() {
             setOcr((s) => ({ ...s, [key]: { status: "failed", message: apiError(err, "") } }));
         }
     };
+
+    // Vesikalik fotografi yapay zeka ile denetler. Sonuc sadece uyari amaclidir,
+    // kullanici uygun olmayan fotografla da basvuruya devam edebilir.
+    const checkPhotoWithAI = async (key, fileInfo) => {
+        if (!fileInfo?.file_id) {
+            setPhotoCheck((s) => ({ ...s, [key]: undefined }));
+            return;
+        }
+        if ((fileInfo.content_type || "").includes("pdf")) {
+            setPhotoCheck((s) => ({
+                ...s,
+                [key]: { status: "warn", issues: ["Vesikalık fotoğrafı JPG veya PNG olarak yükleyin."], advice: "" },
+            }));
+            return;
+        }
+        setPhotoCheck((s) => ({ ...s, [key]: { status: "loading" } }));
+        try {
+            const form = new FormData();
+            form.append("file_id", fileInfo.file_id);
+            const { data } = await api.post("/photo/check", form, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            if (!data?.checked) {
+                setPhotoCheck((s) => ({ ...s, [key]: { status: "skipped", message: data?.message || "" } }));
+                return;
+            }
+            if (data.ok) {
+                setPhotoCheck((s) => ({ ...s, [key]: { status: "ok", score: data.score } }));
+                return;
+            }
+            setPhotoCheck((s) => ({
+                ...s,
+                [key]: {
+                    status: "warn",
+                    isPhoto: data.is_photo !== false,
+                    issues: Array.isArray(data.issues) ? data.issues : [],
+                    advice: data.advice || "",
+                },
+            }));
+        } catch {
+            setPhotoCheck((s) => ({ ...s, [key]: { status: "skipped", message: "" } }));
+        }
+    };
+
 
     const setC = (key) => (e) => {
         setContact((f) => ({ ...f, [key]: e.target.value }));
@@ -1529,12 +1574,63 @@ export default function Apply() {
                                                         <div>
                                                             <FileDropzone
                                                                 label="Vesikalık Fotoğraf"
-                                                                hint="Zorunlu"
+                                                                hint="Zorunlu · Yapay zeka kontrol eder"
                                                                 docType="photo"
                                                                 value={t.photoFile}
-                                                                onChange={(f) => updateTraveler(t.key, { photoFile: f })}
+                                                                onChange={(f) => {
+                                                                    updateTraveler(t.key, { photoFile: f });
+                                                                    checkPhotoWithAI(t.key, f);
+                                                                }}
                                                                 testId={`traveler-${idx}-photo-upload-input`}
                                                             />
+                                                            {photoCheck[t.key]?.status === "loading" && (
+                                                                <p
+                                                                    className="mt-2 flex items-center gap-2 text-xs font-medium text-primary"
+                                                                    data-testid={`traveler-${idx}-photo-check-loading`}
+                                                                >
+                                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                                    Fotoğraf kontrol ediliyor...
+                                                                </p>
+                                                            )}
+                                                            {photoCheck[t.key]?.status === "ok" && (
+                                                                <p
+                                                                    className="mt-2 flex items-center gap-2 text-xs font-semibold text-[hsl(var(--brand-green))]"
+                                                                    data-testid={`traveler-${idx}-photo-check-ok`}
+                                                                >
+                                                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                                                    Fotoğraf vize standartlarına uygun görünüyor.
+                                                                </p>
+                                                            )}
+                                                            {photoCheck[t.key]?.status === "warn" && (
+                                                                <div
+                                                                    className="mt-2 rounded-lg border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.08)] p-3"
+                                                                    data-testid={`traveler-${idx}-photo-check-warning`}
+                                                                >
+                                                                    <p className="flex items-center gap-2 text-xs font-bold text-foreground">
+                                                                        <AlertCircle className="h-3.5 w-3.5 text-[hsl(var(--status-warning))]" />
+                                                                        {photoCheck[t.key].isPhoto === false
+                                                                            ? "Bu görüntü vesikalık fotoğraf gibi görünmüyor"
+                                                                            : "Fotoğrafta düzeltilmesi önerilen noktalar var"}
+                                                                    </p>
+                                                                    {photoCheck[t.key].issues?.length > 0 && (
+                                                                        <ul className="mt-2 space-y-1 pl-1">
+                                                                            {photoCheck[t.key].issues.map((issue, i) => (
+                                                                                <li key={i} className="text-xs leading-5 text-muted-foreground">
+                                                                                    • {issue}
+                                                                                </li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    )}
+                                                                    {photoCheck[t.key].advice && (
+                                                                        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                                                                            {photoCheck[t.key].advice}
+                                                                        </p>
+                                                                    )}
+                                                                    <p className="mt-2 text-xs text-muted-foreground">
+                                                                        Yine de bu fotoğrafla devam edebilirsiniz.
+                                                                    </p>
+                                                                </div>
+                                                            )}
                                                             {te.photo && (
                                                                 <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive">
                                                                     <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {te.photo}

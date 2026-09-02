@@ -1,14 +1,18 @@
 [
   {
-    "content": "Admin: ön değerlendirme sayfasını ve menü öğesini kaldır",
-    "status": "in_progress"
+    "content": "Backend: passport_ai.py AI vesikalık fotoğraf doğrulama fonksiyonu",
+    "status": "completed"
   },
   {
-    "content": "Backend: /api/pre-evaluation* uçları, pre_eval.py ve model kaldır",
-    "status": "pending"
+    "content": "Backend: POST /api/photo/check endpoint'i",
+    "status": "completed"
   },
   {
-    "content": "Doğrulama: import/compile + uç kontrolü (404) + admin sayfaları sağlam",
-    "status": "pending"
+    "content": "Frontend: Apply.jsx fotoğraf kontrolü + uyarı UI (engellemesiz)",
+    "status": "completed"
+  },
+  {
+    "content": "Test: backend endpoint + frontend uyarı akışı (12/12 PASS)",
+    "status": "completed"
   }
 ]

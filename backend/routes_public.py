@@ -57,7 +57,7 @@ from emailer import (
 from models import ApplicationCreate, ContactCreate, DocumentSubmission, QuoteRequest
 from doc_reminders import missing_documents
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
-from passport_ai import read_passport
+from passport_ai import check_photo, read_passport
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
 from visa_guides import build_guide, guide_index
 
@@ -491,6 +491,59 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
         "size": record["size"],
         "url": f"/api/files/{file_id}",
     }
+
+
+@router.post("/photo/check")
+async def check_photo_document(file_id: str = Form(...)) -> dict:
+    """Yuklenen vesikalik fotografi yapay zeka ile denetler (uyari amacli, engellemez)."""
+    record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
+    if not record:
+        raise HTTPException(404, "Dosya bulunamadi.")
+    content_type = record.get("content_type") or ""
+    if content_type == "application/pdf":
+        return {
+            "ok": False,
+            "checked": False,
+            "reason": "pdf",
+            "message": "Vesikalik fotografi PDF yerine JPG veya PNG olarak yukleyin.",
+        }
+    try:
+        data, ct = get_object(record["storage_path"])
+    except Exception as exc:
+        logger.error("photo fetch failed: %s", exc)
+        raise HTTPException(502, "Dosya okunamadi.") from exc
+
+    try:
+        result = await check_photo(data, content_type or ct)
+    except Exception as exc:
+        logger.error("photo ai failed: %s", exc)
+        return {
+            "ok": True,
+            "checked": False,
+            "reason": "ai_error",
+            "message": "Fotograf otomatik kontrol edilemedi; basvurunuza devam edebilirsiniz.",
+        }
+
+    await uploads_col.update_one(
+        {"id": file_id},
+        {
+            "$set": {
+                "photo_check": {
+                    "at": datetime.now(timezone.utc),
+                    "ok": result.get("ok"),
+                    "score": result.get("score"),
+                    "failed": result.get("failed"),
+                }
+            }
+        },
+    )
+    if not result.get("is_photo"):
+        message = "Bu goruntu vesikalik fotograf gibi gorunmuyor. Lutfen yuzunuzun net gorundugu bir portre yukleyin."
+    elif result.get("ok"):
+        message = "Fotograf vize standartlarina uygun gorunuyor."
+    else:
+        message = "Fotografta duzeltilmesi onerilen noktalar var."
+    return {"checked": True, "message": message, **result}
 
 
 @router.post("/passport/read")
