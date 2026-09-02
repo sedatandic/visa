@@ -9,7 +9,6 @@ from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 
 from content import (
-    ADDONS,
     AGENCY_INFO,
     ARTICLES,
     BANK_TRANSFER,
@@ -448,8 +447,9 @@ def _validate_upload(filename: str, data: bytes) -> str:
 
 def _store_upload(path: str, data: bytes, content_type: str) -> dict:
     """Dosyayi object storage'a yazar; hatalari kullanici dostu mesaja cevirir."""
+    result: dict = {}
     try:
-        result = put_object(path, data, content_type)
+        result = put_object(path, data, content_type) or {}
     except Exception as exc:
         logger.error("upload failed: %s", exc)
         raise HTTPException(
@@ -458,7 +458,6 @@ def _store_upload(path: str, data: bytes, content_type: str) -> dict:
     if not (result or {}).get("path"):
         raise HTTPException(502, "Dosya yuklenemedi. Lutfen tekrar deneyin.")
     return result
-
 
 @router.post("/uploads")
 async def upload_document(file: UploadFile = File(...), doc_type: str = Form("passport")) -> dict:
@@ -513,6 +512,8 @@ async def check_photo_document(file_id: str = Form(...)) -> dict:
         logger.error("photo fetch failed: %s", exc)
         raise HTTPException(502, "Dosya okunamadi.") from exc
 
+    result: dict = {}
+    message: str = ""
     try:
         result = await check_photo(data, content_type or ct)
     except Exception as exc:
@@ -817,6 +818,22 @@ async def create_application(payload: ApplicationCreate):
     return result
 
 
+def _tracking_last_names(doc: dict) -> set[str]:
+    """Takip dogrulamasinda kabul edilebilir soyadlarin kucuk harfli kumesi."""
+    candidates: set[str] = set()
+    for traveler in doc.get("travelers") or []:
+        value = (traveler.get("last_name") or "").strip().lower()
+        if value:
+            candidates.add(value)
+    applicant_last = ((doc.get("applicant") or {}).get("last_name") or "").strip().lower()
+    if applicant_last:
+        candidates.add(applicant_last)
+    contact_name = ((doc.get("contact") or {}).get("full_name") or "").strip()
+    if contact_name:
+        candidates.add(contact_name.split()[-1].lower())
+    return candidates
+
+
 async def _find_application_for_tracking(code: str, last_name: str) -> dict:
     """Takip kodu + soyad dogrulamasi yapar; basarisizsa 400/404 firlatir."""
     code = (code or "").strip().upper()
@@ -826,18 +843,7 @@ async def _find_application_for_tracking(code: str, last_name: str) -> dict:
     doc = await applications_col.find_one({"reference_code": code})
     if not doc:
         raise HTTPException(404, "Bu takip koduyla bir basvuru bulunamadi.")
-
-    candidates = set()
-    for t in doc.get("travelers") or []:
-        candidates.add((t.get("last_name") or "").strip().lower())
-    applicant = doc.get("applicant") or {}
-    if applicant.get("last_name"):
-        candidates.add(applicant["last_name"].strip().lower())
-    contact_name = (doc.get("contact") or {}).get("full_name") or ""
-    if contact_name.strip():
-        candidates.add(contact_name.strip().split()[-1].lower())
-
-    if last_name.lower() not in candidates:
+    if last_name.lower() not in _tracking_last_names(doc):
         raise HTTPException(404, "Takip kodu ve soyad bilgisi eslesmiyor.")
     return doc
 
@@ -851,28 +857,34 @@ async def track_application(code: str, last_name: str):
     return view
 
 
-@router.post("/applications/{code}/documents")
-async def submit_missing_documents(code: str, payload: DocumentSubmission) -> dict:
-    """Musterinin takip sayfasindan eksik belgelerini yuklemesi."""
-    doc = await _find_application_for_tracking(code, payload.last_name)
-    updates = {}
-    uploaded_keys = []
+async def _ensure_upload_exists(file_id: str) -> None:
+    """Musterinin gonderdigi file_id'nin gercekten yuklenmis olmasini dogrular."""
+    exists = await uploads_col.find_one({"id": file_id, "is_deleted": False})
+    if not exists:
+        raise HTTPException(400, "Yuklenen belge bulunamadi. Lutfen tekrar yukleyin.")
 
-    async def _validate(file_id: str):
-        exists = await uploads_col.find_one({"id": file_id, "is_deleted": False})
-        if not exists:
-            raise HTTPException(400, "Yuklenen belge bulunamadi. Lutfen tekrar yukleyin.")
 
+async def _collect_extra_documents(
+    doc: dict, payload: DocumentSubmission, uploaded_keys: list[str]
+) -> dict | None:
+    """Bilet/otel gibi basvuru geneli belgeleri toplar; degisiklik yoksa None."""
     extra = dict(doc.get("extra_documents") or {})
+    changed = False
     for key in ("ticket", "hotel"):
         file_id = getattr(payload, f"{key}_file_id", None)
-        if file_id:
-            await _validate(file_id)
-            extra[f"{key}_file_id"] = file_id
-            uploaded_keys.append(key)
-    if uploaded_keys:
-        updates["extra_documents"] = extra
+        if not file_id:
+            continue
+        await _ensure_upload_exists(file_id)
+        extra[f"{key}_file_id"] = file_id
+        uploaded_keys.append(key)
+        changed = True
+    return extra if changed else None
 
+
+async def _apply_traveler_documents(
+    doc: dict, payload: DocumentSubmission, uploaded_keys: list[str]
+) -> list[dict] | None:
+    """Yolcu bazli pasaport/vesikalik belgelerini yolcu kayitlarina isler."""
     travelers = [dict(t) for t in (doc.get("travelers") or [])]
     for item in payload.traveler_documents or []:
         target = next((t for t in travelers if t.get("id") == item.traveler_id), None)
@@ -881,13 +893,45 @@ async def submit_missing_documents(code: str, payload: DocumentSubmission) -> di
         docs = dict(target.get("documents") or {})
         for key in ("passport", "photo"):
             file_id = getattr(item, f"{key}_file_id", None)
-            if file_id:
-                await _validate(file_id)
-                docs[f"{key}_file_id"] = file_id
-                target[f"{key}_file_id"] = file_id
-                uploaded_keys.append(f"{key}:{item.traveler_id}")
+            if not file_id:
+                continue
+            await _ensure_upload_exists(file_id)
+            docs[f"{key}_file_id"] = file_id
+            target[f"{key}_file_id"] = file_id
+            uploaded_keys.append(f"{key}:{item.traveler_id}")
         target["documents"] = docs
     if any(t.get("documents") for t in travelers):
+        return travelers
+    return None
+
+
+async def _notify_documents_uploaded(fresh: dict, uploaded_keys: list[str]) -> None:
+    """Belge yuklemesi sonrasi admin bilgilendirmesi (anahtar yoksa sessiz gecer)."""
+    admin_email = os.environ.get("ADMIN_EMAIL")
+    if not admin_email:
+        return
+    await send_email(
+        admin_email,
+        f"Musteri belge yukledi - {fresh.get('reference_code', '')}",
+        documents_completed_admin_html(fresh, uploaded_keys),
+        kind="documents_uploaded",
+        meta={"application_id": fresh.get("id")},
+    )
+
+
+@router.post("/applications/{code}/documents")
+async def submit_missing_documents(code: str, payload: DocumentSubmission) -> dict:
+    """Musterinin takip sayfasindan eksik belgelerini yuklemesi."""
+    doc = await _find_application_for_tracking(code, payload.last_name)
+    uploaded_keys: list[str] = []
+    updates: dict = {}
+
+    extra = await _collect_extra_documents(doc, payload, uploaded_keys)
+    if extra is not None:
+        updates["extra_documents"] = extra
+
+    travelers = await _apply_traveler_documents(doc, payload, uploaded_keys)
+    if travelers is not None:
         updates["travelers"] = travelers
 
     if not uploaded_keys:
@@ -902,15 +946,7 @@ async def submit_missing_documents(code: str, payload: DocumentSubmission) -> di
         await applications_col.update_one({"id": doc["id"]}, {"$set": {"status": "reviewing"}})
         fresh = await applications_col.find_one({"id": doc["id"]})
 
-    admin_email = os.environ.get("ADMIN_EMAIL")
-    if admin_email:
-        await send_email(
-            admin_email,
-            f"Musteri belge yukledi - {fresh.get('reference_code', '')}",
-            documents_completed_admin_html(fresh, uploaded_keys),
-            kind="documents_uploaded",
-            meta={"application_id": fresh.get("id")},
-        )
+    await _notify_documents_uploaded(fresh, uploaded_keys)
 
     view = public_application_view(fresh)
     view["missing_documents"] = remaining

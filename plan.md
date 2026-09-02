@@ -319,3 +319,26 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
 Test:
 - iteration_23.json — Pasaportla Tek Adım: backend 5/5, frontend 6/6, **%100**.
 - iteration_24.json — Fotoğraf Kontrolü: backend 12/12, **%100**.
+
+---
+
+### Phase 34 — Kod İncelemesi Düzeltmeleri (Refactor) — **COMPLETED (2026-09-02)**
+**Kritik (düzeltildi)**
+- `routes_public._store_upload`, `routes_public.check_photo_document`, `routes_admin._put_visa_document`:
+  `result` / `message` değişkenleri fonksiyon başında tip belirtilerek initialize edildi (linter "used before assignment" uyarısı kapatıldı).
+
+**Karmaşıklık düşürüldü (hepsi artık < 12)**
+- `routes_public.submit_missing_documents` → `_ensure_upload_exists`, `_collect_extra_documents`, `_apply_traveler_documents`, `_notify_documents_uploaded`
+- `routes_public._find_application_for_tracking` → `_tracking_last_names`
+- `routes_zami.zami_readiness` → `_capture_check`, `_mapping_checks`, `_traveler_check`, `_browser_check`, `_session_check`
+- `routes_store.create_order` → `_build_order_lines`, `_build_order_line`, `_parse_trip_start`, `_pricing_block`, `_payment_block`, `_bank_transfer_details`, `_notify_new_order`
+- `routes_store.create_application_order` → `_application_order_items`, `_application_order_note`, `_pricing_block`
+
+**Temizlik**
+- Kullanılmayan importlar kaldırıldı (`content.ADDONS`, `fastapi.Request`). `flake8 --select=F,E9` temiz.
+
+**`is` vs `==` bulgusu → FALSE POSITIVE**
+- Kod tabanındaki tüm kullanımlar `is None` / `is not None` biçiminde; literal karşılaştırması yok. Değişiklik gerekmedi (`==`'e çevirmek Python'da yanlış olurdu).
+
+**Test**
+- `testing_agent_v3` iteration_25.json → backend **30/30 %100 PASS**, davranış regresyonu yok.

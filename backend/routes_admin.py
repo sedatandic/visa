@@ -260,8 +260,9 @@ def _validate_visa_document(filename: str, data: bytes) -> str:
 
 
 def _put_visa_document(path: str, data: bytes, content_type: str) -> dict:
+    result: dict = {}
     try:
-        result = put_object(path, data, content_type)
+        result = put_object(path, data, content_type) or {}
     except Exception as exc:
         logger.error("visa upload failed: %s", exc)
         raise HTTPException(502, "Dosya yuklenemedi. Lutfen tekrar deneyin.") from exc

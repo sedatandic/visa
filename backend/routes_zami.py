@@ -345,31 +345,23 @@ CAPTURE_JS = r"""
 """
 
 
-@router.get("/admin/zami/readiness")
-async def zami_readiness(admin: dict = Depends(require_admin)) -> dict:
-    """Ilk gercek aktarim oncesi hazirlik kontrolu."""
-    mapping = await zami.get_mapping()
-    session = await zami_rpa.session_status()
-    captured = await zami.get_capture()
+CRITICAL_TRAVELER_FIELDS = ("first_name", "last_name", "passport_no", "birth_date", "birth_date_dmy")
 
-    critical_traveler = ["first_name", "last_name", "passport_no", "birth_date", "birth_date_dmy"]
-    traveler_keys = set((mapping.get("traveler_fields") or {}).keys())
-    has_name = bool(traveler_keys & {"first_name", "last_name", "full_name"})
-    has_passport = "passport_no" in traveler_keys
-    has_birth = bool(traveler_keys & {"birth_date", "birth_date_dmy", "birth_date_mdy"})
-    missing_critical = [k for k in critical_traveler if k not in traveler_keys]
 
-    browser = zami_rpa._chrome_executable() is not None or bool(os.environ.get("PLAYWRIGHT_BROWSERS_PATH"))
+def _capture_check(captured: dict) -> dict:
+    fields = (captured.get("form") or {}).get("fields") or []
+    return {
+        "key": "captured",
+        "label": "Zami form alanları yakalandı",
+        "ok": bool(fields),
+        "detail": f"{len(fields)} alan" if fields else "Yakalama yardımcısını Zami formunda çalıştırın",
+    }
 
-    checks = [
-        {
-            "key": "captured",
-            "label": "Zami form alanları yakalandı",
-            "ok": bool((captured.get("form") or {}).get("fields")),
-            "detail": f"{len((captured.get('form') or {}).get('fields') or [])} alan"
-            if (captured.get("form") or {}).get("fields")
-            else "Yakalama yardımcısını Zami formunda çalıştırın",
-        },
+
+def _mapping_checks(mapping: dict) -> list[dict]:
+    """Alan eşlemesi ile ilgili kontroller (form adresi, genel alanlar, gönder butonu)."""
+    fields = mapping.get("fields") or {}
+    return [
         {
             "key": "form_url",
             "label": "Başvuru formu adresi tanımlı",
@@ -379,15 +371,8 @@ async def zami_readiness(admin: dict = Depends(require_admin)) -> dict:
         {
             "key": "fields",
             "label": "Genel alan eşlemesi",
-            "ok": len(mapping.get("fields") or {}) >= 3,
-            "detail": f"{len(mapping.get('fields') or {})} alan eşlendi",
-        },
-        {
-            "key": "traveler",
-            "label": "Yolcu alanları (ad, pasaport, doğum tarihi)",
-            "ok": has_name and has_passport and has_birth,
-            "detail": f"{len(traveler_keys)} alan eşlendi"
-            + (f" · eksik: {', '.join(missing_critical[:3])}" if missing_critical else ""),
+            "ok": len(fields) >= 3,
+            "detail": f"{len(fields)} alan eşlendi",
         },
         {
             "key": "submit",
@@ -396,27 +381,68 @@ async def zami_readiness(admin: dict = Depends(require_admin)) -> dict:
             "detail": mapping.get("submit_selector") or "Boşsa robot formu doldurur ama göndermez",
         },
         {
-            "key": "browser",
-            "label": "Sunucu tarayıcı motoru",
-            "ok": browser,
-            "detail": "Hazır" if browser else "Robot modu kullanılamaz; tarayıcı yardımcısını kullanın",
-        },
-        {
-            "key": "session",
-            "label": "Portal oturumu (captcha + OTP ile açılmış)",
-            "ok": bool(session.get("has_session")),
-            "detail": session.get("saved_at") or "Robot Oturumu sekmesinden giriş yapın",
-        },
-        {
             "key": "status_url",
             "label": "Durum takibi sayfası (opsiyonel)",
             "ok": bool(mapping.get("status_url")),
             "detail": mapping.get("status_url") or "Otomatik durum takibi için gerekli",
         },
     ]
-    required = {"form_url", "fields", "traveler"}
-    ready_bookmarklet = all(c["ok"] for c in checks if c["key"] in required)
-    ready_robot = ready_bookmarklet and all(c["ok"] for c in checks if c["key"] in {"browser", "session"})
+
+
+def _traveler_check(mapping: dict) -> dict:
+    """Yolcu alanlarinin (ad, pasaport, dogum tarihi) eşlenip eşlenmediğini kontrol eder."""
+    traveler_keys = set((mapping.get("traveler_fields") or {}).keys())
+    has_name = bool(traveler_keys & {"first_name", "last_name", "full_name"})
+    has_passport = "passport_no" in traveler_keys
+    has_birth = bool(traveler_keys & {"birth_date", "birth_date_dmy", "birth_date_mdy"})
+    missing_critical = [k for k in CRITICAL_TRAVELER_FIELDS if k not in traveler_keys]
+    detail = f"{len(traveler_keys)} alan eşlendi"
+    if missing_critical:
+        detail += f" · eksik: {', '.join(missing_critical[:3])}"
+    return {
+        "key": "traveler",
+        "label": "Yolcu alanları (ad, pasaport, doğum tarihi)",
+        "ok": has_name and has_passport and has_birth,
+        "detail": detail,
+    }
+
+
+def _browser_check() -> dict:
+    ready = zami_rpa._chrome_executable() is not None or bool(os.environ.get("PLAYWRIGHT_BROWSERS_PATH"))
+    return {
+        "key": "browser",
+        "label": "Sunucu tarayıcı motoru",
+        "ok": ready,
+        "detail": "Hazır" if ready else "Robot modu kullanılamaz; tarayıcı yardımcısını kullanın",
+    }
+
+
+def _session_check(session: dict) -> dict:
+    return {
+        "key": "session",
+        "label": "Portal oturumu (captcha + OTP ile açılmış)",
+        "ok": bool(session.get("has_session")),
+        "detail": session.get("saved_at") or "Robot Oturumu sekmesinden giriş yapın",
+    }
+
+
+@router.get("/admin/zami/readiness")
+async def zami_readiness(admin: dict = Depends(require_admin)) -> dict:
+    """Ilk gercek aktarim oncesi hazirlik kontrolu."""
+    mapping = await zami.get_mapping()
+    session = await zami_rpa.session_status()
+    captured = await zami.get_capture()
+
+    checks = [
+        _capture_check(captured),
+        *_mapping_checks(mapping),
+        _traveler_check(mapping),
+        _browser_check(),
+        _session_check(session),
+    ]
+    by_key = {c["key"]: c["ok"] for c in checks}
+    ready_bookmarklet = all(by_key.get(key) for key in ("form_url", "fields", "traveler"))
+    ready_robot = ready_bookmarklet and all(by_key.get(key) for key in ("browser", "session"))
     return {
         "checks": checks,
         "ready_bookmarklet": ready_bookmarklet,

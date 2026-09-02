@@ -15,7 +15,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 
 from content import BANK_TRANSFER, BUNDLE_DISCOUNT, bundle_discount_amount
@@ -202,74 +202,76 @@ async def get_products(kind: Optional[str] = None) -> dict:
     return {"items": items, "fx": await get_fx(), "bundle": BUNDLE_DISCOUNT}
 
 
-@router.post("/orders")
-async def create_order(payload: OrderCreateIn) -> dict:
-    catalog = {p["id"]: p for p in await product_list()}
-    lines = []
-    total = 0.0
+def _parse_trip_start(value: Optional[str]) -> Optional[date]:
+    """ISO tarih metnini gune cevirir; gecersizse None dondurur."""
     try:
-        trip_start = date.fromisoformat((payload.travel_start or "").strip()[:10])
-    except Exception:
-        trip_start = None
+        return date.fromisoformat((value or "").strip()[:10])
+    except ValueError:
+        return None
+
+
+def _build_order_line(product: dict, quantity: int, trip_start: Optional[date]) -> dict:
+    """Tek bir siparis satirini (fiyat + gecerlilik penceresi) olusturur."""
+    validity_days = int(product.get("validity_days") or 0)
+    ends_on = None
+    if trip_start and validity_days > 0:
+        ends_on = (trip_start + timedelta(days=validity_days - 1)).isoformat()
+    return {
+        "product_id": product["id"],
+        "kind": product["kind"],
+        "name": product["name"],
+        "quantity": quantity,
+        "unit_price": float(product["price"]),
+        "unit_price_usd": float(product.get("price_usd") or 0),
+        "total": round(float(product["price"]) * quantity, 2),
+        "validity_days": validity_days,
+        "starts_on": trip_start.isoformat() if trip_start else None,
+        "ends_on": ends_on,
+    }
+
+
+async def _build_order_lines(payload: OrderCreateIn) -> list[dict]:
+    """Katalogdan dogrulanmis siparis satirlarini uretir."""
+    catalog = {p["id"]: p for p in await product_list()}
+    trip_start = _parse_trip_start(payload.travel_start)
+    lines: list[dict] = []
     for item in payload.items:
         product = catalog.get(item.product_id)
         if not product:
             raise HTTPException(400, "Secilen urun bulunamadi veya satista degil.")
-        line_total = round(float(product["price"]) * item.quantity, 2)
-        total += line_total
-        validity_days = int(product.get("validity_days") or 0)
-        lines.append(
-            {
-                "product_id": product["id"],
-                "kind": product["kind"],
-                "name": product["name"],
-                "quantity": item.quantity,
-                "unit_price": float(product["price"]),
-                "unit_price_usd": float(product.get("price_usd") or 0),
-                "total": line_total,
-                "validity_days": validity_days,
-                "starts_on": trip_start.isoformat() if trip_start else None,
-                "ends_on": (
-                    (trip_start + timedelta(days=validity_days - 1)).isoformat()
-                    if trip_start and validity_days > 0
-                    else None
-                ),
-            }
-        )
+        lines.append(_build_order_line(product, item.quantity, trip_start))
+    return lines
 
-    now = datetime.now(timezone.utc)
+
+def _payment_block(payment_method: str) -> dict:
+    is_transfer = payment_method == "transfer"
+    return {
+        "method": "bank_transfer" if is_transfer else "card",
+        "status": "awaiting_transfer" if is_transfer else "pending",
+    }
+
+
+def _pricing_block(lines: list[dict]) -> dict:
+    """Ara toplam + paket indirimi + odenecek tutari hesaplar."""
+    items_total = round(sum(float(line["total"]) for line in lines), 2)
     bundle_discount = bundle_discount_amount(lines)
-    doc = {
-        "id": str(uuid.uuid4()),
-        "reference_code": new_order_reference(),
-        "items": lines,
-        "contact": payload.contact.model_dump(),
-        "travel_start": payload.travel_start,
-        "travel_end": payload.travel_end,
-        "note": payload.note,
-        "items_total": round(total, 2),
+    return {
+        "items_total": items_total,
         "bundle_discount": bundle_discount,
         "bundle_discount_rate": float(BUNDLE_DISCOUNT["rate"]) if bundle_discount else 0.0,
-        "price": round(total - bundle_discount, 2),
-        "currency": "TRY",
-        "fx_rate": (await get_fx())["effective_rate"],
-        "status": "pending",
-        "payment": {
-            "method": "bank_transfer" if payload.payment_method == "transfer" else "card",
-            "status": "awaiting_transfer" if payload.payment_method == "transfer" else "pending",
-        },
-        "delivery": {},
-        "created_at": now,
-        "updated_at": now,
+        "price": round(items_total - bundle_discount, 2),
     }
-    await orders_col.insert_one(dict(doc))
 
-    bank = None
-    if payload.payment_method == "transfer":
-        settings_doc = await settings_col.find_one({"key": "bank_transfer"})
-        bank = (settings_doc or {}).get("value") or BANK_TRANSFER
 
-    view = serialize_doc(doc)
+async def _bank_transfer_details(payment_method: str) -> Optional[dict]:
+    if payment_method != "transfer":
+        return None
+    settings_doc = await settings_col.find_one({"key": "bank_transfer"})
+    return (settings_doc or {}).get("value") or BANK_TRANSFER
+
+
+async def _notify_new_order(doc: dict, view: dict, bank: Optional[dict]) -> None:
+    """Musteriye ve (tanimliysa) admine siparis bildirimi gonderir."""
     await send_email(
         doc["contact"]["email"],
         f"Siparisiniz alindi - {doc['reference_code']}",
@@ -278,29 +280,49 @@ async def create_order(payload: OrderCreateIn) -> dict:
         meta={"order_id": doc["id"], "reference_code": doc["reference_code"]},
     )
     admin_email = os.environ.get("ADMIN_EMAIL")
-    if admin_email:
-        await send_email(
-            admin_email,
-            f"Yeni eSIM/sigorta siparisi - {doc['reference_code']}",
-            order_admin_html(view),
-            kind="order_admin_notify",
-            meta={"order_id": doc["id"]},
-        )
+    if not admin_email:
+        return
+    await send_email(
+        admin_email,
+        f"Yeni eSIM/sigorta siparisi - {doc['reference_code']}",
+        order_admin_html(view),
+        kind="order_admin_notify",
+        meta={"order_id": doc["id"]},
+    )
 
+
+@router.post("/orders")
+async def create_order(payload: OrderCreateIn) -> dict:
+    lines = await _build_order_lines(payload)
+    now = datetime.now(timezone.utc)
+    doc = {
+        "id": str(uuid.uuid4()),
+        "reference_code": new_order_reference(),
+        "items": lines,
+        "contact": payload.contact.model_dump(),
+        "travel_start": payload.travel_start,
+        "travel_end": payload.travel_end,
+        "note": payload.note,
+        **_pricing_block(lines),
+        "currency": "TRY",
+        "fx_rate": (await get_fx())["effective_rate"],
+        "status": "pending",
+        "payment": _payment_block(payload.payment_method),
+        "delivery": {},
+        "created_at": now,
+        "updated_at": now,
+    }
+    await orders_col.insert_one(dict(doc))
+
+    bank = await _bank_transfer_details(payload.payment_method)
+    view = serialize_doc(doc)
+    await _notify_new_order(doc, view, bank)
     return {"order": view, "bank": bank}
 
 
-async def create_application_order(app_doc: dict, lines: list) -> dict:
-    """Vize basvurusu icinde alinan eSIM / sigorta urunleri icin teslimat siparisi olusturur.
-
-    Odeme vize basvurusu uzerinden tahsil edilir; bu kayit yalnizca admin
-    teslimat akisi (eSIM QR / police PDF) icin kullanilir.
-    """
-    now = datetime.now(timezone.utc)
-    contact = app_doc.get("contact") or {}
-    travel = app_doc.get("travel") or {}
-    payment = app_doc.get("payment") or {}
-    items = [
+def _application_order_items(lines: list) -> list[dict]:
+    """Vize basvurusundaki store satirlarini siparis kalemlerine cevirir."""
+    return [
         {
             "product_id": line["product_id"],
             "kind": line.get("kind", ""),
@@ -315,7 +337,27 @@ async def create_application_order(app_doc: dict, lines: list) -> dict:
         }
         for line in lines
     ]
-    bundle_discount = bundle_discount_amount(items)
+
+
+def _application_order_note(app_doc: dict, travel: dict) -> str:
+    return (
+        f"Vize basvurusu ile birlikte alindi ({app_doc.get('reference_code')}). "
+        f"Seyahat: {travel.get('arrival_date') or '-'} / {travel.get('departure_date') or '-'}. "
+        "Urunler giris tarihinde baslatilacak."
+    )
+
+
+async def create_application_order(app_doc: dict, lines: list) -> dict:
+    """Vize basvurusu icinde alinan eSIM / sigorta urunleri icin teslimat siparisi olusturur.
+
+    Odeme vize basvurusu uzerinden tahsil edilir; bu kayit yalnizca admin
+    teslimat akisi (eSIM QR / police PDF) icin kullanilir.
+    """
+    now = datetime.now(timezone.utc)
+    contact = app_doc.get("contact") or {}
+    travel = app_doc.get("travel") or {}
+    payment = app_doc.get("payment") or {}
+    items = _application_order_items(lines)
     doc = {
         "id": str(uuid.uuid4()),
         "reference_code": new_order_reference(),
@@ -327,18 +369,11 @@ async def create_application_order(app_doc: dict, lines: list) -> dict:
         },
         "travel_start": travel.get("arrival_date"),
         "travel_end": travel.get("departure_date"),
-        "note": (
-            f"Vize basvurusu ile birlikte alindi ({app_doc.get('reference_code')}). "
-            f"Seyahat: {travel.get('arrival_date') or '-'} / {travel.get('departure_date') or '-'}. "
-            "Urunler giris tarihinde baslatilacak."
-        ),
+        "note": _application_order_note(app_doc, travel),
         "source": "visa_application",
         "application_id": app_doc.get("id"),
         "application_reference": app_doc.get("reference_code"),
-        "price": round(sum(i["total"] for i in items) - bundle_discount, 2),
-        "items_total": round(sum(i["total"] for i in items), 2),
-        "bundle_discount": bundle_discount,
-        "bundle_discount_rate": float(BUNDLE_DISCOUNT["rate"]) if bundle_discount else 0.0,
+        **_pricing_block(items),
         "currency": "TRY",
         "fx_rate": (await get_fx())["effective_rate"],
         "status": "pending",
