@@ -10,7 +10,7 @@ export const WhatsAppButton = () => (
         rel="noreferrer"
         aria-label="WhatsApp ile yazın"
         data-testid="whatsapp-floating-button"
-        className="fixed bottom-5 right-5 z-50 flex h-14 items-center gap-2 rounded-full bg-[#25D366] px-4 text-white transition-transform duration-150 hover:-translate-y-0.5"
+        className="fixed bottom-4 right-4 z-50 flex h-12 items-center gap-2 rounded-full bg-[#25D366] px-3.5 text-white transition-transform duration-150 hover:-translate-y-0.5 sm:bottom-5 sm:right-5 sm:h-14 sm:px-4"
         style={{ boxShadow: "var(--shadow-float)" }}
     >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

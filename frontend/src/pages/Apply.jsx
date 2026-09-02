@@ -781,8 +781,12 @@ export default function Apply() {
             <section className="section">
                 <div className="container-page">
                     {/* STEPPER */}
-                    <div className="card-surface p-5" data-testid="wizard-stepper">
-                        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1">
+                    <div
+                        className="sticky top-[77px] z-30 overflow-hidden rounded-2xl border border-border bg-card/95 backdrop-blur-xl"
+                        style={{ boxShadow: "var(--shadow-card)" }}
+                        data-testid="wizard-stepper"
+                    >
+                        <div className="flex items-center gap-2 overflow-x-auto px-4 py-3.5 sm:px-5">
                             {STEPS.map((s, i) => {
                                 const Icon = s.icon;
                                 const done = i < step;
@@ -790,7 +794,7 @@ export default function Apply() {
                                 return (
                                     <div key={s.key} className="flex min-w-fit items-center gap-2">
                                         <span
-                                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-bold ${
+                                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-[13px] font-bold transition-colors duration-200 ${
                                                 done
                                                     ? "border-primary bg-primary text-primary-foreground"
                                                     : active
@@ -800,15 +804,44 @@ export default function Apply() {
                                         >
                                             {done ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                                         </span>
-                                        <span className={`whitespace-nowrap text-xs font-semibold sm:text-sm ${active ? "text-foreground" : "text-muted-foreground"}`}>
-                                            {s.label}
+                                        <span className="flex flex-col leading-tight">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                Adım {i + 1}
+                                            </span>
+                                            <span
+                                                className={`whitespace-nowrap text-xs font-bold sm:text-sm ${
+                                                    active ? "text-foreground" : "text-muted-foreground"
+                                                }`}
+                                            >
+                                                {s.label}
+                                            </span>
                                         </span>
-                                        {i < STEPS.length - 1 && <span className="mx-1 hidden h-px w-8 bg-border lg:block" aria-hidden="true" />}
+                                        {i < STEPS.length - 1 && (
+                                            <span
+                                                className={`mx-2 hidden h-0.5 w-8 rounded-full lg:block ${
+                                                    done ? "bg-primary/50" : "bg-border"
+                                                }`}
+                                                aria-hidden="true"
+                                            />
+                                        )}
                                     </div>
                                 );
                             })}
+                            {quote ? (
+                                <span
+                                    className="ml-auto hidden shrink-0 items-center gap-2 rounded-xl border border-border bg-[hsl(var(--cloud))] px-3 py-2 xl:flex"
+                                    data-testid="wizard-stepper-total"
+                                >
+                                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        Toplam
+                                    </span>
+                                    <span className="font-heading text-sm font-extrabold">
+                                        {formatMoney(quote.total, quote.currency)}
+                                    </span>
+                                </span>
+                            ) : null}
                         </div>
-                        <Progress value={progress} className="mt-4 h-2" />
+                        <Progress value={progress} className="h-1.5 rounded-none" />
                     </div>
 
                     <div className="mt-8 grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
@@ -1741,10 +1774,14 @@ export default function Apply() {
                         </motion.div>
 
                         {/* SIDEBAR */}
-                        <aside className="space-y-5">
+                        <aside className="space-y-5 lg:sticky lg:top-[172px] lg:self-start">
                             <div className="card-surface p-5" data-testid="wizard-order-summary">
-                                <h3 className="font-heading text-base font-bold">Başvuru özeti</h3>
-                                <p className="mt-2 text-sm text-muted-foreground">{travelers.length} yolcu</p>
+                                <div className="flex items-center justify-between gap-3">
+                                    <h3 className="font-heading text-base font-bold">Başvuru özeti</h3>
+                                    <span className="rounded-md bg-[hsl(var(--sand-surface))] px-2 py-1 text-[11px] font-bold text-primary">
+                                        {travelers.length} yolcu
+                                    </span>
+                                </div>
                                 {quote ? (
                                     <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
                                         <div className="flex justify-between">

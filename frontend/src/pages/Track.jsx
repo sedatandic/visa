@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, Clock, CreditCard, Download, FileCheck2, Loader2, Search, UploadCloud, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Clock, CreditCard, Download, FileCheck2, Loader2, Search, UploadCloud, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError, API } from "../lib/api";
 import { STATUS_META, formatDate, formatDateTime, formatMoney, setMeta } from "../lib/site";
@@ -52,16 +52,34 @@ const CustomerTimeline = ({ timeline }) => {
                     return (
                         <li key={step.key} className="flex gap-4" data-testid={`timeline-step-${step.key}`}>
                             <div className="flex flex-col items-center pt-1">
-                                <StepIcon state={step.state} isResult={isResult} resultStatus={timeline.current_status} />
+                                <span
+                                    className={`flex h-9 w-9 items-center justify-center rounded-full border ${
+                                        step.state === "done"
+                                            ? "border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.08)]"
+                                            : active
+                                              ? "border-primary bg-primary/10 ring-4 ring-primary/10"
+                                              : "border-border bg-card"
+                                    }`}
+                                >
+                                    <StepIcon state={step.state} isResult={isResult} resultStatus={timeline.current_status} />
+                                </span>
                                 {i < total - 1 && (
                                     <span
-                                        className={`mt-1 w-px flex-1 ${step.state === "done" ? "bg-[hsl(var(--brand-green)/0.45)]" : "bg-border"}`}
+                                        className={`mt-1.5 w-0.5 flex-1 rounded-full ${
+                                            step.state === "done"
+                                                ? "bg-[hsl(var(--brand-green)/0.45)]"
+                                                : "bg-border"
+                                        }`}
                                     />
                                 )}
                             </div>
                             <div
-                                className={`mb-4 flex-1 rounded-xl border p-4 ${
-                                    active ? "border-primary bg-primary/5" : "border-transparent"
+                                className={`mb-4 flex-1 rounded-xl border p-4 transition-colors duration-200 ${
+                                    active
+                                        ? "border-primary/40 bg-primary/[0.06]"
+                                        : step.state === "done"
+                                          ? "border-border/70 bg-card"
+                                          : "border-transparent"
                                 }`}
                             >
                                 <div className="flex flex-wrap items-center gap-2">
@@ -199,7 +217,8 @@ export default function Track() {    const [searchParams] = useSearchParams();
             />
 
             <section className="section">
-                <div className="container-page max-w-3xl">
+                <div className="container-page max-w-5xl">
+                  <div className={result ? "" : "grid items-start gap-6 lg:grid-cols-[1.15fr_0.85fr]"}>
                     <form onSubmit={search} className="card-surface p-6 sm:p-8" data-testid="tracking-lookup-form">
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div className="space-y-2">
@@ -224,6 +243,39 @@ export default function Track() {    const [searchParams] = useSearchParams();
                             </p>
                         )}
                     </form>
+
+                    {!result && (
+                        <div className="card-surface p-6 sm:p-7" data-testid="tracking-help-card">
+                            <h2 className="font-heading text-base font-bold">Takip kodunuz nerede?</h2>
+                            <ul className="mt-4 space-y-3.5">
+                                {[
+                                    "Başvurunuzu tamamladığınızda ekranda gösterilen DV- ile başlayan koddur.",
+                                    "\"Başvurunuz alındı\" e-postasının konu satırında ve içeriğinde yer alır.",
+                                    "Soyad alanına, başvurudaki yolculardan herhangi birinin soyadını yazabilirsiniz.",
+                                ].map((t) => (
+                                    <li key={t} className="flex items-start gap-2.5 text-sm leading-6 text-muted-foreground">
+                                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                                        {t}
+                                    </li>
+                                ))}
+                            </ul>
+                            <div className="mt-5 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
+                                <p className="text-sm font-semibold">Hesabınızla da giriş yapabilirsiniz</p>
+                                <p className="mt-1.5 text-xs leading-6 text-muted-foreground">
+                                    E-posta adresinize gelen kodla giriş yaparak tüm başvurularınızı tek ekranda
+                                    görebilirsiniz.
+                                </p>
+                                <Link
+                                    to="/hesabim"
+                                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
+                                    data-testid="tracking-account-link"
+                                >
+                                    Başvurularım <ArrowRight className="h-3.5 w-3.5" />
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                  </div>
 
                     {result && (
                         <div className="mt-8 space-y-6" data-testid="tracking-result">

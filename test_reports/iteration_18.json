@@ -1,0 +1,47 @@
+{
+  "summary": "Frontend-only visual refresh testing completed. All 11 navbar links (4 primary + 7 dropdown), mobile Sheet menu, sticky stepper, admin panel (13 pages), pricing tabs, tracking page, and all public pages tested successfully. No data-testid removals or breakages detected.",
+  "backend_issues": {
+    "critical_bugs": [],
+    "flaky_endpoints": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "component": "Application wizard stepper",
+        "issue": "Very minor 2px overlap detected: stepper positioned at top:74px while navbar bottom is at 76px (navbar height 72px + border). This is negligible and does not block any functionality or user interaction.",
+        "severity": "LOW",
+        "affected_selectors": ["[data-testid='wizard-stepper']"],
+        "fix_priority": "LOW"
+      }
+    ]
+  },
+  "passed_tests": [
+    "Navbar desktop: All 11 links working (vize-tipleri, on-degerlendirme, takip, hesabim + 7 dropdown links)",
+    "Navbar dropdown menu: Opens correctly, all 7 grouped links present (gerekli-belgeler, hizmetler, sss, esim, gelismeler, hakkimizda, iletisim)",
+    "Mobile menu (375px): Sheet opens, mobile-apply-button and mobile-phone-link present",
+    "Pricing page: All 4 tabs working (single, multiple, child, other), visa cards with correct testids",
+    "Application wizard: Sticky stepper working, form fields clickable and editable, add traveler button functional",
+    "Tracking page: Two-column layout, tracking form with code/lastname inputs, help card and account link present",
+    "Admin login: Successful with admin@vizeatlas.com / Dubai2026!",
+    "Admin sidebar: All 13 navigation links present and visible (admin, mesajlar, on-degerlendirme, e-postalar, vize-tipleri, vize-rehberleri, siparisler, yorumlar, yazilar, banka, acente, zami, whatsapp)",
+    "Admin pages: All 13 pages load without console errors",
+    "Admin mobile menu (390px): Toggle button visible, Sheet opens",
+    "All 15 public pages load without errors: /, /vize-tipleri, /gerekli-belgeler, /hizmetler, /gelismeler, /sss, /hakkimizda, /iletisim, /kvkk, /on-degerlendirme, /esim, /seyahat-sigortasi, /takip, /hesabim, /basvuru",
+    "Responsive design: No horizontal scroll at 375px, 768px, 1440px viewports",
+    "Pre-evaluation wizard: Present and loading correctly",
+    "eSIM & Insurance pages: Load with product cards",
+    "Form field clickability: All inputs clickable and editable, no overlap blocking interactions",
+    "Navbar visibility: Remains visible after scroll, not blocked by sticky stepper"
+  ],
+  "test_report_links": [],
+  "success_percentage": {
+    "frontend": "98%",
+    "backend": "N/A (backend not tested as per instructions)"
+  },
+  "updated_files": [],
+  "action_item_for_main_agent": "Optional: Adjust wizard-stepper top position from 74px to 77px to eliminate the 2px overlap with navbar (navbar height 72px + border = ~76px). This is a very minor cosmetic issue and does not affect functionality. All other features working perfectly.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": true
+}

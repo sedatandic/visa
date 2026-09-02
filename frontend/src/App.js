@@ -99,7 +99,7 @@ function App() {
 
                     <Route path="*" element={<Site><NotFound /></Site>} />
                 </Routes>
-                <Toaster position="top-center" richColors />
+                <Toaster position="bottom-right" closeButton />
             </BrowserRouter>
         </div>
     );

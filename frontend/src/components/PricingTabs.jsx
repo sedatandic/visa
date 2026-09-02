@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { formatMoney } from "../lib/site";
 import { Button } from "./ui/button";
 import { VisaTypeCard } from "./VisaTypeCard";
+import { Skeleton } from "./ui/skeleton";
 
 /**
  * Category-tabbed pricing block (Tek Girisli / Cok Girisli / Cocuk / Diger)
@@ -34,7 +35,11 @@ export const PricingTabs = ({ compactHeading = false }) => {
 
     return (
         <div data-testid="pricing-tabs">
-            <div className="flex flex-wrap gap-2" role="tablist">
+            <div
+                className="inline-flex max-w-full flex-wrap gap-1 rounded-2xl border border-border bg-card p-1.5"
+                role="tablist"
+                style={{ boxShadow: "var(--shadow-card)" }}
+            >
                 {categories.map((c) => (
                     <button
                         key={c.id}
@@ -43,10 +48,10 @@ export const PricingTabs = ({ compactHeading = false }) => {
                         aria-selected={active === c.id}
                         onClick={() => setActive(c.id)}
                         data-testid={`pricing-tab-${c.id}`}
-                        className={`rounded-full border px-5 py-2.5 text-sm font-bold transition-colors duration-150 ${
+                        className={`min-h-[44px] rounded-xl px-4 text-sm font-bold transition-colors duration-150 focus-visible:outline-none ${
                             active === c.id
-                                ? "border-[hsl(var(--brand-red))] bg-[hsl(var(--brand-red))] text-white"
-                                : "border-border bg-card text-foreground/80 hover:border-[hsl(var(--brand-red)/0.5)]"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-foreground/75 hover:bg-muted hover:text-foreground"
                         }`}
                     >
                         {c.label}
@@ -67,7 +72,15 @@ export const PricingTabs = ({ compactHeading = false }) => {
             <div className="mt-7 grid gap-6 md:grid-cols-2 lg:grid-cols-3" data-testid="pricing-grid">
                 {loading
                     ? [0, 1, 2].map((i) => (
-                          <div key={i} className="h-[430px] animate-pulse rounded-xl border border-border bg-card" />
+                          <div key={i} className="card-surface p-6" data-testid={`pricing-skeleton-${i}`}>
+                              <Skeleton className="h-5 w-24" />
+                              <Skeleton className="mt-4 h-6 w-4/5" />
+                              <Skeleton className="mt-2 h-4 w-full" />
+                              <Skeleton className="mt-5 h-24 w-full rounded-xl" />
+                              <Skeleton className="mt-5 h-4 w-3/4" />
+                              <Skeleton className="mt-2.5 h-4 w-2/3" />
+                              <Skeleton className="mt-6 h-12 w-full rounded-xl" />
+                          </div>
                       ))
                     : visible.map((visa) => <VisaTypeCard key={visa.id} visa={visa} />)}
             </div>

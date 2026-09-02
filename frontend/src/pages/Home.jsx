@@ -66,7 +66,7 @@ export default function Home() {
     return (
         <div data-testid="home-page">
             {/* HERO */}
-            <section className="relative overflow-hidden border-b border-border bg-card" data-testid="landing-hero">
+            <section className="noise-overlay relative overflow-hidden border-b border-border bg-card" data-testid="landing-hero">
                 <div className="hero-glow absolute inset-0" aria-hidden="true" />
                 <div className="container-page relative grid items-center gap-12 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:py-20">
                     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
@@ -110,13 +110,13 @@ export default function Home() {
                             </Button>
                         </div>
 
-                        <div className="mt-9 grid gap-4 sm:grid-cols-3">
+                        <div className="mt-9 grid gap-4 rounded-2xl border border-border bg-card/70 p-4 backdrop-blur sm:grid-cols-3 sm:divide-x sm:divide-border" data-testid="hero-trust-strip">
                             {[
                                 { icon: Users, title: "Aile başvurusu", detail: "Tek formda çoklu yolcu", tone: "red" },
                                 { icon: BadgeCheck, title: "Evrak kontrolü", detail: "Başvuru öncesi ücretsiz", tone: "green" },
                                 { icon: Clock, title: "Ortalama 3 gün", detail: "Ekspreste 24 saat", tone: "red" },
                             ].map(({ icon: Icon, title, detail, tone }) => (
-                                <div key={title} className="flex items-start gap-2.5">
+                                <div key={title} className="flex items-start gap-2.5 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                                     <span
                                         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
                                             tone === "red"

@@ -217,6 +217,25 @@ Kod inceleme raporundaki bulgular uygulandi (davranis birebir korunarak):
 
 ---
 
+### Phase 27 — Tum Site Arayuz Yenilemesi (Stitch tarzi) — **COMPLETED (2026-09-02)**
+Kullanici istegi: "could we connect this with google stitch?" → netlestirme: "Mevcut sitenin gorunumunu Stitch ile bastan yenilemek; tumu".
+Karar: Stitch API anahtari verilmedigi icin Stitch servisi cagrilmadi; ayni sonuc `design_agent` blueprint'i (`/app/design_guidelines.md`) ile uygulandi. Marka kimligi (BAE yesil/kirmizi paleti, light mode) ve TUM islevler korundu.
+
+Yapilanlar:
+- **Navbar:** 11 duz link gruplandi → 4 ana link + "Bilgi & Hizmetler" DropdownMenu + mobil Sheet menu (gruplu, 48px dokunma hedefleri, sticky + scroll golgesi). Tum `nav-link-*` testid'leri korundu.
+- **AdminLayout:** yatay 13 sekme → sol yan menu (4 grup: Operasyon / Musteri Iletisimi / Icerik / Ayarlar), mobilde Sheet, sticky baslik + "Siteyi gor". Tablo/liste alani tam genislige cikti.
+- **VisaTypeCard:** ortalanmis metin → sola hizali, sabit yukseklikli rozet satiri, ayri fiyat blogu (TL + USD + islem suresi), tutarli CTA alani.
+- **PricingTabs:** dolgulu kirmizi pill'ler → segment kontrolu (primary yesil aktif durum) + gercek skeleton yukleme durumu.
+- **Apply sihirbazi:** yapiskan adim gostergesi (Adim n/4 + ilerleme cubugu + toplam tutar), yapiskan ozet paneli (lg+), ozet basligi yolcu rozetiyle.
+- **Track:** tek kolon ortali form → iki kolonlu duzen + "Takip kodunuz nerede?" yardim karti + hesap linki; timeline ikonlari halka/durum renkleriyle guclendirildi.
+- **Diger:** hero guven seridi (bolunmus kart), noise-overlay, WhatsApp FAB mobilde kucultuldu, Toaster `bottom-right` + `richColors` kapatildi (tema uyumlu bildirim).
+
+Test: iteration_18.json — frontend %98 (11 navbar linki, mobil Sheet, 13 admin sayfasi, fiyat sekmeleri, takip, tum public sayfalar). Tek bulgu 2px stepper ortusmesiydi → `top-[77px]` ile duzeltildi ve olcumle dogrulandi (navbar bottom 76 / stepper top 77).
+
+Bilinen kozmetik madde: native `type="date"` alanlari tarayici yereline gore `mm/dd/yyyy` gosteriyor. Shadcn Calendar'a gecis testid/typing davranisini degistirecegi icin bilincli olarak yapilmadi.
+
+---
+
 ## 3. Next Actions
 
 ### P0 — “İlk Gerçek Aktarım” (Zami Live Verification) — **BLOCKED**
@@ -269,6 +288,7 @@ Kod inceleme raporundaki bulgular uygulandi (davranis birebir korunarak):
 - Phase 1–19: **TAMAMLANDI**.
 - Phase 20–23 (Zami RPA + yakalama + mapping + status + tracking): **TAMAMLANDI**, ancak **İlk Gerçek Aktarım canlı doğrulaması P0 ve BLOCKED** (kullanıcı Zami kimlik bilgileri yok).
 - Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
+- Phase 27 (Tum site arayuz yenilemesi): **TAMAMLANDI** — iteration_18.json, frontend %98, kritik hata yok.
 - Phase 26 (Kod kalitesi refactor): **TAMAMLANDI** — iteration_17.json, kritik hata yok.
 - Phase 25 (Ücretsiz Ön Değerlendirme): **TAMAMLANDI** — iteration_16.json: backend 60/61, frontend 24/24, admin 7/7 (kritik hata yok).
 

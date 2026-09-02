@@ -1,528 +1,461 @@
 {
-  "brand": {
-    "product": "VizeAtlas Dubai",
-    "positioning": "Türkiye’den Dubai/BAE’ye seyahat edenler için hızlı, şeffaf ve kurumsal vize başvurusu.",
-    "brand_attributes": [
-      "Kurumsal güven",
-      "Editoryal netlik (jenerik SaaS değil)",
-      "Şeffaf fiyat",
-      "Hızlı işlem",
-      "Mobilde kolay"
+  "meta": {
+    "project": "VizeAtlas Dubai",
+    "goal": "Üretimde çalışan vize başvuru platformunun (public site + başvuru sihirbazı + müşteri hesabı + admin) görsel/etkileşim katmanını Google Stitch benzeri AI-native, modern ve güven veren bir estetikle yenilemek. API/state/form alanları ve mevcut data-testid’ler ASLA değişmeyecek.",
+    "mode": "light-only",
+    "language": "tr-TR",
+    "non_negotiables": [
+      "Frontend/backend sözleşmesi değişmeyecek (API çağrıları, state akışları, form field isimleri).",
+      "Mevcut data-testid attribute’ları korunacak; yeni eklenen tüm interaktif/ana bilgi öğelerine data-testid eklenecek.",
+      "Token mimarisi korunacak: index.css içindeki CSS değişken isimleri aynı kalacak; sadece değer/ölçek rafine edilebilir.",
+      "Gradient kısıtları: viewport’un %20’sini aşmayacak; mavi-mor / mor-pembe gibi doygun koyu gradientler YASAK.",
+      "transition: all YASAK; sadece opacity/transform ve hedefli property transition.",
+      "Mobile-first; dokunma hedefi min 44x44px; WCAG AA kontrast."
+    ]
+  },
+
+  "brand_personality": {
+    "attributes": [
+      "Güven veren (şeffaf ücret, resmi süreç hissi)",
+      "Hızlı ve rehberlik eden (adım adım, hata önleyici)",
+      "Premium ama sade (Dubai hissi: temiz, ferah, yüksek kalite)",
+      "AI-native (OCR/otomatik doldurma gibi akıllı özellikler görünür ama abartısız)"
     ],
-    "visual_direction": {
-      "style_fusion": [
-        "Swiss grid (net hiyerarşi) + editorial tipografi (karakterli başlıklar)",
-        "UAE bayrak renkleriyle ‘kurumsal’ renk blokları (gradient değil) + ince çizgisel ayırıcılar",
-        "Form/dash alanlarında ‘government-like’ ciddiyet: düşük radius, yüksek kontrast, belirgin focus"
+    "visual_metaphors": [
+      "‘Resmi evrak’ netliği: ince çizgiler, düzenli grid, güçlü tipografik hiyerarşi",
+      "‘Dubai modernliği’: geniş boşluk, cam/ışık hissi veren çok hafif yüzey parıltıları",
+      "‘BAE bayrağı’ vurguları: yeşil ana aksiyon, kırmızı kritik uyarı/aksiyon"
+    ]
+  },
+
+  "design_tokens": {
+    "note": "Token isimleri korunur. Aşağıdaki değerler rafine öneridir; uygulama index.css :root altında yapılır.",
+    "css_variables": {
+      "--background": "40 18% 98%",
+      "--foreground": "210 22% 7%",
+      "--card": "0 0% 100%",
+      "--card-foreground": "210 22% 7%",
+      "--popover": "0 0% 100%",
+      "--popover-foreground": "210 22% 7%",
+
+      "--primary": "152 78% 22%",
+      "--primary-foreground": "0 0% 100%",
+
+      "--secondary": "150 18% 95%",
+      "--secondary-foreground": "210 22% 10%",
+      "--muted": "210 16% 95%",
+      "--muted-foreground": "214 14% 30%",
+
+      "--accent": "352 78% 38%",
+      "--accent-foreground": "0 0% 100%",
+      "--destructive": "352 78% 38%",
+      "--destructive-foreground": "0 0% 100%",
+
+      "--border": "214 18% 86%",
+      "--input": "214 18% 86%",
+      "--ring": "152 78% 22%",
+
+      "--radius": "0.9rem",
+
+      "--navy": "210 24% 8%",
+      "--sand-surface": "150 22% 95%",
+      "--cloud": "210 16% 96%",
+      "--gold": "352 78% 40%",
+      "--teal-hover": "152 82% 18%",
+      "--success": "152 82% 26%",
+
+      "--brand-green": "152 78% 22%",
+      "--brand-red": "352 78% 38%",
+      "--brand-black": "210 24% 8%",
+      "--brand-white": "0 0% 100%",
+
+      "--status-success": "152 82% 26%",
+      "--status-warning": "34 72% 38%",
+      "--status-info": "206 72% 27%",
+      "--status-danger": "352 78% 38%",
+
+      "--shadow-soft": "0 14px 34px rgba(11, 15, 20, 0.10)",
+      "--shadow-card": "0 10px 24px rgba(11, 15, 20, 0.08)",
+      "--shadow-float": "0 22px 60px rgba(11, 15, 20, 0.14)",
+      "--focus-ring": "0 0 0 4px rgba(11, 107, 58, 0.22)"
+    },
+    "gradients": {
+      "allowed_usage": [
+        "Sadece hero/section background dekoru (max %20 viewport)",
+        "Dekoratif overlay (noise ile)"
       ],
-      "anti_patterns": [
-        "Mor/mavi SaaS gradient hero",
-        "Aşırı yuvarlak köşeler (pill UI)",
-        "Emoji ikonlar",
-        "Kart içi gradientler",
-        "Her yerde aynı teal aksan (mevcut tema tamamen değişecek)"
+      "recipes": {
+        "hero_glow": "radial-gradient(1000px circle at 12% 0%, hsl(var(--brand-green) / 0.12), transparent 58%), radial-gradient(760px circle at 88% 4%, hsl(var(--brand-red) / 0.07), transparent 62%), linear-gradient(180deg, hsl(var(--sand-surface) / 0.9) 0%, transparent 70%)",
+        "section_tint": "linear-gradient(180deg, hsl(var(--cloud)) 0%, hsl(var(--background)) 70%)"
+      },
+      "prohibited": [
+        "blue-500 to purple-600",
+        "purple-500 to pink-500",
+        "green-500 to blue-500",
+        "red to pink",
+        "Herhangi bir koyu/doygun gradientin küçük UI öğelerinde kullanımı"
       ]
+    },
+    "spacing_scale": {
+      "base": "4px",
+      "tokens": {
+        "space-1": "4px",
+        "space-2": "8px",
+        "space-3": "12px",
+        "space-4": "16px",
+        "space-5": "20px",
+        "space-6": "24px",
+        "space-8": "32px",
+        "space-10": "40px",
+        "space-12": "48px",
+        "space-14": "56px",
+        "space-16": "64px"
+      },
+      "rule": "Mevcut .section padding’leri korunur; içerik blokları arası boşluklar 24–40px bandında tutulur (mobilde 16–24px)."
+    },
+    "radius_scale": {
+      "rule": "Genel radius --radius (0.9rem) korunur. İç bileşenlerde: input/button 12px, kart 16px, modal/sheet 18px."
     }
   },
 
   "typography": {
-    "font_pairing": {
+    "fonts": {
       "heading": {
-        "family": "Spectral",
-        "fallback": "Georgia, serif",
-        "weights": [400, 500, 600, 700]
+        "css_var": "--font-heading",
+        "recommended": "Montserrat (mevcut) veya Space Grotesk (alternatif)",
+        "note": "Türkçe karakter desteği zorunlu. Eğer Montserrat kalacaksa ağırlık dağılımını rafine edin: 700/800 başlık, 600 alt başlık."
       },
       "body": {
-        "family": "IBM Plex Sans",
-        "fallback": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-        "weights": [400, 500, 600, 700]
+        "css_var": "--font-body",
+        "recommended": "Figtree (mevcut) veya IBM Plex Sans (alternatif)",
+        "note": "Body’de 400/500; form label 600."
       },
-      "ui_mono_optional": {
-        "family": "IBM Plex Mono",
-        "weights": [400, 500, 600]
-      },
-      "rationale": "Spectral (serif) başlıklarda ‘insan eliyle’ editoryal güven verir; IBM Plex Sans form/admin gibi yoğun UI alanlarında okunaklı ve kurumsal. Poppins-benzeri jenerik hissi kırar."
-    },
-    "font_loading": {
-      "file": "/app/frontend/public/index.html",
-      "replace_google_fonts_link_with": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:wght@400;500;600;700&display=swap"
-    },
-    "css_vars": {
-      "file": "/app/frontend/src/index.css",
-      "set": {
-        "--font-heading": "\"Spectral\", Georgia, serif",
-        "--font-body": "\"IBM Plex Sans\", Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-        "--font-mono": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
+      "mono": {
+        "css_var": "--font-mono",
+        "recommended": "IBM Plex Mono (mevcut)",
+        "usage": "Referans kodu/sipariş numarası, kur notu, küçük teknik metinler"
       }
     },
     "type_scale_tailwind": {
-      "h1": "text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-[-0.02em]",
-      "h2": "text-base md:text-lg leading-[1.35] text-muted-foreground",
-      "section_title": "text-2xl sm:text-3xl font-semibold tracking-[-0.015em]",
-      "body": "text-sm sm:text-base leading-7",
+      "h1": "text-4xl sm:text-5xl lg:text-6xl",
+      "h2": "text-base md:text-lg",
+      "body": "text-sm sm:text-base",
       "small": "text-xs sm:text-sm"
     },
-    "usage_rules": [
-      "H1/H2/H3 ve .font-heading: Spectral",
-      "Body, form label, tablo metni: IBM Plex Sans",
-      "Takip kodu, başvuru kodu, admin ID gibi alanlar: IBM Plex Mono (opsiyonel)"
-    ]
-  },
-
-  "color_system": {
-    "constraints": [
-      "UAE bayrak renklerinden türetilmiş 4 renk birlikte kullanılacak: yeşil, kırmızı (ham #FF0000 YASAK), beyaz, siyah.",
-      "Kırmızı/yeşil birlikte kullanıldığında durumlar sadece renkle anlatılmayacak: ikon + metin şart.",
-      "WCAG AA kontrast hedefi (özellikle buton, badge, link).",
-      "Gradient sadece dekoratif overlay; viewport’un %20’sini geçmeyecek; küçük elementlerde gradient yok."
-    ],
-    "palette_hex": {
-      "uae_green": "#0B6B3A",
-      "uae_green_2": "#0F7A43",
-      "uae_red": "#B11226",
-      "uae_red_2": "#8F0F1F",
-      "uae_black": "#0B0F14",
-      "uae_white": "#FFFFFF",
-
-      "paper": "#FBFBFA",
-      "ink": "#0B0F14",
-      "ink_muted": "#3B4652",
-      "border": "#D7DDE3",
-      "surface": "#FFFFFF",
-      "surface_2": "#F3F5F7",
-
-      "success": "#0B6B3A",
-      "warning": "#B7791F",
-      "info": "#0F4C81",
-      "danger": "#B11226"
-    },
-
-    "css_tokens_to_set_in_index_css": {
-      "file": "/app/frontend/src/index.css",
-      "light": {
-        "--background": "40 20% 98%",
-        "--foreground": "210 22% 6%",
-
-        "--card": "0 0% 100%",
-        "--card-foreground": "210 22% 6%",
-
-        "--popover": "0 0% 100%",
-        "--popover-foreground": "210 22% 6%",
-
-        "--primary": "152 82% 23%",
-        "--primary-foreground": "0 0% 100%",
-
-        "--secondary": "210 20% 96%",
-        "--secondary-foreground": "210 22% 10%",
-
-        "--muted": "210 20% 96%",
-        "--muted-foreground": "215 16% 28%",
-
-        "--accent": "352 78% 38%",
-        "--accent-foreground": "0 0% 100%",
-
-        "--destructive": "352 78% 38%",
-        "--destructive-foreground": "0 0% 100%",
-
-        "--border": "214 18% 86%",
-        "--input": "214 18% 86%",
-        "--ring": "152 82% 23%",
-
-        "--radius": "0.625rem",
-
-        "--sidebar": "0 0% 100%",
-        "--sidebar-foreground": "210 22% 6%",
-        "--sidebar-border": "214 18% 86%",
-        "--sidebar-accent": "210 20% 96%",
-        "--sidebar-accent-foreground": "210 22% 10%",
-        "--sidebar-ring": "152 82% 23%",
-
-        "--chart-1": "152 82% 23%",
-        "--chart-2": "352 78% 38%",
-        "--chart-3": "210 22% 6%",
-        "--chart-4": "210 20% 60%",
-        "--chart-5": "210 20% 80%"
-      },
-      "dark": {
-        "--background": "210 22% 6%",
-        "--foreground": "0 0% 98%",
-
-        "--card": "210 22% 9%",
-        "--card-foreground": "0 0% 98%",
-
-        "--popover": "210 22% 9%",
-        "--popover-foreground": "0 0% 98%",
-
-        "--primary": "152 70% 40%",
-        "--primary-foreground": "210 22% 6%",
-
-        "--secondary": "210 18% 14%",
-        "--secondary-foreground": "0 0% 98%",
-
-        "--muted": "210 18% 14%",
-        "--muted-foreground": "215 14% 70%",
-
-        "--accent": "352 70% 52%",
-        "--accent-foreground": "210 22% 6%",
-
-        "--destructive": "352 70% 52%",
-        "--destructive-foreground": "210 22% 6%",
-
-        "--border": "210 18% 18%",
-        "--input": "210 18% 18%",
-        "--ring": "152 70% 40%",
-
-        "--radius": "0.625rem",
-
-        "--sidebar": "210 22% 8%",
-        "--sidebar-foreground": "0 0% 98%",
-        "--sidebar-border": "210 18% 18%",
-        "--sidebar-accent": "210 18% 14%",
-        "--sidebar-accent-foreground": "0 0% 98%",
-        "--sidebar-ring": "152 70% 40%",
-
-        "--chart-1": "152 70% 40%",
-        "--chart-2": "352 70% 52%",
-        "--chart-3": "0 0% 98%",
-        "--chart-4": "210 18% 55%",
-        "--chart-5": "210 18% 30%"
-      },
-      "additional_custom_props": {
-        "--shadow-soft": "0 10px 30px rgba(11, 15, 20, 0.10)",
-        "--shadow-card": "0 8px 20px rgba(11, 15, 20, 0.08)",
-        "--shadow-float": "0 18px 50px rgba(11, 15, 20, 0.18)",
-        "--focus-ring": "0 0 0 4px rgba(11, 107, 58, 0.22)",
-        "--noise-opacity": "0.05",
-
-        "--brand-green": "152 82% 23%",
-        "--brand-red": "352 78% 38%",
-        "--brand-black": "210 22% 6%",
-        "--brand-white": "0 0% 100%",
-
-        "--status-success": "152 82% 23%",
-        "--status-warning": "38 70% 42%",
-        "--status-info": "206 78% 28%",
-        "--status-danger": "352 78% 38%"
-      }
-    },
-
-    "where_to_use_colors": {
-      "primary_green": [
-        "Ana CTA butonları (Başvuru Yap, Ödemeyi Tamamla)",
-        "Wizard stepper aktif adım çizgisi/ring",
-        "Admin KPI kartlarında ‘pozitif’ metrik vurgusu"
-      ],
-      "accent_red": [
-        "İkincil vurgu (örn. ‘Hızlı Sonuç’, ‘Sınırlı süre’ gibi küçük highlight)",
-        "Destructive aksiyonlar (Sil/İptal)",
-        "Hata durumları (Alert/Banner)"
-      ],
-      "black_white": [
-        "Metin ve yüzeylerin ana kontrastı",
-        "Navbar/footer yapısal çizgiler",
-        "Admin tablo başlıkları"
-      ],
-      "avoid": [
-        "Kırmızı ve yeşili aynı komponent içinde sadece renk farkıyla ayırmak",
-        "Kırmızı metni beyaz zeminde küçük puntoda kullanmak (kontrast düşebilir)"
-      ]
-    },
-
-    "allowed_gradients": {
-      "restriction": "Gradient alanı viewport’un %20’sini geçmeyecek; kartların içinde gradient yok; küçük UI elementlerinde gradient yok.",
-      "hero_overlay": "radial-gradient(900px circle at 18% 10%, rgba(11, 107, 58, 0.14), transparent 55%), radial-gradient(700px circle at 82% 0%, rgba(177, 18, 38, 0.10), transparent 60%)"
-    },
-
-    "selection_and_noise": {
-      "selection": "::selection { background-color: hsl(var(--brand-green) / 0.18); color: hsl(var(--foreground)); }",
-      "noise_overlay": "Mevcut .noise-overlay kullanılabilir; opacity --noise-opacity ile kontrol edilecek."
+    "line_height": {
+      "headings": "leading-[1.05]",
+      "body": "leading-6",
+      "dense_tables": "leading-5"
     }
   },
 
   "layout_and_grid": {
-    "container": "max-w-6xl mx-auto px-4 sm:px-6",
-    "section_spacing": "py-14 sm:py-20",
-    "grid_rules": [
-      "Landing: mobil tek kolon; md: 2 kolon; lg: 12 kolon mantığıyla 7/5 veya 8/4 split.",
-      "Fiyatlar: md:grid-cols-2 lg:grid-cols-3; ‘En Popüler’ kartı ring ile vurgula (gradient değil).",
-      "Form wizard: sol içerik + sağ sticky özet (lg+); mobilde özet accordion/collapsible.",
-      "Admin: md+ tablo; mobilde card-list; tablo header sticky + yatay scroll."
-    ],
-    "radius_and_surfaces": {
-      "radius": {
-        "global": "--radius: 0.625rem",
-        "cards": "rounded-xl",
-        "buttons": "rounded-lg",
-        "inputs": "rounded-lg"
+    "container": {
+      "class": ".container-page",
+      "current": "max-w-6xl px-4 sm:px-6",
+      "guidance": "Public sayfalarda 12 kolon hissi: desktop’ta 2/3 + 1/3 split (içerik + sticky özet). Mobilde tek kolon."
+    },
+    "page_patterns": {
+      "public_marketing": {
+        "hero": "Z-pattern: sol metin + sağ görsel/örnek vize kartı; mobilde önce metin sonra kart.",
+        "sections": "Bento grid (2x2 veya 3x2) ile güven unsurları + hizmetler.",
+        "cta": "Sayfa içinde 2 ana CTA: ‘Hemen Başvur’ ve ‘Ücretsiz Ön Değerlendirme’."
       },
-      "surface_priority": [
-        "Okuma alanları: solid (paper/surface)",
-        "Vurgu alanları: border + ince renk şeridi (sol border)"
-      ]
+      "wizard_apply": {
+        "desktop": "Sol: stepper + form (8/12). Sağ: sticky fiyat özeti + güven rozetleri (4/12).",
+        "mobile": "Üstte kompakt stepper; altta form; fiyat özeti ‘drawer’ veya sayfa içi yapışkan alt bar (min 56px)."
+      },
+      "admin": {
+        "desktop": "Sol sidebar (sheet/collapsible), üstte sticky toolbar (filtre + arama + aksiyon).",
+        "density": "Tablo satır yüksekliği 44–52px; kritik aksiyonlar sağda sabit."
+      }
     }
   },
 
   "components": {
     "component_path": {
-      "accordion": "/app/frontend/src/components/ui/accordion.jsx",
-      "alert": "/app/frontend/src/components/ui/alert.jsx",
-      "badge": "/app/frontend/src/components/ui/badge.jsx",
-      "breadcrumb": "/app/frontend/src/components/ui/breadcrumb.jsx",
-      "button": "/app/frontend/src/components/ui/button.jsx",
-      "calendar": "/app/frontend/src/components/ui/calendar.jsx",
-      "card": "/app/frontend/src/components/ui/card.jsx",
-      "checkbox": "/app/frontend/src/components/ui/checkbox.jsx",
-      "dialog": "/app/frontend/src/components/ui/dialog.jsx",
-      "drawer": "/app/frontend/src/components/ui/drawer.jsx",
-      "dropdown_menu": "/app/frontend/src/components/ui/dropdown-menu.jsx",
-      "form": "/app/frontend/src/components/ui/form.jsx",
-      "input": "/app/frontend/src/components/ui/input.jsx",
-      "label": "/app/frontend/src/components/ui/label.jsx",
-      "pagination": "/app/frontend/src/components/ui/pagination.jsx",
-      "progress": "/app/frontend/src/components/ui/progress.jsx",
-      "scroll_area": "/app/frontend/src/components/ui/scroll-area.jsx",
-      "select": "/app/frontend/src/components/ui/select.jsx",
-      "separator": "/app/frontend/src/components/ui/separator.jsx",
-      "sheet": "/app/frontend/src/components/ui/sheet.jsx",
-      "sonner": "/app/frontend/src/components/ui/sonner.jsx",
-      "table": "/app/frontend/src/components/ui/table.jsx",
-      "tabs": "/app/frontend/src/components/ui/tabs.jsx",
-      "textarea": "/app/frontend/src/components/ui/textarea.jsx",
-      "tooltip": "/app/frontend/src/components/ui/tooltip.jsx"
+      "shadcn_primary": [
+        "/app/frontend/src/components/ui/button.jsx",
+        "/app/frontend/src/components/ui/card.jsx",
+        "/app/frontend/src/components/ui/tabs.jsx",
+        "/app/frontend/src/components/ui/badge.jsx",
+        "/app/frontend/src/components/ui/input.jsx",
+        "/app/frontend/src/components/ui/textarea.jsx",
+        "/app/frontend/src/components/ui/select.jsx",
+        "/app/frontend/src/components/ui/dialog.jsx",
+        "/app/frontend/src/components/ui/sheet.jsx",
+        "/app/frontend/src/components/ui/drawer.jsx",
+        "/app/frontend/src/components/ui/progress.jsx",
+        "/app/frontend/src/components/ui/table.jsx",
+        "/app/frontend/src/components/ui/skeleton.jsx",
+        "/app/frontend/src/components/ui/tooltip.jsx",
+        "/app/frontend/src/components/ui/accordion.jsx",
+        "/app/frontend/src/components/ui/calendar.jsx",
+        "/app/frontend/src/components/ui/sonner.jsx"
+      ],
+      "existing_shared_components_to_style": [
+        "Navbar",
+        "Footer",
+        "SiteLayout",
+        "AdminLayout",
+        "PricingTabs",
+        "IconCards",
+        "Testimonials",
+        "SampleVisa",
+        "AuthorityStrip",
+        "GdrfaBadge",
+        "TursabBadge",
+        "FileDropzone",
+        "StatusBadge",
+        "StoreCheckout",
+        "FxNote",
+        "VisaGuideLinks",
+        "BrandMark",
+        "WhatsAppButton",
+        "PreEvaluation"
+      ]
     },
 
     "button_system": {
-      "tokens": {
-        "radius": "var(--radius)",
-        "shadow": "0 10px 22px rgba(11, 15, 20, 0.10)",
-        "motion": "transition-colors transition-shadow duration-150"
-      },
       "variants": {
         "primary": {
-          "use": "Başvuru Yap / Ödemeyi Tamamla / Kaydet",
-          "classes": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-soft)]",
-          "micro_interaction": "hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.99] (transform sadece ilgili elementte)"
+          "use": "Ana CTA (Hemen Başvur, Ödemeye Geç)",
+          "tailwind": "bg-primary text-primary-foreground hover:bg-[hsl(var(--teal-hover))] shadow-[var(--shadow-card)]",
+          "motion": "hover: translateY(-1px) + shadow-soft; active: scale(0.98)",
+          "a11y": "focus-visible: box-shadow var(--focus-ring)",
+          "data_testid": "Örn: data-testid=\"primary-cta-button\""
         },
         "secondary": {
-          "use": "Fiyatları Gör / Belgeleri İncele",
-          "classes": "bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80"
+          "use": "İkincil CTA (Ücretsiz Ön Değerlendirme)",
+          "tailwind": "bg-secondary text-secondary-foreground hover:bg-secondary/70 border border-border",
+          "motion": "hover: border-primary/40"
         },
         "ghost": {
-          "use": "Navbar linkleri / küçük aksiyonlar",
-          "classes": "hover:bg-muted"
+          "use": "Navbar link/ikon aksiyonları",
+          "tailwind": "bg-transparent hover:bg-muted text-foreground"
         },
         "destructive": {
-          "use": "Admin: Sil/İptal",
-          "classes": "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          "use": "Sil/iptal",
+          "tailwind": "bg-destructive text-destructive-foreground hover:bg-destructive/90"
         }
       },
       "sizes": {
-        "md": "h-11 px-5 text-sm",
-        "lg": "h-12 px-6 text-base",
-        "icon": "h-11 w-11"
+        "sm": "h-9 px-3 text-sm",
+        "md": "h-11 px-4 text-sm",
+        "lg": "h-12 px-5 text-base"
       },
-      "data_testid_examples": [
-        "data-testid=\"hero-apply-now-button\"",
-        "data-testid=\"pricing-select-plan-button\"",
-        "data-testid=\"wizard-next-step-button\"",
-        "data-testid=\"admin-save-status-button\""
-      ]
+      "rule": "Butonlarda transition sadece background-color, box-shadow, border-color, opacity için verilecek; transform transition ayrı (duration-150/200)."
     },
 
-    "status_badges": {
-      "component": "badge",
-      "rule": "Durumlar sadece renkle değil: ikon + metin. (lucide: CheckCircle, Clock, AlertTriangle, XCircle)",
-      "mapping": {
-        "Taslak": "bg-muted text-foreground border border-border",
-        "Belgeler Bekleniyor": "bg-[hsl(var(--status-warning))/0.16] text-[hsl(var(--foreground))] border border-[hsl(var(--status-warning))/0.25]",
-        "İncelemede": "bg-[hsl(var(--status-info))/0.14] text-[hsl(var(--foreground))] border border-[hsl(var(--status-info))/0.25]",
-        "Onaylandı": "bg-[hsl(var(--status-success))/0.14] text-[hsl(var(--foreground))] border border-[hsl(var(--status-success))/0.25]",
-        "Reddedildi": "bg-[hsl(var(--status-danger))/0.14] text-[hsl(var(--foreground))] border border-[hsl(var(--status-danger))/0.25]"
-      },
-      "data_testid": "application-status-badge"
-    },
-
-    "forms_and_wizard": {
-      "wizard_stepper": {
-        "pattern": "Üstte yatay stepper (mobilde yatay scroll) + Progress bar; adım başlıkları kısa.",
-        "components": ["progress", "card", "separator"],
-        "microcopy": {
-          "helper": "Bilgileriniz yalnızca başvurunuz için kullanılır.",
-          "upload_hint": "JPG/PNG/PDF • Maks. 10MB"
+    "card_system": {
+      "base": "card-surface",
+      "hoverable": "card-hoverable",
+      "patterns": {
+        "pricing_card": {
+          "layout": "Başlık + fiyat + dahil olanlar + teslim süresi + CTA + şeffaf ücret notu",
+          "details": "‘Devlet harcı’ ve ‘Hizmet bedeli’ ayrı satır; toplam en altta.",
+          "micro": "hover’da border-primary/40 + shadow-soft; seçili kartta ring-2 ring-primary/30",
+          "data_testid": "pricing-option-card"
         },
-        "data_testid": [
-          "wizard-stepper",
-          "wizard-personal-info-form",
-          "wizard-document-upload-dropzone",
-          "wizard-summary-section"
-        ]
-      },
-      "dropzone": {
-        "visual": "Kesik çizgili border + ikon + sürükle-bırak metni; hover’da border primary.",
-        "states": {
-          "idle": "border-dashed border-border bg-card",
-          "drag_over": "border-[hsl(var(--ring))] bg-[hsl(var(--ring))]/5",
-          "uploading": "progress + ‘Yükleniyor…’",
-          "success": "Badge: Yüklendi (success)",
-          "error": "Alert destructive"
-        },
-        "data_testid": [
-          "passport-upload-input",
-          "biometric-photo-upload-input",
-          "uploaded-passport-preview"
-        ]
+        "trust_card": {
+          "layout": "Rozet/ikon + kısa başlık + 1 cümle açıklama",
+          "style": "Muted yüzey (bg-secondary/60) + ince border"
+        }
       }
     },
 
-    "admin_panel": {
-      "kpi_cards": "Card + sol border accent (success/info/warning/danger) — gradient yok.",
-      "filters": "Select + Input; her biri data-testid ile.",
-      "table": "Table + sticky header + zebra (bg-muted/40) + row hover (bg-muted/60).",
-      "data_testid": [
-        "admin-applications-search-input",
-        "admin-status-filter-select",
-        "admin-applications-table",
-        "admin-kpi-cards"
+    "forms_and_inputs": {
+      "rules": [
+        "Label her zaman görünür (placeholder label yerine geçmez).",
+        "Hata mesajı: text-sm, status-danger rengi, input border status-danger/40 + focus ring kırmızı değil (ring primary kalsın, hata border ile).",
+        "Yükleme: input disabled + skeleton satırı; form submit butonu loading state (spinner)"
+      ],
+      "input_tailwind": "h-11 rounded-[12px] bg-card border-input focus-visible:ring-0 focus-visible:shadow-[var(--focus-ring)]",
+      "textarea_tailwind": "min-h-[96px] rounded-[12px]",
+      "select": "shadcn Select kullan; native select yok",
+      "calendar": "Tarih seçimi gereken yerlerde shadcn Calendar + Popover"
+    },
+
+    "stepper_apply_wizard": {
+      "structure": "5–7 adım: Yolcular → Belgeler → Detaylar → Ek Hizmetler → Ödeme → Takip",
+      "desktop": "Sol üstte yatay stepper + altında form; sağda sticky özet",
+      "mobile": "Üstte yatay scroll stepper (ScrollArea) + altta form",
+      "visual": {
+        "completed": "Badge/ikon + muted connector",
+        "current": "primary ring + daha büyük nokta",
+        "upcoming": "border + muted"
+      },
+      "shadcn": ["progress.jsx", "badge.jsx", "scroll-area.jsx", "separator.jsx"],
+      "data_testid": "apply-stepper"
+    },
+
+    "timeline_order_status": {
+      "use": "/siparis/:reference ve /takip",
+      "pattern": "Dikey timeline: 5 adım (Alındı, İncelemede, Evrak Bekleniyor, Onaylandı, PDF Hazır) + her adımda tarih/saat + kısa açıklama",
+      "components": ["badge.jsx", "card.jsx", "separator.jsx", "tooltip.jsx"],
+      "micro": "Yeni güncelleme geldiğinde ilgili adım kısa ‘pulse’ (opacity) animasyonu (prefers-reduced-motion’a saygı)",
+      "data_testid": "order-status-timeline"
+    },
+
+    "pre_evaluation_wizard": {
+      "home_widget": "Ana sayfada 3 soruluk mini wizard: 1 ekran = 1 soru (radio/select), en sonda skor + lead form",
+      "score_ui": "Progress + renk kodu: düşük=warning, orta=info, yüksek=success; metinle destekle (renge bağımlı olma)",
+      "components": ["card.jsx", "radio-group.jsx", "select.jsx", "progress.jsx", "dialog.jsx"],
+      "data_testid": "pre-evaluation-wizard"
+    },
+
+    "file_upload_dropzone": {
+      "use": "Pasaport/fotoğraf yükleme + admin PDF yükleme",
+      "pattern": "Büyük dropzone (min-h 140px) + dosya listesi + durum (yükleniyor/başarılı/hata)",
+      "style": "bg-secondary/50 + dashed border-border; hover’da border-primary/40",
+      "micro": "drag enter’da hafif scale(1.01) + border vurgusu",
+      "data_testid": "file-dropzone"
+    },
+
+    "cross_sell_esim_insurance": {
+      "pattern": "Apply akışında ‘Ek Hizmetler’ adımında 2 kart: eSIM ve Sigorta; tarih seçimine göre uygunluk + paket indirimi etiketi",
+      "components": ["card.jsx", "switch.jsx", "badge.jsx", "calendar.jsx", "tabs.jsx"],
+      "pricing": "%10 paket indirimi badge (accent değil; success/primary tonlarıyla) — kırmızı sadece kritik uyarı/iptal için",
+      "data_testid": "cross-sell-section"
+    },
+
+    "admin_table_and_filters": {
+      "pattern": "Üst toolbar: arama (Command veya Input), durum filtre Tabs, tarih filtre Calendar, export/refresh butonları",
+      "table": "shadcn Table + sticky header; satır hover bg-muted/60",
+      "status_badges": {
+        "submitted": "bg-secondary text-foreground",
+        "reviewing": "bg-[hsl(var(--status-info)/0.12)] text-[hsl(var(--status-info))]",
+        "approved": "bg-[hsl(var(--status-success)/0.12)] text-[hsl(var(--status-success))]",
+        "rejected": "bg-[hsl(var(--status-danger)/0.12)] text-[hsl(var(--status-danger))]",
+        "cancelled": "bg-muted text-muted-foreground"
+      },
+      "loading": "Skeleton satırları (8–12 row) + toolbar skeleton",
+      "empty_state": "Card içinde: başlık + açıklama + ‘Filtreleri Sıfırla’ ghost button",
+      "data_testid": "admin-applications-table"
+    }
+  },
+
+  "page_blueprints": {
+    "priority_order": [
+      "1) / (Home) — reklam trafiği ilk temas",
+      "2) /basvuru (Apply wizard) — dönüşüm",
+      "3) /siparis/:reference ve /takip — güven + destek yükünü azaltır",
+      "4) /hesabim — tekrar kullanım",
+      "5) Admin — operasyon verimliliği",
+      "6) SEO rehber sayfaları — okunabilirlik + iç link"
+    ],
+    "home": {
+      "hero": {
+        "layout": "Sol: H1 + kısa güven cümlesi + 2 CTA; Sağ: ‘Örnek Vize’ kartı + mini fiyat özeti",
+        "background": "hero-glow + noise-overlay (çok düşük opaklık)",
+        "trust": "Hero altında AuthorityStrip + partner logoları marquee",
+        "data_testid": "home-hero"
+      },
+      "sections": [
+        "Fiyatlar (PricingTabs) — şeffaf ücret kırılımı + kur notu",
+        "Nasıl Çalışır (3-5 adım) — timeline/stepper görseli",
+        "Ücretsiz Ön Değerlendirme (mini wizard embed)",
+        "Yorumlar + örnek vize + SSS kısa"
       ]
+    },
+    "apply": {
+      "sticky_summary": "Sağ panel: toplam, yolcu sayısı, ek hizmetler, kur notu, güven rozetleri; mobilde alt sticky bar + ‘Detay’ Drawer",
+      "ocr": "Pasaport OCR sonrası otomatik doldurma: form alanlarında ‘AI ile dolduruldu’ küçük badge + ‘Geri Al’ link",
+      "data_testid": "apply-page"
+    },
+    "order_status": {
+      "hero": "Sipariş referansı (mono) + durum badge + WhatsApp destek butonu",
+      "timeline": "Dikey timeline + gerekli aksiyonlar (evrak yükle vb.)",
+      "data_testid": "order-status-page"
+    },
+    "seo_guides": {
+      "reading": "Geniş satır uzunluğu kontrolü: prose benzeri sınıflar; içerik kartları; iç linkler (VisaGuideLinks)",
+      "toc": "Desktop’ta sağda sticky içerik listesi (ScrollArea)"
+    },
+    "admin": {
+      "layout": "AdminLayout: sidebar + üst toolbar; yoğun ekranlarda iki satırlı toolbar (mobilde Sheet)",
+      "detail": "Başvuru detayında: sol içerik (form verileri) + sağ aksiyon paneli (durum güncelle, PDF yükle, WhatsApp gönder)"
     }
   },
 
   "motion_and_microinteractions": {
-    "principles": [
-      "Hover: 120–180ms (transition-colors/opacity/shadow).",
-      "Modal/Drawer: 180–240ms.",
-      "Reduced motion: App.css zaten reduce-motion içeriyor; yeni animasyonlar buna saygılı olmalı."
-    ],
-    "library": {
-      "name": "framer-motion",
-      "install": "npm i framer-motion",
-      "usage": [
-        "Hero CTA ve trust rozetlerinde hafif giriş (opacity + y).",
-        "Wizard adım geçişlerinde crossfade.",
-        "Admin KPI kartlarında stagger (çok hafif)."
-      ]
+    "durations": {
+      "micro": "150–200ms",
+      "panel": "220–260ms"
     },
-    "no_universal_transition": "transition-all kullanma; sadece transition-colors, transition-shadow, transition-opacity."
+    "easing": {
+      "standard": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      "exit": "cubic-bezier(0.4, 0, 1, 1)"
+    },
+    "rules": [
+      "Sadece opacity/transform animasyonu (performans).",
+      "Hover: kartlarda translateY(-1px) + shadow-soft; butonda translateY(-1px) + shadow.",
+      "Scroll reveal: Framer Motion ile section bazlı (prefers-reduced-motion’da kapalı).",
+      "Form validation: hata mesajı fade-in (opacity) 150ms.",
+      "Timeline güncellemesi: ilgili adımda 2 kez yumuşak pulse (opacity)."
+    ],
+    "framer_scaffold_js": {
+      "note": "Proje JS/JSX. Örnek kullanım:",
+      "snippet": "import { motion, useReducedMotion } from 'framer-motion';\n\nexport default function Section({ children }) {\n  const reduce = useReducedMotion();\n  return (\n    <motion.section\n      initial={reduce ? false : { opacity: 0, y: 10 }}\n      whileInView={reduce ? undefined : { opacity: 1, y: 0 }}\n      viewport={{ once: true, amount: 0.2 }}\n      transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}\n    >\n      {children}\n    </motion.section>\n  );\n}"
+    }
   },
 
-  "imagery": {
-    "image_urls": [
-      {
-        "category": "hero",
-        "description": "Dubai skyline / geniş kadraj (hero sağ görsel kartı veya masked image).",
-        "url": "https://images.unsplash.com/photo-1656994865204-9646ebddd2cb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwxfHxEdWJhaSUyMHNreWxpbmUlMjBnb2xkZW4lMjBob3VyJTIwZWRpdG9yaWFsfGVufDB8fHxncmVlbnwxNzg4MTE4Mzg3fDA&ixlib=rb-4.1.0&q=85"
-      },
-      {
-        "category": "supporting",
-        "description": "Başvuru/form sayfası yan görseli için ‘documents flatlay’ (stok SaaS değil, gerçek foto).",
-        "url": "https://images.unsplash.com/photo-1491317079341-38313806b657?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2ODh8MHwxfHNlYXJjaHwxfHxwYXNzcG9ydCUyMGFwcGxpY2F0aW9uJTIwZG9jdW1lbnRzJTIwZmxhdGxheXxlbnwwfHx8d2hpdGV8MTc4ODExODM5NXww&ixlib=rb-4.1.0&q=85"
-      },
-      {
-        "category": "supporting",
-        "description": "Blog/makaleler kapak görseli için minimal çalışma masası flatlay.",
-        "url": "https://images.unsplash.com/photo-1617175093778-8517ba3e14d9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2ODh8MHwxfHNlYXJjaHwyfHxwYXNzcG9ydCUyMGFwcGxpY2F0aW9uJTIwZG9jdW1lbnRzJTIwZmxhdGxheXxlbnwwfHx8d2hpdGV8MTc4ODExODM5NXww&ixlib=rb-4.1.0&q=85"
-      }
-    ],
-    "direction": [
-      "Fotoğraflar: gerçek, yüksek çözünürlük, düşük doygunluk; aşırı HDR yok.",
-      "Hero’da tam ekran foto + koyu overlay yapma; bunun yerine görseli kart içinde kullan.",
-      "Admin’de fotoğraf minimum; doküman preview dialog ile."
+  "accessibility": {
+    "checklist": [
+      "Tüm form alanlarında label + aria-describedby (hata metni id).",
+      "Renkle tek başına anlam verme (skor/durum metinle desteklenir).",
+      "Focus-visible her interaktif öğede belirgin (var(--focus-ring)).",
+      "Dokunma hedefleri min 44x44px (özellikle navbar, stepper, tablo aksiyonları).",
+      "Tablo: başlık hücreleri th + scope; satır aksiyonları için tooltip."
     ]
   },
 
-  "implementation_plan": {
-    "files_to_change": [
-      {
-        "path": "/app/frontend/public/index.html",
-        "change": "Google Fonts linkini Spectral + IBM Plex Sans (+ opsiyonel Plex Mono) ile değiştir."
-      },
-      {
-        "path": "/app/frontend/src/index.css",
-        "change": "Mevcut teal/sand tokenlarını UAE türevi tokenlarla değiştir; .dark bloğu ekle; ::selection ve --focus-ring güncelle; --radius düşür (0.625rem)."
-      },
-      {
-        "path": "/app/frontend/tailwind.config.js",
-        "change": "Gerekirse sidebar/chart tokenları için renk mapping zaten var; ek tokenlar (status-*) kullanılacaksa Tailwind’e eklemek yerine CSS var + arbitrary value kullan."
-      },
-      {
-        "path": "/app/frontend/src/App.css",
-        "change": "Merkezleme yok; reduce-motion bloğu kalsın. Ek global stil ekleme (tema index.css’te)."
-      }
-    ],
-    "notes": [
-      "Mevcut fonksiyonellik bozulmamalı: sadece token/font/sınıf düzeyi değişiklik.",
-      "Tüm interaktif ve kritik bilgi elementlerine data-testid ekle (kebab-case).",
-      "Kırmızı/yeşil durumlar: ikon + metin + badge; sadece renk ile ayrım yok."
+  "testing_and_data_testid": {
+    "rules": [
+      "Mevcut data-testid’ler korunacak (isim değişikliği yok).",
+      "Yeni eklenen her buton/link/input/menü/önemli bilgi alanına data-testid ekle.",
+      "Kebab-case; rol odaklı: örn ‘apply-summary-drawer-open-button’, ‘admin-filter-status-tabs’."
     ]
   },
 
-  "instructions_to_main_agent": [
-    "Mevcut turkuaz/teal + krem temayı tamamen kaldır: index.css :root tokenlarını bu dosyadaki light/dark ile değiştir.",
-    "index.html font linkini Spectral + IBM Plex Sans (+ Plex Mono) ile değiştir; index.css’te --font-heading/--font-body güncelle.",
-    "UAE renklerini ‘karışık’ kullan: primary=yeşil, accent/destructive=koyu kırmızı, metin=near-black, yüzey=beyaz; küçük vurgu şeritleri/ayırıcılar ile siyah-beyaz dengesi kur.",
-    "Gradient sadece hero dekoratif overlay (max %20 viewport). Kartlarda ve footer’da gradient yok.",
-    "Aşırı yuvarlak köşeleri azalt: --radius 0.625rem; buton/input rounded-lg, kart rounded-xl.",
-    "Status renkleri (success/warning/info/danger) için CSS var kullan; badge + ikon + metin ile göster.",
-    "Tüm butonlar, linkler, inputlar, selectler, tab trigger’lar, wizard next/back, ödeme CTA, admin filtreleri ve tablo satır aksiyonlarına data-testid ekle (kebab-case).",
-    "Shadcn UI dışı HTML dropdown/calendar/toast kullanma; mevcut /components/ui bileşenlerini kullan."
-  ]
+  "image_urls": {
+    "hero_or_marketing": [
+      {
+        "category": "passport-flatlay",
+        "description": "Belgeler / güven / başvuru hazırlığı hissi veren açık zemin görseli (hero yan görsel veya Documents sayfası üst banner).",
+        "url": "https://images.unsplash.com/photo-1613244469730-f1aa82dbe7df?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNDR8MHwxfHNlYXJjaHwzfHxwYXNzcG9ydCUyMGZsYXQlMjBsYXklMjBsaWdodCUyMGJhY2tncm91bmR8ZW58MHx8fHdoaXRlfDE3ODgzNzE3MzB8MA&ixlib=rb-4.1.0&q=85"
+      }
+    ],
+    "fallbacks": [
+      {
+        "category": "abstract",
+        "description": "Stock görsel bulunamazsa: hero’da sadece hero-glow + noise-overlay + SampleVisa bileşeni kullan.",
+        "url": ""
+      }
+    ]
+  },
+
+  "instructions_to_main_agent": {
+    "implementation_sequence": [
+      "1) index.css token rafinesi (değerleri güncelle, isimleri koru).",
+      "2) Global yardımcı sınıflar: .card-surface, .card-hoverable, .hero-glow, .noise-overlay iyileştirmeleri (gradient %20 kuralına uy).",
+      "3) Navbar/Footer: spacing, sticky davranış, mobil menü Sheet; CTA butonları netleştir.",
+      "4) Home: hero + PricingTabs + PreEvaluation embed + trust strip + testimonials.",
+      "5) Apply wizard: stepper + sticky summary + file dropzone + cross-sell adımı.",
+      "6) Track/OrderStatus: timeline + aksiyon kartları.",
+      "7) Admin: toolbar + table density + empty/loading states.",
+      "8) SEO rehber sayfaları: okunabilirlik (satır uzunluğu, başlık ritmi, TOC)."
+    ],
+    "do_not_break": [
+      "API çağrıları ve payload alanları",
+      "Form field name/id",
+      "Mevcut data-testid değerleri",
+      "Route path’leri",
+      "Light-only (dark mode ekleme)"
+    ],
+    "js_only_note": "Bileşen örnekleri .js/.jsx formatında tutulmalı; .tsx önerme.",
+    "stitch_alignment": "Google Stitch yaklaşımı gibi: DESIGN.md benzeri tek kaynak (bu dosya) + token-first + bileşen anatomisi net. Yeni ekran üretirken ‘Anatomy + Vibe + Content’ prompt şablonunu kullanın."
+  },
+
+  "general_ui_ux_design_guidelines_appendix": "<General UI UX Design Guidelines>\n    - You must **not** apply universal transition. Eg: `transition: all`. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms\n    - You must **not** center align the app container, ie do not add `.App { text-align: center; }` in the css file. This disrupts the human natural reading flow of text\n   - NEVER: use AI assistant Emoji characters like`🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons. Always use **FontAwesome cdn** or **lucid-react** library already installed in the package.json\n\n **GRADIENT RESTRICTION RULE**\nNEVER use dark/saturated gradient combos (e.g., purple/pink) on any UI element.  Prohibited gradients: blue-500 to purple 600, purple 500 to pink-500, green-500 to blue-500, red to pink etc\nNEVER use dark gradients for logo, testimonial, footer etc\nNEVER let gradients cover more than 20% of the viewport.\nNEVER apply gradients to text-heavy content or reading areas.\nNEVER use gradients on small UI elements (<100px width).\nNEVER stack multiple gradient layers in the same viewport.\n\n**ENFORCEMENT RULE:**\n    • Id gradient area exceeds 20% of viewport OR affects readability, **THEN** use solid colors\n\n**How and where to use:**\n   • Section backgrounds (not content backgrounds)\n   • Hero section header content. Eg: dark to light to dark color\n   • Decorative overlays and accent elements only\n   • Hero section with 2-3 mild color\n   • Gradients creation can be done for any angle say horizontal, vertical or diagonal\n\n- For AI chat, voice application, **do not use purple color. Use color like light green, ocean blue, peach orange etc**\n\n</Font Guidelines>\n\n- Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead. \n   \n- Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.\n\n- Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.\n   \n- Before generating UI, infer the visual style from the problem statement (palette, contrast, mood, motion) and immediately instantiate it by setting global design tokens (primary, secondary/accent, background, foreground, ring, state colors), rather than relying on any library defaults. Don't make the background dark as a default step, always understand problem first and define colors accordingly\n    Eg: - if it implies playful/energetic, choose a colorful scheme\n           - if it implies monochrome/minimal, choose a black–white/neutral scheme\n\n**Component Reuse:**\n\t- Prioritize using pre-existing components from src/components/ui when applicable\n\t- Create new components that match the style and conventions of existing components when needed\n\t- Examine existing components to understand the project's component patterns before creating new ones\n\n**IMPORTANT**: Do not use HTML based component like dropdown, calendar, toast etc. You **MUST** always use `/app/frontend/src/components/ui/ ` only as a primary components as these are modern and stylish component\n\n**Best Practices:**\n\t- Use Shadcn/UI as the primary component library for consistency and accessibility\n\t- Import path: ./components/[component-name]\n\n**Export Conventions:**\n\t- Components MUST use named exports (export const ComponentName = ...)\n\t- Pages MUST use default exports (export default function PageName() {...})\n\n**Toasts:**\n  - Use `sonner` for toasts\"\n  - Sonner component are located in `/app/src/components/ui/sonner.tsx`\n\nUse 2–4 color gradients, subtle textures/noise overlays, or CSS-based noise to avoid flat visuals.\n</General UI UX Design Guidelines>"
 }
-
-<General UI UX Design Guidelines>  
-    - You must **not** apply universal transition. Eg: `transition: all`. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms
-    - You must **not** center align the app container, ie do not add `.App { text-align: center; }` in the css file. This disrupts the human natural reading flow of text
-   - NEVER: use AI assistant Emoji characters like`🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons. Always use **FontAwesome cdn** or **lucid-react** library already installed in the package.json
-
- **GRADIENT RESTRICTION RULE**
-NEVER use dark/saturated gradient combos (e.g., purple/pink) on any UI element.  Prohibited gradients: blue-500 to purple 600, purple 500 to pink-500, green-500 to blue-500, red to pink etc
-NEVER use dark gradients for logo, testimonial, footer etc
-NEVER let gradients cover more than 20% of the viewport.
-NEVER apply gradients to text-heavy content or reading areas.
-NEVER use gradients on small UI elements (<100px width).
-NEVER stack multiple gradient layers in the same viewport.
-
-**ENFORCEMENT RULE:**
-    • Id gradient area exceeds 20% of viewport OR affects readability, **THEN** use solid colors
-
-**How and where to use:**
-   • Section backgrounds (not content backgrounds)
-   • Hero section header content. Eg: dark to light to dark color
-   • Decorative overlays and accent elements only
-   • Hero section with 2-3 mild color
-   • Gradients creation can be done for any angle say horizontal, vertical or diagonal
-
-- For AI chat, voice application, **do not use purple color. Use color like light green, ocean blue, peach orange etc**
-
-</Font Guidelines>
-
-- Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead. 
-   
-- Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.
-
-- Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.
-   
-- Before generating UI, infer the visual style from the problem statement (palette, contrast, mood, motion) and immediately instantiate it by setting global design tokens (primary, secondary/accent, background, foreground, ring, state colors), rather than relying on any library defaults. Don't make the background dark as a default step, always understand problem first and define colors accordingly
-    Eg: - if it implies playful/energetic, choose a colorful scheme
-           - if it implies monochrome/minimal, choose a black–white/neutral scheme
-
-**Component Reuse:**
-	- Prioritize using pre-existing components from src/components/ui when applicable
-	- Create new components that match the style and conventions of existing components when needed
-	- Examine existing components to understand the project's component patterns before creating new ones
-
-**IMPORTANT**: Do not use HTML based component like dropdown, calendar, toast etc. You **MUST** always use `/app/frontend/src/components/ui/ ` only as a primary components as these are modern and stylish component
-
-**Best Practices:**
-	- Use Shadcn/UI as the primary component library for consistency and accessibility
-	- Import path: ./components/[component-name]
-
-**Export Conventions:**
-	- Components MUST use named exports (export const ComponentName = ...)
-	- Pages MUST use default exports (export default function PageName() {...})
-
-**Toasts:**
-  - Use `sonner` for toasts"
-  - Sonner component are located in `/app/src/components/ui/sonner.tsx`
-
-Use 2–4 color gradients, subtle textures/noise overlays, or CSS-based noise to avoid flat visuals.
-</General UI UX Design Guidelines>
