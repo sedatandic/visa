@@ -5,7 +5,7 @@ import { PageHeader } from "../components/SiteLayout";
 export default function Kvkk() {
     useEffect(() => {
         setMeta(
-            "KVKK ve Gizlilik Politikası | VizeAtlas Dubai",
+            "KVKK ve Gizlilik Politikası | Dubai Vize Online",
             "Kişisel verilerinizin işlenmesi, saklanması ve korunmasına ilişkin aydınlatma metni ve gizlilik politikası."
         );
     }, []);

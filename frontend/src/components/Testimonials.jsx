@@ -2,7 +2,7 @@ import React from "react";
 import { BadgeCheck, Quote, Star } from "lucide-react";
 import { formatDate } from "../lib/site";
 
-const RED = "text-[hsl(var(--brand-red))]";
+const RED = "text-[hsl(var(--brand-copper))]";
 
 const Stars = ({ rating = 5, size = "h-4 w-4" }) => (
     <div className={`flex items-center gap-0.5 ${RED}`} aria-label={`${rating} / 5 puan`}>
@@ -20,10 +20,10 @@ export const ReviewSummary = ({ summary }) => {
     if (!summary) return null;
     return (
         <div
-            className="grid gap-6 rounded-2xl border border-[hsl(var(--brand-red)/0.28)] bg-[hsl(var(--brand-red)/0.05)] p-6 sm:p-8 lg:grid-cols-[280px_1fr]"
+            className="grid gap-6 rounded-2xl border border-[hsl(var(--brand-copper)/0.28)] bg-[hsl(var(--brand-copper)/0.05)] p-6 sm:p-8 lg:grid-cols-[280px_1fr]"
             data-testid="review-summary"
         >
-            <div className="flex flex-col justify-center border-b border-[hsl(var(--brand-red)/0.2)] pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
+            <div className="flex flex-col justify-center border-b border-[hsl(var(--brand-copper)/0.2)] pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
                 <div className="flex items-end gap-2">
                     <span
                         className={`font-heading text-5xl font-bold leading-none ${RED}`}
@@ -49,9 +49,9 @@ export const ReviewSummary = ({ summary }) => {
                             <span className="text-sm font-medium">{h.label}</span>
                             <span className={`font-heading text-sm font-bold ${RED}`}>%{h.value}</span>
                         </div>
-                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[hsl(var(--brand-red)/0.14)]">
+                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[hsl(var(--brand-copper)/0.14)]">
                             <div
-                                className="h-full rounded-full bg-[hsl(var(--brand-red))]"
+                                className="h-full rounded-full bg-[hsl(var(--brand-copper))]"
                                 style={{ width: `${h.value}%` }}
                             />
                         </div>
@@ -74,7 +74,7 @@ export const TestimonialCard = ({ item }) => (
     >
         <div className="flex items-center justify-between gap-3">
             <Stars rating={item.rating} size="h-3.5 w-3.5" />
-            <Quote className="h-5 w-5 text-[hsl(var(--brand-red)/0.35)]" aria-hidden="true" />
+            <Quote className="h-5 w-5 text-[hsl(var(--brand-copper)/0.35)]" aria-hidden="true" />
         </div>
         <blockquote className="mt-3 flex-1 text-sm leading-6">{item.text}</blockquote>
         <figcaption className="mt-5 flex items-center gap-3 border-t border-border pt-4">
@@ -110,14 +110,14 @@ export const FeaturedTestimonial = ({ item }) => {
     if (!item) return null;
     return (
         <figure
-            className="flex h-full flex-col justify-between rounded-2xl border border-[hsl(var(--brand-red)/0.28)] bg-card p-6 sm:p-7"
+            className="flex h-full flex-col justify-between rounded-2xl border border-[hsl(var(--brand-copper)/0.28)] bg-card p-6 sm:p-7"
             style={{ boxShadow: "var(--shadow-soft)" }}
             data-testid="featured-testimonial"
         >
             <div>
                 <div className="flex items-start justify-between gap-3">
                     <Stars rating={item.rating} size="h-4.5 w-4.5" />
-                    <Quote className="h-8 w-8 text-[hsl(var(--brand-red)/0.2)]" aria-hidden="true" />
+                    <Quote className="h-8 w-8 text-[hsl(var(--brand-copper)/0.2)]" aria-hidden="true" />
                 </div>
                 <blockquote className="mt-4 font-heading text-lg font-semibold leading-8">
                     “{item.text}”

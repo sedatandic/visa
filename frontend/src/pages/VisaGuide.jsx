@@ -205,7 +205,7 @@ export default function VisaGuide() {
 
                         {/* PRICE / CTA BOX */}
                         <aside
-                            className="h-fit rounded-2xl border-2 border-[hsl(var(--brand-red))] bg-card p-6"
+                            className="h-fit rounded-2xl border-2 border-[hsl(var(--brand-copper))] bg-card p-6"
                             style={{ boxShadow: "var(--shadow-soft)" }}
                             data-testid="visa-guide-summary"
                         >
@@ -213,7 +213,7 @@ export default function VisaGuide() {
                                 Hizmet bedeli
                             </p>
                             <p
-                                className="mt-1.5 font-heading text-4xl font-extrabold tracking-tight text-[hsl(var(--brand-red))]"
+                                className="mt-1.5 font-heading text-4xl font-extrabold tracking-tight text-[hsl(var(--brand-copper))]"
                                 data-testid="visa-guide-price"
                             >
                                 {formatMoney(visa.price, visa.currency)}
@@ -271,7 +271,7 @@ export default function VisaGuide() {
                         <ul className="mt-4 space-y-3">
                             {(guide.highlights || []).map((h) => (
                                 <li key={h} className="flex items-start gap-2.5 text-sm leading-6">
-                                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--brand-red))]" />
+                                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--brand-copper))]" />
                                     <span>{h}</span>
                                 </li>
                             ))}
@@ -302,7 +302,7 @@ export default function VisaGuide() {
                                     <span
                                         className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
                                             d.required
-                                                ? "border-[hsl(var(--brand-red)/0.3)] bg-[hsl(var(--brand-red)/0.08)] text-[hsl(var(--brand-red))]"
+                                                ? "border-[hsl(var(--brand-copper)/0.3)] bg-[hsl(var(--brand-copper)/0.08)] text-[hsl(var(--brand-copper))]"
                                                 : "border-border bg-muted text-muted-foreground"
                                         }`}
                                     >
@@ -405,7 +405,7 @@ export default function VisaGuide() {
                                     className="card-surface card-hoverable p-5"
                                     data-testid={`related-guide-${r.slug}`}
                                 >
-                                    <p className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--brand-red))]">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--brand-copper))]">
                                         {r.entry_label} · {r.duration_days} gün
                                     </p>
                                     <h3 className="mt-2 font-heading text-base font-bold">{r.title}</h3>

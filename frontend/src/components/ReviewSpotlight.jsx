@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, BadgeCheck, Quote, Star } from "lucide-react";
 import { Button } from "./ui/button";
 
-const RED = "text-[hsl(var(--brand-red))]";
+const RED = "text-[hsl(var(--brand-copper))]";
 
 const Stars = ({ rating = 5, size = "h-4 w-4" }) => (
     <div className={`flex items-center gap-0.5 ${RED}`} aria-label={`${rating} / 5 puan`}>
@@ -92,7 +92,7 @@ export const ReviewSpotlight = ({ summary, testimonials = [] }) => {
                             aria-live="polite"
                         >
                             <Quote
-                                className="absolute right-5 top-5 h-8 w-8 text-[hsl(var(--brand-red)/0.18)]"
+                                className="absolute right-5 top-5 h-8 w-8 text-[hsl(var(--brand-copper)/0.18)]"
                                 aria-hidden="true"
                             />
                             <AnimatePresence mode="wait">
@@ -145,7 +145,7 @@ export const ReviewSpotlight = ({ summary, testimonials = [] }) => {
                                         data-testid={`spotlight-dot-${i}`}
                                         className={`h-2.5 rounded-full transition-[width,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                                             i === index
-                                                ? "w-7 bg-[hsl(var(--brand-red))]"
+                                                ? "w-7 bg-[hsl(var(--brand-copper))]"
                                                 : "w-2.5 bg-border hover:bg-muted-foreground/40"
                                         }`}
                                     />

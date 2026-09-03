@@ -165,7 +165,7 @@ export default function Track() {    const [searchParams] = useSearchParams();
 
     useEffect(() => {
         setMeta(
-            "Başvuru Takip | VizeAtlas Dubai",
+            "Başvuru Takip | Dubai Vize Online",
             "Takip kodunuz ve soyadınızla Dubai vize başvurunuzun durumunu sorgulayın, onaylanan vizenizi indirin."
         );
     }, []);

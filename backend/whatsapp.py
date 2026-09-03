@@ -54,30 +54,60 @@ def normalize_phone(raw: str | None) -> str | None:
     return "+" + digits
 
 
+# Metin ayarlari: (anahtar, varsayilan, ortam degiskeni)
+# Oncelik sirasi: DB ayari -> ortam degiskeni -> varsayilan.
+_SETTING_FIELDS: tuple[tuple[str, str, str | None], ...] = (
+    ("provider", "manual", None),
+    ("template_text", DEFAULT_TEMPLATE, None),
+    ("meta_phone_number_id", "", "META_PHONE_NUMBER_ID"),
+    ("meta_template_name", "visa_status_update", None),
+    ("meta_template_language", "tr", None),
+    ("meta_api_version", "v23.0", None),
+    ("twilio_whatsapp_from", "", "TWILIO_WHATSAPP_FROM"),
+    ("twilio_content_sid", "", "TWILIO_CONTENT_SID"),
+    ("twilio_account_sid", "", "TWILIO_ACCOUNT_SID"),
+)
+
+# Gizli ayarlar: (anahtar, ortam degiskeni, "var mi" bayragi)
+_SECRET_FIELDS: tuple[tuple[str, str, str], ...] = (
+    ("meta_access_token", "META_ACCESS_TOKEN", "has_meta_token"),
+    ("twilio_auth_token", "TWILIO_AUTH_TOKEN", "has_twilio_token"),
+)
+
+# Admin panelinden guncellenebilen (gizli olmayan) ayar anahtarlari
+_EDITABLE_KEYS: tuple[str, ...] = ("enabled", "only_optin") + tuple(
+    key for key, _default, _env in _SETTING_FIELDS
+)
+
+
+def _setting_value(stored: dict, key: str, default: str, env_key: str | None) -> str:
+    """Tek bir metin ayarini oncelik sirasina gore cozer."""
+    if stored.get(key):
+        return stored[key]
+    if env_key and os.environ.get(env_key):
+        return os.environ[env_key]
+    return default
+
+
+def _secret_value(stored: dict, key: str, env_key: str) -> str:
+    """Gizli ayari DB'den, yoksa ortam degiskeninden okur."""
+    return stored.get(key) or os.environ.get(env_key, "")
+
+
 async def get_settings(masked: bool = True) -> dict:
     doc = await settings_col.find_one({"key": SETTINGS_KEY})
     value = (doc or {}).get("value") or {}
-    data = {
+    data: dict = {
         "enabled": bool(value.get("enabled", True)),
-        "provider": value.get("provider") or "manual",
-        "template_text": value.get("template_text") or DEFAULT_TEMPLATE,
         "only_optin": bool(value.get("only_optin", True)),
-        "meta_phone_number_id": value.get("meta_phone_number_id") or os.environ.get("META_PHONE_NUMBER_ID", ""),
-        "meta_template_name": value.get("meta_template_name") or "visa_status_update",
-        "meta_template_language": value.get("meta_template_language") or "tr",
-        "meta_api_version": value.get("meta_api_version") or "v23.0",
-        "twilio_whatsapp_from": value.get("twilio_whatsapp_from") or os.environ.get("TWILIO_WHATSAPP_FROM", ""),
-        "twilio_content_sid": value.get("twilio_content_sid") or os.environ.get("TWILIO_CONTENT_SID", ""),
-        "twilio_account_sid": value.get("twilio_account_sid") or os.environ.get("TWILIO_ACCOUNT_SID", ""),
     }
-    secrets_present = {
-        "has_meta_token": bool(value.get("meta_access_token") or os.environ.get("META_ACCESS_TOKEN")),
-        "has_twilio_token": bool(value.get("twilio_auth_token") or os.environ.get("TWILIO_AUTH_TOKEN")),
-    }
-    data.update(secrets_present)
-    if not masked:
-        data["meta_access_token"] = value.get("meta_access_token") or os.environ.get("META_ACCESS_TOKEN", "")
-        data["twilio_auth_token"] = value.get("twilio_auth_token") or os.environ.get("TWILIO_AUTH_TOKEN", "")
+    for key, default, env_key in _SETTING_FIELDS:
+        data[key] = _setting_value(value, key, default, env_key)
+    for key, env_key, flag in _SECRET_FIELDS:
+        secret = _secret_value(value, key, env_key)
+        data[flag] = bool(secret)
+        if not masked:
+            data[key] = secret
     return data
 
 
@@ -85,23 +115,11 @@ async def save_settings(payload: dict) -> dict:
     doc = await settings_col.find_one({"key": SETTINGS_KEY})
     current = (doc or {}).get("value") or {}
     value = dict(current)
-    for key in (
-        "enabled",
-        "provider",
-        "template_text",
-        "only_optin",
-        "meta_phone_number_id",
-        "meta_template_name",
-        "meta_template_language",
-        "meta_api_version",
-        "twilio_whatsapp_from",
-        "twilio_content_sid",
-        "twilio_account_sid",
-    ):
+    for key in _EDITABLE_KEYS:
         if payload.get(key) is not None:
             value[key] = payload[key]
     # sirlar yalnizca yeni deger geldiyse guncellenir
-    for secret in ("meta_access_token", "twilio_auth_token"):
+    for secret, _env_key, _flag in _SECRET_FIELDS:
         if payload.get(secret):
             value[secret] = payload[secret]
     await settings_col.update_one(
@@ -204,6 +222,55 @@ async def _send_twilio(cfg: dict, phone: str, app_doc: dict, status: str) -> dic
     return {"status": "sent", "detail": res.json().get("sid", "")}
 
 
+def _manual_response(phone: str, text: str, reason: str) -> dict:
+    """Manuel mod yaniti: admin'in tek tikla gonderebilecegi wa.me baglantisi."""
+    return {
+        "status": "manual",
+        "reason": reason,
+        "link": wa_link(phone, text),
+        "message": text,
+        "phone": phone,
+    }
+
+
+async def _delivery_block(
+    app_doc: dict, cfg: dict, status: str, phone: str | None, text: str, force: bool
+) -> dict | None:
+    """Gonderim oncesi kontroller. Engel varsa hazir yanit, yoksa None doner."""
+    if status not in RESULT_STATUSES and not force:
+        return {"status": "skipped", "reason": "Sadece vize sonucu bildirimleri gönderilir."}
+    if not cfg["enabled"] and not force:
+        return {"status": "skipped", "reason": "WhatsApp bildirimi kapalı."}
+    if not phone:
+        contact = app_doc.get("contact") or {}
+        await _log(app_doc, status, cfg["provider"], "invalid_phone", contact.get("phone", ""))
+        return {"status": "failed", "reason": "Geçerli bir Türk cep telefonu numarası bulunamadı."}
+    if cfg["only_optin"] and not app_doc.get("whatsapp_optin") and not force:
+        response = _manual_response(
+            phone,
+            text,
+            "Müşteri WhatsApp bilgilendirme onayı vermedi; hazır bağlantı ile elle gönderebilirsiniz.",
+        )
+        await _log(app_doc, status, "manual", "optin_missing", "", response["link"])
+        return response
+    return None
+
+
+# Saglayici -> (gonderici fonksiyon, zorunlu ayar anahtarlari)
+_PROVIDERS = {
+    "meta": (_send_meta, ("meta_access_token", "meta_phone_number_id")),
+    "twilio": (_send_twilio, ("twilio_auth_token", "twilio_account_sid")),
+}
+
+
+def _provider_sender(cfg: dict):
+    """Secili saglayici hazirsa gonderici fonksiyonunu, degilse None dondurur."""
+    sender, required = _PROVIDERS.get(cfg.get("provider"), (None, ()))
+    if sender and all(cfg.get(key) for key in required):
+        return sender
+    return None
+
+
 async def notify_result(app_doc: dict, status: str, base_url: str = "", force: bool = False) -> dict:
     """Vize sonucu icin WhatsApp bildirimi (moda gore API veya hazir baglanti)."""
     cfg = await get_settings(masked=False)
@@ -211,40 +278,19 @@ async def notify_result(app_doc: dict, status: str, base_url: str = "", force: b
     phone = normalize_phone(contact.get("phone"))
     text = render_message(cfg["template_text"], app_doc, status, base_url)
 
-    if status not in RESULT_STATUSES and not force:
-        return {"status": "skipped", "reason": "Sadece vize sonucu bildirimleri gönderilir."}
-    if not cfg["enabled"] and not force:
-        return {"status": "skipped", "reason": "WhatsApp bildirimi kapalı."}
-    if not phone:
-        await _log(app_doc, status, cfg["provider"], "invalid_phone", contact.get("phone", ""))
-        return {"status": "failed", "reason": "Geçerli bir Türk cep telefonu numarası bulunamadı."}
-    if cfg["only_optin"] and not app_doc.get("whatsapp_optin") and not force:
-        link = wa_link(phone, text)
-        await _log(app_doc, status, "manual", "optin_missing", "", link)
-        return {
-            "status": "manual",
-            "reason": "Müşteri WhatsApp bilgilendirme onayı vermedi; hazır bağlantı ile elle gönderebilirsiniz.",
-            "link": link,
-            "message": text,
-            "phone": phone,
-        }
+    blocked = await _delivery_block(app_doc, cfg, status, phone, text, force)
+    if blocked is not None:
+        return blocked
 
     provider = cfg["provider"]
+    sender = _provider_sender(cfg)
+    if sender is None:
+        response = _manual_response(phone, text, "Manuel mod: hazır WhatsApp bağlantısı oluşturuldu.")
+        await _log(app_doc, status, "manual", "manual_link", "", response["link"])
+        return response
+
     try:
-        if provider == "meta" and cfg.get("meta_access_token") and cfg.get("meta_phone_number_id"):
-            out = await _send_meta(cfg, phone, app_doc, status)
-        elif provider == "twilio" and cfg.get("twilio_auth_token") and cfg.get("twilio_account_sid"):
-            out = await _send_twilio(cfg, phone, app_doc, status)
-        else:
-            link = wa_link(phone, text)
-            await _log(app_doc, status, "manual", "manual_link", "", link)
-            return {
-                "status": "manual",
-                "reason": "Manuel mod: hazır WhatsApp bağlantısı oluşturuldu.",
-                "link": link,
-                "message": text,
-                "phone": phone,
-            }
+        out = await sender(cfg, phone, app_doc, status)
     except Exception as exc:
         logger.error("whatsapp send failed: %s", exc)
         out = {"status": "failed", "detail": str(exc)[:200]}

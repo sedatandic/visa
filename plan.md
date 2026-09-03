@@ -9,31 +9,44 @@
   - **E-posta bildirimleri (Resend)**:
     - Resend entegrasyonu canlı (API anahtarı bağlı) ve outbox kayıtları admin panelde görünür.
     - **Kritik kısıt:** Gönderici `onboarding@resend.dev` (sandbox) ise Resend sadece hesap sahibine mail atar; müşteri mailleri “error” olur ama akış bozulmaz (graceful degradation).
-    - Hedef: Resend’de **domain doğrulaması** + `SENDER_EMAIL=noreply@<domain>` ile gerçek müşteri e-postalarını üretime almak.
-  - WhatsApp bildirimleri: **manuel mod** (wa.me link üretimi) tamam; otomatik sağlayıcı (Twilio/Meta) **beklemede**.
+    - Hedef: Resend’de **domain doğrulaması** + `SENDER_EMAIL=noreply@dubaivizeonline.com` ile gerçek müşteri e-postalarını üretime almak.
+  - WhatsApp bildirimleri:
+    - **Manuel mod** (wa.me link üretimi) tamam.
+    - Otomatik sağlayıcı (Twilio/Meta) **beklemede** (API anahtarları yok).
+
 - Güven ve “insan eliyle tasarlanmış” kurumsal görünüm:
-  - **Sadece kırmızı + beyaz** palet (yeşil tamamen kaldırıldı).
-  - Tipografi ve UI dili tasarım kılavuzuna uygun.
+  - **Tema logo bazlı:** petrol teal + bakır/bronz + royal mavi + kum beyazı.
+  - Kırmızı yalnızca **destructive/hata** semantiğinde (silme, reddedildi) kullanılır.
+  - **Tipografi güncellendi:** başlık/marka fontu **Tinos** (Times ailesi; logoyla metrik uyumlu), gövde **Figtree**, mono **Roboto Mono**.
+  - “AI hissi” azaltma:
+    - Public UI’da **parıltı/Sparkles ikonları kaldırıldı** (anlamsız süs yerine anlamlı ikonlar).
+    - Premium tasarım sistemi dokunuşları: radius ölçeği, tipografik ince ayarlar (balance/pretty + lining-nums), mikro-etkileşimler, grain doku.
   - Gerçek görseller / kurumsal bloklar / sosyal kanıt / örnek vize görselleri.
   - **TÜRSAB + acente şeffaflığı** ve **GDRFA rozeti**.
+
 - **Başvuru evrak standardı (güncel)**:
   - **Her yolcu:** Pasaport + vesikalık fotoğraf.
   - **Tüm başvuru:** Uçak bileti/rezervasyon + otel/konaklama rezervasyonu (**opsiyonel yükleme**; formda soru olarak sorulmaz).
+
 - SEO büyüme hedefi (tamamlandı): vize rehber sayfaları, sitemap/robots, JSON-LD.
 - Operasyonel verim + dönüşüm (tamamlandı): eksik belge hatırlatma, taslak hatırlatma, hesap/draft, aile profili.
 - Fiyatlandırma (tamamlandı): USD baz fiyat + canlı kurla TL tahsilat + kur şeffaflığı.
-- Ek ürün satışları (tamamlandı & geliştirildi):
+
+- Ek ürün satışları (tamamlandı):
   - Mağaza sayfaları üzerinden **eSIM** ve **seyahat sigortası** satışı.
   - Vize başvurusu içinde eSIM + sigorta upsell (tek formda).
   - Ek ürünler seyahat tarihine bağlandı (başlangıç/bitiş).
   - **Akıllı paket önerisi** + **%10 seyahat paketi indirimi** (sigorta+eSIM birlikte) hem başvuruda hem mağazada.
+
 - AI destekli otomasyon (tamamlandı):
   - **Pasaport OCR** (Adım 1’de “Pasaportla Tek Adım”).
-  - **Fotoğraf Kontrolü**: vesikalık fotoğraf yüklenirken AI ile uygunluk kontrolü (arka plan/çerçeve/yüz/netlik) ve kullanıcıya uyarı.
-    - **Kritik karar:** Uyarı bazlıdır, **başvuruyu engellemez**.
+  - **Fotoğraf Kontrolü** (AI vesikalık doğrulama) uyarı bazlı, başvuruyu engellemez.
+
 - Zami Tours otomasyonu (tamamlandı, üretim hazır):
   - Playwright RPA + yakalama (capture) + alan eşleme + toplu aktarım + durum polling + kullanıcı takip zaman çizelgesi.
-  - **Zami zorunlu alanlar P0 tamamlandı:** Medeni hal, meslek, anne adı, baba adı artık başvuruda toplanıyor ve RPA ile dolduruluyor.
+  - **Zami zorunlu alanlar tamamlandı:** Medeni hal, meslek, anne adı, baba adı başvuruda toplanıyor ve RPA ile dolduruluyor.
+  - **Kritik sağlamlık:** Zami mapping’in admin panelden kaydedilince veri kaybetmesi bug’ı düzeltildi; mapping artık kayıpsız korunur.
+
 - Hosting/Deploy hedefi:
   - **Paylaşımlı cPanel/PHP hosting alınmayacak.** (Uygulama Python/FastAPI + Playwright + MongoDB gerektirir.)
   - Kullanıcı yalnızca **Domain (Alan Adı)** satın alır; uygulama Emergent altyapısında barınır; domain sonrası DNS yönlendirme yapılır.
@@ -56,7 +69,7 @@
 
 ---
 
-### Phase 4 — Marka/Tema Yenileme + Sosyal Kanıt (Tamamlandı; koyu mod kaldırıldı)
+### Phase 4 — Marka/Tema Yenileme + Sosyal Kanıt (Tamamlandı)
 
 ---
 
@@ -89,7 +102,7 @@
 
 ### Phase 11 — Zorunlu Seyahat Belgeleri + Kart Tıklama Davranışı (Tamamlandı)
 - Kart gövde tıklaması başvuruya yönlendirmez (sadece buton/link)
-- Not: Seyahat belgeleri artık form sorusu değil, opsiyonel belge yükleme (Phase 31 ile uyumlu).
+- Not: Seyahat belgeleri artık form sorusu değil, opsiyonel belge yükleme.
 
 ---
 
@@ -118,7 +131,7 @@
 
 ### Phase 17 — Vize Başvurusu İçinde eSIM + Sigorta Upsell — **COMPLETED (2026-08-31)**
 - Backend: `StoreItemIn` + `store_items` (quote & application), `compute_pricing(store_lines=...)`, `resolve_store_lines()`, `create_application_order()` (source=visa_application), `sync_application_order_payment()` (kart/havale/admin mark-paid).
-- Frontend: `Apply.jsx` adım 2'de sigorta planı (yolcu başına, tek seçim) + eSIM paketleri (adet stepper, varsayılan adet yolcu sayısı); özet + canlı FX toplam.
+- Frontend: `Apply.jsx` adım 2'de sigorta planı + eSIM paketleri; özet + canlı FX toplam.
 - Admin: AdminOrders’da “Vize başvurusu ile alındı” etiketi; AdminApplicationDetail’de store satırları + bağlı sipariş kodu.
 
 ---
@@ -136,16 +149,16 @@
 ---
 
 ### Phase 20 — Zami Tours Portalına Başvuru Aktarımı (visa.zamitours.ae) — **COMPLETED (2026-09-01) / LIVE VERIFIED (2026-09-03)**
-Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik login sınırlı. Bu yüzden iki yol birlikte kuruldu.
+Engel: girişte resimli CAPTCHA + OTP var → tam otomatik login sınırlı.
 - **A) Tarayıcı yardımcısı (bookmarklet)**
   - `GET /api/zami/bookmarklet.js` (BASE’i `currentScript.src`’den alır).
   - Admin başvuru detayında “Aktarım kodu oluştur” → 45 dk tek kullanımlık token.
-  - Zami formunda bookmarklet çalıştır → token gir → alanlar mapping’e göre dolar; dosyalar için indirme linkleri listelenir (file input set sınırlı → kullanıcı yönlendirilir).
+  - Zami formunda bookmarklet çalıştır → token gir → alanlar mapping’e göre dolar; dosyalar için indirme linkleri listelenir.
 - **B) Robot oturumu (Playwright RPA)**
-  - Oturum `storage_state` ile saklanır; transfer “güvenli mod/dry-run” ile screenshot döndürebilir.
-  - Kritik: Playwright chromium yolu **`/usr/local/bin/browser-use-chromium`** korunur.
+  - Oturum `storage_state` ile saklanır; transfer “dry-run” ile screenshot döndürebilir.
+  - Kritik: Playwright chromium yolu `/usr/local/bin/browser-use-chromium` korunur.
 - **Admin alan eşleme ekranı (`/admin/zami`)**
-  - HTML yapıştırma opsiyonu + yakalama (capture) ile field listesi.
+  - HTML yapıştırma + yakalama (capture) ile field listesi.
   - Genel + yolcu alanlarında `{i}` şablonu (multi-passenger).
   - Mapping hem bookmarklet hem RPA tarafından ortak kullanılır.
 
@@ -158,9 +171,8 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
 ---
 
 ### Phase 22 — Alan Eşlemesi Otomasyonu (yakalama + otomatik öneri) — **COMPLETED (2026-09-01)**
-- `GET /api/zami/capture.js` bookmarklet’i alanları okuyup token korumalı capture endpoint’e gönderir.
-- `zami.suggest_mapping()` etiket/isim anahtar kelimeleriyle öneri çıkarır; `{i}` şablonlaştırır.
-- Dayanıklılık: sistem chromium fallback; yoksa anlaşılır hata + bookmarklet önerisi.
+- `GET /api/zami/capture.js` capture endpoint’e gönderir.
+- `zami.suggest_mapping()` öneri çıkarır; `{i}` şablonlaştırır.
 
 ---
 
@@ -172,215 +184,221 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
 
 ### Phase 24 — WhatsApp Bildirimleri (Manuel Mod) + Admin Ayarları — **COMPLETED (2026-09-01)**
 - Admin WhatsApp ayarları paneli.
-- Durum değişimlerinde admin’e/operasyona **wa.me** linki üreten manuel bildirim akışı.
-- Otomatik sağlayıcı (Twilio/Meta) entegrasyonu **beklemede: API anahtarları yok**.
+- Durum değişimlerinde wa.me linki üreten manuel bildirim akışı.
 
 ---
 
-### Phase 25 — Ücretsiz Ön Değerlendirme Sihirbazı (3 Soru) — **KALDIRILDI (2026-09-02)**
-- Kullanıcı isteği ile tamamen kaldırıldı.
-- Route `/on-degerlendirme` 404.
-- Admin sayfası ve backend endpoint’leri kaldırıldı.
-- Not: DB koleksiyonu silinmedi (geri getirmek istenirse mümkün).
+### Phase 25 — Ücretsiz Ön Değerlendirme Sihirbazı — **KALDIRILDI (2026-09-02)**
 
 ---
 
-### Phase 26 — Kod Kalitesi Raporu Uygulamasi (Refactor) — **COMPLETED (2026-09-02)**
-(Detaylar önceki sürümle aynı; davranış korunarak refactor tamamlandı.)
+### Phase 26 — Kod Kalitesi Refactoring (Rapor Maddeleri + Saf Fonksiyon İyileştirmeleri) — **COMPLETED (2026-09-03)**
+**Amaç:** Karmaşıklığı düşürmek, test edilebilirliği artırmak, davranışı bozmadan refactor.
+
+**Kapsam (tamamı kapatıldı)**
+- `whatsapp.get_settings` (17 → 5): tablo tabanlı ayar çözümü.
+- `whatsapp.notify_result` (17 → 8): provider seçimi/engel kontrolü/modülerleştirme.
+- `visa_delivery.fetch_visa_document` (15 → 5): hazırlık + indirme + kaydetme adımları.
+- `passport_ai.normalize_photo_result` (14 → 4) ve `normalize_result` sadeleştirme.
+- `routes_zami`: `_base_url`, `zami_config`, `zami_candidates` sadeleştirme.
+- `routes_public`: `get_site_content`, `_tracking_last_names`, `_apply_traveler_documents` sadeleştirme.
+- `routes_admin.admin_send_visa` sadeleştirme.
+- `content.compute_pricing` (11 → 6): `_addon_lines` (boş listede `0.0` float).
+- `db.serialize_doc` daha okunur tip-dispatch.
+- Testler: `backend_test.py` pythonic True/False.
+- Ek (raporda yoktu ama risksiz): `zami.save_mapping` ve `zami.build_payload` saf yardımcı fonksiyonlara bölündü; JSON çıktısı birebir aynı doğrulandı.
+
+**Kalite/Tarama**
+- Ruff: F632/E712/E711/F821/F401/F811: **All checks passed**
+- Ortalama karmaşıklık: **A (≈4.24)**
+- Test: iteration_30 (%100), iteration_31 (39/39 backend)
+
+**Bilinçli ertelenen borç (riskli / canlı OTP gerektirir)**
+- `zami_rpa.fill_application`, `check_status`, `zami.suggest_mapping`, `parse_form_fields`, `zami_status.apply_status`.
 
 ---
 
-### Phase 27 — Tum Site Arayuz Yenilemesi (Stitch tarzi) — **COMPLETED (2026-09-02)**
-(Detaylar önceki sürümle aynı; Stitch tarzı tasarım uygulandı, UI geri alınmayacak.)
+### Phase 27 — Stitch Tarzı UI Yenilemesi — **COMPLETED (2026-09-02)**
 
 ---
 
-### Phase 28 — Turkce Tarih Secici + Ana Sayfa Vitrini — **COMPLETED (2026-09-02)**
-(Detaylar önceki sürümle aynı.)
+### Phase 28 — Türkçe Tarih Seçici + Ana Sayfa Vitrini — **COMPLETED (2026-09-02)**
 
 ---
 
-### Phase 29 — Sehir Alani ve On Degerlendirme Kaldirildi — **COMPLETED (2026-09-02)**
-- “Şehir” alanı kaldırıldı.
-- Ön değerlendirme tamamen kaldırıldı.
+### Phase 29 — Şehir Alanı + Ön Değerlendirme Kaldırıldı — **COMPLETED (2026-09-02)**
 
 ---
 
-### Phase 30 — Formu Kisaltma + Yorum Vitrini — **COMPLETED (2026-09-02)**
+### Phase 30 — Formu Kısaltma + Yorum Vitrini — **COMPLETED (2026-09-02)**
 
 ---
 
-### Phase 31 — dubaivizeal Tarzi Kisa Soru Seti — **COMPLETED (2026-09-02)**
-- Konaklama ve uçuş alanları **soru olarak sorulmaz**.
-- Uçak bileti + otel yükleme **opsiyonel**.
+### Phase 31 — Kısa Soru Seti (uçuş/otel soru değil) — **COMPLETED (2026-09-02)**
 
 ---
 
-### Phase 32 — Pasaportla Tek Adim (Sifira Yakin Soru) — **COMPLETED (2026-09-02)**
-- Pasaport OCR adım 1’e taşındı; eksiksiz okunduğunda alanlar özet karta dönüşür.
+### Phase 32 — Pasaportla Tek Adım (OCR) — **COMPLETED (2026-09-02)**
 
 ---
 
-### Phase 33 — Fotoğraf Kontrolü (AI Vesikalık Fotoğraf Doğrulama) — **COMPLETED (2026-09-02)**
-**Amaç:** Kullanıcı vesikalık fotoğraf yüklediğinde, arka plan/çerçeve/yüz/netlik gibi kriterleri AI ile kontrol edip **hemen uyarı vermek**; admin manuel inceleme yükünü azaltmak.
+### Phase 33 — AI Fotoğraf Kontrolü (Vesikalık) — **COMPLETED (2026-09-02)**
 
-**Backend**
-- `backend/passport_ai.py`
-  - `check_photo()` + `normalize_photo_result()` eklendi.
-  - Emergent LLM Vision prompt ile kriterler: açık/düz arka plan, tek kişi, yüz net ve kadraj doğru, engel/filtre yok, bulanıklık yok, çözünürlük yeterli.
-- `backend/routes_public.py`
-  - `POST /api/photo/check` eklendi.
-  - Edge-case’ler:
-    - Geçersiz `file_id` → **404**
-    - PDF → `checked=false`, `reason="pdf"` (kullanıcıyı JPG/PNG’ye yönlendirir)
-    - AI hata/verimsiz yanıt → **graceful fallback**: `ok=true`, `checked=false`, `reason="ai_error"` (akış bozulmaz)
-  - Kontrol özeti `uploads` kaydına `photo_check` alanı ile yazılır.
+---
 
-**Frontend**
-- `frontend/src/pages/Apply.jsx`
-  - `checkPhotoWithAI()` eklendi; fotoğraf yükleme sonrası otomatik çağrılır.
-  - UI durumları (testid):
-    - `traveler-N-photo-check-loading`
-    - `traveler-N-photo-check-ok`
-    - `traveler-N-photo-check-warning`
-  - **Uyarı bazlı:** Uygun değilse bilgilendirir ama **başvuruyu engellemez** (“Yine de devam edebilirsiniz.”).
+### Phase 34 — Zami Zorunlu Alanlar (Medeni Hal / Meslek / Anne / Baba) — **COMPLETED (2026-09-03)**
 
-**Test**
-- `testing_agent_v3` iteration_24.json
-  - Backend 12/12 **%100 PASS**
+---
+
+### Phase 35 — Canlı E-posta (Resend) Aktivasyonu — **COMPLETED (2026-09-03)**
+- `RESEND_API_KEY` bağlı.
+- Sandbox uyarıları admin panelde.
+- **USER ACTION:** Resend domain doğrulaması sonrası `SENDER_EMAIL=noreply@dubaivizeonline.com`.
+
+---
+
+### Phase 36 — Kritik Bug Fix: Zami Mapping Veri Kaybı — **COMPLETED (2026-09-03)**
+**Keşif:** `routes_zami.MappingIn` içinde bazı alanlar yoktu; admin panelden mapping kaydedilince `constants`, `validate_selector`, `helper_selectors`, `upload_targets`, `status_search_field`, `status_submit_selector` siliniyordu.
+
+**Düzeltme**
+- `MappingIn` modeline eksik alanlar `Optional=None` olarak eklendi.
+- `zami.normalize_mapping(value, current)` artık istek payload’ında **gönderilmeyen** alanları mevcut değerden **korur**.
+- AdminZami UI bu alanları round-trip eder.
+- Mapping’in tek kaynağı: `/app/scripts/zami_save_mapping.py` (validate_selector/helper_selectors/upload_targets dahil tam set).
+
+**Test:** iteration_32 → kritik bug yok.
+
+---
+
+### Phase 37 — Logo Bazlı Yeni Tema + Marka Adı Güncellemesi — **COMPLETED (2026-09-03)**
+**Amaç:** Logoya uyumlu premium görünüm + marka tutarlılığı.
+
+**Yapılanlar**
+- Yeni palet (logodan): petrol teal (#0E5A66/#003040), bakır/bronz (#A06030/#B0733C), royal mavi (#2B4B9B), kum beyazı (#F7F4EF).
+- `index.css` token seti tamamen yenilendi (light+dark).
+- Dekoratif kırmızı kaldırıldı; kırmızı yalnızca destructive/hata.
+- `.flag-strip` teal→royal→bakır dalga.
+- Logo işleme: kağıt zemin kaldırılıp kırpıldı; `/public/brand/` altında favicon + icon + wordmark üretildi; büyük dosyalar temizlendi.
+- Navbar/Footer `BrandMark` ile güncellendi.
+- Marka adı: **VizeAtlas Dubai → Dubai Vize Online** (frontend + backend metinleri, FastAPI title, bookmarklet etiketleri).
+
+**Test:** iteration_32 → 0 kritik hata.
+
+---
+
+### Phase 38 — Tipografi + Premium Tasarım Sistemi (AI hissini azaltma) — **COMPLETED (2026-09-03)**
+**Kullanıcı geri bildirimi:** “yapay zekayla yapıldığı çok belli oluyor” + “bu fontu kullan” + Instagram reel: “implement these skills”.
+
+**Reel çözümlemesi**
+- Instagram auth-wall nedeniyle direkt crawl mümkün olmadı.
+- imginn aynası üzerinden görülen içerik: tasarım sistemi disiplini (tipografi/primary-secondary button/premium deneyim). Kilitli “skill paketi” içeriğine erişilemedi.
+
+**Uygulananlar**
+- **Font:** Headings/marka fontu Playfair Display → **Tinos** (Times ailesi; logoyla metrik uyumlu).
+  - Fake bold engelleme: headings weight 700’e sabitlendi; extrabold/black override edildi.
+- **AI parıltı ikonları kaldırıldı:** public UI’da Sparkles → anlamlı ikonlar (ShieldCheck/Star/ScanLine/Tag/Plus/CheckCircle2/Activity).
+- **Premium tasarım sistemi dokunuşları:**
+  - Radius ölçeği: tek `--radius` yerine `--radius-sm/lg/xl`.
+  - Tipografik zanaat: `text-wrap: balance/pretty`, `lining-nums` + `.tabular`.
+  - Mikro-etkileşimler: tutarlı 160ms transition + active feedback; hover’da yalnızca transform + shadow.
+  - **Grain doku:** body::after (pointer-events:none) → düz/dijital hissi azaltır.
+
+**Test:** iteration_33 → 0 kritik bug, 0 UI bug.
 
 ---
 
 ## 3. Next Actions
 
-### P0 — Zami Zorunlu Alanlar (Medeni Hal / Meslek / Anne / Baba) — **COMPLETED (2026-09-03)**
-**Amaç:** Zami RPA aktarımını %100 otomatikleştirmek için kullanıcıdan eksik zorunlu alanları toplamak.
+### P0 — “AI Hissi”ni Kıran En Kritik İş: Gerçek Firma Bilgileri — **USER ACTION REQUIRED**
+**Neden P0?** Sahte/placeholder veriler (telefon, adres, unvan, TÜRSAB, vergi) ve uydurma istatistikler “AI işi” izlenimini en çok artıran unsur.
 
-**Yapılanlar**
-- Frontend: `Apply.jsx`
-  - Yolcu başına yeni alanlar eklendi: `marital_status`, `profession`, `mother_name`, `father_name`
-  - Validasyon eklendi (boş bırakılırsa adım ilerlemez).
-  - Çocuk yolcu seçilince otomatik: `marital_status=single`, `profession=Student`.
-- Backend: `models.py`
-  - `TravelerIn` genişletildi (pattern doğrulama: `single|married|divorced|widowed`).
-- Backend: `zami.py`
-  - `build_payload()` traveler alanlarına yeni 4 alanı ve `marital_status_label`’ı ekledi.
-  - `TRAVELER_FIELDS` + `TRAVELER_HINTS` güncellendi.
-  - `MANUAL_FIELDS` içinden `fa/mo/pf_tt` çıkarıldı (artık otomatik dolduruluyor).
-- DB: `zami_mapping`
-  - `traveler_fields` içine eklendi:
-    - `marital_status_label -> [name="ms"]`
-    - `profession -> [name="pf_tt"]`
-    - `mother_name -> [name="mo"]`
-    - `father_name -> [name="fa"]`
-  - `constants` içinden `[name="ms"]` kaldırıldı.
-- Admin: `AdminApplicationDetail.jsx`
-  - Yeni alanlar yolcu kartında görüntüleniyor.
+**Gerekli veriler**
+1) Gerçek telefon / WhatsApp
+2) Gerçek destek e-postası
+3) Açık adres (en az il/ilçe + mahalle)
+4) Ticaret unvanı, TÜRSAB belge no, vergi dairesi/no, MERSİS, ticaret sicil no
+5) Gerçek sosyal kanıt: tamamlanan başvuru sayısı, ortalama sonuç süresi, yıllık deneyim (varsa)
+6) Varsa ekip/ofis fotoğrafları (stok foto yerine)
 
-**Test**
-- `testing_agent_v3` iteration_28.json → backend **12/12**, frontend **%100**.
+**Uygulama**
+- `company_info` ve `review_summary` admin ayarlarından bu gerçek veriler girilecek.
+- Ana sayfadaki vitrin istatistikleri gerçek sayılarla güncellenecek veya kaldırılacak.
 
 ---
 
-### P1 — Canlı E-posta (Resend) Aktivasyonu — **COMPLETED (2026-09-03)**
-**Amaç:** Taslak hatırlatma, ödeme makbuzu, vize PDF teslimi ve durum e-postalarını canlıya almak.
-
-**Yapılanlar**
-- `backend/.env` içine kullanıcı tarafından sağlanan **RESEND_API_KEY** eklendi (send-only restricted key).
-- Admin bildirimlerinin sandbox modda da hemen çalışması için `ADMIN_EMAIL=info@dubaivizeonline.com` yapıldı.
-- `GET /api/admin/emails` artık aşağıdaki bilgileri döndürüyor:
-  - `email_configured`
-  - `sender_email`
-  - `sandbox_sender`
-- `AdminEmails.jsx`:
-  - Sandbox uyarı bloğu eklendi (`data-testid=email-sandbox-warning`).
-  - Üretim gönderici bilgi bloğu eklendi (`data-testid=email-sender-info`).
-- E2E doğrulama:
-  - Sandbox izinli adrese (`info@dubaivizeonline.com`) gönderim **sent**.
-  - Diğer alıcılara gönderim **error**, fakat başvuru/taslak akışı bozulmuyor (graceful degradation).
-
-**Test**
-- `testing_agent_v3` iteration_29.json → backend **%95**, frontend **%100**.
-  - Not: “/admin/zami/mapping GET 405” bir bug değil; bu endpoint PUT-only, GET için `/admin/zami/config` kullanılıyor.
-
-**Kullanıcı aksiyonu (kritik)**
-- Şu an gönderici `onboarding@resend.dev` olduğu için Resend sandbox kısıtı var.
-- Üretim için:
-  1) Resend panelinde `resend.com/domains` üzerinden **dubaivizeonline.com** domain doğrulaması
-  2) `SENDER_EMAIL=noreply@dubaivizeonline.com` (veya `info@dubaivizeonline.com`) olarak güncelleme
+### P0.1 — Resend Production Gönderici (Domain Doğrulaması + SENDER_EMAIL) — **USER ACTION REQUIRED**
+1) Resend panelinde `resend.com/domains` → `dubaivizeonline.com` doğrula.
+2) Deploy ortamında/`.env`:
+   - `SENDER_EMAIL=noreply@dubaivizeonline.com` (veya `info@dubaivizeonline.com`)
+3) Doğrulama testi:
+   - Gerçek müşteri adresine e-posta `sent`.
 
 ---
 
-### P1 — Stripe Prod Geçişi (opsiyonel) — **BEKLEMEDE**
+### P1 — Custom Domain Deploy — **IN PROGRESS / USER ACTION REQUIRED**
+**Durum / bulgular**
+- `dubaivizeonline.com`: DNS’te A kaydı yok (ideal).
+- Paylaşımlı hosting alınmayacak.
+- Deployment readiness: PASS.
+
+**Deploy runbook**
+1) Emergent’te Deploy → Deploy Now.
+2) Deploy sonrası Link domain → `dubaivizeonline.com`.
+3) DNS kayıtları: kök domain (`@`) ve `www` (Emergent yönlendirmesine göre A/CNAME).
+4) SSL otomatik.
+5) Env:
+   - `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `EMERGENT_LLM_KEY`, `RESEND_API_KEY`, `SENDER_EMAIL`, `STRIPE_API_KEY`, `PUBLIC_SITE_URL`, `PUBLIC_BASE_URL`.
+6) Deploy sonrası:
+   - `PUBLIC_SITE_URL` ve `PUBLIC_BASE_URL` yeni domain’e çekilecek (e-posta linkleri, dosya linkleri).
+
+---
+
+### P2 — Stripe Prod Geçişi (opsiyonel) — **BEKLEMEDE**
 - Canlı anahtarlar + webhook secret + success/cancel URL’leri.
 
 ---
 
-### P2 — Custom Domain Deploy — **IN PROGRESS / USER ACTION REQUIRED**
-**Durum / bulgular**
-- Domainler:
-  - `dubaivizeonline.com`: DNS’te A kaydı yok (şu an yönlenmiyor) → **deploy için ideal**
-  - `dubaivizemerkezi.com`: 194.31.150.134’e yönlü
-- Paylaşımlı hosting (cPanel/PHP) **alınmayacak**.
-- Deployment readiness kontrolü: **PASS** (bloklayıcı yok).
-- Temizlik: `/app/scripts/out` ekran görüntü klasörü silindi.
-
-**Uygulanacak adımlar (deploy runbook)**
-1) Emergent’te **Deploy → Deploy Now** (yaklaşık 10–15 dk; 50 kredi/ay)
-2) Deploy sonrası **Link domain** → `dubaivizeonline.com`
-3) Emergent’in verdiği DNS kayıtlarını domain sağlayıcı panelinde ekle:
-   - kök domain (`@`) için A veya CNAME
-   - `www` için CNAME
-4) DNS yayılımını bekle (genelde 5–30 dk; nadiren 24 saat)
-5) SSL otomatik aktif (https)
-6) Deploy ortamında env var’ları gir:
-   - `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `EMERGENT_LLM_KEY`, `RESEND_API_KEY`, `SENDER_EMAIL`, `STRIPE_API_KEY`, `PUBLIC_SITE_URL`, `PUBLIC_BASE_URL`
-7) Domain açıldıktan sonra:
-   - `PUBLIC_SITE_URL` ve `PUBLIC_BASE_URL` yeni domain’e çekilecek
-   - Resend domain doğrulaması + `SENDER_EMAIL` production’a alınacak
-
-**Test hedefi (deploy sonrası)**
-- Ana sayfa + başvuru akışı
-- Admin login
-- Resend e-posta outbox → gerçek müşteri maili “sent”
-- Zami readiness ve cron’lar (status sweep logları)
-
----
-
-### P2 — WhatsApp Otomatik Sağlayıcı (Twilio/Meta) — **BEKLEMEDE**
+### P3 — WhatsApp Otomatik Sağlayıcı (Twilio/Meta) — **BEKLEMEDE**
 - Sağlayıcı seçimi + API anahtarları.
 
 ---
 
 ### Ops — Zami’de Kalan Manuel Alanlar (İyileştirme) — **BACKLOG**
-Zami’de halen elle girilecek alanlar:
 - Eğitim (`eu`)
 - Uçuş bilgileri (`tr_a_d`, `tr_a_fn`, `tr_d_d`, `tr_d_fn`)
 
-Not: Bu alanlar şu an formda sorulmuyor (Phase 31 kararı). İstenirse “opsiyonel” olarak eklenebilir veya admin tarafında tamamlanabilir.
+Not: Phase 31 kararı gereği formda soru olarak yok. İstenirse opsiyonel alan yapılabilir.
+
+---
+
+### Tech Debt — Canlı RPA Kodunda Karmaşıklık Azaltma — **BACKLOG (RISKLI)**
+OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
+- `zami_rpa.fill_application` (44)
+- `check_status` (30)
+- `zami.suggest_mapping` (28)
+- `parse_form_fields` (22)
+- `zami_status.apply_status` (22)
 
 ---
 
 ## 4. Success Criteria
-- POC/V1/SEO/Account/Drafts/FX/Reminders/Storefront akışları: mevcut kriterler **korunur**.
-- Phase 17–19 ek ürün akışları:
-  - Ek ürün tarihleri doğru, öneri + indirim doğru, hem başvuru hem mağaza akışı sorunsuz.
-- Fotoğraf Kontrolü (Phase 33) başarı kriterleri:
-  1) Fotoğraf yükleme sonrası kontrol tetiklenir, kullanıcıya 2 durumda net geri bildirim verir (OK / Uyarı).
-  2) Uyarı çıktığında **başvuruyu engellemez**.
-  3) Edge-case’lerde akış bozulmaz (PDF, AI error, invalid file_id).
-- Zami entegrasyonu (Phase 20–23) başarı kriterleri:
-  1) Admin mapping ile Zami form alanları eşlenebilir ve değişime dayanıklı olur.
-  2) Bookmarklet ile kullanıcı Zami formunu doldurabilir (captcha/OTP kendisi).
-  3) Playwright RPA ile admin, insan onayıyla login olup başvuruyu doldurabilir (dry-run + submit).
-  4) Aktarım kayıtları/loglar ve hata ayıklama çıktıları admin panelinde görünür.
-  5) Canlı portalda gerçek kayıt (Waiting list) oluşturulabildi ve otomatik durum takibi çalışır.
-  6) Zami zorunlu alanları (medeni hal/meslek/anne/baba) artık public formdan toplanır ve otomatik doldurulur.
-- WhatsApp (Phase 24):
-  - Manuel modda wa.me linkleri doğru mesaj şablonlarıyla üretilir ve operasyon akışına uygun olur.
+- POC/V1/SEO/Account/Drafts/FX/Reminders/Storefront akışları: mevcut kriterler korunur.
+- Tema/marka başarı kriterleri:
+  1) Petrol teal + bakır/bronz tema tüm public/admin sayfalarda tutarlı.
+  2) Favicon/ikon/wordmark doğru servis edilir (`/brand/*` 200).
+  3) “VizeAtlas” metinleri public alanlarda kalmaz.
+  4) Tipografi: başlıklarda Tinos (Times ailesi) kullanılır; fake bold oluşmaz.
+  5) Public UI’da anlamsız “AI parıltı” ikonları yoktur.
+
+- Zami entegrasyonu başarı kriterleri:
+  1) Mapping kaydı admin panelden kaydedilince **constants/upload_targets/validate_selector** kaybolmaz.
+  2) Bookmarklet + RPA aktarım akışı bozulmaz.
+  3) Status sweep (cron) çalışır ve admin panelde loglanır.
+
 - E-posta (Resend) başarı kriterleri:
-  1) `RESEND_API_KEY` bağlıyken outbox kayıtları “skipped” yerine “sent/error” olur.
-  2) Domain doğrulaması sonrası müşteri e-postaları **sent** olur (sandbox kısıtı kalkar).
+  1) `RESEND_API_KEY` bağlıyken outbox “sent/error” olur.
+  2) Domain doğrulaması sonrası müşteri e-postaları **sent** olur.
+
 - Deploy/Domain başarı kriterleri:
   1) `https://dubaivizeonline.com` açılır, SSL aktif.
   2) Admin panel ve ödeme akışları çalışır.
@@ -390,28 +408,26 @@ Not: Bu alanlar şu an formda sorulmuyor (Phase 31 kararı). İstenirse “opsiy
 
 ## DURUM (2026-09-03)
 - Phase 1–19: **TAMAMLANDI**.
-- Phase 20–23 (Zami RPA + yakalama + mapping + status + tracking): **TAMAMLANDI** ve canlı doğrulandı.
+- Phase 20–23 (Zami RPA + capture + mapping + status + tracking): **TAMAMLANDI** ve canlı doğrulandı.
 - Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
-- Phase 25 (Ön değerlendirme): **KALDIRILDI** (kullanıcı isteği).
+- Phase 25: **KALDIRILDI**.
 - Phase 26 (Kod kalitesi refactor): **TAMAMLANDI**.
-- Phase 27 (Stitch tarzı UI): **TAMAMLANDI**.
-- Phase 28 (Türkçe tarih seçici + ana sayfa vitrini): **TAMAMLANDI**.
-- Phase 29 (Şehir + ön değerlendirme kaldırma): **TAMAMLANDI**.
-- Phase 30 (Form kısaltma + yorum vitrini): **TAMAMLANDI**.
-- Phase 31 (Kısa soru seti; uçuş/otel soru değil): **TAMAMLANDI**.
-- Phase 32 (Pasaportla tek adım): **TAMAMLANDI**.
-- Phase 33 (Fotoğraf kontrolü): **TAMAMLANDI**.
-- **P0 Zami zorunlu alanlar (Medeni Hal/Meslek/Anne/Baba)**: **TAMAMLANDI**.
-- **P1 Canlı E-posta (Resend) aktivasyonu**: **TAMAMLANDI** (sandbox mod kısıtlı; domain doğrulaması bekliyor).
+- Phase 34 (Zami zorunlu alanlar): **TAMAMLANDI**.
+- Phase 35 (Resend aktivasyonu): **TAMAMLANDI** (sandbox kısıtı var; domain doğrulaması bekliyor).
+- Phase 36 (Zami mapping veri kaybı bug fix): **TAMAMLANDI**.
+- Phase 37 (Logo bazlı yeni tema + marka adı): **TAMAMLANDI**.
+- Phase 38 (Tipografi + premium tasarım sistemi): **TAMAMLANDI**.
 
 Test raporları (seçme):
-- iteration_23.json — Pasaportla Tek Adım: backend 5/5, frontend 6/6, **%100**.
-- iteration_24.json — Fotoğraf Kontrolü: backend 12/12, **%100**.
-- iteration_27.json — UI palet + regresyon: **%100**.
-- iteration_28.json — Zami zorunlu alanlar: backend **12/12**, frontend **%100**.
-- iteration_29.json — Resend aktivasyonu + sandbox uyarıları: backend **%95**, frontend **%100**.
+- iteration_28.json — Zami zorunlu alanlar: backend 12/12, frontend %100.
+- iteration_29.json — Resend aktivasyonu + sandbox uyarıları.
+- iteration_30.json — Refactor regresyon: %100.
+- iteration_31.json — Refactor + Zami mapping/build_payload regresyon: 39/39 backend.
+- iteration_32.json — Tema/Logo/Marka + Zami mapping bug fix regresyon: kritik hata 0.
+- iteration_33.json — Tinos font + ikon değişimi + premium tasarım sistemi: kritik hata 0.
 
 Blokajlar / Bekleyen:
+- **Gerçek firma bilgileri** (telefon/adres/TÜRSAB/vergisel bilgiler) → “AI hissi”ni kırmak için **USER ACTION REQUIRED**.
 - **Resend production (domain doğrulaması + SENDER_EMAIL)** → müşteri e-postaları için **USER ACTION REQUIRED**.
+- **Custom domain deploy/DNS yönlendirme** → **USER ACTION REQUIRED** (`dubaivizeonline.com`).
 - Stripe prod anahtarları yok (opsiyonel).
-- Custom domain deploy/DNS yönlendirme → **USER ACTION REQUIRED** (özellikle `dubaivizeonline.com` için).

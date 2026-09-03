@@ -20,7 +20,9 @@ import {
     Save,
     ShieldCheck,
     Signal,
-    Sparkles,
+    ScanLine,
+    Star,
+    Tag,
     Trash2,
     User,
     Users,
@@ -368,7 +370,7 @@ export default function Apply() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vize Başvuru Formu | Aile Başvurusu | VizeAtlas Dubai",
+            "Dubai Vize Başvuru Formu | Aile Başvurusu | Dubai Vize Online",
             "Dubai vize başvurunuzu online tamamlayın. Tek formda birden fazla yolcu ekleyin; çocuk vizesi ve aile indirimi otomatik hesaplanır."
         );
     }, []);
@@ -502,7 +504,7 @@ export default function Apply() {
             className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--brand-green)/0.12)] px-2 py-0.5 text-[11px] font-semibold text-[hsl(var(--brand-green))]"
             data-testid={testId}
         >
-            <Sparkles className="h-3 w-3" aria-hidden="true" /> Sizin için önerilen
+            <Star className="h-3 w-3 fill-current" aria-hidden="true" /> Sizin için önerilen
         </span>
     );
 
@@ -1144,7 +1146,7 @@ export default function Apply() {
 
                                                     <div className="mt-5 rounded-xl border border-primary/35 bg-primary/[0.05] p-4" data-testid={`traveler-${idx}-ai-passport-box`}>
                                                         <p className="flex items-center gap-2 font-heading text-base font-bold">
-                                                            <Sparkles className="h-4.5 w-4.5 text-primary" />
+                                                            <ScanLine className="h-4.5 w-4.5 text-primary" aria-hidden="true" />
                                                             Pasaportu yükleyin, gerisini biz dolduralım
                                                         </p>
                                                         <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -1491,7 +1493,7 @@ export default function Apply() {
                                             <div className="flex flex-wrap items-start justify-between gap-4">
                                                 <div className="max-w-xl">
                                                     <p className="flex items-center gap-2 font-heading text-sm font-bold">
-                                                        <Sparkles className="h-4 w-4 text-[hsl(var(--brand-green))]" aria-hidden="true" />
+                                                        <Tag className="h-4 w-4 text-[hsl(var(--brand-green))]" aria-hidden="true" />
                                                         {bundleInfo?.title || "Seyahat paketi indirimi"}
                                                     </p>
                                                     <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
@@ -1521,7 +1523,7 @@ export default function Apply() {
                                                     disabled={!travelDatesReady || bundleActive}
                                                     data-testid="apply-recommended-bundle-button"
                                                 >
-                                                    <Sparkles className="mr-2 h-4 w-4" />
+                                                    <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
                                                     {bundleActive ? "Paket eklendi" : "Önerilenleri ekle"}
                                                 </Button>
                                             </div>
@@ -1718,7 +1720,7 @@ export default function Apply() {
                                                             {ocr[t.key]?.status === "done" && (
                                                                 <div className="mt-2 rounded-lg border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.07)] p-3" data-testid={`traveler-${idx}-docs-ocr-success`}>
                                                                     <p className="flex items-center gap-2 text-xs font-semibold text-[hsl(var(--brand-green))]">
-                                                                        <Sparkles className="h-3.5 w-3.5" />
+                                                                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                                                                         Pasaport okundu: {ocr[t.key].name} {ocr[t.key].passport_no ? `· ${ocr[t.key].passport_no}` : ""}
                                                                     </p>
                                                                     <p className="mt-1 text-xs text-muted-foreground">
@@ -2013,7 +2015,7 @@ export default function Apply() {
                                                     </div>
                                                     <div className="flex justify-between gap-3 border-t border-border pt-2">
                                                         <dt className="text-muted-foreground">Tutar</dt>
-                                                        <dd className="text-right font-bold text-[hsl(var(--brand-red))]">
+                                                        <dd className="text-right font-bold text-[hsl(var(--brand-copper))]">
                                                             {formatMoney(transferInfo.amount, transferInfo.currency)}
                                                         </dd>
                                                     </div>

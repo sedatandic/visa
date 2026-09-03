@@ -11,7 +11,7 @@ export default function Documents() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vizesi Gerekli Belgeler | VizeAtlas Dubai",
+            "Dubai Vizesi Gerekli Belgeler | Dubai Vize Online",
             "Dubai (BAE) vize başvurusu için gereken belgeler: pasaport fotoğrafı, vesikalık fotoğraf kriterleri, dönüş uçak bileti ve otel rezervasyonu."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
@@ -40,7 +40,7 @@ export default function Documents() {
                                             <span
                                                 className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
                                                     d.required
-                                                        ? "border-[hsl(var(--brand-red)/0.30)] bg-[hsl(var(--brand-red)/0.08)] text-[hsl(var(--brand-red))]"
+                                                        ? "border-[hsl(var(--brand-copper)/0.30)] bg-[hsl(var(--brand-copper)/0.08)] text-[hsl(var(--brand-copper))]"
                                                         : "border-border bg-muted text-muted-foreground"
                                                 }`}
                                             >

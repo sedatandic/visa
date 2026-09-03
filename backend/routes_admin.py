@@ -361,6 +361,36 @@ def _visa_send_update(app_doc: dict, to_email: str, now: datetime, payload: Send
     return update
 
 
+async def _load_sendable_visa(application_id: str) -> tuple[dict, dict, str]:
+    """Vize belgesinin gonderilebilirligini dogrular; (basvuru, belge, e-posta) doner."""
+    app_doc = await applications_col.find_one({"id": application_id})
+    if not app_doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    visa_result = app_doc.get("visa_result") or {}
+    if not visa_result.get("file_id"):
+        raise HTTPException(400, "Once onaylanan vize belgesini yukleyin.")
+    to_email = (app_doc.get("contact") or {}).get("email") or (
+        app_doc.get("applicant") or {}
+    ).get("email")
+    if not to_email:
+        raise HTTPException(400, "Basvuruda e-posta adresi bulunamadi.")
+    return app_doc, visa_result, to_email
+
+
+def _visa_send_mongo_update(update: dict, now: datetime, message: str) -> dict:
+    """Set/push islemlerini birlestirir; onaya gecişde durum gecmisi eklenir."""
+    mongo_update: dict = {"$set": update}
+    if update.get("status") == "approved":
+        mongo_update["$push"] = {
+            "status_history": {
+                "status": "approved",
+                "at": now,
+                "note": message or "Vize belgesi basvuru sahibine iletildi",
+            }
+        }
+    return mongo_update
+
+
 @router.post("/admin/applications/{application_id}/send-visa")
 async def admin_send_visa(
     application_id: str,
@@ -368,18 +398,10 @@ async def admin_send_visa(
     request: Request,
     admin: dict = Depends(require_admin),
 ) -> dict:
-    app_doc = await applications_col.find_one({"id": application_id})
-    if not app_doc:
-        raise HTTPException(404, "Basvuru bulunamadi.")
-    vr = app_doc.get("visa_result") or {}
-    if not vr.get("file_id"):
-        raise HTTPException(400, "Once onaylanan vize belgesini yukleyin.")
-    to_email = (app_doc.get("contact") or {}).get("email") or (app_doc.get("applicant") or {}).get("email")
-    if not to_email:
-        raise HTTPException(400, "Basvuruda e-posta adresi bulunamadi.")
+    app_doc, visa_result, to_email = await _load_sendable_visa(application_id)
 
     origin = _resolve_origin(payload.origin_url, request)
-    download_url = f"{origin}/api/files/{vr['file_id']}?download=1"
+    download_url = f"{origin}/api/files/{visa_result['file_id']}?download=1"
 
     now = datetime.now(timezone.utc)
     update = _visa_send_update(app_doc, to_email, now, payload)
@@ -393,16 +415,9 @@ async def admin_send_visa(
     )
     update["visa_result.send_status"] = res.get("status")
 
-    mongo_update = {"$set": update}
-    if update.get("status") == "approved":
-        mongo_update["$push"] = {
-            "status_history": {
-                "status": "approved",
-                "at": now,
-                "note": payload.message or "Vize belgesi basvuru sahibine iletildi",
-            }
-        }
-    await applications_col.update_one({"id": application_id}, mongo_update)
+    await applications_col.update_one(
+        {"id": application_id}, _visa_send_mongo_update(update, now, payload.message or "")
+    )
 
     fresh = await applications_col.find_one({"id": application_id})
     return {
@@ -561,7 +576,7 @@ def _build_whatsapp_message(app_doc: dict, template: str, origin: str, custom: s
 
     if template == "visa_ready" and visa_file_id:
         return (
-            f"Merhaba {name}, VizeAtlas Dubai'den yaziyoruz. "
+            f"Merhaba {name}, Dubai Vize Online'den yaziyoruz. "
             f"{ref} numarali basvurunuz ONAYLANDI. Vize belgenizi e-postanizdan veya "
             f"su adresten indirebilirsiniz: {origin}/api/files/{visa_file_id}?download=1 "
             f"Iyi yolculuklar dileriz."

@@ -161,14 +161,14 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
                                         qty
                                             ? "border-primary"
                                             : p.popular
-                                              ? "border-[hsl(var(--brand-red))]"
+                                              ? "border-[hsl(var(--brand-copper))]"
                                               : "border-border hover:border-primary/50"
                                     }`}
                                     style={{ boxShadow: qty || p.popular ? "var(--shadow-soft)" : "var(--shadow-card)" }}
                                     data-testid={`product-card-${p.id}`}
                                 >
                                     {p.popular && (
-                                        <span className="mb-3 inline-flex w-fit rounded-full bg-[hsl(var(--brand-red))] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
+                                        <span className="mb-3 inline-flex w-fit rounded-full bg-[hsl(var(--brand-copper))] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
                                             En çok tercih edilen
                                         </span>
                                     )}

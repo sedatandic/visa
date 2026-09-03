@@ -18,7 +18,6 @@ import {
     PlaneTakeoff,
     Quote,
     ShieldCheck,
-    Sparkles,
     Star,
     Users,
 } from "lucide-react";
@@ -56,7 +55,7 @@ export default function Home() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vizesi | Online Başvuru, Fiyatlar ve Aile Başvurusu | VizeAtlas Dubai",
+            "Dubai Vizesi | Online Başvuru, Fiyatlar ve Aile Başvurusu | Dubai Vize Online",
             "Dubai (BAE) vizesi için online başvuru: net fiyatlar, tek formda aile başvurusu, çocuk vizesi indirimi, ekspres hizmet ve ortalama 2 iş gününde sonuç."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
@@ -83,16 +82,16 @@ export default function Home() {
                 <div className="container-page relative grid items-center gap-12 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:py-24">
                     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
                         <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur">
-                            <Sparkles className="h-3.5 w-3.5 text-[hsl(var(--brand-red))]" aria-hidden="true" />
+                            <ShieldCheck className="h-3.5 w-3.5 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
                             Birleşik Arap Emirlikleri Vize Danışmanlığı
                         </span>
                         <h1 className="mt-6 font-heading text-4xl font-extrabold leading-[1.06] text-white sm:text-5xl lg:text-[56px]">
                             Dubai vizeniz
                             <br />
-                            <span className="text-[hsl(var(--brand-red))]">2 iş gününde</span> hazır
+                            <span className="text-[hsl(var(--brand-copper))]">2 iş gününde</span> hazır
                         </h1>
                         <div className="mt-5 flex items-center gap-1.5" aria-hidden="true">
-                            <span className="h-1 w-10 rounded-full bg-[hsl(var(--brand-red))]" />
+                            <span className="h-1 w-10 rounded-full bg-[hsl(var(--brand-copper))]" />
                             <span className="h-1 w-6 rounded-full bg-[hsl(var(--brand-green))]" />
                             <span className="h-1 w-3 rounded-full bg-white/60" />
                         </div>
@@ -104,10 +103,10 @@ export default function Home() {
 
                         {content?.promo && (
                             <div
-                                className="mt-7 flex items-start gap-3 rounded-xl border border-[hsl(var(--brand-red)/0.45)] bg-[hsl(var(--brand-red)/0.14)] p-4 backdrop-blur"
+                                className="mt-7 flex items-start gap-3 rounded-xl border border-[hsl(var(--brand-copper)/0.45)] bg-[hsl(var(--brand-copper)/0.14)] p-4 backdrop-blur"
                                 data-testid="hero-promo-banner"
                             >
-                                <Percent className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--brand-red))]" aria-hidden="true" />
+                                <Percent className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
                                 <div>
                                     <p className="text-sm font-bold text-white">{content.promo.title}</p>
                                     <p className="mt-1 text-xs leading-5 text-white/75">{content.promo.detail}</p>
@@ -188,7 +187,7 @@ export default function Home() {
                                     className="rounded-[22px] border border-white/15 bg-white/[0.08] p-4 backdrop-blur-md"
                                     data-testid="hero-rating-card"
                                 >
-                                    <div className="flex items-center gap-1 text-[hsl(var(--brand-red))]">
+                                    <div className="flex items-center gap-1 text-[hsl(var(--brand-copper))]">
                                         {[0, 1, 2, 3, 4].map((i) => (
                                             <Star key={i} className="h-4 w-4 fill-current" aria-hidden="true" />
                                         ))}
@@ -206,7 +205,7 @@ export default function Home() {
                             style={{ boxShadow: "var(--shadow-float)" }}
                             data-testid="hero-experience-badge"
                         >
-                            <span className="font-heading text-2xl font-extrabold leading-none text-[hsl(var(--brand-red))]">
+                            <span className="font-heading text-2xl font-extrabold leading-none text-[hsl(var(--brand-copper))]">
                                 7+
                             </span>
                             <span className="text-xs font-semibold leading-tight text-white">
@@ -228,7 +227,7 @@ export default function Home() {
                             { value: "7+ yıl", label: "Acente deneyimi" },
                         ].map(({ value, label }) => (
                             <div key={label} className="px-2 py-3 sm:px-6">
-                                <p className="font-heading text-2xl font-extrabold text-white sm:text-3xl">{value}</p>
+                                <p className="tabular font-heading text-2xl font-extrabold text-white sm:text-3xl">{value}</p>
                                 <p className="mt-1 text-xs font-medium text-white/70 sm:text-sm">{label}</p>
                             </div>
                         ))}
@@ -254,7 +253,7 @@ export default function Home() {
                                     ].map((t) => (
                                         <span key={t} className="flex items-center gap-8 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-white/85">
                                             {t}
-                                            <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--brand-red))]" />
+                                            <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--brand-copper))]" />
                                         </span>
                                     ))}
                                 </div>
@@ -350,7 +349,7 @@ export default function Home() {
                                         <span
                                             className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
                                                 d.required
-                                                    ? "border-[hsl(var(--brand-red)/0.30)] bg-[hsl(var(--brand-red)/0.08)] text-[hsl(var(--brand-red))]"
+                                                    ? "border-[hsl(var(--brand-copper)/0.30)] bg-[hsl(var(--brand-copper)/0.08)] text-[hsl(var(--brand-copper))]"
                                                     : "border-border bg-muted text-muted-foreground"
                                             }`}
                                         >
@@ -518,7 +517,7 @@ export default function Home() {
                             bir durum varsa başvuruyu göndermeden önce sizi bilgilendiririz.
                         </p>
                         <div className="mt-6 overflow-hidden rounded-2xl border border-border" style={{ boxShadow: "var(--shadow-card)" }}>
-                            <img src={IMAGES.office} alt="VizeAtlas danışmanlık ofisi" className="h-[220px] w-full object-cover" loading="lazy" />
+                            <img src={IMAGES.office} alt="Dubai Vize Online danışmanlık ofisi" className="h-[220px] w-full object-cover" loading="lazy" />
                         </div>
                     </div>
                 </div>

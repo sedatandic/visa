@@ -57,6 +57,13 @@ export default function AdminZami() {
         auto_check_enabled: false,
         auto_check_hours: 6,
         auto_notify: true,
+        // Panelde duzenlenmeyen ama kayitta korunmasi gereken RPA ayarlari
+        constants: {},
+        validate_selector: null,
+        helper_selectors: null,
+        upload_targets: null,
+        status_search_field: null,
+        status_submit_selector: null,
     });
     const [formHtml, setFormHtml] = useState("");
     const [parsedFields, setParsedFields] = useState([]);
@@ -103,6 +110,14 @@ export default function AdminZami() {
             auto_check_enabled: !!m.auto_check_enabled,
             auto_check_hours: m.auto_check_hours || 6,
             auto_notify: m.auto_notify !== false,
+            // Bu alanlar panelde duzenlenmez; kaydederken kaybolmamasi icin
+            // olduğu gibi geri gonderilir.
+            constants: m.constants ?? {},
+            validate_selector: m.validate_selector ?? null,
+            helper_selectors: m.helper_selectors ?? null,
+            upload_targets: m.upload_targets ?? null,
+            status_search_field: m.status_search_field ?? null,
+            status_submit_selector: m.status_submit_selector ?? null,
         });
 
     const load = async () => {
@@ -141,14 +156,21 @@ export default function AdminZami() {
         loadCandidates();
     }, []);
 
-    const selectorOptions = useMemo(
-        () =>
-            parsedFields.map((f) => ({
+    const selectorOptions = useMemo(() => {
+        // Zami formunda ayni `name` birden fazla kez gecebiliyor. Select
+        // secenek degerleri tekil olmak zorunda; ilk gorulen etiket korunur.
+        const seen = new Set();
+        const options = [];
+        for (const f of parsedFields) {
+            if (!f.selector || seen.has(f.selector)) continue;
+            seen.add(f.selector);
+            options.push({
                 value: f.selector,
                 label: `${f.label || f.name} · ${f.selector} (${f.type})`,
-            })),
-        [parsedFields]
-    );
+            });
+        }
+        return options;
+    }, [parsedFields]);
 
     const saveSettings = async () => {
         setSaving(true);
@@ -412,7 +434,7 @@ export default function AdminZami() {
                         >
                             <ol className="space-y-2 text-sm leading-6 text-muted-foreground">
                                 <li><strong className="text-foreground">1.</strong> "Yakalama kodu oluştur" butonuna basın.</li>
-                                <li><strong className="text-foreground">2.</strong> Aşağıdaki "VizeAtlas → Alanları Yakala" bağlantısını yer imleri çubuğuna sürükleyin.</li>
+                                <li><strong className="text-foreground">2.</strong> Aşağıdaki "Dubai Vize Online → Alanları Yakala" bağlantısını yer imleri çubuğuna sürükleyin.</li>
                                 <li><strong className="text-foreground">3.</strong> Zami'de <strong className="text-foreground">yeni başvuru formunu</strong> açıp yer imine tıklayın, kodu yapıştırın, "Tamam" (başvuru formu) seçin.</li>
                                 <li><strong className="text-foreground">4.</strong> Aynısını <strong className="text-foreground">başvuru listesi/durum sayfasında</strong> yapın; bu kez "İptal" (durum sayfası) seçin.</li>
                                 <li><strong className="text-foreground">5.</strong> Bu ekranı yenileyip "Önerilen eşlemeyi uygula" butonuna basın ve kontrol edip kaydedin.</li>
@@ -508,7 +530,7 @@ export default function AdminZami() {
                                         toast.info("Bu bağlantıyı tıklamak yerine yer imleri çubuğuna sürükleyin.");
                                     }}
                                 >
-                                    VizeAtlas → Alanları Yakala (yer imine sürükleyin)
+                                    Dubai Vize Online → Alanları Yakala (yer imine sürükleyin)
                                 </a>
                                 <Textarea
                                     readOnly
@@ -679,7 +701,7 @@ export default function AdminZami() {
                             <ol className="space-y-3 text-sm leading-6 text-muted-foreground">
                                 <li>
                                     <strong className="text-foreground">1.</strong> Aşağıdaki bağlantıyı tarayıcınızın yer imleri
-                                    çubuğuna sürükleyin (adı: “VizeAtlas → Zami Doldur”).
+                                    çubuğuna sürükleyin (adı: “Dubai Vize Online → Zami Doldur”).
                                 </li>
                                 <li>
                                     <strong className="text-foreground">2.</strong> Zami portalına girin ve yeni başvuru formunu açın.
@@ -704,7 +726,7 @@ export default function AdminZami() {
                                         toast.info("Bu bağlantıyı tıklamak yerine yer imleri çubuğuna sürükleyin.");
                                     }}
                                 >
-                                    VizeAtlas → Zami Doldur (yer imine sürükleyin)
+                                    Dubai Vize Online → Zami Doldur (yer imine sürükleyin)
                                 </a>
                                 <p className="mt-3 text-xs leading-5 text-muted-foreground">
                                     Sürükleyemiyorsanız yeni bir yer imi oluşturup adres alanına şunu yapıştırın:

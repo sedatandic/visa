@@ -26,7 +26,7 @@ export const SampleVisa = ({ className = "" }) => (
                     </p>
                 </div>
             </div>
-            <span className="rounded-full bg-[hsl(var(--brand-red)/0.10)] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[hsl(var(--brand-red))]">
+            <span className="rounded-full bg-[hsl(var(--brand-copper)/0.10)] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[hsl(var(--brand-copper))]">
                 Örnektir
             </span>
         </div>

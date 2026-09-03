@@ -1,9 +1,9 @@
 """Zami 'New Visa Request (Dubai)' formu icin gercek alan eslemesini kaydeder.
 
 Alan adlari 03.09.2026'da canli portaldan yakalanmistir (84 alan).
-Sadece bizim topladigimiz veriler eslenir; portalda zorunlu olup bizde
-bulunmayan alanlar (Baba/Anne adi, Meslek, Ucus bilgileri vb.) operator
-tarafindan doldurulur.
+Bu dosya alan eslemesinin KAYNAGIDIR: mapping bozulursa yeniden calistirilir.
+Portalda zorunlu olup bizde bulunmayan alanlar (Egitim, ucus bilgileri)
+operator tarafindan doldurulur.
 """
 import asyncio
 import json
@@ -45,7 +45,6 @@ MAPPING = {
         '[name="e_cy_tt"]': "TURKEY",
         '[name="ls"]': "Turkish",
         # Bilmedigimiz bilgiler icin portalin sundugu durust secenek
-        '[name="ms"]': "Unknown",
         '[name="rg"]': "Unknown",
     },
     # Yolcu bazli alanlar (Zami formu tek yolcu esasli calisir; ilk yolcu)
@@ -62,11 +61,23 @@ MAPPING = {
         "nationality_label": '[name="nt_tt"]',
         "passport_country_label": '[name="pc_tt"]',
         "zami_visa_type": '[name="dr_tp"]',
+        # Basvuru formunda kullaniciya sorulan zorunlu Zami alanlari
+        "marital_status_label": '[name="ms"]',
+        "profession": '[name="pf_tt"]',
+        "mother_name": '[name="mo"]',
+        "father_name": '[name="fa"]',
     },
     "status_url": "https://visa.zamitours.ae/?_=203&s=vs.search",
     "status_search_selector": '[name="pn"]',
     "status_search_field": "passport",
     "status_submit_selector": 'button:has-text("SEARCH")',
+    # Formu gondermeden once Zami'nin kendi dogrulamasini tetikler
+    "validate_selector": 'button:has-text("CHECK")',
+    "helper_selectors": ['button:has-text("TRANSLATE TO ARABIC")'],
+    "upload_targets": [
+        {"doc": "passport", "selector": 'div.img-editor:has-text("Main Passport Page")'},
+        {"doc": "photo", "selector": 'div.img-editor:has-text("Personal Photo")'},
+    ],
     "status_result_selector": "",
     # 6 saatte bir otomatik durum kontrolu ve musteriye bildirim
     "auto_check_enabled": True,

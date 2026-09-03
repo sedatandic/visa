@@ -1,32 +1,45 @@
 import React from "react";
 import { COMPANY } from "../lib/site";
 
+const BRAND_NAME = `${COMPANY.brand} ${COMPANY.brandSuffix}`.trim();
+
+/**
+ * Marka işareti: logodan kesilmiş ikon (deve + skyline) + logo tipografisini
+ * yansıtan yazı (bakır serif "DUBAI" + petrol teal "Vize Online").
+ * Koyu zeminlerde (`light`) yazı beyaza döner.
+ */
 export const BrandMark = ({ light = false }) => (
-    <>
-        <span
-            className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-primary"
+    <span className="flex items-center gap-2.5" data-testid="brand-mark">
+        <img
+            src="/brand/icon-192.png"
+            alt=""
             aria-hidden="true"
-        >
-            <span className="absolute left-0 top-0 h-full w-1.5 bg-[hsl(var(--brand-red))]" />
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-                <path d="M4 21V11a8 8 0 0 1 16 0v10" />
-                <path d="M8.5 13.5 11 16l4.5-5" />
-            </svg>
-        </span>
+            className={
+                light
+                    ? "h-10 w-10 shrink-0 rounded-lg bg-white/95 object-contain p-1 shadow-sm"
+                    : "h-10 w-10 shrink-0 object-contain"
+            }
+            width="192"
+            height="192"
+            loading="eager"
+            decoding="async"
+        />
         <span className="flex flex-col leading-none">
             <span
-                className={`font-heading text-[18px] font-bold tracking-tight ${light ? "text-white" : "text-foreground"}`}
-            >
-                {COMPANY.brand}
-                <span className="text-[hsl(var(--brand-red))]">.</span>
-            </span>
-            <span
-                className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                    light ? "text-white/60" : "text-muted-foreground"
+                className={`font-heading text-[20px] font-bold uppercase leading-none tracking-[0.11em] ${
+                    light ? "text-white" : "text-[hsl(var(--brand-copper))]"
                 }`}
             >
-                {COMPANY.brandSuffix} Vize
+                {COMPANY.brand.replace(" Vize", "")}
+            </span>
+            <span
+                className={`font-heading text-[13.5px] font-bold leading-tight tracking-[0.01em] ${
+                    light ? "text-white/80" : "text-primary"
+                }`}
+            >
+                Vize {COMPANY.brandSuffix}
             </span>
         </span>
-    </>
+        <span className="sr-only">{BRAND_NAME}</span>
+    </span>
 );

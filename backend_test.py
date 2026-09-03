@@ -237,32 +237,68 @@ class TestRunner:
             if ready_robot:
                 print(f"   ✅ Robot ready")
         
-        # Test mapping endpoint
+        # Test config endpoint (FIXED: was /mapping, should be /config)
         success, response = self.test(
-            "Zami Mapping",
+            "Zami Config",
             "GET",
-            "admin/zami/mapping",
+            "admin/zami/config",
             200,
             headers=headers
         )
         
         if success:
-            mapping = response
-            required_keys = ['constants', 'validate_selector', 'helper_selectors', 
-                           'upload_targets', 'status_search_field', 'status_submit_selector',
-                           'auto_check_enabled', 'auto_check_hours']
+            mapping = response.get('mapping', {})
             
-            for key in required_keys:
-                if key in mapping:
-                    print(f"   ✅ {key}: {mapping[key]}")
-                else:
-                    print(f"   ❌ Missing key: {key}")
+            # Verify mapping structure per review request requirements
+            fields = mapping.get('fields', {})
+            traveler_fields = mapping.get('traveler_fields', {})
+            constants = mapping.get('constants', {})
+            upload_targets = mapping.get('upload_targets', {})
+            validate_selector = mapping.get('validate_selector', '')
             
-            # Verify auto_check settings
-            if mapping.get('auto_check_enabled') == True:
-                print(f"   ✅ Auto-check enabled")
-            if mapping.get('auto_check_hours') == 6:
-                print(f"   ✅ Auto-check hours set to 6")
+            print(f"   Fields count: {len(fields)} (expected: 8)")
+            print(f"   Traveler fields count: {len(traveler_fields)} (expected: 16)")
+            print(f"   Constants count: {len(constants)} (expected: 7)")
+            print(f"   Upload targets count: {len(upload_targets)} (expected: 2)")
+            print(f"   Validate selector: {validate_selector}")
+            
+            if len(fields) == 8:
+                print(f"   ✅ Fields count correct (8)")
+            else:
+                print(f"   ❌ Fields count is {len(fields)}, expected 8")
+            
+            if len(traveler_fields) == 16:
+                print(f"   ✅ Traveler fields count correct (16)")
+            else:
+                print(f"   ❌ Traveler fields count is {len(traveler_fields)}, expected 16")
+            
+            if len(constants) == 7:
+                print(f"   ✅ Constants count correct (7)")
+            else:
+                print(f"   ❌ Constants count is {len(constants)}, expected 7")
+            
+            if len(upload_targets) == 2:
+                print(f"   ✅ Upload targets count correct (2)")
+            else:
+                print(f"   ❌ Upload targets count is {len(upload_targets)}, expected 2")
+            
+            if 'CHECK' in validate_selector:
+                print(f"   ✅ Validate selector contains 'CHECK'")
+            else:
+                print(f"   ❌ Validate selector does not contain 'CHECK'")
+        
+        # Test candidates endpoint
+        success, response = self.test(
+            "Zami Candidates",
+            "GET",
+            "admin/zami/candidates",
+            200,
+            headers=headers
+        )
+        
+        if success:
+            items = response.get('items', [])
+            print(f"   Candidates count: {len(items)}")
 
     def test_passport_read_regression(self):
         """Test passport read returns new fields"""
@@ -712,6 +748,79 @@ class TestRunner:
             else:
                 print(f"   ❌ Draft email status is '{email_status}', expected 'sent'")
 
+    def test_public_endpoints(self):
+        """Test all public endpoints mentioned in review request"""
+        print("\n\n🌐 TESTING PUBLIC ENDPOINTS")
+        print("=" * 60)
+        
+        # Test content/site
+        self.test("GET /content/site", "GET", "content/site", 200)
+        
+        # Test visa-types
+        self.test("GET /visa-types", "GET", "visa-types", 200)
+        
+        # Test visa-guides
+        self.test("GET /visa-guides", "GET", "visa-guides", 200)
+        
+        # Test articles
+        self.test("GET /articles", "GET", "articles", 200)
+        
+        # Test products
+        self.test("GET /products", "GET", "products", 200)
+        
+        # Test fx
+        self.test("GET /fx", "GET", "fx", 200)
+        
+        # Test pricing/quote
+        success, visa_response = self.test("GET /visa-types for quote", "GET", "visa-types", 200)
+        if success and visa_response:
+            adult_visas = [v for v in visa_response if v.get('category') != 'child']
+            if adult_visas:
+                visa_id = adult_visas[0]['id']
+                self.test(
+                    "POST /pricing/quote",
+                    "POST",
+                    "pricing/quote",
+                    200,
+                    data={
+                        "visa_type_ids": [visa_id],
+                        "addons": {"express": False, "insurance": False},
+                        "store_items": []
+                    }
+                )
+    
+    def test_admin_endpoints(self):
+        """Test all admin endpoints mentioned in review request"""
+        print("\n\n🔐 TESTING ADMIN ENDPOINTS")
+        print("=" * 60)
+        
+        if not self.admin_token:
+            print("❌ Skipping - No admin token")
+            return
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Test admin/applications
+        self.test("GET /admin/applications", "GET", "admin/applications", 200, headers=headers)
+        
+        # Test admin/emails
+        self.test("GET /admin/emails", "GET", "admin/emails", 200, headers=headers)
+        
+        # Test admin/orders
+        self.test("GET /admin/orders", "GET", "admin/orders", 200, headers=headers)
+        
+        # Test admin/zami/config
+        self.test("GET /admin/zami/config", "GET", "admin/zami/config", 200, headers=headers)
+        
+        # Test admin/zami/candidates
+        self.test("GET /admin/zami/candidates", "GET", "admin/zami/candidates", 200, headers=headers)
+        
+        # Test admin/zami/readiness
+        self.test("GET /admin/zami/readiness", "GET", "admin/zami/readiness", 200, headers=headers)
+        
+        # Test admin/whatsapp/settings
+        self.test("GET /admin/whatsapp/settings", "GET", "admin/whatsapp/settings", 200, headers=headers)
+
     def run_all_tests(self):
         """Run all tests"""
         print("\n" + "=" * 60)
@@ -725,7 +834,9 @@ class TestRunner:
             return 1
         
         # Run all test suites
-        self.test_email_system()  # NEW: Test email system first
+        self.test_public_endpoints()  # NEW: Test all public endpoints
+        self.test_admin_endpoints()   # NEW: Test all admin endpoints
+        self.test_email_system()
         self.test_drafts()
         self.test_zami_admin_endpoints()
         self.test_passport_read_regression()

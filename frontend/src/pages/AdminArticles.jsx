@@ -130,7 +130,7 @@ export default function AdminArticles() {
                     {items.map((a) => (
                         <div key={a.id} className="card-surface flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between" data-testid={`admin-article-${a.id}`}>
                             <div className="min-w-0">
-                                <p className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--brand-red))]">
+                                <p className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--brand-copper))]">
                                     {formatDate(a.date)} {a.published === false ? "· TASLAK" : ""}
                                 </p>
                                 <h3 className="mt-1 font-heading text-base font-bold">{a.title}</h3>

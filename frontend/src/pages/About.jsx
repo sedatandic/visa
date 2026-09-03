@@ -28,8 +28,8 @@ export default function About() {
 
     useEffect(() => {
         setMeta(
-            "Hakkımızda | VizeAtlas Dubai",
-            "VizeAtlas Dubai; Birleşik Arap Emirlikleri vize başvurularında uzmanlaşmış bağımsız bir danışmanlık hizmetidir."
+            "Hakkımızda | Dubai Vize Online",
+            "Dubai Vize Online; Birleşik Arap Emirlikleri vize başvurularında uzmanlaşmış bağımsız bir danışmanlık hizmetidir."
         );
     }, []);
 
@@ -38,7 +38,7 @@ export default function About() {
             <PageHeader
                 eyebrow="Hakkımızda"
                 title="Vize sürecini insanlar için basitleştiriyoruz"
-                description="VizeAtlas Dubai, Birleşik Arap Emirlikleri vize başvurularında uzmanlaşmış bağımsız bir danışmanlık hizmetidir. Resmî bir devlet kurumu değiliz; başvurunuzu sizin adınıza hazırlar, kontrol eder ve yetkili mercilere iletiriz."
+                description="Dubai Vize Online, Birleşik Arap Emirlikleri vize başvurularında uzmanlaşmış bağımsız bir danışmanlık hizmetidir. Resmî bir devlet kurumu değiliz; başvurunuzu sizin adınıza hazırlar, kontrol eder ve yetkili mercilere iletiriz."
             />
 
             <section className="section">

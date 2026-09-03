@@ -14,7 +14,7 @@ from db import email_outbox_col
 
 logger = logging.getLogger(__name__)
 
-BRAND = "VizeAtlas Dubai"
+BRAND = "Dubai Vize Online"
 
 
 def _wrap(title: str, body_html: str) -> str:

@@ -77,7 +77,7 @@ export default function AdminBankTransfer() {
                             <Input
                                 value={form.account_name || ""}
                                 onChange={(e) => set("account_name", e.target.value)}
-                                placeholder="Örn. VizeAtlas Turizm ve Danışmanlık A.Ş."
+                                placeholder="Örn. Dubai Vize Online Turizm ve Danışmanlık A.Ş."
                                 data-testid="bank-account-name-input"
                             />
                         </div>

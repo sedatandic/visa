@@ -582,8 +582,8 @@ STATUS_LABELS = {
 }
 
 COMPANY = {
-    "brand": "VizeAtlas Dubai",
-    "legal_name": "VizeAtlas Turizm ve Danışmanlık A.Ş.",
+    "brand": "Dubai Vize Online",
+    "legal_name": "Dubai Vize Online Turizm ve Danışmanlık A.Ş.",
     "phone": "+90 850 000 00 00",
     "whatsapp": "908500000000",
     "email": "destek@vizeatlas.com",
@@ -600,7 +600,7 @@ COMPANY = {
 
 AGENCY_INFO = {
     "title": "Acente Bilgilerimiz",
-    "description": "VizeAtlas Dubai, TÜRSAB üyesi bir seyahat acentesidir. Tüm başvurularınız acente güvencesiyle yürütülür.",
+    "description": "Dubai Vize Online, TÜRSAB üyesi bir seyahat acentesidir. Tüm başvurularınız acente güvencesiyle yürütülür.",
     "items": [
         {"label": "Ticaret Unvanı", "value": COMPANY["legal_name"]},
         {"label": "TÜRSAB Belge No", "value": COMPANY["tursab_no"]},
@@ -641,6 +641,26 @@ def bundle_discount_amount(store_lines) -> float:
     return round(total * float(BUNDLE_DISCOUNT["rate"]), 2)
 
 
+def _addon_lines(addons: dict, count: int, addon_prices: dict | None) -> tuple[list, float]:
+    """Secili ek hizmetleri fatura satirlarina cevirir; (satirlar, toplam) doner."""
+    lines = []
+    for key, meta in ADDONS.items():
+        if not addons.get(key):
+            continue
+        unit_price = float((addon_prices or {}).get(key, meta["price"]))
+        quantity = count if meta["per_person"] else 1
+        lines.append(
+            {
+                "id": key,
+                "name": meta["name"],
+                "unit_price": unit_price,
+                "quantity": quantity,
+                "total": round(unit_price * quantity, 2),
+            }
+        )
+    return lines, round(sum(line["total"] for line in lines), 2) if lines else 0.0
+
+
 def compute_pricing(
     visa_prices,
     addons: dict,
@@ -653,23 +673,7 @@ def compute_pricing(
     subtotal = round(sum(float(p) for p in visa_prices), 2)
     rate = family_discount_rate(count)
     discount = round(subtotal * rate, 2)
-    addon_lines = []
-    addons_total = 0.0
-    for key, meta in ADDONS.items():
-        if addons.get(key):
-            unit_price = float((addon_prices or {}).get(key, meta["price"]))
-            line_total = round(unit_price * (count if meta["per_person"] else 1), 2)
-            addon_lines.append(
-                {
-                    "id": key,
-                    "name": meta["name"],
-                    "unit_price": unit_price,
-                    "quantity": count if meta["per_person"] else 1,
-                    "total": line_total,
-                }
-            )
-            addons_total += line_total
-    addons_total = round(addons_total, 2)
+    addon_lines, addons_total = _addon_lines(addons, count, addon_prices)
     store_lines = list(store_lines or [])
     store_total = round(sum(float(line.get("total") or 0) for line in store_lines), 2)
     bundle_discount = bundle_discount_amount(store_lines)
@@ -701,7 +705,7 @@ PROMO = {
 BANK_TRANSFER = {
     "enabled": True,
     "title": "Havale / EFT ile ödeme",
-    "account_name": "VizeAtlas Turizm ve Danışmanlık A.Ş.",
+    "account_name": "Dubai Vize Online Turizm ve Danışmanlık A.Ş.",
     "bank_name": "Örnek Bank A.Ş.",
     "iban": "TR00 0000 0000 0000 0000 0000 00",
     "currency": "TRY",
@@ -716,7 +720,7 @@ BANK_TRANSFER = {
 
 REFUND_TERMS = {
     "updated_at": "2026-08-01",
-    "intro": "Aşağıdaki koşullar, VizeAtlas Dubai üzerinden alınan vize danışmanlık hizmetleri için geçerlidir. Başvurunuzu tamamladığınızda bu koşulları kabul etmiş sayılırsınız.",
+    "intro": "Aşağıdaki koşullar, Dubai Vize Online üzerinden alınan vize danışmanlık hizmetleri için geçerlidir. Başvurunuzu tamamladığınızda bu koşulları kabul etmiş sayılırsınız.",
     "sections": [
         {
             "title": "Başvuru öncesi iptal",
@@ -767,7 +771,7 @@ REFUND_TERMS = {
 
 SERVICE_TERMS = {
     "updated_at": "2026-08-01",
-    "intro": "Bu mesafeli hizmet sözleşmesi, VizeAtlas Dubai (Hizmet Sağlayıcı) ile online başvuru yapan misafir (Alıcı) arasında elektronik ortamda kurulur.",
+    "intro": "Bu mesafeli hizmet sözleşmesi, Dubai Vize Online (Hizmet Sağlayıcı) ile online başvuru yapan misafir (Alıcı) arasında elektronik ortamda kurulur.",
     "sections": [
         {
             "title": "1. Sözleşmenin konusu",

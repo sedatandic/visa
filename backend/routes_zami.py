@@ -18,21 +18,42 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _base_url(request: Request) -> str:
-    """Public taban URL. Ingress arkasinda http/internal host gelebilecegi icin
-    once PUBLIC_BASE_URL, sonra Origin, sonra x-forwarded basliklari kullanilir."""
+def _configured_base(_request: Request) -> str:
+    """Ortam degiskeniyle sabitlenmis public taban URL."""
     configured = os.environ.get("PUBLIC_BASE_URL")
-    if configured:
-        return configured.rstrip("/")
+    return configured.rstrip("/") if configured else ""
+
+
+def _origin_base(request: Request) -> str:
+    """Tarayici Origin basligi (Zami portali disindaysa) taban URL olur."""
     origin = request.headers.get("origin") or ""
     if origin.startswith("http") and "zamitours" not in origin:
         return origin.rstrip("/")
+    return ""
+
+
+def _forwarded_base(request: Request) -> str:
+    """Ingress'in ilettigi host/proto basliklarindan taban URL kurar."""
     host = request.headers.get("x-forwarded-host") or request.headers.get("host") or ""
-    if host:
-        proto = (request.headers.get("x-forwarded-proto") or "").split(",")[0].strip()
-        if not proto:
-            proto = "http" if host.startswith("localhost") or host.startswith("127.") else "https"
-        return f"{proto}://{host}"
+    if not host:
+        return ""
+    proto = (request.headers.get("x-forwarded-proto") or "").split(",")[0].strip()
+    if not proto:
+        proto = "http" if host.startswith(("localhost", "127.")) else "https"
+    return f"{proto}://{host}"
+
+
+# Taban URL cozumleyicileri: oncelik sirasiyla denenir
+_BASE_URL_RESOLVERS = (_configured_base, _origin_base, _forwarded_base)
+
+
+def _base_url(request: Request) -> str:
+    """Public taban URL. Ingress arkasinda http/internal host gelebilecegi icin
+    once PUBLIC_BASE_URL, sonra Origin, sonra x-forwarded basliklari kullanilir."""
+    for resolver in _BASE_URL_RESOLVERS:
+        base = resolver(request)
+        if base:
+            return base
     return str(request.base_url).rstrip("/")
 
 
@@ -49,6 +70,13 @@ class MappingIn(BaseModel):
     auto_check_enabled: bool = False
     auto_check_hours: int = 6
     auto_notify: bool = True
+    # Gonderilmezse mevcut kayitli deger korunur (bkz. zami.normalize_mapping)
+    constants: Optional[dict] = None
+    validate_selector: Optional[str] = None
+    helper_selectors: Optional[list] = None
+    upload_targets: Optional[list] = None
+    status_search_field: Optional[str] = None
+    status_submit_selector: Optional[str] = None
 
 
 class ParseHtmlIn(BaseModel):
@@ -85,6 +113,27 @@ class StatusCheckIn(BaseModel):
 
 
 # ------------------------------------------------------------ admin: ayarlar
+def _captured_form(captured: dict) -> dict:
+    """Yakalanan basvuru formu ozetini tek bicimde dondurur."""
+    page = captured.get("form") or {}
+    return {
+        "url": page.get("url") or "",
+        "fields": page.get("fields") or [],
+        "captured_at": captured.get("form_captured_at"),
+    }
+
+
+def _captured_status(captured: dict) -> dict:
+    """Yakalanan durum sayfasi ozetini tek bicimde dondurur."""
+    page = captured.get("status") or {}
+    return {
+        "url": page.get("url") or "",
+        "fields": page.get("fields") or [],
+        "sample_text": (page.get("sample_text") or "")[:400],
+        "captured_at": captured.get("status_captured_at"),
+    }
+
+
 @router.get("/admin/zami/config")
 async def zami_config(admin: dict = Depends(require_admin)) -> dict:
     captured = await zami.get_capture()
@@ -94,19 +143,7 @@ async def zami_config(admin: dict = Depends(require_admin)) -> dict:
         "session": await zami_rpa.session_status(),
         "global_fields": [{"key": k, "label": v} for k, v in zami.GLOBAL_FIELDS],
         "traveler_fields": [{"key": k, "label": v} for k, v in zami.TRAVELER_FIELDS],
-        "captured": {
-            "form": {
-                "url": ((captured.get("form") or {}).get("url") or ""),
-                "fields": ((captured.get("form") or {}).get("fields") or []),
-                "captured_at": captured.get("form_captured_at"),
-            },
-            "status": {
-                "url": ((captured.get("status") or {}).get("url") or ""),
-                "fields": ((captured.get("status") or {}).get("fields") or []),
-                "sample_text": ((captured.get("status") or {}).get("sample_text") or "")[:400],
-                "captured_at": captured.get("status_captured_at"),
-            },
-        },
+        "captured": {"form": _captured_form(captured), "status": _captured_status(captured)},
         "suggestions": zami.suggest_mapping(captured),
     }
 
@@ -244,7 +281,7 @@ CAPTURE_JS = r"""
     } catch (e) {}
     return "__BASE__";
   })();
-  var token = window.__VIZEATLAS_CAPTURE_TOKEN__ || window.prompt("VizeAtlas yakalama kodunu yapıştırın:");
+  var token = window.__VIZEATLAS_CAPTURE_TOKEN__ || window.prompt("Dubai Vize Online yakalama kodunu yapıştırın:");
   if (!token) return;
   var pageType =
     window.__VIZEATLAS_PAGE_TYPE__ ||
@@ -313,7 +350,7 @@ CAPTURE_JS = r"""
   box.style.cssText =
     "position:fixed;z-index:2147483647;right:16px;bottom:16px;max-width:340px;font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;" +
     "background:#0B1F33;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35)";
-  box.innerHTML = "<b>VizeAtlas</b><br>" + fields.length + " alan bulundu, gönderiliyor…";
+  box.innerHTML = "<b>Dubai Vize Online</b><br>" + fields.length + " alan bulundu, gönderiliyor…";
   document.body.appendChild(box);
 
   fetch(BASE + "/api/zami/capture/" + encodeURIComponent(token), {
@@ -327,7 +364,7 @@ CAPTURE_JS = r"""
     })
     .then(function (res) {
       box.innerHTML =
-        "<b>VizeAtlas</b><br>" +
+        "<b>Dubai Vize Online</b><br>" +
         res.captured_fields +
         " alan kaydedildi.<br>Otomatik eşleşme: " +
         res.suggested_global +
@@ -339,7 +376,7 @@ CAPTURE_JS = r"""
       }, 12000);
     })
     .catch(function (err) {
-      box.innerHTML = "<b>VizeAtlas</b><br>Hata: " + err.message;
+      box.innerHTML = "<b>Dubai Vize Online</b><br>Hata: " + err.message;
     });
 })();
 """
@@ -518,32 +555,36 @@ async def whatsapp_logs(application_id: Optional[str] = None, admin: dict = Depe
     return {"items": serialize_doc(docs)}
 
 
+def _iso_or_none(value) -> str | None:
+    """Datetime alanini ISO metne cevirir; deger yoksa None dondurur."""
+    return value.isoformat() if value else None
+
+
+def _candidate_row(doc: dict) -> dict:
+    """Aktarim adayi basvuruyu admin listesi icin ozetler."""
+    contact = doc.get("contact") or {}
+    return {
+        "id": doc.get("id"),
+        "reference_code": doc.get("reference_code"),
+        "full_name": contact.get("full_name", ""),
+        "email": contact.get("email", ""),
+        "traveler_count": len(doc.get("travelers") or []),
+        "status": doc.get("status"),
+        "payment_status": (doc.get("payment") or {}).get("status"),
+        "created_at": _iso_or_none(doc.get("created_at")),
+        "zami_reference": doc.get("zami_reference") or "",
+        "zami_status": doc.get("zami_status") or "",
+        "zami_transferred_at": _iso_or_none(doc.get("zami_transferred_at")),
+    }
+
+
 # ------------------------------------------------- toplu aktarim & durum takibi
 @router.get("/admin/zami/candidates")
 async def zami_candidates(admin: dict = Depends(require_admin)) -> dict:
     """Zami'ye aktarilmaya uygun basvurular (odemesi alinmis / inceleme asamasinda)."""
     query = {"status": {"$in": ["submitted", "payment_pending", "documents_pending", "reviewing"]}}
     docs = await applications_col.find(query).sort("created_at", -1).limit(100).to_list(100)
-    items = []
-    for d in docs:
-        items.append(
-            {
-                "id": d.get("id"),
-                "reference_code": d.get("reference_code"),
-                "full_name": (d.get("contact") or {}).get("full_name", ""),
-                "email": (d.get("contact") or {}).get("email", ""),
-                "traveler_count": len(d.get("travelers") or []),
-                "status": d.get("status"),
-                "payment_status": (d.get("payment") or {}).get("status"),
-                "created_at": d.get("created_at").isoformat() if d.get("created_at") else None,
-                "zami_reference": d.get("zami_reference") or "",
-                "zami_status": d.get("zami_status") or "",
-                "zami_transferred_at": d.get("zami_transferred_at").isoformat()
-                if isinstance(d.get("zami_transferred_at"), object) and d.get("zami_transferred_at")
-                else None,
-            }
-        )
-    return {"items": items}
+    return {"items": [_candidate_row(d) for d in docs]}
 
 
 @router.post("/admin/zami/bulk-transfer")
@@ -741,13 +782,13 @@ BOOKMARKLET_JS = r"""
     } catch (e) {}
     return "__BASE__";
   })();
-  var token = window.__VIZEATLAS_TOKEN__ || window.prompt("VizeAtlas aktarım kodunu yapıştırın:");
+  var token = window.__VIZEATLAS_TOKEN__ || window.prompt("Dubai Vize Online aktarım kodunu yapıştırın:");
   if (!token) return;
   var box = document.createElement("div");
   box.style.cssText =
     "position:fixed;z-index:2147483647;right:16px;bottom:16px;max-width:340px;font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;" +
     "background:#0B1F33;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35)";
-  box.innerHTML = "<b>VizeAtlas</b><br>Veriler alınıyor…";
+  box.innerHTML = "<b>Dubai Vize Online</b><br>Veriler alınıyor…";
   document.body.appendChild(box);
 
   function setVal(el, value) {
@@ -816,7 +857,7 @@ BOOKMARKLET_JS = r"""
         })
         .join("");
       box.innerHTML =
-        "<b>VizeAtlas · " +
+        "<b>Dubai Vize Online · " +
         (data.reference_code || "") +
         "</b><br>" +
         ok +
@@ -831,7 +872,7 @@ BOOKMARKLET_JS = r"""
       };
     })
     .catch(function (err) {
-      box.innerHTML = "<b>VizeAtlas</b><br>Hata: " + err.message;
+      box.innerHTML = "<b>Dubai Vize Online</b><br>Hata: " + err.message;
     });
 })();
 """

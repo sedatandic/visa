@@ -12,7 +12,7 @@ export default function Services() {
 
     useEffect(() => {
         setMeta(
-            "Vize Hizmetlerimiz | VizeAtlas Dubai",
+            "Vize Hizmetlerimiz | Dubai Vize Online",
             "Dubai vize başvurusu, aile başvurusu, evrak kontrolü, ekspres vize, vize uzatma ve başvuru takibi hizmetleri."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});

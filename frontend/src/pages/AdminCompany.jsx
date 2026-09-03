@@ -9,7 +9,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 
 const FIELDS = [
-    { key: "legal_name", label: "Ticaret ünvanı *", placeholder: "Örn. VizeAtlas Turizm ve Danışmanlık A.Ş.", wide: true },
+    { key: "legal_name", label: "Ticaret ünvanı *", placeholder: "Örn. Dubai Vize Online Turizm ve Danışmanlık A.Ş.", wide: true },
     { key: "tursab_no", label: "TÜRSAB belge numarası", placeholder: "Örn. 12345" },
     { key: "tursab_type", label: "Acente türü", placeholder: "Örn. A Grubu Seyahat Acentesi" },
     { key: "tax_office", label: "Vergi dairesi", placeholder: "Örn. Beşiktaş" },

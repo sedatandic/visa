@@ -238,7 +238,7 @@ export default function AdminTestimonials() {
                 <div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3" data-testid="admin-testimonials-list">
                     {items.map((t) => (
                         <div key={t.id} className="card-surface flex flex-col p-5" data-testid={`admin-testimonial-${t.id}`}>
-                            <div className="flex items-center gap-1 text-[hsl(var(--brand-red))]">
+                            <div className="flex items-center gap-1 text-[hsl(var(--brand-copper))]">
                                 {Array.from({ length: t.rating || 5 }).map((_, i) => (
                                     <Star key={i} className="h-3.5 w-3.5 fill-current" />
                                 ))}

@@ -253,6 +253,39 @@ async def public_fx() -> dict:
     }
 
 
+async def _company_info() -> dict:
+    """Sabit sirket bilgileri uzerine admin panelinden girilen alanlar yazilir."""
+    company_doc = await settings_col.find_one({"key": "company_info"})
+    return {**COMPANY, **((company_doc or {}).get("value") or {})}
+
+
+def _agency_info(company: dict) -> dict:
+    """Acente seffaflik blogu; degeri bos olan satirlar gizlenir."""
+    rows = (
+        ("Ticaret Unvanı", company.get("legal_name", "")),
+        ("TÜRSAB Belge No", company.get("tursab_no", "")),
+        ("Acente Türü", company.get("tursab_type", "")),
+        (
+            "Vergi Dairesi / No",
+            f"{company.get('tax_office', '')} / {company.get('tax_no', '')}".strip(" /"),
+        ),
+        ("MERSİS No", company.get("mersis_no", "")),
+        ("Ticaret Sicil No", company.get("trade_registry_no", "")),
+        ("Adres", company.get("address", "")),
+        ("Kuruluş", company.get("founded_year", "")),
+    )
+    return {
+        **AGENCY_INFO,
+        "items": [{"label": label, "value": value} for label, value in rows if value],
+    }
+
+
+async def _bank_transfer_info() -> dict:
+    """Havale/EFT bilgileri: admin ayari yoksa varsayilan blok kullanilir."""
+    doc = await settings_col.find_one({"key": "bank_transfer"})
+    return (doc or {}).get("value") or BANK_TRANSFER
+
+
 @router.get("/content/site")
 async def get_site_content() -> dict:
     testimonials = await testimonials_col.find({"published": True}).sort("order", 1).to_list(50)
@@ -260,25 +293,7 @@ async def get_site_content() -> dict:
     article_docs = (
         await articles_col.find({"published": True}).sort("date", -1).limit(20).to_list(20)
     )
-    company_doc = await settings_col.find_one({"key": "company_info"})
-    company = {**COMPANY, **((company_doc or {}).get("value") or {})}
-    agency_info = {
-        **AGENCY_INFO,
-        "items": [
-            {"label": "Ticaret Unvanı", "value": company.get("legal_name", "")},
-            {"label": "TÜRSAB Belge No", "value": company.get("tursab_no", "")},
-            {"label": "Acente Türü", "value": company.get("tursab_type", "")},
-            {
-                "label": "Vergi Dairesi / No",
-                "value": f"{company.get('tax_office', '')} / {company.get('tax_no', '')}".strip(" /"),
-            },
-            {"label": "MERSİS No", "value": company.get("mersis_no", "")},
-            {"label": "Ticaret Sicil No", "value": company.get("trade_registry_no", "")},
-            {"label": "Adres", "value": company.get("address", "")},
-            {"label": "Kuruluş", "value": company.get("founded_year", "")},
-        ],
-    }
-    agency_info["items"] = [i for i in agency_info["items"] if i["value"]]
+    company = await _company_info()
     return {
         "company": company,
         "visa_categories": VISA_CATEGORIES,
@@ -301,9 +316,8 @@ async def get_site_content() -> dict:
         "important_notice": IMPORTANT_NOTICE,
         "status_labels": STATUS_LABELS,
         "promo": PROMO,
-        "agency_info": agency_info,
-        "bank_transfer": ((await settings_col.find_one({"key": "bank_transfer"})) or {}).get("value")
-        or BANK_TRANSFER,
+        "agency_info": _agency_info(company),
+        "bank_transfer": await _bank_transfer_info(),
     }
 
 
@@ -818,20 +832,19 @@ async def create_application(payload: ApplicationCreate):
     return result
 
 
+def _tracking_name_sources(doc: dict):
+    """Takip dogrulamasinda kullanilabilecek ham soyad adaylarini uretir."""
+    for traveler in doc.get("travelers") or []:
+        yield traveler.get("last_name")
+    yield (doc.get("applicant") or {}).get("last_name")
+    contact_name = ((doc.get("contact") or {}).get("full_name") or "").strip()
+    yield contact_name.split()[-1] if contact_name else ""
+
+
 def _tracking_last_names(doc: dict) -> set[str]:
     """Takip dogrulamasinda kabul edilebilir soyadlarin kucuk harfli kumesi."""
-    candidates: set[str] = set()
-    for traveler in doc.get("travelers") or []:
-        value = (traveler.get("last_name") or "").strip().lower()
-        if value:
-            candidates.add(value)
-    applicant_last = ((doc.get("applicant") or {}).get("last_name") or "").strip().lower()
-    if applicant_last:
-        candidates.add(applicant_last)
-    contact_name = ((doc.get("contact") or {}).get("full_name") or "").strip()
-    if contact_name:
-        candidates.add(contact_name.split()[-1].lower())
-    return candidates
+    names = ((raw or "").strip().lower() for raw in _tracking_name_sources(doc))
+    return {name for name in names if name}
 
 
 async def _find_application_for_tracking(code: str, last_name: str) -> dict:
@@ -881,6 +894,20 @@ async def _collect_extra_documents(
     return extra if changed else None
 
 
+async def _attach_traveler_files(target: dict, item, uploaded_keys: list[str]) -> None:
+    """Tek yolcunun pasaport/vesikalik dosyalarini kaydina isler."""
+    docs = dict(target.get("documents") or {})
+    for key in ("passport", "photo"):
+        file_id = getattr(item, f"{key}_file_id", None)
+        if not file_id:
+            continue
+        await _ensure_upload_exists(file_id)
+        docs[f"{key}_file_id"] = file_id
+        target[f"{key}_file_id"] = file_id
+        uploaded_keys.append(f"{key}:{item.traveler_id}")
+    target["documents"] = docs
+
+
 async def _apply_traveler_documents(
     doc: dict, payload: DocumentSubmission, uploaded_keys: list[str]
 ) -> list[dict] | None:
@@ -890,16 +917,7 @@ async def _apply_traveler_documents(
         target = next((t for t in travelers if t.get("id") == item.traveler_id), None)
         if not target:
             raise HTTPException(400, "Yolcu bulunamadi.")
-        docs = dict(target.get("documents") or {})
-        for key in ("passport", "photo"):
-            file_id = getattr(item, f"{key}_file_id", None)
-            if not file_id:
-                continue
-            await _ensure_upload_exists(file_id)
-            docs[f"{key}_file_id"] = file_id
-            target[f"{key}_file_id"] = file_id
-            uploaded_keys.append(f"{key}:{item.traveler_id}")
-        target["documents"] = docs
+        await _attach_traveler_files(target, item, uploaded_keys)
     if any(t.get("documents") for t in travelers):
         return travelers
     return None

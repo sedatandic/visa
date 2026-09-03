@@ -35,30 +35,27 @@ zami_logs_col = db["zami_logs"]
 zami_handoffs_col = db["zami_handoffs"]
 
 
+try:  # bson pymongo ile gelir; yoksa ObjectId kontrolu atlanir
+    from bson import ObjectId as _ObjectId
+except Exception:  # pragma: no cover
+    _ObjectId = None
+
+
+def _serialize_mapping(doc: dict) -> dict:
+    """Mongo'nun `_id` alanini atarak sozlugu ozyinelemeli serilestirir."""
+    return {key: serialize_doc(value) for key, value in doc.items() if key != "_id"}
+
+
 def serialize_doc(doc: Any) -> Any:
     """Recursively convert a Mongo document into a JSON-serializable structure."""
-    if doc is None:
-        return None
-    if isinstance(doc, list):
-        return [serialize_doc(d) for d in doc]
     if isinstance(doc, dict):
-        out = {}
-        for k, v in doc.items():
-            if k == "_id":
-                continue
-            out[k] = serialize_doc(v)
-        return out
-    if isinstance(doc, datetime):
+        return _serialize_mapping(doc)
+    if isinstance(doc, list):
+        return [serialize_doc(item) for item in doc]
+    if isinstance(doc, (datetime, date)):
         return doc.isoformat()
-    if isinstance(doc, date):
-        return doc.isoformat()
-    try:
-        from bson import ObjectId
-
-        if isinstance(doc, ObjectId):
-            return str(doc)
-    except Exception:
-        pass
+    if _ObjectId is not None and isinstance(doc, _ObjectId):
+        return str(doc)
     return doc
 
 

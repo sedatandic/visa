@@ -200,6 +200,124 @@ def zami_visa_label(visa_type_id: str | None, fallback: str = "") -> str:
     return ZAMI_VISA_TYPE_LABELS.get((visa_type_id or "").strip(), fallback)
 
 
+def _date_variants(prefix: str, value) -> dict:
+    """Bir tarihi portalin bekledigi dort formatta uretir."""
+    return {
+        prefix: _fmt(value, "iso"),
+        f"{prefix}_dmy": _fmt(value, "dmy"),
+        f"{prefix}_dmy_dash": _fmt(value, "dmy_dash"),
+        f"{prefix}_mdy": _fmt(value, "mdy"),
+    }
+
+
+def _contact_globals(contact: dict) -> dict:
+    """Iletisim bilgileri alanlari."""
+    return {
+        "contact.full_name": contact.get("full_name", ""),
+        "contact.email": contact.get("email", ""),
+        "contact.phone": contact.get("phone", ""),
+        "contact.phone_intl": phone_intl(contact.get("phone")),
+        "contact.address_city": contact.get("address_city", ""),
+    }
+
+
+def _travel_globals(travel: dict) -> dict:
+    """Seyahat bilgileri alanlari (tum tarih formatlariyla)."""
+    return {
+        **_date_variants("travel.arrival_date", travel.get("arrival_date")),
+        **_date_variants("travel.departure_date", travel.get("departure_date")),
+        "travel.purpose": travel.get("purpose", ""),
+        "travel.accommodation": travel.get("accommodation", ""),
+        "travel.flight_no": travel.get("flight_no", ""),
+        "travel.notes": travel.get("notes", ""),
+    }
+
+
+def _group_globals(app_doc: dict, travelers: list, travel: dict) -> dict:
+    """Vize tipi + grup (aile) bilgileri."""
+    visa_name = app_doc.get("visa_type_name", "")
+    first_visa_type = (travelers[0] or {}).get("visa_type_id") if travelers else ""
+    count = len(travelers)
+    return {
+        "visa_type_name": visa_name,
+        "zami_visa_type": zami_visa_label(first_visa_type, visa_name),
+        "birth_country_label": country_label(travel.get("birth_country") or "TR"),
+        # Zami "Group Membership": tek yolcu ise 'None / Alone', aile ise ana kisi
+        "zami_group_membership": "None / Alone" if count <= 1 else "Family Main Person",
+        "zami_total_members": str(count) if count > 1 else "",
+        "traveler_count": str(count),
+    }
+
+
+def _traveler_row(traveler: dict, contact: dict) -> dict:
+    """Tek yolcunun Zami formuna yazilacak tum alan varyantlari."""
+    gender = traveler.get("gender", "")
+    nationality = traveler.get("nationality") or "TR"
+    applicant_type = traveler.get("applicant_type", "adult")
+    marital = (traveler.get("marital_status") or "").strip().lower()
+    return {
+        "first_name": traveler.get("first_name", ""),
+        "last_name": traveler.get("last_name", ""),
+        "full_name": f"{traveler.get('first_name', '')} {traveler.get('last_name', '')}".strip(),
+        **_date_variants("birth_date", traveler.get("birth_date")),
+        "gender": gender,
+        "gender_label": GENDER_LABELS.get(gender, ""),
+        "gender_en": "Male" if gender == "male" else "Female",
+        "nationality": traveler.get("nationality", "TR"),
+        "nationality_label": country_label(nationality),
+        "passport_country_label": country_label(nationality),
+        "national_id": traveler.get("national_id", ""),
+        "passport_no": traveler.get("passport_no", ""),
+        **_date_variants("passport_expiry", traveler.get("passport_expiry")),
+        "passport_issue_date": _fmt(traveler.get("passport_issue_date"), "iso"),
+        "passport_issue_date_dmy": _fmt(traveler.get("passport_issue_date"), "dmy"),
+        "passport_issue_date_dmy_dash": _fmt(traveler.get("passport_issue_date"), "dmy_dash"),
+        "birth_place": (traveler.get("birth_place") or "").strip(),
+        "passport_issue_place": (traveler.get("passport_issue_place") or "").strip(),
+        "applicant_type": applicant_type,
+        "applicant_type_label": APPLICANT_LABELS.get(applicant_type, ""),
+        "marital_status": traveler.get("marital_status", "") or "",
+        "marital_status_label": MARITAL_LABELS.get(marital, ""),
+        "profession": (traveler.get("profession") or "").strip(),
+        "mother_name": (traveler.get("mother_name") or "").strip(),
+        "father_name": (traveler.get("father_name") or "").strip(),
+        "visa_type_name": traveler.get("visa_type_name", ""),
+        "zami_visa_type": zami_visa_label(
+            traveler.get("visa_type_id"), traveler.get("visa_type_name", "")
+        ),
+        "phone": contact.get("phone", ""),
+    }
+
+
+# Basvuru geneli ek belgeler: (alan adi, portalda gorunecek etiket)
+_EXTRA_DOC_LABELS = (
+    ("ticket_file_id", "Uçak bileti / rezervasyon"),
+    ("hotel_file_id", "Otel rezervasyonu"),
+)
+
+
+def _document_rows(travelers: list, extra: dict, file_url) -> list:
+    """Yolcu belgeleri + basvuru geneli ek belgeleri indirme linkleriyle listeler."""
+    documents = []
+    for idx, traveler in enumerate(travelers):
+        docs = traveler.get("documents") or {}
+        name = (
+            f"{traveler.get('first_name', '')} {traveler.get('last_name', '')}".strip()
+            or f"Yolcu {idx + 1}"
+        )
+        for key, suffix in (("passport_file_id", "Pasaport"), ("photo_file_id", "Vesikalık")):
+            if docs.get(key):
+                documents.append(
+                    {"label": f"{name} · {suffix}", "url": file_url(docs[key]), "traveler_index": idx}
+                )
+    for key, label in _EXTRA_DOC_LABELS:
+        if extra.get(key):
+            documents.append({"label": label, "url": file_url(extra[key]), "traveler_index": None})
+    for file_id in extra.get("other_file_ids") or []:
+        documents.append({"label": "Ek belge", "url": file_url(file_id), "traveler_index": None})
+    return documents
+
+
 def build_payload(app_doc: dict, file_base_url: str = "") -> dict:
     """Basvuru dokumanini Zami aktarimi icin duz alan/deger sozluklerine cevirir."""
     contact = app_doc.get("contact") or {}
@@ -207,106 +325,22 @@ def build_payload(app_doc: dict, file_base_url: str = "") -> dict:
     travelers = app_doc.get("travelers") or []
     extra = app_doc.get("extra_documents") or {}
 
-    globals_map = {
-        "reference_code": app_doc.get("reference_code", ""),
-        "contact.full_name": contact.get("full_name", ""),
-        "contact.email": contact.get("email", ""),
-        "contact.phone": contact.get("phone", ""),
-        "contact.phone_intl": phone_intl(contact.get("phone")),
-        "contact.address_city": contact.get("address_city", ""),
-        "travel.arrival_date": _fmt(travel.get("arrival_date"), "iso"),
-        "travel.arrival_date_dmy": _fmt(travel.get("arrival_date"), "dmy"),
-        "travel.arrival_date_dmy_dash": _fmt(travel.get("arrival_date"), "dmy_dash"),
-        "travel.arrival_date_mdy": _fmt(travel.get("arrival_date"), "mdy"),
-        "travel.departure_date": _fmt(travel.get("departure_date"), "iso"),
-        "travel.departure_date_dmy": _fmt(travel.get("departure_date"), "dmy"),
-        "travel.departure_date_dmy_dash": _fmt(travel.get("departure_date"), "dmy_dash"),
-        "travel.departure_date_mdy": _fmt(travel.get("departure_date"), "mdy"),
-        "travel.purpose": travel.get("purpose", ""),
-        "travel.accommodation": travel.get("accommodation", ""),
-        "travel.flight_no": travel.get("flight_no", ""),
-        "travel.notes": travel.get("notes", ""),
-        "visa_type_name": app_doc.get("visa_type_name", ""),
-        "zami_visa_type": zami_visa_label(
-            (travelers[0] or {}).get("visa_type_id") if travelers else "",
-            app_doc.get("visa_type_name", ""),
-        ),
-        "birth_country_label": country_label(travel.get("birth_country") or "TR"),
-        # Zami "Group Membership": tek yolcu ise 'None / Alone', aile ise ana kisi
-        "zami_group_membership": "None / Alone" if len(travelers) <= 1 else "Family Main Person",
-        "zami_total_members": str(len(travelers)) if len(travelers) > 1 else "",
-        "traveler_count": str(len(travelers)),
-    }
-
-    traveler_rows = []
-    for t in travelers:
-        traveler_rows.append(
-            {
-                "first_name": t.get("first_name", ""),
-                "last_name": t.get("last_name", ""),
-                "full_name": f"{t.get('first_name','')} {t.get('last_name','')}".strip(),
-                "birth_date": _fmt(t.get("birth_date"), "iso"),
-                "birth_date_dmy": _fmt(t.get("birth_date"), "dmy"),
-                "birth_date_dmy_dash": _fmt(t.get("birth_date"), "dmy_dash"),
-                "birth_date_mdy": _fmt(t.get("birth_date"), "mdy"),
-                "gender": t.get("gender", ""),
-                "gender_label": GENDER_LABELS.get(t.get("gender", ""), ""),
-                "gender_en": "Male" if t.get("gender") == "male" else "Female",
-                "nationality": t.get("nationality", "TR"),
-                "nationality_label": country_label(t.get("nationality") or "TR"),
-                "passport_country_label": country_label(t.get("nationality") or "TR"),
-                "national_id": t.get("national_id", ""),
-                "passport_no": t.get("passport_no", ""),
-                "passport_expiry": _fmt(t.get("passport_expiry"), "iso"),
-                "passport_expiry_dmy": _fmt(t.get("passport_expiry"), "dmy"),
-                "passport_expiry_dmy_dash": _fmt(t.get("passport_expiry"), "dmy_dash"),
-                "passport_expiry_mdy": _fmt(t.get("passport_expiry"), "mdy"),
-                "passport_issue_date": _fmt(t.get("passport_issue_date"), "iso"),
-                "passport_issue_date_dmy": _fmt(t.get("passport_issue_date"), "dmy"),
-                "passport_issue_date_dmy_dash": _fmt(t.get("passport_issue_date"), "dmy_dash"),
-                "birth_place": (t.get("birth_place") or "").strip(),
-                "passport_issue_place": (t.get("passport_issue_place") or "").strip(),
-                "applicant_type": t.get("applicant_type", "adult"),
-                "applicant_type_label": APPLICANT_LABELS.get(t.get("applicant_type", "adult"), ""),
-                "marital_status": t.get("marital_status", "") or "",
-                "marital_status_label": MARITAL_LABELS.get(
-                    (t.get("marital_status") or "").strip().lower(), ""
-                ),
-                "profession": (t.get("profession") or "").strip(),
-                "mother_name": (t.get("mother_name") or "").strip(),
-                "father_name": (t.get("father_name") or "").strip(),
-                "visa_type_name": t.get("visa_type_name", ""),
-                "zami_visa_type": zami_visa_label(t.get("visa_type_id"), t.get("visa_type_name", "")),
-                "phone": contact.get("phone", ""),
-            }
-        )
-
     def file_url(file_id):
         if not file_id:
             return None
         return f"{file_base_url}/api/files/{file_id}?download=1"
 
-    documents = []
-    for idx, t in enumerate(travelers):
-        docs = t.get("documents") or {}
-        name = f"{t.get('first_name','')} {t.get('last_name','')}".strip() or f"Yolcu {idx + 1}"
-        if docs.get("passport_file_id"):
-            documents.append({"label": f"{name} · Pasaport", "url": file_url(docs["passport_file_id"]), "traveler_index": idx})
-        if docs.get("photo_file_id"):
-            documents.append({"label": f"{name} · Vesikalık", "url": file_url(docs["photo_file_id"]), "traveler_index": idx})
-    if extra.get("ticket_file_id"):
-        documents.append({"label": "Uçak bileti / rezervasyon", "url": file_url(extra["ticket_file_id"]), "traveler_index": None})
-    if extra.get("hotel_file_id"):
-        documents.append({"label": "Otel rezervasyonu", "url": file_url(extra["hotel_file_id"]), "traveler_index": None})
-    for fid in extra.get("other_file_ids") or []:
-        documents.append({"label": "Ek belge", "url": file_url(fid), "traveler_index": None})
-
     return {
         "application_id": app_doc.get("id"),
         "reference_code": app_doc.get("reference_code"),
-        "globals": globals_map,
-        "travelers": traveler_rows,
-        "documents": documents,
+        "globals": {
+            "reference_code": app_doc.get("reference_code", ""),
+            **_contact_globals(contact),
+            **_travel_globals(travel),
+            **_group_globals(app_doc, travelers, travel),
+        },
+        "travelers": [_traveler_row(t, contact) for t in travelers],
+        "documents": _document_rows(travelers, extra, file_url),
     }
 
 
@@ -330,57 +364,88 @@ async def get_mapping() -> dict:
     return mapping
 
 
-async def save_mapping(value: dict) -> dict:
-    mapping = dict(DEFAULT_MAPPING)
-    keywords = value.get("status_keywords")
-    if not isinstance(keywords, dict) or not keywords:
-        keywords = DEFAULT_MAPPING["status_keywords"]
+def _trimmed(value) -> str:
+    """None guvenli kirpma."""
+    return (value or "").strip()
+
+
+def _non_empty_map(value) -> dict:
+    """Degeri bos olan eslemeleri atar."""
+    return {k: v for k, v in (value or {}).items() if v}
+
+
+def _clean_selector_list(value, key: str) -> list:
+    """Bos secicileri atar; liste tamamen bosalirsa varsayilani kullanir."""
+    cleaned = [str(s) for s in (value or []) if str(s).strip()]
+    return cleaned or DEFAULT_MAPPING[key]
+
+
+def _clean_upload_targets(value) -> list:
+    """Eksik alanli yukleme hedeflerini atar; bos kalirsa varsayilani kullanir."""
+    targets = [
+        t for t in (value or []) if isinstance(t, dict) and t.get("doc") and t.get("selector")
+    ]
+    return targets or DEFAULT_MAPPING["upload_targets"]
+
+
+def _clean_keywords(value) -> dict:
+    """Durum anahtar kelimelerini kucuk harfe indirger ve boslari atar."""
+    keywords = value if isinstance(value, dict) and value else DEFAULT_MAPPING["status_keywords"]
+    return {
+        key: [str(word).strip().lower() for word in (words or []) if str(word).strip()]
+        for key, words in keywords.items()
+    }
+
+
+def normalize_mapping(value: dict, current: dict | None = None) -> dict:
+    """Admin panelinden gelen alan eslemesini guvenli varsayilanlarla birlestirir.
+
+    Istekte GONDERILMEYEN (None) alanlar mevcut kayitli degeriyle korunur; bu
+    sayede panelden kismi kayit yapildiginda sabitler, yukleme hedefleri gibi
+    kritik RPA ayarlari kaybolmaz.
+    """
+    base = dict(DEFAULT_MAPPING)
+    if current:
+        base.update({k: v for k, v in current.items() if k in DEFAULT_MAPPING})
+
+    def keep(key: str, cleaner):
+        """Alan gonderilmediyse mevcut degeri korur, gonderildiyse temizler."""
+        return base[key] if value.get(key) is None else cleaner(value[key])
+
+    mapping = dict(base)
     mapping.update(
         {
-            "form_url": (value.get("form_url") or "").strip(),
-            "submit_selector": (value.get("submit_selector") or "").strip(),
+            "form_url": _trimmed(value.get("form_url")),
+            "submit_selector": _trimmed(value.get("submit_selector")),
             "dry_run": bool(value.get("dry_run", True)),
-            "fields": {k: v for k, v in (value.get("fields") or {}).items() if v},
-            "constants": {k: v for k, v in (value.get("constants") or {}).items() if v},
-            "validate_selector": (
-                value.get("validate_selector")
-                if value.get("validate_selector") is not None
-                else DEFAULT_MAPPING["validate_selector"]
+            "fields": _non_empty_map(value.get("fields")),
+            "traveler_fields": _non_empty_map(value.get("traveler_fields")),
+            "constants": keep("constants", _non_empty_map),
+            "validate_selector": keep("validate_selector", lambda v: v),
+            "helper_selectors": keep(
+                "helper_selectors", lambda v: _clean_selector_list(v, "helper_selectors")
             ),
-            "helper_selectors": (
-                [str(s) for s in (value.get("helper_selectors") or []) if str(s).strip()]
-                or DEFAULT_MAPPING["helper_selectors"]
+            "upload_targets": keep("upload_targets", _clean_upload_targets),
+            "status_search_field": keep(
+                "status_search_field", lambda v: v or base["status_search_field"]
             ),
-            "upload_targets": (
-                [
-                    t
-                    for t in (value.get("upload_targets") or [])
-                    if isinstance(t, dict) and t.get("doc") and t.get("selector")
-                ]
-                or DEFAULT_MAPPING["upload_targets"]
-            ),
-            "status_search_field": (
-                value.get("status_search_field") or DEFAULT_MAPPING["status_search_field"]
-            ),
-            "status_submit_selector": (
-                value.get("status_submit_selector")
-                if value.get("status_submit_selector") is not None
-                else DEFAULT_MAPPING["status_submit_selector"]
-            ),
-            "traveler_fields": {k: v for k, v in (value.get("traveler_fields") or {}).items() if v},
-            "status_url": (value.get("status_url") or "").strip(),
-            "status_search_selector": (value.get("status_search_selector") or "").strip(),
-            "status_result_selector": (value.get("status_result_selector") or "").strip(),
-            "status_keywords": {
-                k: [str(w).strip().lower() for w in (v or []) if str(w).strip()]
-                for k, v in keywords.items()
-            },
+            "status_submit_selector": keep("status_submit_selector", lambda v: v),
+            "status_url": _trimmed(value.get("status_url")),
+            "status_search_selector": _trimmed(value.get("status_search_selector")),
+            "status_result_selector": _trimmed(value.get("status_result_selector")),
+            "status_keywords": _clean_keywords(value.get("status_keywords")),
             "auto_check_enabled": bool(value.get("auto_check_enabled", False)),
             "auto_check_hours": max(1, min(int(value.get("auto_check_hours") or 6), 48)),
             "auto_notify": bool(value.get("auto_notify", True)),
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
     )
+    return mapping
+
+
+async def save_mapping(value: dict) -> dict:
+    current = await get_mapping()
+    mapping = normalize_mapping(value, current)
     await settings_col.update_one(
         {"key": MAPPING_KEY}, {"$set": {"key": MAPPING_KEY, "value": mapping}}, upsert=True
     )

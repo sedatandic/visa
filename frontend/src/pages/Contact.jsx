@@ -18,7 +18,7 @@ export default function Contact() {
 
     useEffect(() => {
         setMeta(
-            "İletişim | VizeAtlas Dubai",
+            "İletişim | Dubai Vize Online",
             "Dubai vize başvurunuzla ilgili sorularınız için bize telefon, e-posta veya WhatsApp üzerinden ulaşabilirsiniz."
         );
     }, []);

@@ -110,7 +110,7 @@ export default function Esim() {
                             </Link>
                             .
                         </p>
-                        <Zap className="ml-auto hidden h-5 w-5 text-[hsl(var(--brand-red))] sm:block" />
+                        <Zap className="ml-auto hidden h-5 w-5 text-[hsl(var(--brand-copper))] sm:block" />
                     </div>
                 </div>
             </section>

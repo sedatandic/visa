@@ -163,7 +163,7 @@ export default function AdminApplicationDetail() {
     };
 
     useEffect(() => {
-        setMeta("Başvuru Detayı | VizeAtlas Dubai", "Başvuru detayı, belge görüntüleyici ve vize teslimi.");
+        setMeta("Başvuru Detayı | Dubai Vize Online", "Başvuru detayı, belge görüntüleyici ve vize teslimi.");
     }, []);
 
     const load = useCallback(async () => {

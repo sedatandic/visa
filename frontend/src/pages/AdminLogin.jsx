@@ -17,7 +17,7 @@ export default function AdminLogin() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        setMeta("Yönetici Girişi | VizeAtlas Dubai", "VizeAtlas Dubai yönetim paneli girişi.");
+        setMeta("Yönetici Girişi | Dubai Vize Online", "Dubai Vize Online yönetim paneli girişi.");
     }, []);
 
     const submit = async (e) => {
@@ -60,7 +60,7 @@ export default function AdminLogin() {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="admin@vizeatlas.com"
+                                placeholder="admin@dubaivizeonline.com"
                                 data-testid="admin-email-input"
                             />
                         </div>

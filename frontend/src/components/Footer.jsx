@@ -6,6 +6,7 @@ import { COMPANY } from "../lib/site";
 import { TrFlag, UaeFlag } from "./FlagIcons";
 import { TursabBadge } from "./TursabBadge";
 import { GdrfaBadge } from "./GdrfaBadge";
+import { BrandMark } from "./BrandMark";
 
 export const Footer = () => {
     const [agency, setAgency] = useState(null);
@@ -33,20 +34,7 @@ export const Footer = () => {
         <div className="container-page grid gap-10 py-14 md:grid-cols-4">
             <div className="md:col-span-2">
                 <div className="flex items-center gap-2.5">
-                    <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-primary">
-                        <span className="absolute left-0 top-0 h-full w-1.5 bg-[hsl(var(--brand-red))]" />
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-                            <path d="M4 21V11a8 8 0 0 1 16 0v10" />
-                            <path d="M8.5 13.5 11 16l4.5-5" />
-                        </svg>
-                    </span>
-                    <span className="font-heading text-lg font-bold">
-                        {COMPANY.brand}
-                        <span className="text-primary">.</span>{" "}
-                        <span className="text-white/60 text-sm font-semibold uppercase tracking-widest">
-                            {COMPANY.brandSuffix}
-                        </span>
-                    </span>
+                    <BrandMark light />
                 </div>
                 <p className="mt-4 max-w-md text-sm leading-6 text-white/70">
                     Dubai ve Birleşik Arap Emirlikleri vize başvurularınızı baştan sona takip eden

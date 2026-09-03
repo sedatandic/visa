@@ -111,37 +111,56 @@ def _clean_name(value: str) -> str:
     return re.sub(r"[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]", "", value).strip().upper()
 
 
-def normalize_result(raw: dict) -> dict:
-    gender = (raw.get("gender") or "").strip().lower()
-    if gender in {"m", "male", "erkek"}:
-        gender = "male"
-    elif gender in {"f", "female", "kadin", "kadın"}:
-        gender = "female"
-    else:
-        gender = ""
+GENDER_ALIASES = {
+    "m": "male",
+    "male": "male",
+    "erkek": "male",
+    "f": "female",
+    "female": "female",
+    "kadin": "female",
+    "kadın": "female",
+}
 
-    national_id = re.sub(r"\D", "", str(raw.get("national_id") or ""))
-    if len(national_id) != 11:
-        national_id = ""
 
+def _normalize_gender(value) -> str:
+    """Model cikisindaki cinsiyet ifadesini male/female/"" degerine indirger."""
+    return GENDER_ALIASES.get((value or "").strip().lower(), "")
+
+
+def _normalize_national_id(value) -> str:
+    """TC kimlik no yalnizca 11 haneli ise kabul edilir."""
+    digits = re.sub(r"\D", "", str(value or ""))
+    return digits if len(digits) == 11 else ""
+
+
+def _normalize_code(value) -> str:
+    """Pasaport no gibi kodlari harf/rakam disini atarak buyuk harfe cevirir."""
+    return re.sub(r"[^A-Za-z0-9]", "", str(value or "")).upper()
+
+
+def _clamp_unit(value) -> float:
+    """Sayisal degeri 0.0-1.0 araligina sikistirir; cevrilemezse 0.0 doner."""
     try:
-        confidence = float(raw.get("confidence") or 0)
+        number = float(value or 0)
     except (TypeError, ValueError):
-        confidence = 0.0
+        return 0.0
+    return max(0.0, min(1.0, number))
 
+
+def normalize_result(raw: dict) -> dict:
     return {
         "first_name": _clean_name(raw.get("first_name")),
         "last_name": _clean_name(raw.get("last_name")),
-        "passport_no": re.sub(r"[^A-Za-z0-9]", "", str(raw.get("passport_no") or "")).upper(),
+        "passport_no": _normalize_code(raw.get("passport_no")),
         "birth_date": _normalize_date(raw.get("birth_date")),
         "passport_expiry": _normalize_date(raw.get("passport_expiry")),
         "passport_issue_date": _normalize_date(raw.get("passport_issue_date")),
         "birth_place": _clean_name(raw.get("birth_place"))[:60],
         "passport_issue_place": _clean_name(raw.get("passport_issue_place"))[:60],
-        "gender": gender,
+        "gender": _normalize_gender(raw.get("gender")),
         "nationality": (str(raw.get("nationality") or "").strip().upper()[:3] or "TR"),
-        "national_id": national_id,
-        "confidence": max(0.0, min(1.0, confidence)),
+        "national_id": _normalize_national_id(raw.get("national_id")),
+        "confidence": _clamp_unit(raw.get("confidence")),
         "is_passport": bool(raw.get("is_passport", True)),
     }
 
@@ -185,43 +204,37 @@ PHOTO_ISSUE_LABELS = {
 PHOTO_CRITERIA = tuple(PHOTO_ISSUE_LABELS.keys())
 
 
+def _photo_issues(raw: dict, checks: dict) -> list[str]:
+    """Modelin sorun listesini temizler; bos ise basarisiz kriterlerden uretir."""
+    issues = [str(item).strip()[:180] for item in (raw.get("issues") or []) if str(item).strip()]
+    if issues:
+        return issues
+    return [PHOTO_ISSUE_LABELS[key] for key, ok in checks.items() if not ok]
+
+
+def _photo_advice(raw: dict, ok: bool) -> str:
+    """Model oneri vermediyse ve fotograf uygun degilse varsayilan oneriyi doner."""
+    advice = str(raw.get("advice") or "").strip()[:220]
+    if ok or advice:
+        return advice
+    return "Duz beyaz bir duvar onunde, net ve yuzunuz tam gorunecek sekilde yeni bir fotograf cekin."
+
+
 def normalize_photo_result(raw: dict) -> dict:
     """LLM cikisini guvenli, tahmin edilebilir bir sozluge cevirir."""
-    def _flag(key: str) -> bool:
-        return bool(raw.get(key, True))
-
     is_photo = bool(raw.get("is_photo", True))
-    checks = {key: _flag(key) for key in PHOTO_CRITERIA}
-
-    issues: list[str] = []
-    for item in raw.get("issues") or []:
-        text = str(item).strip()
-        if text:
-            issues.append(text[:180])
-    if not issues:
-        issues = [PHOTO_ISSUE_LABELS[key] for key, ok in checks.items() if not ok]
-
-    try:
-        score = float(raw.get("score") or 0)
-    except (TypeError, ValueError):
-        score = 0.0
-    score = max(0.0, min(1.0, score))
-
+    checks = {key: bool(raw.get(key, True)) for key in PHOTO_CRITERIA}
     failed = [key for key, ok in checks.items() if not ok]
     ok = is_photo and not failed
-
-    advice = str(raw.get("advice") or "").strip()[:220]
-    if not ok and not advice:
-        advice = "Duz beyaz bir duvar onunde, net ve yuzunuz tam gorunecek sekilde yeni bir fotograf cekin."
 
     return {
         "ok": ok,
         "is_photo": is_photo,
         "checks": checks,
         "failed": failed,
-        "issues": issues[:6],
-        "advice": advice,
-        "score": score,
+        "issues": _photo_issues(raw, checks)[:6],
+        "advice": _photo_advice(raw, ok),
+        "score": _clamp_unit(raw.get("score")),
     }
 
 

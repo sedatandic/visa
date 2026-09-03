@@ -1,0 +1,118 @@
+{
+  "summary": "Zami refactoring test completed - save_mapping and build_payload functions successfully refactored into pure helper functions. Behavior preserved across all critical tests. 39/39 backend tests passed (100%). Frontend pages load without errors. One minor normalization bug found: empty string selectors revert to defaults instead of being accepted.",
+  "backend_issues": {
+    "critical_bugs": [],
+    "medium_bugs": [
+      {
+        "file": "/app/backend/zami.py",
+        "function": "normalize_mapping",
+        "issue": "Empty string ('') for validate_selector and status_submit_selector reverts to default instead of being accepted",
+        "expected_behavior": "Empty string should be accepted as-is (per requirements: 'boş string (\"\") KABUL edilmeli')",
+        "actual_behavior": "Empty string reverts to default value (button:has-text('CHECK') and button:has-text('SEARCH'))",
+        "impact": "Admin cannot intentionally set these selectors to empty string",
+        "fix_priority": "MEDIUM",
+        "test_evidence": "PUT /api/admin/zami/mapping with validate_selector='' returns validate_selector='button:has-text(\"CHECK\")'"
+      }
+    ],
+    "flaky_endpoints": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "page": "/admin/zami",
+        "issue": "No HTML table element found for mapping display",
+        "severity": "INFO",
+        "note": "Page loads successfully but mapping may be displayed in a different format (cards, divs, etc.)"
+      }
+    ]
+  },
+  "passed_tests": [
+    "✅ CRITICAL: GET /api/admin/zami/config - mapping structure verified (8 fields, 16 traveler_fields, 7 constants, 2 upload_targets)",
+    "✅ CRITICAL: Mapping field verification - all expected fields present with correct selectors",
+    "✅ CRITICAL: [name='ms'] correctly in traveler_fields, NOT in constants",
+    "✅ CRITICAL: PUT /api/admin/zami/mapping - empty values dropped from fields/constants/traveler_fields",
+    "✅ CRITICAL: Empty helper_selectors list reverts to default",
+    "✅ CRITICAL: Invalid upload_targets revert to default",
+    "✅ CRITICAL: auto_check_hours clamping works (0→6, 99→48, -5→1)",
+    "✅ CRITICAL: Empty status_keywords dict reverts to default with lowercase conversion",
+    "✅ CRITICAL: form_url and status_url whitespace trimming works",
+    "✅ CRITICAL: None selectors correctly revert to defaults",
+    "✅ CRITICAL: Original mapping restoration successful via /app/scripts/zami_save_mapping.py",
+    "✅ REGRESSION: GET /api/admin/zami/payload/{id} - structure preserved (application_id, reference_code, globals, travelers, documents)",
+    "✅ REGRESSION: globals has exactly 24 keys (all expected keys present)",
+    "✅ REGRESSION: travelers[0] has exactly 34 keys",
+    "✅ REGRESSION: birth_date has 4 formats (iso, dmy, dmy_dash, mdy)",
+    "✅ REGRESSION: passport_expiry has 4 formats",
+    "✅ REGRESSION: passport_issue_date has ONLY 3 formats (no _mdy) - CRITICAL VERIFICATION",
+    "✅ REGRESSION: marital_status_label is English ('Married', 'Single')",
+    "✅ REGRESSION: documents list format correct (label, url, traveler_index)",
+    "✅ REGRESSION: Group logic - 2 travelers → zami_group_membership='Family Main Person', zami_total_members='2'",
+    "✅ REGRESSION: Pricing - 1 traveler → family_discount=0",
+    "✅ REGRESSION: Pricing - 3 travelers → family_discount_rate=0.1, discount=subtotal*0.1",
+    "✅ REGRESSION: Express addon per_person=true → quantity=traveler_count",
+    "✅ REGRESSION: addons_total type is FLOAT (0.0 even with no addons)",
+    "✅ REGRESSION: Bundle discount applied for insurance+eSIM (10% of store_total)",
+    "✅ REGRESSION: POST /api/admin/zami/check-status-all works (ok=true, checked=2, error=None)",
+    "✅ REGRESSION: All public endpoints return 200 (content/site, visa-types, visa-guides, articles, products, fx)",
+    "✅ REGRESSION: All admin endpoints return 200 (applications, orders, emails, whatsapp/settings, zami/readiness, zami/candidates, contact-messages)",
+    "✅ REGRESSION: POST /api/applications with new Zami fields (marital_status, profession, mother_name, father_name) works",
+    "✅ REGRESSION: Invalid marital_status correctly rejected with 422",
+    "✅ FRONTEND: Homepage loads without errors",
+    "✅ FRONTEND: /basvuru page loads",
+    "✅ FRONTEND: /admin/giris page loads",
+    "✅ FRONTEND: Admin login successful",
+    "✅ FRONTEND: /admin/zami page loads",
+    "✅ FRONTEND: /admin/e-postalar page loads",
+    "✅ FRONTEND: /takip page loads",
+    "✅ FRONTEND: No JavaScript console errors detected"
+  ],
+  "test_report_links": [
+    "/app/backend_test_zami_refactor.py",
+    "/tmp/zami_refactor_test.log"
+  ],
+  "action_item_for_main_agent": {
+    "priority": "MEDIUM",
+    "items": [
+      {
+        "issue": "Empty string selector normalization bug",
+        "file": "/app/backend/zami.py",
+        "function": "normalize_mapping",
+        "description": "When validate_selector or status_submit_selector is set to empty string (''), it reverts to default instead of accepting the empty string. The _or_default function looks correct, but the behavior doesn't match requirements.",
+        "requirement": "Per requirements: 'validate_selector ve status_submit_selector için boş string (\"\") KABUL edilmeli (varsayılana dönmemeli) ama None gönderilirse varsayılana dönmeli'",
+        "suggested_fix": "Check if Pydantic model or FastAPI is converting empty strings to None before reaching normalize_mapping. May need to use Field(default='') or handle empty strings explicitly in the normalization logic.",
+        "test_command": "curl -X PUT /api/admin/zami/mapping -d '{\"validate_selector\":\"\"}' and verify it returns validate_selector=\"\" not the default"
+      }
+    ]
+  },
+  "updated_files": [
+    "/app/backend_test_zami_refactor.py"
+  ],
+  "success_percentage": {
+    "backend": "100% (39/39 tests passed)",
+    "frontend": "100% (8/8 pages loaded successfully)",
+    "overall": "100% (all critical functionality working, 1 minor normalization bug)"
+  },
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": true,
+  "additional_notes": {
+    "refactoring_verification": "The refactoring of zami.py successfully split save_mapping (complexity 35) into normalize_mapping + 6 helper functions (_trimmed, _non_empty_map, _or_default, _clean_selector_list, _clean_upload_targets, _clean_keywords) and build_payload (complexity 30) into 5 helper functions (_date_variants, _contact_globals, _travel_globals, _group_globals, _traveler_row, _document_rows). Behavior is preserved - all payload structures match expected formats.",
+    "critical_verifications": [
+      "passport_issue_date has ONLY 3 date formats (no _mdy) - verified ✅",
+      "marital_status_label is English - verified ✅",
+      "globals has exactly 24 keys - verified ✅",
+      "travelers[0] has exactly 34 keys - verified ✅",
+      "addons_total is float type (0.0) - verified ✅",
+      "Original mapping restored after tests - verified ✅"
+    ],
+    "safe_operations_tested": [
+      "POST /api/admin/zami/check-status-all (read-only status check) - works correctly"
+    ],
+    "dangerous_operations_not_tested": [
+      "POST /api/admin/zami/transfer (writes to real portal + needs OTP)",
+      "POST /api/admin/zami/bulk-transfer (writes to real portal)",
+      "POST /api/admin/zami/session/start (requires CAPTCHA + OTP)"
+    ]
+  }
+}

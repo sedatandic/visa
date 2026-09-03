@@ -3,66 +3,148 @@
 @tailwind utilities;
 
 @layer base {
+    /*
+     * Marka paleti logodan türetildi (Dubai Vize Online):
+     *   petrol teal  #0E5A66 / #003040   -> primary & koyu yüzeyler
+     *   bakır/bronz  #A06030 / #B0733C   -> accent (vurgu)
+     *   royal mavi   #2B4B9B             -> ikincil bilgi vurgusu
+     *   kum/kırık beyaz #F7F4EF          -> zeminler
+     * Kırmızı SADECE destructive/hata semantiğinde kullanılır.
+     */
     :root {
-        /* --- Yüzeyler & metin: beyaz zemin, kırmızı vurgular (yeşil yok) --- */
-        --background: 0 20% 98%;
-        --foreground: 350 12% 14%;
+        /* --- Yüzeyler & metin: kum beyazı zemin, petrol teal metin --- */
+        --background: 36 33% 97%;
+        --foreground: 195 100% 12%;
         --card: 0 0% 100%;
-        --card-foreground: 350 12% 14%;
+        --card-foreground: 195 100% 12%;
         --popover: 0 0% 100%;
-        --popover-foreground: 350 12% 14%;
+        --popover-foreground: 195 100% 12%;
 
-        /* --- Marka kırmızısı (primary) --- */
-        --primary: 352 78% 42%;
+        /* --- Marka petrol teali (primary) --- */
+        --primary: 191 67% 26%;
         --primary-foreground: 0 0% 100%;
 
-        --secondary: 352 30% 96%;
-        --secondary-foreground: 350 14% 18%;
-        --muted: 350 16% 95%;
-        --muted-foreground: 350 8% 36%;
+        --secondary: 36 28% 93%;
+        --secondary-foreground: 195 100% 14%;
+        --muted: 36 18% 92%;
+        --muted-foreground: 195 18% 34%;
 
-        /* --- Vurgu / uyarı: koyu kırmızı --- */
-        --accent: 352 72% 34%;
+        /* --- Vurgu: bakır / bronz --- */
+        --accent: 28 55% 42%;
         --accent-foreground: 0 0% 100%;
-        --destructive: 352 78% 42%;
+        --destructive: 0 72% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 350 18% 88%;
-        --input: 350 18% 88%;
-        --ring: 352 78% 42%;
-        --radius: 0.9rem;
+        --border: 36 16% 86%;
+        --input: 36 16% 86%;
+        --ring: 191 67% 26%;
+        /* Ölçekli köşe yarıçapı: tek "balon" değer yerine hiyerarşi */
+        --radius: 0.625rem;
+        --radius-sm: 0.375rem;
+        --radius-lg: 0.875rem;
+        --radius-xl: 1.125rem;
 
         /* --- Marka tokenları (bileşenlerde kullanılıyor) --- */
-        /* koyu bloklar: koyu bordo kırmızı */
-        --navy: 352 52% 20%;
-        --sand-surface: 352 40% 96%; /* açık kırmızı-beyaz zemin */
-        --cloud: 350 20% 97%; /* çok açık nötr zemin */
-        --gold: 352 78% 46%; /* vurgu: bayrak kırmızısı */
-        --teal-hover: 352 78% 34%;
-        --success: 350 10% 26%;
+        --navy: 195 100% 12%; /* koyu bloklar: en koyu petrol teal */
+        --sand-surface: 36 28% 93%; /* açık kum zemin */
+        --cloud: 36 33% 97%; /* çok açık nötr zemin */
+        --gold: 28 55% 42%; /* vurgu: bakır/bronz */
+        --teal-hover: 191 67% 22%;
+        --success: 191 67% 22%;
 
-        --brand-green: 352 78% 42%; /* geriye uyumluluk: artık kırmızı */
-        --brand-green-soft: 352 45% 92%;
-        --brand-green-deep: 352 52% 20%;
-        --brand-red: 352 78% 42%;
-        --brand-black: 350 12% 14%;
+        --brand-green: 191 67% 26%; /* geriye uyumluluk: artık petrol teal */
+        --brand-green-soft: 191 35% 92%;
+        --brand-green-deep: 195 100% 12%;
+        --brand-copper: 28 55% 42%;
+        --brand-royal: 221 55% 45%;
+        --brand-red: 0 72% 50%; /* yalnızca hata/silme */
+        --brand-black: 195 100% 12%;
         --brand-white: 0 0% 100%;
 
-        --status-success: 350 10% 26%;
-        --status-warning: 32 76% 42%;
-        --status-info: 350 12% 32%;
-        --status-danger: 352 78% 42%;
+        --status-success: 191 67% 22%;
+        --status-warning: 32 90% 45%;
+        --status-info: 221 55% 45%;
+        --status-danger: 0 72% 50%;
 
-        --font-heading: "Montserrat", "Segoe UI", Roboto, sans-serif;
+        --chart-1: 191 67% 26%;
+        --chart-2: 28 55% 42%;
+        --chart-3: 221 55% 45%;
+        --chart-4: 36 18% 60%;
+        --chart-5: 195 18% 34%;
+
+        /* Logo tipografisi: klasik Times ailesi (Tinos, Times New Roman ile
+           metrik uyumlu) - başlıklar ve marka yazısı logoyla aynı görünür. */
+        --font-heading: "Tinos", "Times New Roman", Times, Georgia, serif;
         --font-body: "Figtree", "Segoe UI", Roboto, sans-serif;
-        --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+        --font-mono: "Roboto Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
 
-        --shadow-soft: 0 10px 30px hsl(352 40% 20% / 0.12);
-        --shadow-card: 0 8px 20px hsl(352 40% 20% / 0.08);
-        --shadow-float: 0 18px 50px hsl(352 40% 20% / 0.16);
-        --focus-ring: 0 0 0 4px hsl(352 78% 42% / 0.26);
+        --shadow-soft: 0 10px 30px hsl(195 60% 10% / 0.1);
+        --shadow-card: 0 8px 20px hsl(195 60% 10% / 0.08);
+        --shadow-float: 0 18px 50px hsl(195 60% 10% / 0.14);
+        --focus-ring: 0 0 0 4px hsl(191 67% 26% / 0.22);
+
+        --gradient-wave: linear-gradient(90deg, hsl(191 67% 26%) 0%, hsl(221 55% 45%) 100%);
     }
 
+    .dark {
+        --background: 195 100% 8%;
+        --foreground: 36 33% 94%;
+        --card: 195 100% 10%;
+        --card-foreground: 36 33% 94%;
+        --popover: 195 100% 10%;
+        --popover-foreground: 36 33% 94%;
+
+        --primary: 191 67% 38%;
+        --primary-foreground: 195 100% 8%;
+
+        --secondary: 195 40% 14%;
+        --secondary-foreground: 36 33% 94%;
+        --muted: 195 35% 14%;
+        --muted-foreground: 36 12% 72%;
+
+        --accent: 28 55% 52%;
+        --accent-foreground: 195 100% 8%;
+        --destructive: 0 72% 52%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 195 35% 18%;
+        --input: 195 35% 18%;
+        --ring: 191 67% 38%;
+
+        --navy: 195 100% 8%;
+        --sand-surface: 195 40% 14%;
+        --cloud: 195 35% 14%;
+        --gold: 28 55% 52%;
+        --teal-hover: 191 67% 34%;
+        --success: 191 67% 38%;
+
+        --brand-green: 191 67% 38%;
+        --brand-green-soft: 191 35% 18%;
+        --brand-green-deep: 195 100% 8%;
+        --brand-copper: 28 55% 52%;
+        --brand-royal: 221 55% 55%;
+        --brand-red: 0 72% 52%;
+        --brand-black: 195 100% 8%;
+        --brand-white: 0 0% 100%;
+
+        --status-success: 191 67% 38%;
+        --status-warning: 32 90% 55%;
+        --status-info: 221 55% 55%;
+        --status-danger: 0 72% 52%;
+
+        --chart-1: 191 67% 38%;
+        --chart-2: 28 55% 52%;
+        --chart-3: 221 55% 55%;
+        --chart-4: 36 12% 72%;
+        --chart-5: 195 18% 60%;
+
+        --shadow-soft: 0 10px 30px hsl(195 80% 2% / 0.35);
+        --shadow-card: 0 8px 20px hsl(195 80% 2% / 0.28);
+        --shadow-float: 0 18px 50px hsl(195 80% 2% / 0.42);
+        --focus-ring: 0 0 0 4px hsl(191 67% 38% / 0.22);
+
+        --gradient-wave: linear-gradient(90deg, hsl(191 67% 38%) 0%, hsl(221 55% 55%) 100%);
+    }
 }
 
 @layer base {
@@ -86,8 +168,57 @@
     h5,
     .font-heading {
         font-family: var(--font-heading);
-        letter-spacing: -0.02em;
-        font-weight: 800;
+        /* Tinos yalnızca 400/700 içerir; tarayıcının sahte kalın üretmesini
+           engellemek için başlık ağırlığı 700'de sabitlenir. */
+        font-weight: 700;
+        letter-spacing: -0.005em;
+        /* Tek kelime sarkmasını (orphan) engeller - dizgi zanaatı detayı */
+        text-wrap: balance;
+        /* Serif rakamları eski stil görünmesin: hizalı ve orantılı */
+        font-variant-numeric: lining-nums proportional-nums;
+    }
+    /* Utility sınıflarıyla 800/900 istenen başlıklarda da gerçek kalın kullan */
+    .font-heading.font-extrabold,
+    .font-heading.font-black,
+    h1.font-extrabold,
+    h1.font-black,
+    h2.font-extrabold,
+    h2.font-black,
+    h3.font-extrabold,
+    h3.font-black {
+        font-weight: 700;
+    }
+    /* Büyük başlıklarda serif için optik sıkılaştırma */
+    h1,
+    .font-heading.text-4xl,
+    .font-heading.text-5xl,
+    .font-heading.text-6xl {
+        letter-spacing: -0.018em;
+    }
+    p,
+    li {
+        text-wrap: pretty;
+    }
+    /* Fiyat / istatistik rakamları hizalı sütunlar halinde okunur */
+    .tabular {
+        font-variant-numeric: tabular-nums lining-nums;
+    }
+    a:not([class*="no-underline"]) {
+        text-underline-offset: 0.2em;
+    }
+    /* Dokunsal geri bildirim: her butonda tutarlı, kısa ve sadece transform */
+    button,
+    [role="button"] {
+        transition:
+            transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            box-shadow 160ms ease,
+            background-color 160ms ease,
+            border-color 160ms ease,
+            color 160ms ease;
+    }
+    button:active:not(:disabled),
+    [role="button"]:active:not([aria-disabled="true"]) {
+        transform: translateY(1px);
     }
     ::selection {
         background-color: hsl(var(--brand-green) / 0.18);
@@ -96,6 +227,22 @@
     :focus-visible {
         outline: none;
         box-shadow: var(--focus-ring);
+    }
+    /* Premium doku: geniş yüzeylerin "düz/dijital" görünmesini engelleyen
+       çok hafif grain katmanı (%3). Tıklamayı engellemez. */
+    body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        pointer-events: none;
+        opacity: 0.032;
+        mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .dark body::after {
+        mix-blend-mode: screen;
+        opacity: 0.045;
     }
 }
 
@@ -111,43 +258,50 @@
         box-shadow: var(--shadow-card);
     }
     .card-hoverable {
-        @apply transition-shadow duration-200 hover:border-primary/40;
+        transition:
+            transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            box-shadow 180ms ease,
+            border-color 180ms ease;
+        @apply hover:border-primary/40;
     }
     .card-hoverable:hover {
         box-shadow: var(--shadow-soft);
+        transform: translateY(-2px);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .card-hoverable:hover {
+            transform: none;
+        }
     }
     .eyebrow {
-        @apply inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[hsl(var(--brand-red))];
+        @apply inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[hsl(var(--brand-copper))];
     }
     .font-mono-code {
         font-family: var(--font-mono);
         letter-spacing: 0.02em;
     }
-    /* Marka şeridi: kırmızı / beyaz (yeşil kullanılmaz) */
+    /* Marka şeridi: logodaki teal → royal mavi dalga + bakır vurgu */
     .flag-strip {
         height: 3px;
         width: 100%;
         background: linear-gradient(
             to right,
-            hsl(var(--brand-red)) 0%,
-            hsl(var(--brand-red)) 40%,
-            hsl(0 0% 97%) 40%,
-            hsl(0 0% 97%) 60%,
-            hsl(352 52% 20%) 60%,
-            hsl(352 52% 20%) 100%
+            hsl(var(--brand-green)) 0%,
+            hsl(var(--brand-royal)) 45%,
+            hsl(var(--brand-copper)) 100%
         );
-        border-left: 6px solid hsl(var(--brand-red));
+        border-left: 6px solid hsl(var(--brand-copper));
     }
     .hero-glow {
         background:
             radial-gradient(
                 1000px circle at 12% 0%,
-                hsl(var(--brand-green) / 0.13),
+                hsl(var(--brand-green) / 0.14),
                 transparent 58%
             ),
             radial-gradient(
                 760px circle at 88% 4%,
-                hsl(var(--brand-red) / 0.08),
+                hsl(var(--brand-copper) / 0.1),
                 transparent 62%
             ),
             linear-gradient(180deg, hsl(var(--sand-surface) / 0.85) 0%, transparent 70%);

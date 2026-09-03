@@ -28,7 +28,7 @@ export default function ArticleDetail() {
                 if (cancelled) return;
                 setData(res);
                 const a = res.article || {};
-                setMeta(`${a.title} | VizeAtlas Dubai`, a.excerpt || "", {
+                setMeta(`${a.title} | Dubai Vize Online`, a.excerpt || "", {
                     canonicalPath: `/gelismeler/${a.slug}`,
                     ogType: "article",
                 });
@@ -107,7 +107,7 @@ export default function ArticleDetail() {
                         </BreadcrumbList>
                     </Breadcrumb>
 
-                    <p className="mt-6 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[hsl(var(--brand-red))]">
+                    <p className="mt-6 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[hsl(var(--brand-copper))]">
                         <CalendarDays className="h-3.5 w-3.5" /> {formatDate(a.date)}
                     </p>
                     <h1 className="mt-3 text-3xl font-extrabold leading-tight sm:text-4xl" data-testid="article-title">
@@ -147,7 +147,7 @@ export default function ArticleDetail() {
                                         className="card-surface card-hoverable p-5"
                                         data-testid={`related-article-${r.slug}`}
                                     >
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--brand-red))]">
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--brand-copper))]">
                                             {formatDate(r.date)}
                                         </p>
                                         <h3 className="mt-2 font-heading text-base font-bold">{r.title}</h3>

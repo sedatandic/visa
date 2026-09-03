@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Clock, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Clock, Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { formatMoney, formatUsd } from "../lib/site";
 
@@ -35,7 +35,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                 selected
                     ? "border-primary ring-2 ring-primary/25"
                     : isPopular
-                      ? "border-[hsl(var(--brand-red)/0.55)]"
+                      ? "border-[hsl(var(--brand-copper)/0.55)]"
                       : "border-border hover:border-primary/45"
             }`}
             style={{ boxShadow: isPopular || selected ? "var(--shadow-soft)" : "var(--shadow-card)" }}
@@ -45,7 +45,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                     selected
                         ? "bg-primary"
                         : isPopular
-                          ? "bg-[hsl(var(--brand-red))]"
+                          ? "bg-[hsl(var(--brand-copper))]"
                           : "bg-border"
                 }`}
                 aria-hidden="true"
@@ -54,8 +54,8 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
             <div className="flex flex-1 flex-col p-6">
                 <div className="flex h-6 items-center">
                     {isPopular ? (
-                        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[hsl(var(--brand-red)/0.10)] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[hsl(var(--brand-red))]">
-                            <Sparkles className="h-3 w-3" aria-hidden="true" /> En çok tercih edilen
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[hsl(var(--brand-copper)/0.10)] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[hsl(var(--brand-copper))]">
+                            <Star className="h-3 w-3 fill-current" aria-hidden="true" /> En çok tercih edilen
                         </span>
                     ) : (
                         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -83,7 +83,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                 <div className="mt-5 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
                     <div className="flex items-end gap-2">
                         <span
-                            className="font-heading text-[32px] font-extrabold leading-none tracking-tight text-foreground"
+                            className="tabular font-heading text-[32px] font-extrabold leading-none tracking-tight text-foreground"
                             data-testid={`visa-price-${visa.id}`}
                         >
                             {formatMoney(visa.price, visa.currency)}
@@ -137,7 +137,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                             {visa.slug && (
                                 <Link
                                     to={`/dubai-vizesi/${visa.slug}`}
-                                    className="relative z-[2] mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold text-primary underline-offset-4 transition-colors duration-150 hover:text-[hsl(var(--brand-red))] hover:underline focus-visible:outline-none"
+                                    className="relative z-[2] mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold text-primary underline-offset-4 transition-colors duration-150 hover:text-[hsl(var(--brand-copper))] hover:underline focus-visible:outline-none"
                                     data-testid={`guide-link-${visa.id}`}
                                 >
                                     Detaylı rehberi oku <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

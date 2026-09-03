@@ -8,7 +8,7 @@ import {
     Landmark,
     MapPinned,
     PlaneTakeoff,
-    Sparkles,
+    Activity,
     Ticket,
     Waves,
     Wind,
@@ -20,7 +20,7 @@ const SERVICE_ICONS = {
     hotel: BedDouble,
     transfer: CarFront,
     citytour: Building2,
-    activity: Sparkles,
+    activity: Activity,
 };
 
 const TOUR_ICONS = {
@@ -36,7 +36,7 @@ export const IconTile = ({ icon: Icon, tone = "teal" }) => {
     const tones = {
         teal: "bg-primary/10 text-primary",
         sand: "bg-[hsl(var(--sand-surface))] text-[hsl(var(--navy))]",
-        gold: "bg-[hsl(var(--brand-red)/0.10)] text-[hsl(var(--brand-red))]",
+        gold: "bg-[hsl(var(--brand-copper)/0.10)] text-[hsl(var(--brand-copper))]",
     };
     return (
         <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${tones[tone]}`}>
@@ -46,7 +46,7 @@ export const IconTile = ({ icon: Icon, tone = "teal" }) => {
 };
 
 export const ServiceCard = ({ item }) => {
-    const Icon = SERVICE_ICONS[item.key] || Sparkles;
+    const Icon = SERVICE_ICONS[item.key] || Compass;
     return (
         <div className="card-surface card-hoverable p-6" data-testid={`service-card-${item.key}`}>
             <IconTile icon={Icon} tone="teal" />

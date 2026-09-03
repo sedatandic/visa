@@ -11,7 +11,7 @@ export default function Articles() {
 
     useEffect(() => {
         setMeta(
-            "Dubai'den Gelişmeler | Vize ve Seyahat Rehberi | VizeAtlas Dubai",
+            "Dubai'den Gelişmeler | Vize ve Seyahat Rehberi | Dubai Vize Online",
             "Dubai vize kuralları, pasaport süresi, vize uzatma, seyahat sigortası ve ret sebepleri hakkında güncel rehber yazıları."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
@@ -29,7 +29,7 @@ export default function Articles() {
                 <div className="container-page max-w-3xl space-y-8">
                     {(content?.articles || []).map((a) => (
                         <article key={a.slug} className="card-surface p-6 sm:p-8" data-testid={`article-${a.slug}`}>
-                            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[hsl(var(--brand-red))]">
+                            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[hsl(var(--brand-copper))]">
                                 <CalendarDays className="h-3.5 w-3.5" /> {formatDate(a.date)}
                             </p>
                             <h2 className="mt-3 font-heading text-xl font-bold sm:text-2xl">

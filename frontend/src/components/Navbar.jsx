@@ -166,7 +166,7 @@ export const Navbar = () => {
                         className="hidden items-center gap-2 whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold text-foreground/75 transition-colors duration-150 hover:text-primary xl:flex"
                         data-testid="navbar-phone-link"
                     >
-                        <Phone className="h-4 w-4 text-[hsl(var(--brand-red))]" aria-hidden="true" />
+                        <Phone className="h-4 w-4 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
                         {COMPANY.phone}
                     </a>
                     <Button asChild className="h-11 px-5" data-testid="navbar-apply-button">
@@ -267,7 +267,7 @@ export const Navbar = () => {
                                     className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold text-foreground"
                                     data-testid="mobile-phone-link"
                                 >
-                                    <Phone className="h-4 w-4 text-[hsl(var(--brand-red))]" aria-hidden="true" />
+                                    <Phone className="h-4 w-4 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
                                     {COMPANY.phone}
                                 </a>
                             </div>

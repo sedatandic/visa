@@ -13,7 +13,7 @@ const CONFIG = {
         title: "İade ve İptal Koşulları",
         description:
             "Vize danışmanlık hizmetimizde iptal, iade ve ret durumlarında uygulanan kuralların tamamı.",
-        meta: "İade ve İptal Koşulları | VizeAtlas Dubai",
+        meta: "İade ve İptal Koşulları | Dubai Vize Online",
         metaDesc:
             "Dubai vize başvurularında iptal, iade, ret (RED) ve süre aşımı durumlarında uygulanan koşullar.",
         testId: "refund-terms-page",
@@ -25,9 +25,9 @@ const CONFIG = {
         title: "Mesafeli Hizmet Sözleşmesi",
         description:
             "Online başvuru sırasında kurulan hizmet sözleşmesinin tarafları, kapsamı ve yükümlülükleri.",
-        meta: "Mesafeli Hizmet Sözleşmesi | VizeAtlas Dubai",
+        meta: "Mesafeli Hizmet Sözleşmesi | Dubai Vize Online",
         metaDesc:
-            "VizeAtlas Dubai vize danışmanlık hizmeti mesafeli sözleşme metni: kapsam, yükümlülükler, ödeme ve cayma hakkı.",
+            "Dubai Vize Online vize danışmanlık hizmeti mesafeli sözleşme metni: kapsam, yükümlülükler, ödeme ve cayma hakkı.",
         testId: "service-terms-page",
         icon: FileText,
     },
@@ -63,7 +63,7 @@ export default function LegalTerms({ variant = "refund" }) {
                         {(doc?.sections || []).map((s, i) => (
                             <div key={s.title} className="card-surface p-6" data-testid={`legal-section-${i}`}>
                                 <h2 className="flex items-start gap-2.5 font-heading text-lg font-bold">
-                                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--brand-red))]" />
+                                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--brand-copper))]" />
                                     {s.title}
                                 </h2>
                                 <ul className="mt-3 space-y-2.5">

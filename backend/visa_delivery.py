@@ -77,10 +77,14 @@ async def _store_pdf(application_id: str, data: bytes, filename: str) -> dict:
     }
 
 
-async def fetch_visa_document(app_doc: dict) -> dict:
-    """Zami kaydindan vize PDF'ini indirir; bulamazsa sebebini dondurur."""
+async def _fetch_context(app_doc: dict) -> dict:
+    """Zami kayit adresi + saklanan oturumu hazirlar.
+
+    Hazirsa `{"ok": True, "url": ..., "state": ...}`, degilse hata sebebi doner.
+    """
     import zami
     import zami_rpa
+    from db import settings_col
 
     creds = await zami.raw_credentials()
     url = zami_record_url(app_doc, creds["portal_url"])
@@ -91,34 +95,61 @@ async def fetch_visa_document(app_doc: dict) -> dict:
     if not session.get("has_session") or session.get("expired"):
         return {"ok": False, "reason": "session"}
 
-    from db import settings_col
-
     doc = await settings_col.find_one({"key": zami_rpa.SESSION_KEY})
     state = ((doc or {}).get("value") or {}).get("storage_state")
-    pw, browser, context, page = await zami_rpa._launch_with_state(state)
+    return {"ok": True, "url": url, "state": state}
+
+
+async def _download_pdf(page, selector: str) -> tuple[bytes, str] | None:
+    """Tek bir secici uzerinden PDF indirmeyi dener; PDF degilse None doner."""
+    target = page.locator(selector).first
+    if await target.count() == 0 or not await target.is_visible():
+        return None
+    async with page.expect_download(timeout=20000) as info:
+        await target.click(timeout=8000)
+    download = await info.value
+    local = await download.path()
+    if not local:
+        return None
+    with open(local, "rb") as fh:
+        data = fh.read()
+    if not data.startswith(b"%PDF"):
+        return None
+    return data, download.suggested_filename
+
+
+async def _grab_visa_pdf(page, app_doc: dict) -> dict:
+    """Olasi tum secicileri sirayla deneyip PDF'i indirir ve saklar."""
+    for selector in VISA_DOC_SELECTORS:
+        try:
+            found = await _download_pdf(page, selector)
+            if not found:
+                continue
+            data, suggested = found
+            filename = suggested or f"vize-{app_doc.get('reference_code')}.pdf"
+            visa_result = await _store_pdf(app_doc["id"], data, filename)
+            return {"ok": True, "visa_result": visa_result, "selector": selector}
+        except Exception:
+            continue
+    return {"ok": False, "reason": "not_found"}
+
+
+async def fetch_visa_document(app_doc: dict) -> dict:
+    """Zami kaydindan vize PDF'ini indirir; bulamazsa sebebini dondurur."""
+    import zami_rpa
+
+    prepared = await _fetch_context(app_doc)
+    if not prepared.get("ok"):
+        return prepared
+
+    url = prepared["url"]
+    pw, browser, context, page = await zami_rpa._launch_with_state(prepared["state"])
     try:
         await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-        for selector in VISA_DOC_SELECTORS:
-            try:
-                target = page.locator(selector).first
-                if await target.count() == 0 or not await target.is_visible():
-                    continue
-                async with page.expect_download(timeout=20000) as info:
-                    await target.click(timeout=8000)
-                download = await info.value
-                local = await download.path()
-                if not local:
-                    continue
-                with open(local, "rb") as fh:
-                    data = fh.read()
-                if not data.startswith(b"%PDF"):
-                    continue
-                filename = download.suggested_filename or f"vize-{app_doc.get('reference_code')}.pdf"
-                visa_result = await _store_pdf(app_doc["id"], data, filename)
-                return {"ok": True, "visa_result": visa_result, "selector": selector}
-            except Exception:
-                continue
-        return {"ok": False, "reason": "not_found", "url": url}
+        result = await _grab_visa_pdf(page, app_doc)
+        if not result.get("ok"):
+            result["url"] = url
+        return result
     except Exception as exc:
         logger.warning("zami visa fetch failed: %s", exc)
         return {"ok": False, "reason": "error", "error": str(exc)}

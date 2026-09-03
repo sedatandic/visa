@@ -45,7 +45,7 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setMeta("Yönetim Paneli | VizeAtlas Dubai", "Başvuru yönetim paneli.");
+        setMeta("Yönetim Paneli | Dubai Vize Online", "Başvuru yönetim paneli.");
     }, []);
 
     const handleAuthError = (err) => {
