@@ -920,7 +920,7 @@ export default function Apply() {
                 <div className="container-page">
                     {/* STEPPER */}
                     <div
-                        className="sticky top-[77px] z-30 overflow-hidden rounded-2xl border border-border bg-card/95 backdrop-blur-xl"
+                        className="sticky top-[77px] z-30 overflow-hidden rounded-[var(--radius-lg)] border border-border/70 bg-card/95 backdrop-blur-xl"
                         style={{ boxShadow: "var(--shadow-card)" }}
                         data-testid="wizard-stepper"
                     >

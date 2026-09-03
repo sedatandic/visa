@@ -63,75 +63,75 @@ export default function Home() {
 
     return (
         <div data-testid="home-page">
-            {/* HERO — sinematik vitrin */}
-            <section className="relative isolate overflow-hidden bg-[hsl(var(--navy))]" data-testid="landing-hero">
-                <img
-                    src={IMAGES.heroSkyline}
-                    alt="Dubai silueti ve Burj Khalifa gün batımında"
-                    className="absolute inset-0 h-full w-full object-cover object-center"
-                    loading="eager"
-                    aria-hidden="true"
-                />
-                <div className="absolute inset-0 bg-[hsl(var(--navy)/0.55)]" aria-hidden="true" />
-                <div
-                    className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--navy))] via-[hsl(var(--navy)/0.9)] to-[hsl(var(--navy)/0.35)]"
-                    aria-hidden="true"
-                />
-                <div className="noise-overlay absolute inset-0" aria-hidden="true" />
+            {/* HERO — gökyüzü zemin + yüzen açık panel */}
+            <section className="relative isolate" data-testid="landing-hero">
+                <div className="container-page relative pt-10 sm:pt-14">
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.45 }}
+                        className="relative overflow-hidden rounded-[var(--radius-xl)] border border-white/60 bg-card/70 px-5 pb-10 pt-12 backdrop-blur-sm sm:px-10 sm:pb-14 sm:pt-16"
+                        style={{ boxShadow: "var(--shadow-float)" }}
+                    >
+                        <div className="hero-glow absolute inset-0" aria-hidden="true" />
 
-                <div className="container-page relative grid items-center gap-12 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:py-24">
-                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-                        <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur">
-                            <ShieldCheck className="h-3.5 w-3.5 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
-                            Birleşik Arap Emirlikleri Vize Danışmanlığı
-                        </span>
-                        <h1 className="mt-6 font-heading text-4xl font-extrabold leading-[1.06] text-white sm:text-5xl lg:text-[56px]">
-                            Dubai vizeniz
-                            <br />
-                            <span className="text-[hsl(var(--brand-copper))]">2 iş gününde</span> hazır
-                        </h1>
-                        <div className="mt-5 flex items-center gap-1.5" aria-hidden="true">
-                            <span className="h-1 w-10 rounded-full bg-[hsl(var(--brand-copper))]" />
-                            <span className="h-1 w-6 rounded-full bg-[hsl(var(--brand-green))]" />
-                            <span className="h-1 w-3 rounded-full bg-white/60" />
+                        <div className="relative mx-auto max-w-3xl text-center">
+                            <span
+                                className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/70"
+                                data-testid="hero-eyebrow"
+                            >
+                                <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                                Birleşik Arap Emirlikleri Vize Danışmanlığı
+                            </span>
+                            <h1 className="mt-6 font-heading text-4xl font-extrabold sm:text-5xl lg:text-[58px]">
+                                <span className="display-italic">Dubai vizeniz</span>
+                                <br />
+                                2 iş gününde hazır
+                            </h1>
+                            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+                                Tek formda tüm aileniz için başvuru yapın. Pasaportunuzu yükleyin, bilgileriniz
+                                otomatik dolsun; belgeleri danışmanlarımız kontrol etsin. Onaylanan vizeniz PDF
+                                olarak e-postanıza gelsin.
+                            </p>
+
+                            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                                <Button asChild size="lg" data-testid="hero-apply-now-button">
+                                    <Link to="/basvuru">
+                                        Başvuruya Başla <ArrowRight className="ml-1 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                                <Button asChild size="lg" variant="outline" data-testid="hero-pricing-button">
+                                    <Link to="/vize-tipleri">Hizmet Bedellerini Gör</Link>
+                                </Button>
+                            </div>
                         </div>
-                        <p className="mt-6 max-w-xl text-base leading-7 text-white/80 sm:text-lg">
-                            Tek formda tüm aileniz için başvuru yapın. Pasaportunuzu yükleyin, bilgileriniz
-                            otomatik dolsun; belgeleri danışmanlarımız kontrol etsin. Onaylanan vizeniz PDF
-                            olarak e-postanıza gelsin.
-                        </p>
+
+                        <div className="relative mt-10 overflow-hidden rounded-[var(--radius-lg)] border border-white/60">
+                            <img
+                                src={IMAGES.heroSkyline}
+                                alt="Dubai silueti ve Burj Khalifa gün batımında"
+                                className="h-[220px] w-full object-cover object-center sm:h-[300px]"
+                                loading="eager"
+                            />
+                        </div>
 
                         {content?.promo && (
                             <div
-                                className="mt-7 flex items-start gap-3 rounded-xl border border-[hsl(var(--brand-copper)/0.45)] bg-[hsl(var(--brand-copper)/0.14)] p-4 backdrop-blur"
+                                className="panel-cream relative mt-8 flex items-start gap-3 p-5"
                                 data-testid="hero-promo-banner"
                             >
-                                <Percent className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
+                                <Percent className="mt-0.5 h-5 w-5 shrink-0 text-foreground/70" aria-hidden="true" />
                                 <div>
-                                    <p className="text-sm font-bold text-white">{content.promo.title}</p>
-                                    <p className="mt-1 text-xs leading-5 text-white/75">{content.promo.detail}</p>
+                                    <p className="text-sm font-bold">{content.promo.title}</p>
+                                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                        {content.promo.detail}
+                                    </p>
                                 </div>
                             </div>
                         )}
 
-                        <div className="mt-8 flex flex-wrap items-center gap-3">
-                            <Button asChild className="h-12 px-7 text-base" data-testid="hero-apply-now-button">
-                                <Link to="/basvuru">
-                                    Başvuruya Başla <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
-                            <Button
-                                asChild
-                                variant="secondary"
-                                className="h-12 border border-white/25 bg-white/10 px-7 text-base text-white backdrop-blur hover:bg-white/20"
-                                data-testid="hero-pricing-button"
-                            >
-                                <Link to="/vize-tipleri">Hizmet Bedellerini Gör</Link>
-                            </Button>
-                        </div>
-
                         <div
-                            className="mt-10 grid gap-4 rounded-2xl border border-white/15 bg-white/[0.08] p-4 backdrop-blur-md sm:grid-cols-3 sm:divide-x sm:divide-white/15"
+                            className="relative mt-8 grid gap-4 rounded-[var(--radius-lg)] border border-border/70 bg-card p-4 sm:grid-cols-3 sm:divide-x sm:divide-border/70"
                             data-testid="hero-trust-strip"
                         >
                             {[
@@ -139,125 +139,75 @@ export default function Home() {
                                 { icon: BadgeCheck, title: "Evrak kontrolü", detail: "Başvuru öncesi ücretsiz" },
                                 { icon: Clock, title: "Ortalama 2 gün", detail: "Ekspreste 24 saat" },
                             ].map(({ icon: Icon, title, detail }) => (
-                                <div key={title} className="flex min-w-0 items-center gap-2.5 sm:px-3.5 sm:first:pl-0 sm:last:pr-0">
-                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
-                                        <Icon className="h-4 w-4 text-white" aria-hidden="true" />
+                                <div
+                                    key={title}
+                                    className="flex min-w-0 items-center gap-2.5 sm:px-3.5 sm:first:pl-0 sm:last:pr-0"
+                                >
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                        <Icon className="h-4 w-4" aria-hidden="true" />
                                     </span>
                                     <div className="min-w-0">
-                                        <p className="truncate text-[13px] font-bold leading-tight text-white">{title}</p>
-                                        <p className="mt-0.5 text-[11px] leading-4 text-white/70">{detail}</p>
+                                        <p className="truncate text-[13px] font-bold leading-tight">{title}</p>
+                                        <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{detail}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </motion.div>
 
-                    {/* GORSEL VITRIN */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.97 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        className="relative hidden lg:block"
-                    >
-                        <div className="grid gap-4">
-                            <div
-                                className="overflow-hidden rounded-[26px] border border-white/15"
-                                style={{ boxShadow: "var(--shadow-float)" }}
-                            >
-                                <img
-                                    src={IMAGES.burjAlArabAerial}
-                                    alt="Burj Al Arab ve Jumeirah kıyısı"
-                                    className="h-[220px] w-full object-cover"
-                                    loading="lazy"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div
-                                    className="overflow-hidden rounded-[22px] border border-white/15"
-                                    style={{ boxShadow: "var(--shadow-soft)" }}
-                                >
-                                    <img
-                                        src={IMAGES.dubaiNight}
-                                        alt="Dubai'nin gece silueti"
-                                        className="h-[150px] w-full object-cover"
-                                        loading="lazy"
-                                    />
-                                </div>
-                                <div
-                                    className="rounded-[22px] border border-white/15 bg-white/[0.08] p-4 backdrop-blur-md"
-                                    data-testid="hero-rating-card"
-                                >
-                                    <div className="flex items-center gap-1 text-[hsl(var(--brand-copper))]">
-                                        {[0, 1, 2, 3, 4].map((i) => (
-                                            <Star key={i} className="h-4 w-4 fill-current" aria-hidden="true" />
-                                        ))}
-                                    </div>
-                                    <p className="mt-2.5 text-sm font-bold leading-tight text-white">
-                                        4.500+ başarılı başvuru
-                                    </p>
-                                    <p className="mt-1 text-xs text-white/70">2019'dan bu yana yanınızdayız</p>
-                                </div>
-                            </div>
-                        </div>
-
+                        {/* SAYISAL VITRIN SERIDI */}
                         <div
-                            className="absolute -left-3 top-5 flex items-center gap-2.5 rounded-full border border-white/20 bg-[hsl(var(--navy))] px-4 py-2.5"
-                            style={{ boxShadow: "var(--shadow-float)" }}
-                            data-testid="hero-experience-badge"
+                            className="relative mt-8 grid grid-cols-2 gap-4 border-t border-border/70 pt-6 sm:divide-x sm:divide-border/70 lg:grid-cols-4"
+                            data-testid="hero-stats-bar"
                         >
-                            <span className="font-heading text-2xl font-extrabold leading-none text-[hsl(var(--brand-copper))]">
-                                7+
-                            </span>
-                            <span className="text-xs font-semibold leading-tight text-white">
-                                yıllık
-                                <br />
-                                deneyim
-                            </span>
+                            {[
+                                { value: "4.500+", label: "Tamamlanan başvuru" },
+                                { value: "%98", label: "Onay oranı" },
+                                { value: "2 gün", label: "Ortalama sonuç süresi" },
+                                { value: "7+ yıl", label: "Acente deneyimi" },
+                            ].map(({ value, label }) => (
+                                <div key={label} className="px-2 sm:px-6">
+                                    <p className="tabular font-heading text-2xl font-extrabold sm:text-3xl">{value}</p>
+                                    <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">{label}</p>
+                                </div>
+                            ))}
                         </div>
                     </motion.div>
                 </div>
-
-                {/* SAYISAL VITRIN SERIDI */}
-                <div className="relative border-t border-white/12" data-testid="hero-stats-bar">
-                    <div className="container-page grid grid-cols-2 divide-white/12 py-6 sm:divide-x lg:grid-cols-4">
-                        {[
-                            { value: "4.500+", label: "Tamamlanan başvuru" },
-                            { value: "%98", label: "Onay oranı" },
-                            { value: "2 gün", label: "Ortalama sonuç süresi" },
-                            { value: "7+ yıl", label: "Acente deneyimi" },
-                        ].map(({ value, label }) => (
-                            <div key={label} className="px-2 py-3 sm:px-6">
-                                <p className="tabular font-heading text-2xl font-extrabold text-white sm:text-3xl">{value}</p>
-                                <p className="mt-1 text-xs font-medium text-white/70 sm:text-sm">{label}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
 
                 {/* MARQUEE RIBBON */}
-                <div className="relative border-t border-white/12 bg-[hsl(var(--navy))] py-3" data-testid="hero-marquee">
-                    <div className="marquee">
-                        <div className="marquee-track">
-                            {[0, 1].map((dup) => (
-                                <div key={dup} className="flex shrink-0 items-center gap-8 pr-8" aria-hidden={dup === 1}>
-                                    {[
-                                        "Turistik Vize",
-                                        "Aile Başvurusu",
-                                        "Ekspres Vize",
-                                        "Vize Uzatma",
-                                        "Transit Vize",
-                                        "Freelancer Vize",
-                                        "Evrak Kontrolü",
-                                        "Başvuru Takibi",
-                                    ].map((t) => (
-                                        <span key={t} className="flex items-center gap-8 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-white/85">
-                                            {t}
-                                            <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--brand-copper))]" />
-                                        </span>
+                <div className="mt-8" data-testid="hero-marquee">
+                    <div className="container-page">
+                        <div className="panel-dark py-3.5">
+                            <div className="marquee">
+                                <div className="marquee-track">
+                                    {[0, 1].map((dup) => (
+                                        <div
+                                            key={dup}
+                                            className="flex shrink-0 items-center gap-8 pr-8"
+                                            aria-hidden={dup === 1}
+                                        >
+                                            {[
+                                                "Turistik Vize",
+                                                "Aile Başvurusu",
+                                                "Ekspres Vize",
+                                                "Vize Uzatma",
+                                                "Transit Vize",
+                                                "Freelancer Vize",
+                                                "Evrak Kontrolü",
+                                                "Başvuru Takibi",
+                                            ].map((t) => (
+                                                <span
+                                                    key={t}
+                                                    className="flex items-center gap-8 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-white/85"
+                                                >
+                                                    {t}
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--cream-tag))]" />
+                                                </span>
+                                            ))}
+                                        </div>
                                     ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </div>
                 </div>

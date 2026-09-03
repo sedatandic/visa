@@ -29,14 +29,14 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                     onSelect(visa);
                 }
             } : undefined}
-            className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] focus-visible:outline-none ${
+            className={`group relative flex h-full flex-col overflow-hidden rounded-[var(--radius-lg)] border bg-card transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] focus-visible:outline-none ${
                 clickable ? "cursor-pointer" : ""
             } ${
                 selected
                     ? "border-primary ring-2 ring-primary/25"
                     : isPopular
-                      ? "border-[hsl(var(--brand-copper)/0.55)]"
-                      : "border-border hover:border-primary/45"
+                      ? "border-foreground/25 ring-1 ring-foreground/10"
+                      : "border-border hover:border-foreground/20"
             }`}
             style={{ boxShadow: isPopular || selected ? "var(--shadow-soft)" : "var(--shadow-card)" }}
         >
@@ -45,7 +45,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                     selected
                         ? "bg-primary"
                         : isPopular
-                          ? "bg-[hsl(var(--brand-copper))]"
+                          ? "bg-primary"
                           : "bg-border"
                 }`}
                 aria-hidden="true"
@@ -54,7 +54,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
             <div className="flex flex-1 flex-col p-6">
                 <div className="flex h-6 items-center">
                     {isPopular ? (
-                        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[hsl(var(--brand-copper)/0.10)] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[hsl(var(--brand-copper))]">
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[hsl(var(--cream-tag)/0.35)] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-foreground">
                             <Star className="h-3 w-3 fill-current" aria-hidden="true" /> En çok tercih edilen
                         </span>
                     ) : (
@@ -65,7 +65,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                    <span className="inline-flex items-center rounded-md bg-[hsl(var(--sand-surface))] px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
+                    <span className="inline-flex items-center rounded-full bg-secondary px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
                         {visa.duration_days} gün
                     </span>
                     {visa.entry_label && (
@@ -137,7 +137,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                             {visa.slug && (
                                 <Link
                                     to={`/dubai-vizesi/${visa.slug}`}
-                                    className="relative z-[2] mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold text-primary underline-offset-4 transition-colors duration-150 hover:text-[hsl(var(--brand-copper))] hover:underline focus-visible:outline-none"
+                                    className="relative z-[2] mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold text-primary underline-offset-4 transition-colors duration-150 hover:text-foreground hover:underline focus-visible:outline-none"
                                     data-testid={`guide-link-${visa.id}`}
                                 >
                                     Detaylı rehberi oku <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

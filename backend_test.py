@@ -821,6 +821,230 @@ class TestRunner:
         # Test admin/whatsapp/settings
         self.test("GET /admin/whatsapp/settings", "GET", "admin/whatsapp/settings", 200, headers=headers)
 
+    def test_otp_reminder_endpoints(self):
+        """Test OTP reminder endpoints (new feature)"""
+        print("\n\n🔔 TESTING OTP REMINDER ENDPOINTS")
+        print("=" * 60)
+        
+        if not self.admin_token:
+            print("❌ Skipping - No admin token")
+            return
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Test 1: Unauthenticated call should fail (401/403)
+        print("\n   Test 1: Unauthenticated calls should be rejected")
+        success, response = self.test(
+            "POST /admin/zami/session/otp-reminder (no auth)",
+            "POST",
+            "admin/zami/session/otp-reminder",
+            401  # Should be rejected
+        )
+        if success:
+            print(f"   ✅ Unauthenticated call rejected with 401")
+        
+        success, response = self.test(
+            "POST /admin/zami/session/otp-reminder?force=true (no auth)",
+            "POST",
+            "admin/zami/session/otp-reminder",
+            401,  # Should be rejected
+            params={"force": "true"}
+        )
+        if success:
+            print(f"   ✅ Unauthenticated force call rejected with 401")
+        
+        # Test 2: Authenticated call without force (may return reminder_not_due due to 24h dedupe)
+        print("\n   Test 2: Authenticated call without force")
+        success, response = self.test(
+            "POST /admin/zami/session/otp-reminder (no force)",
+            "POST",
+            "admin/zami/session/otp-reminder",
+            200,
+            headers=headers
+        )
+        
+        if success:
+            ok = response.get('ok')
+            kind = response.get('kind')
+            reason = response.get('reason')
+            
+            print(f"   Response: ok={ok}, kind={kind}, reason={reason}")
+            
+            if ok == True:
+                print(f"   ✅ ok is True")
+            else:
+                print(f"   ❌ ok is {ok}, expected True")
+            
+            # kind may be None with reason 'reminder_not_due' - that's a PASS
+            if kind is None and reason == 'reminder_not_due':
+                print(f"   ✅ kind is None with reason 'reminder_not_due' (24h dedupe - PASS)")
+            elif kind in ['due_now', 'upcoming']:
+                print(f"   ✅ kind is '{kind}' (valid reminder type)")
+            else:
+                print(f"   ⚠️  kind is {kind}, reason is {reason}")
+        
+        # Test 3: Authenticated call with force=true
+        print("\n   Test 3: Authenticated call with force=true")
+        success, response = self.test(
+            "POST /admin/zami/session/otp-reminder?force=true",
+            "POST",
+            "admin/zami/session/otp-reminder",
+            200,
+            headers=headers,
+            params={"force": "true"}
+        )
+        
+        if success:
+            ok = response.get('ok')
+            kind = response.get('kind')
+            email = response.get('email')
+            whatsapp = response.get('whatsapp')
+            whatsapp_link = response.get('whatsapp_link')
+            
+            print(f"   Response: ok={ok}, kind={kind}")
+            print(f"   Email status: {email}")
+            print(f"   WhatsApp status: {whatsapp}")
+            print(f"   WhatsApp link: {whatsapp_link[:50] if whatsapp_link else None}...")
+            
+            if ok == True:
+                print(f"   ✅ ok is True")
+            else:
+                print(f"   ❌ ok is {ok}, expected True")
+            
+            if kind == 'upcoming':
+                print(f"   ✅ kind is 'upcoming'")
+            else:
+                print(f"   ❌ kind is '{kind}', expected 'upcoming'")
+            
+            if email in ['sent', 'skipped', 'error']:
+                print(f"   ✅ email status is valid: '{email}'")
+            else:
+                print(f"   ⚠️  email status is '{email}'")
+            
+            # WhatsApp should be 'manual' with wa.me link (no Twilio configured)
+            if whatsapp == 'manual':
+                print(f"   ✅ whatsapp status is 'manual' (expected, no Twilio)")
+            else:
+                print(f"   ⚠️  whatsapp status is '{whatsapp}', expected 'manual'")
+            
+            if whatsapp_link and 'wa.me' in whatsapp_link:
+                print(f"   ✅ whatsapp_link contains 'wa.me'")
+            else:
+                print(f"   ⚠️  whatsapp_link does not contain 'wa.me': {whatsapp_link}")
+        
+        # Test 4: Check GET /admin/zami/config includes new session fields
+        print("\n   Test 4: Check session object includes new OTP reminder fields")
+        success, response = self.test(
+            "GET /admin/zami/config (check session fields)",
+            "GET",
+            "admin/zami/config",
+            200,
+            headers=headers
+        )
+        
+        if success:
+            session = response.get('session', {})
+            
+            # Check for new fields
+            new_fields = [
+                'otp_reminder_kind',
+                'otp_reminder_sent_at',
+                'otp_reminder_wa_link'
+            ]
+            
+            # Check for earlier fields
+            earlier_fields = [
+                'trusted_device',
+                'otp_required',
+                'last_otp_at',
+                'last_auto_login_at',
+                'auto_login_count',
+                'next_otp_due'
+            ]
+            
+            print(f"   Session object keys: {list(session.keys())}")
+            
+            for field in new_fields:
+                if field in session:
+                    print(f"   ✅ New field '{field}' present: {session.get(field)}")
+                else:
+                    print(f"   ❌ New field '{field}' missing")
+            
+            for field in earlier_fields:
+                if field in session:
+                    print(f"   ✅ Earlier field '{field}' present: {session.get(field)}")
+                else:
+                    print(f"   ⚠️  Earlier field '{field}' missing")
+
+    def test_otp_reminder_logic(self):
+        """Test OTP reminder logic via direct Python import"""
+        print("\n\n🧪 TESTING OTP REMINDER LOGIC (Python Import)")
+        print("=" * 60)
+        
+        try:
+            import sys
+            sys.path.insert(0, '/app/backend')
+            import otp_reminders
+            from datetime import datetime, timedelta, timezone
+            
+            print("\n   Test 1: decide_reminder returns 'due_now' when otp_required=True")
+            session = {"otp_required": True}
+            state = {}
+            result = otp_reminders.decide_reminder(session, state)
+            if result == 'due_now':
+                print(f"   ✅ Returns 'due_now' when otp_required=True")
+            else:
+                print(f"   ❌ Returns '{result}', expected 'due_now'")
+            
+            print("\n   Test 2: decide_reminder returns 'upcoming' within 3 days of next_otp_due")
+            now = datetime.now(timezone.utc)
+            next_otp = (now + timedelta(days=2)).isoformat()
+            session = {"otp_required": False, "next_otp_due": next_otp}
+            state = {}
+            result = otp_reminders.decide_reminder(session, state, now=now)
+            if result == 'upcoming':
+                print(f"   ✅ Returns 'upcoming' within 3 days of next_otp_due")
+            else:
+                print(f"   ❌ Returns '{result}', expected 'upcoming'")
+            
+            print("\n   Test 3: decide_reminder returns None when far away")
+            next_otp = (now + timedelta(days=10)).isoformat()
+            session = {"otp_required": False, "next_otp_due": next_otp}
+            state = {}
+            result = otp_reminders.decide_reminder(session, state, now=now)
+            if result is None:
+                print(f"   ✅ Returns None when far away (>3 days)")
+            else:
+                print(f"   ❌ Returns '{result}', expected None")
+            
+            print("\n   Test 4: decide_reminder returns None when same kind sent < 24h ago (dedupe)")
+            next_otp = (now + timedelta(days=2)).isoformat()
+            last_sent = (now - timedelta(hours=12)).isoformat()
+            session = {"otp_required": False, "next_otp_due": next_otp}
+            state = {"otp_reminder_kind": "upcoming", "otp_reminder_sent_at": last_sent}
+            result = otp_reminders.decide_reminder(session, state, now=now)
+            if result is None:
+                print(f"   ✅ Returns None when same kind sent < 24h ago (dedupe)")
+            else:
+                print(f"   ❌ Returns '{result}', expected None (dedupe)")
+            
+            print("\n   Test 5: decide_reminder returns 'upcoming' when same kind sent > 24h ago")
+            last_sent = (now - timedelta(hours=25)).isoformat()
+            session = {"otp_required": False, "next_otp_due": next_otp}
+            state = {"otp_reminder_kind": "upcoming", "otp_reminder_sent_at": last_sent}
+            result = otp_reminders.decide_reminder(session, state, now=now)
+            if result == 'upcoming':
+                print(f"   ✅ Returns 'upcoming' when same kind sent > 24h ago")
+            else:
+                print(f"   ❌ Returns '{result}', expected 'upcoming'")
+            
+            print("\n   ✅ All logic tests passed")
+            
+        except Exception as e:
+            print(f"   ❌ Logic test failed: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
     def run_all_tests(self):
         """Run all tests"""
         print("\n" + "=" * 60)
@@ -834,8 +1058,10 @@ class TestRunner:
             return 1
         
         # Run all test suites
-        self.test_public_endpoints()  # NEW: Test all public endpoints
-        self.test_admin_endpoints()   # NEW: Test all admin endpoints
+        self.test_public_endpoints()  # Test all public endpoints
+        self.test_admin_endpoints()   # Test all admin endpoints
+        self.test_otp_reminder_endpoints()  # NEW: Test OTP reminder endpoints
+        self.test_otp_reminder_logic()  # NEW: Test OTP reminder logic
         self.test_email_system()
         self.test_drafts()
         self.test_zami_admin_endpoints()

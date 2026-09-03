@@ -13,18 +13,23 @@
     - Hedef: Resend’de **domain doğrulaması** + `SENDER_EMAIL=noreply@dubaivizeonline.com` ile gerçek müşteri e-postalarını üretime almak.
   - WhatsApp bildirimleri:
     - **Manuel mod** (wa.me link üretimi) tamam.
-    - Otomatik sağlayıcı (Twilio/Meta) **beklemede** (API anahtarları yok).
+    - Admin’e “operasyonel uyarılar” için **serbest metin** WhatsApp mesajı desteği eklendi (Twilio varsa direkt, yoksa wa.me link).
+    - Otomatik sağlayıcı (Twilio/Meta) **beklemede** (API anahtarları yoksa manuel link üzerinden ilerler).
 
 - Güven ve “insan eliyle tasarlanmış” kurumsal görünüm:
-  - **Tema logo bazlı:** petrol teal + bakır/bronz + royal mavi + kum beyazı.
+  - **Yeni ana tema (kullanıcı referansı): “Sky Panels”**
+    - Açık gökyüzü mavisi zemin + kırık beyaz “yüzen panel” katmanları
+    - Antrasit “pill” butonlar + yuvarlak ikon butonlar
+    - Sıcak krem vurgu (etiket/indirim/öne çıkan)
+    - **Tipografi:** Google Sans hissine yakın geometrik sans → **Figtree** (ital axis dahil)
+    - Büyük radius (20–32px) + yumuşak, difüz gölgeler
   - Kırmızı yalnızca **destructive/hata** semantiğinde (silme, reddedildi) kullanılır.
-  - **Tipografi güncellendi:** başlık/marka fontu **Tinos** (Times ailesi; logoyla metrik uyumlu), gövde **Figtree**, mono **Roboto Mono**.
   - “AI hissi” azaltma:
-    - Public UI’da **parıltı/Sparkles ikonları kaldırıldı** (anlamsız süs yerine anlamlı ikonlar).
-    - Premium tasarım sistemi dokunuşları: radius ölçeği, tipografik ince ayarlar (balance/pretty + lining-nums), mikro-etkileşimler, grain doku.
+    - Public UI’da anlamsız AI ikonları yok.
+    - Premium dizgi + mikro etkileşimler + doku/grain düşük opaklık.
   - Gerçek görseller / kurumsal bloklar / sosyal kanıt / örnek vize görselleri.
   - **TÜRSAB + acente şeffaflığı** ve **GDRFA rozeti**.
-  - Not: Kullanıcının paylaştığı `onyuz-rehberi.pdf` bir **Stitch/Dribbble iş akışı rehberi**; spesifik UI talimatı içermediği için uygulanacak değişiklikler kullanıcı yönlendirmesi olmadan sınırlı tutulur.
+  - Not: Kullanıcının paylaştığı `onyuz-rehberi.pdf` bir **iş akışı/tasarım rehberi**; spesifik “şunu uygula” listesi olmadığından sadece açık yönlendirme ile uygulanacak.
 
 - **Başvuru evrak standardı (güncel)**:
   - **Her yolcu:** Pasaport + vesikalık fotoğraf.
@@ -48,9 +53,13 @@
   - Playwright RPA + yakalama (capture) + alan eşleme + toplu aktarım + durum polling + kullanıcı takip zaman çizelgesi.
   - **Zami zorunlu alanlar tamamlandı:** Medeni hal, meslek, anne adı, baba adı başvuruda toplanıyor ve RPA ile dolduruluyor.
   - **Kritik sağlamlık:** Zami mapping’in admin panelden kaydedilince veri kaybetmesi bug’ı düzeltildi; mapping artık kayıpsız korunur.
-  - **Yeni hedef (tamamlandı): “OTP ayda bir” yaklaşımı**:
+  - **“OTP ayda bir” yaklaşımı (tamamlandı):**
     - İlk OTP’li girişte portalın **trusted device (device_state)** çerezi kalıcı saklanır.
     - Oturum düştüğünde sistem **şifre + AI captcha** ile OTP’siz otomatik yeniden giriş dener; OTP gerçekten gerekirse admin uyarılır.
+  - **OTP Hatırlatıcı (tamamlandı):**
+    - OTP yaklaştığında veya portal OTP istediğinde admin’e **e-posta + WhatsApp** hatırlatması.
+    - 24 saat tekrar koruması (aynı uyarıyı spam’lemez).
+    - Hazırlık ekranında “OTP hatırlatma kanalları” kontrolü (placeholder numarayı yakalar).
 
 - Hosting/Deploy hedefi:
   - **Paylaşımlı cPanel/PHP hosting alınmayacak.** (Uygulama Python/FastAPI + Playwright + MongoDB gerektirir.)
@@ -253,34 +262,6 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 
 ---
 
-### Phase 27 — Stitch Tarzı UI Yenilemesi — **COMPLETED (2026-09-02)**
-
----
-
-### Phase 28 — Türkçe Tarih Seçici + Ana Sayfa Vitrini — **COMPLETED (2026-09-02)**
-
----
-
-### Phase 29 — Şehir Alanı + Ön Değerlendirme Kaldırıldı — **COMPLETED (2026-09-02)**
-
----
-
-### Phase 30 — Formu Kısaltma + Yorum Vitrini — **COMPLETED (2026-09-02)**
-
----
-
-### Phase 31 — Kısa Soru Seti (uçuş/otel soru değil) — **COMPLETED (2026-09-02)**
-
----
-
-### Phase 32 — Pasaportla Tek Adım (OCR) — **COMPLETED (2026-09-02)**
-
----
-
-### Phase 33 — AI Fotoğraf Kontrolü (Vesikalık) — **COMPLETED (2026-09-02)**
-
----
-
 ### Phase 34 — Zami Zorunlu Alanlar (Medeni Hal / Meslek / Anne / Baba) — **COMPLETED (2026-09-03)**
 
 ---
@@ -300,31 +281,6 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 - `zami.normalize_mapping(value, current)` artık istek payload’ında **gönderilmeyen** alanları mevcut değerden **korur**.
 - AdminZami UI bu alanları round-trip eder.
 - Mapping’in tek kaynağı: `/app/scripts/zami_save_mapping.py` (validate_selector/helper_selectors/upload_targets dahil tam set).
-
----
-
-### Phase 37 — Logo Bazlı Yeni Tema + Marka Adı Güncellemesi — **COMPLETED (2026-09-03)**
-**Amaç:** Logoya uyumlu premium görünüm + marka tutarlılığı.
-
-**Yapılanlar**
-- Yeni palet (logodan): petrol teal (#0E5A66/#003040), bakır/bronz (#A06030/#B0733C), royal mavi (#2B4B9B), kum beyazı (#F7F4EF).
-- `index.css` token seti tamamen yenilendi (light+dark).
-- Dekoratif kırmızı kaldırıldı; kırmızı yalnızca destructive/hata.
-- `.flag-strip` teal→royal→bakır dalga.
-- Logo işleme: kağıt zemin kaldırılıp kırpıldı; `/public/brand/` altında favicon + icon + wordmark üretildi; büyük dosyalar temizlendi.
-- Navbar/Footer `BrandMark` ile güncellendi.
-- Marka adı: **VizeAtlas Dubai → Dubai Vize Online** (frontend + backend metinleri, FastAPI title, bookmarklet etiketleri).
-
----
-
-### Phase 38 — Tipografi + Premium Tasarım Sistemi (AI hissini azaltma) — **COMPLETED (2026-09-03)**
-**Kullanıcı geri bildirimi:** “yapay zekayla yapıldığı çok belli oluyor” + “bu fontu kullan” + Instagram reel: “implement these skills”.
-
-**Uygulananlar**
-- **Font:** Headings/marka fontu → **Tinos** (Times ailesi; logoyla metrik uyumlu).
-- Fake bold engelleme: headings weight 700’e sabitlendi; extrabold/black override edildi.
-- Public UI’da Sparkles kaldırıldı → anlamlı ikonlar.
-- Premium dokunuşlar: radius ölçeği, `text-wrap: balance/pretty`, `.tabular`, mikro-etkileşimler, grain doku.
 
 ---
 
@@ -361,10 +317,70 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 
 ---
 
+### Phase 41 — Zami OTP Hatırlatıcı (E-posta + WhatsApp) — **COMPLETED (2026-09-03)**
+**Amaç:** OTP gerekliliği yaklaştığında veya portal OTP istediğinde admin’i önceden uyararak operasyonu kesintisiz tutmak.
+
+**Backend**
+- Yeni modül: `/app/backend/otp_reminders.py`
+  - 6 saatte bir kontrol döngüsü.
+  - `next_otp_due` tarihine **3 gün** kalınca `upcoming` uyarısı.
+  - Portal OTP istiyorsa `due_now` uyarısı.
+  - **24 saat tekrar koruması** (aynı uyarıyı günde en fazla bir kez gönderir).
+- WhatsApp: `whatsapp.send_admin_text()`
+  - Twilio yapılandırıldıysa direkt WhatsApp mesajı.
+  - Aksi halde **wa.me** linki üretir (manuel gönderim).
+- Yeni endpoint: `POST /api/admin/zami/session/otp-reminder?force=true`
+  - `force=true` ile test amaçlı hatırlatma tetiklenebilir.
+- Readiness iyileştirmesi:
+  - “OTP hatırlatma kanalları” kontrolü eklendi (placeholder/örnek WhatsApp numarası uyarısı).
+
+**Frontend (Admin)**
+- Admin → Zami ekranında:
+  - **“Hatırlatmayı test et”** butonu.
+  - “Son hatırlatma” bilgisi (tarih + tür) ve varsa WhatsApp linki.
+
+**Canlı doğrulama**
+- E-posta: `sent`
+- WhatsApp: `manual` link üretildi
+- Dedupe: ikinci tetikleme `reminder_not_due`
+
+**Test**
+- iteration_36: kritik hata 0 (genel başarı ~%95; düşük öncelikli 422/400 farkları not edildi)
+
+---
+
+### Phase 42 — Tasarım Sistemi Tam Yenileme (Sky Panels / Flightin Referansı) — **COMPLETED (2026-09-03)**
+**Amaç:** Kullanıcının verdiği 4 referans görsele göre siteyi yeniden tasarlamak.
+
+**Design blueprint**
+- `/app/design_guidelines.md` tamamen yeniden yazıldı (Sky Panels sistemi).
+
+**Uygulananlar**
+- `index.css` token seti (light+dark) sky/charcoal/cream’e geçirildi.
+- Radius ölçeği 20–32px’e büyütüldü; gölge ölçeği yumuşak/difüz yapıldı.
+- Font: Tinos serif → **Figtree** (ital axis dahil); `display-italic` vurgusu eklendi.
+- `.sky-shell`, `.panel-float`, `.panel-cream`, `.panel-dark`, `.segment-*` yardımcı sınıfları eklendi.
+- Shadcn bileşen güncellemeleri:
+  - Button: antrasit pill (h-11/h-12), outline=açık pill, icon=yuvarlak
+  - Card, Input, Select, Textarea, Tabs (aktif segment antrasit), Badge (full radius), Dialog
+- Layout:
+  - `SiteLayout` gökyüzü zemin aldı.
+  - `PageHeader` yüzen panele dönüştü.
+  - `Home` hero merkezi açık panel + koyu marquee panel olarak yeniden yazıldı.
+- Renk remap:
+  - Bakır/teal vurgular `VisaTypeCard`, `Testimonials`, `ReviewSpotlight`, `StoreCheckout`, `IconCards` içinde antrasit/krem’e uyarlandı.
+- Admin:
+  - Admin ekranları okunabilirlik için sade zeminde kaldı (sky sadece public site).
+
+**Test**
+- iteration_37: frontend regresyon ~%95, `ui_bugs=0`, mobilde yatay kaydırma yok, admin akışı sağlam.
+
+---
+
 ## 3. Next Actions
 
 ### P0 — “AI Hissi”ni Kıran En Kritik İş: Gerçek Firma Bilgileri — **USER ACTION REQUIRED**
-**Neden P0?** Sahte/placeholder veriler (telefon, adres, unvan, TÜRSAB, vergi) ve uydurma istatistikler “AI işi” izlenimini en çok artıran unsur.
+**Neden P0?** Sahte/placeholder veriler (telefon, adres, unvan, TÜRSAB, vergi) ve uydurma istatistikler güveni en hızlı düşürür.
 
 **Gerekli veriler**
 1) Gerçek telefon / WhatsApp
@@ -372,7 +388,7 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 3) Açık adres (en az il/ilçe + mahalle)
 4) Ticaret unvanı, TÜRSAB belge no, vergi dairesi/no, MERSİS, ticaret sicil no
 5) Gerçek sosyal kanıt: tamamlanan başvuru sayısı, ortalama sonuç süresi, yıllık deneyim (varsa)
-6) Varsa ekip/ofis fotoğrafları (stok foto yerine)
+6) Varsa ekip/ofis fotoğrafları
 
 **Uygulama**
 - `company_info` ve `review_summary` admin ayarlarından bu gerçek veriler girilecek.
@@ -380,7 +396,7 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 
 ---
 
-### P0.1 — Zami “OTP Ayda Bir”in Aktifleşmesi: İlk OTP’li Giriş — **USER ACTION REQUIRED**
+### P0.1 — Zami “OTP Ayda Bir”in Aktifleşmesi: İlk OTP’li Giriş — **USER ACTION REQUIRED (TEK SEFER)**
 **Neden gerekli?** Trusted-device çerezi ancak OTP ile doğrulanmış ilk girişte oluşur.
 
 **Adımlar**
@@ -390,10 +406,20 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 
 **Beklenen sonuç**
 - Sonraki oturum düşmelerinde robot çoğu zaman **OTP’siz** toparlar; OTP tipik olarak ~ayda bir gerekir.
+- OTP tarihi yaklaşınca veya portal OTP istediğinde Phase 41 hatırlatıcı otomatik uyarır.
 
 ---
 
-### P0.2 — `onyuz-rehberi.pdf` Uygulama Kapsamı — **USER DECISION REQUIRED (hızlı seçim)**
+### P0.2 — OTP Hatırlatıcı Kanalları (Gerçek numara/e-posta) — **USER ACTION REQUIRED**
+**Durum:** Sistem placeholder WhatsApp numarasını tespit edip readiness’te uyarıyor.
+
+**Yapılacaklar**
+- Admin hatırlatmalarının gideceği gerçek WhatsApp numarasını `company_info.whatsapp` alanına girin **veya** env `ADMIN_WHATSAPP` sağlayın.
+- Admin e-posta uyarısı için env `ADMIN_EMAIL` doğru olmalı.
+
+---
+
+### P0.3 — `onyuz-rehberi.pdf` Uygulama Kapsamı — **USER DECISION REQUIRED (hızlı seçim)**
 Bu PDF bir iş akışı/tasarım rehberi; spesifik “şunu yap” listesi olmadığı için değişiklikler yönlendirme olmadan riskli.
 
 Seçenekler:
@@ -404,7 +430,7 @@ Seçenekler:
 
 ---
 
-### P0.3 — Resend Production Gönderici (Domain Doğrulaması + SENDER_EMAIL) — **USER ACTION REQUIRED**
+### P0.4 — Resend Production Gönderici (Domain Doğrulaması + SENDER_EMAIL) — **USER ACTION REQUIRED**
 1) Resend panelinde `resend.com/domains` → `dubaivizeonline.com` doğrula.
 2) Deploy ortamında/`.env`:
    - `SENDER_EMAIL=noreply@dubaivizeonline.com` (veya `info@dubaivizeonline.com`)
@@ -437,6 +463,7 @@ Seçenekler:
 
 ### P3 — WhatsApp Otomatik Sağlayıcı (Twilio/Meta) — **BEKLEMEDE**
 - Sağlayıcı seçimi + API anahtarları.
+- Not: Phase 41 ile admin uyarıları Twilio yoksa dahi **wa.me link** üzerinden çalışır.
 
 ---
 
@@ -459,12 +486,12 @@ OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
 ## 4. Success Criteria
 - POC/V1/SEO/Account/Drafts/FX/Reminders/Storefront akışları: mevcut kriterler korunur.
 
-- Tema/marka başarı kriterleri:
-  1) Petrol teal + bakır/bronz tema tüm public/admin sayfalarda tutarlı.
+- Tema/marka başarı kriterleri (güncel):
+  1) **Sky Panels** tema tüm public sayfalarda tutarlı (sky zemin + floating panel + charcoal pill).
   2) Favicon/ikon/wordmark doğru servis edilir (`/brand/*` 200).
   3) “VizeAtlas” metinleri public alanlarda kalmaz.
-  4) Tipografi: başlıklarda Tinos (Times ailesi) kullanılır; fake bold oluşmaz.
-  5) Public UI’da anlamsız “AI parıltı” ikonları yoktur.
+  4) Tipografi: başlıklarda **Figtree**; gerektiğinde kısa italik display vurgusu; okunabilirlik AA.
+  5) Mobilde yatay kaydırma yok; 44px dokunma hedefleri korunur.
 
 - Zami entegrasyonu başarı kriterleri:
   1) Mapping kaydı admin panelden kaydedilince **constants/upload_targets/validate_selector** kaybolmaz.
@@ -473,8 +500,13 @@ OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
   4) **OTP ayda bir yaklaşımı:**
      - İlk OTP’li giriş sonrası `device_state` kayıtlıdır.
      - Oturum düştüğünde sistem çoğu durumda **OTP’siz** otomatik yenileme yapar.
-     - OTP gerçekten gerektiğinde admin **tek e-posta** ile bilgilendirilir.
+     - OTP gerçekten gerektiğinde admin **tek e-posta** + WhatsApp ile bilgilendirilir.
      - Admin panelde “OTP’siz yenile” butonu çalışır ve sayaç artar.
+  5) **OTP hatırlatıcı:**
+     - `next_otp_due` yaklaşırken (≤3 gün) admin’e hatırlatma düşer.
+     - `otp_required=true` olduğunda hatırlatma düşer.
+     - Aynı uyarı **24 saat** içinde tekrar gönderilmez.
+     - Readiness’te uyarı kanalları (ADMIN_EMAIL + gerçek WhatsApp) “ok” olur.
 
 - E-posta (Resend) başarı kriterleri:
   1) `RESEND_API_KEY` bağlıyken outbox “sent/error” olur.
@@ -483,7 +515,7 @@ OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
 - Deploy/Domain başarı kriterleri:
   1) `https://dubaivizeonline.com` açılır, SSL aktif.
   2) Admin panel ve ödeme akışları çalışır.
-  3) Cron job’lar (taslak hatırlatma, Zami status sweep + keepalive) deploy ortamında çalışır.
+  3) Cron job’lar (taslak hatırlatma, Zami status sweep + keepalive + OTP reminder) deploy ortamında çalışır.
 
 ---
 
@@ -496,20 +528,20 @@ OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
 - Phase 34 (Zami zorunlu alanlar): **TAMAMLANDI**.
 - Phase 35 (Resend aktivasyonu): **TAMAMLANDI** (sandbox kısıtı var; domain doğrulaması bekliyor).
 - Phase 36 (Zami mapping veri kaybı bug fix): **TAMAMLANDI**.
-- Phase 37 (Logo bazlı yeni tema + marka adı): **TAMAMLANDI**.
-- Phase 38 (Tipografi + premium tasarım sistemi): **TAMAMLANDI**.
-- Phase 39 (Kod kalitesi refactor 3. tur): **TAMAMLANDI**.
-- Phase 40 (Zami OTP ayda bir — trusted device + auto relogin + UI): **TAMAMLANDI**.
+- Phase 40 (Zami OTP ayda bir — trusted device + auto relogin + admin UI): **TAMAMLANDI**.
+- Phase 41 (Zami OTP hatırlatıcı — e-posta + WhatsApp + admin UI + readiness kanalı kontrolü): **TAMAMLANDI**.
+- Phase 42 (Sky Panels tasarım sistemi — tokenlar + bileşenler + Home hero + layout): **TAMAMLANDI**.
 
 Test raporları (seçme):
-- iteration_31.json — Refactor + Zami mapping/build_payload regresyon: 39/39 backend.
-- iteration_34.json — Kod kalitesi raporu 3. tur: kritik hata 0.
-- iteration_35.json — **OTP ayda bir** özelliği: backend 12/12 + regresyonlar PASS.
+- iteration_35.json — **OTP ayda bir**: backend 12/12 + regresyonlar PASS.
+- iteration_36.json — **OTP hatırlatıcı**: kritik hata 0; canlı test + dedupe doğrulandı.
+- iteration_37.json — **Sky Panels UI**: frontend regresyon ~%95; ui_bugs=0; mobil overflow yok; admin akışı sağlam.
 
 Blokajlar / Bekleyen:
-- **Gerçek firma bilgileri** (telefon/adres/TÜRSAB/vergisel bilgiler) → “AI hissi”ni kırmak için **USER ACTION REQUIRED**.
+- **Gerçek firma bilgileri** (telefon/adres/TÜRSAB/vergisel bilgiler) → güven için **USER ACTION REQUIRED**.
+- **Gerçek WhatsApp numarası (ADMIN_WHATSAPP veya company_info.whatsapp)** → OTP hatırlatıcı WhatsApp hedefi için **USER ACTION REQUIRED**.
 - **`onyuz-rehberi.pdf` kapsam kararı** → uygulanacak UI revizyon hedefi için **USER DECISION REQUIRED**.
 - **Resend production (domain doğrulaması + SENDER_EMAIL)** → müşteri e-postaları için **USER ACTION REQUIRED**.
 - **Custom domain deploy/DNS yönlendirme** → **USER ACTION REQUIRED** (`dubaivizeonline.com`).
-- **Zami OTP ilk giriş**: OTP ayda bir yaklaşımının aktifleşmesi için **bir kez** OTP ile giriş gerekir.
+- **Zami OTP ilk giriş**: OTP ayda bir yaklaşımının aktifleşmesi için **tek sefer** OTP ile giriş gerekir.
 - Stripe prod anahtarları yok (opsiyonel).

@@ -271,6 +271,56 @@ def _provider_sender(cfg: dict):
     return None
 
 
+async def send_admin_text(text: str, reason: str = "admin_alert") -> dict:
+    """Yoneticiye serbest metinli WhatsApp bildirimi gonderir.
+
+    Twilio yapilandirildiysa dogrudan mesaj atilir; aksi halde (manuel mod)
+    tek tikla gonderilebilir bir `wa.me` baglantisi dondurulur.
+    """
+    cfg = await get_settings(masked=False)
+    phone = normalize_phone(await admin_whatsapp_number())
+    if not phone:
+        return {"status": "failed", "reason": "Yönetici WhatsApp numarası tanımlı değil."}
+
+    if cfg.get("twilio_account_sid") and cfg.get("twilio_auth_token") and cfg.get("twilio_whatsapp_from"):
+        try:
+            out = await _send_twilio_text(cfg, phone, text)
+        except Exception as exc:
+            logger.error("admin whatsapp send failed: %s", exc)
+            out = {"status": "failed", "detail": str(exc)[:200]}
+        if out["status"] == "sent":
+            return {**out, "phone": phone, "message": text, "link": wa_link(phone, text)}
+
+    return {
+        "status": "manual",
+        "reason": reason,
+        "phone": phone,
+        "message": text,
+        "link": wa_link(phone, text),
+    }
+
+
+async def admin_whatsapp_number() -> str | None:
+    """Yonetici WhatsApp numarasi: ortam degiskeni -> firma bilgisi."""
+    env_value = os.environ.get("ADMIN_WHATSAPP")
+    if env_value:
+        return env_value
+    doc = await settings_col.find_one({"key": "company_info"})
+    value = (doc or {}).get("value") or {}
+    return value.get("whatsapp") or value.get("phone")
+
+
+async def _send_twilio_text(cfg: dict, phone: str, text: str) -> dict:
+    """Twilio uzerinden serbest metinli (template'siz) WhatsApp mesaji."""
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{cfg['twilio_account_sid']}/Messages.json"
+    data = {"From": cfg["twilio_whatsapp_from"], "To": f"whatsapp:{phone}", "Body": text}
+    async with httpx.AsyncClient(timeout=20) as client:
+        res = await client.post(url, data=data, auth=(cfg["twilio_account_sid"], cfg["twilio_auth_token"]))
+    if res.is_error:
+        return {"status": "failed", "detail": f"Twilio hatası: {res.status_code} {res.text[:200]}"}
+    return {"status": "sent", "detail": res.json().get("sid", "")}
+
+
 async def notify_result(app_doc: dict, status: str, base_url: str = "", force: bool = False) -> dict:
     """Vize sonucu icin WhatsApp bildirimi (moda gore API veya hazir baglanti)."""
     cfg = await get_settings(masked=False)

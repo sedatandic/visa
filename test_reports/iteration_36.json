@@ -1,0 +1,69 @@
+{
+  "summary": "Completed backend testing for OTP reminder feature. All core OTP reminder endpoints working correctly with proper authentication, 24h dedupe logic, email/WhatsApp notifications, and session field updates. Regression tests confirm existing endpoints remain functional.",
+  "backend_issues": {
+    "critical_bugs": [],
+    "minor_issues": [
+      {
+        "endpoint": "/api/passport/read",
+        "issue": "Returns 422 instead of 400 for missing file_id (validation error vs bad request)",
+        "impact": "Minor - endpoint works correctly, just different status code",
+        "fix_priority": "LOW"
+      },
+      {
+        "endpoint": "/api/photo/check",
+        "issue": "Returns 422 instead of 400 for missing file_id (validation error vs bad request)",
+        "impact": "Minor - endpoint works correctly, just different status code",
+        "fix_priority": "LOW"
+      }
+    ],
+    "flaky_endpoints": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "POST /api/admin/zami/session/otp-reminder (no force) - returns ok=true, kind=null with reason='reminder_not_due' (24h dedupe working)",
+    "POST /api/admin/zami/session/otp-reminder?force=true - returns ok=true, kind='upcoming', email='sent', whatsapp='manual' with wa.me link",
+    "Unauthenticated calls to both OTP reminder endpoints rejected with 401",
+    "GET /api/admin/zami/config session object includes all new fields: otp_reminder_kind, otp_reminder_sent_at, otp_reminder_wa_link",
+    "GET /api/admin/zami/config session object includes all earlier fields: trusted_device, otp_required, last_otp_at, last_auto_login_at, auto_login_count, next_otp_due",
+    "otp_reminders.decide_reminder logic: returns 'due_now' when otp_required=true",
+    "otp_reminders.decide_reminder logic: returns 'upcoming' within 3 days of next_otp_due",
+    "otp_reminders.decide_reminder logic: returns None when >3 days away",
+    "otp_reminders.decide_reminder logic: returns None when same kind sent <24h ago (dedupe)",
+    "otp_reminders.decide_reminder logic: returns 'upcoming' when same kind sent >24h ago",
+    "Backend startup log contains 'zami otp reminder scheduler started'",
+    "Regression: GET /api/health - working",
+    "Regression: GET /api/visa-types - working",
+    "Regression: GET /api/content/site - working",
+    "Regression: GET /api/fx - working",
+    "Regression: POST /api/applications - working",
+    "Regression: GET /api/admin/zami/readiness - working",
+    "Regression: GET /api/admin/zami/candidates - working",
+    "Regression: GET /api/admin/zami/config - working",
+    "Regression: GET /api/admin/applications - working",
+    "Regression: GET /api/admin/emails - working",
+    "Regression: GET /api/admin/orders - working",
+    "Regression: GET /api/admin/whatsapp/settings - working",
+    "Email system working with sandbox emails",
+    "Draft functionality working correctly",
+    "Zami admin endpoints working correctly",
+    "Pricing family discount working correctly"
+  ],
+  "test_report_links": [
+    "/app/backend_test.py",
+    "/tmp/backend_test_output.txt"
+  ],
+  "action_item_for_main_agent": "",
+  "updated_files": [
+    "/app/backend_test.py"
+  ],
+  "success_percentage": {
+    "backend": "95%",
+    "frontend": "N/A (backend only testing)"
+  },
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": true
+}

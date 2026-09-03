@@ -4,146 +4,187 @@
 
 @layer base {
     /*
-     * Marka paleti logodan türetildi (Dubai Vize Online):
-     *   petrol teal  #0E5A66 / #003040   -> primary & koyu yüzeyler
-     *   bakır/bronz  #A06030 / #B0733C   -> accent (vurgu)
-     *   royal mavi   #2B4B9B             -> ikincil bilgi vurgusu
-     *   kum/kırık beyaz #F7F4EF          -> zeminler
+     * Tasarım sistemi: "Sky Panels" (referans görsellerden türetildi)
+     *   gökyüzü mavisi  #E4F4FF / #38B6FF -> zemin ve bilgi vurgusu
+     *   antrasit        #1E1E1E / #2E2E2E -> primary (pill butonlar, koyu panel)
+     *   kırık beyaz     #F8F8F6          -> yüzen paneller / kartlar
+     *   sıcak krem      #FBF6EC / #F5C24B -> ikincil kart ve etiket vurgusu
      * Kırmızı SADECE destructive/hata semantiğinde kullanılır.
      */
     :root {
-        /* --- Yüzeyler & metin: kum beyazı zemin, petrol teal metin --- */
-        --background: 36 33% 97%;
-        --foreground: 195 100% 12%;
-        --card: 0 0% 100%;
-        --card-foreground: 195 100% 12%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 195 100% 12%;
+        /* --- Yüzeyler & metin: açık gökyüzü zemin, antrasit metin --- */
+        --background: 205 100% 97%;
+        --foreground: 0 0% 12%;
+        --card: 60 20% 98%;
+        --card-foreground: 0 0% 12%;
+        --popover: 60 20% 98%;
+        --popover-foreground: 0 0% 12%;
 
-        /* --- Marka petrol teali (primary) --- */
-        --primary: 191 67% 26%;
+        /* --- Primary: antrasit pill butonlar --- */
+        --primary: 0 0% 12%;
         --primary-foreground: 0 0% 100%;
 
-        --secondary: 36 28% 93%;
-        --secondary-foreground: 195 100% 14%;
-        --muted: 36 18% 92%;
-        --muted-foreground: 195 18% 34%;
+        --secondary: 205 55% 92%;
+        --secondary-foreground: 0 0% 12%;
+        --muted: 210 25% 94%;
+        --muted-foreground: 0 0% 38%;
 
-        /* --- Vurgu: bakır / bronz --- */
-        --accent: 28 55% 42%;
-        --accent-foreground: 0 0% 100%;
+        /* --- Vurgu: sıcak krem --- */
+        --accent: 38 78% 88%;
+        --accent-foreground: 0 0% 12%;
         --destructive: 0 72% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 36 16% 86%;
-        --input: 36 16% 86%;
-        --ring: 191 67% 26%;
-        /* Ölçekli köşe yarıçapı: tek "balon" değer yerine hiyerarşi */
-        --radius: 0.625rem;
-        --radius-sm: 0.375rem;
-        --radius-lg: 0.875rem;
-        --radius-xl: 1.125rem;
+        --border: 210 18% 88%;
+        --input: 210 18% 88%;
+        --ring: 205 85% 55%;
+        /* Ölçekli köşe yarıçapı: referanstaki geniş yumuşak köşeler */
+        --radius: 1.25rem;
+        --radius-sm: 0.875rem;
+        --radius-lg: 1.75rem;
+        --radius-xl: 2rem;
 
-        /* --- Marka tokenları (bileşenlerde kullanılıyor) --- */
-        --navy: 195 100% 12%; /* koyu bloklar: en koyu petrol teal */
-        --sand-surface: 36 28% 93%; /* açık kum zemin */
-        --cloud: 36 33% 97%; /* çok açık nötr zemin */
-        --gold: 28 55% 42%; /* vurgu: bakır/bronz */
-        --teal-hover: 191 67% 22%;
-        --success: 191 67% 22%;
+        /* --- Sistem tokenları (bileşenlerde kullanılıyor) --- */
+        --sky: 205 95% 92%;
+        --sky-deep: 205 85% 55%;
+        --panel: 60 20% 98%;
+        --panel-2: 38 78% 96%;
+        --charcoal: 0 0% 12%;
+        --charcoal-2: 0 0% 18%;
+        --cream-tag: 42 95% 72%;
 
-        --brand-green: 191 67% 26%; /* geriye uyumluluk: artık petrol teal */
-        --brand-green-soft: 191 35% 92%;
-        --brand-green-deep: 195 100% 12%;
-        --brand-copper: 28 55% 42%;
-        --brand-royal: 221 55% 45%;
+        --navy: 0 0% 12%; /* koyu bloklar: antrasit */
+        --sand-surface: 60 20% 98%; /* yüzen panel zemini */
+        --cloud: 205 100% 97%; /* en açık gökyüzü zemin */
+        --gold: 38 82% 52%; /* sıcak vurgu */
+        --teal-hover: 0 0% 18%;
+        --success: 158 64% 34%;
+
+        --brand-green: 205 85% 55%; /* geriye uyumluluk: artık gök mavisi */
+        --brand-green-soft: 205 95% 92%;
+        --brand-green-deep: 0 0% 12%;
+        --brand-copper: 38 82% 46%;
+        --brand-royal: 205 85% 45%;
         --brand-red: 0 72% 50%; /* yalnızca hata/silme */
-        --brand-black: 195 100% 12%;
+        --brand-black: 0 0% 12%;
         --brand-white: 0 0% 100%;
 
-        --status-success: 191 67% 22%;
-        --status-warning: 32 90% 45%;
-        --status-info: 221 55% 45%;
+        --status-success: 158 64% 34%;
+        --status-warning: 38 92% 46%;
+        --status-info: 205 85% 45%;
         --status-danger: 0 72% 50%;
 
-        --chart-1: 191 67% 26%;
-        --chart-2: 28 55% 42%;
-        --chart-3: 221 55% 45%;
-        --chart-4: 36 18% 60%;
-        --chart-5: 195 18% 34%;
+        --chart-1: 205 85% 55%;
+        --chart-2: 0 0% 22%;
+        --chart-3: 38 82% 52%;
+        --chart-4: 205 40% 72%;
+        --chart-5: 0 0% 46%;
 
-        /* Logo tipografisi: klasik Times ailesi (Tinos, Times New Roman ile
-           metrik uyumlu) - başlıklar ve marka yazısı logoyla aynı görünür. */
-        --font-heading: "Tinos", "Times New Roman", Times, Georgia, serif;
+        /* Tipografi: referanstaki Google Sans'a en yakın açık lisanslı
+           geometrik grotesk -> Figtree (başlık + gövde tek aile). */
+        --font-heading: "Figtree", "Segoe UI", Roboto, sans-serif;
         --font-body: "Figtree", "Segoe UI", Roboto, sans-serif;
         --font-mono: "Roboto Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
 
-        --shadow-soft: 0 10px 30px hsl(195 60% 10% / 0.1);
-        --shadow-card: 0 8px 20px hsl(195 60% 10% / 0.08);
-        --shadow-float: 0 18px 50px hsl(195 60% 10% / 0.14);
-        --focus-ring: 0 0 0 4px hsl(191 67% 26% / 0.22);
+        --shadow-soft: 0 10px 30px hsl(220 30% 10% / 0.1);
+        --shadow-card: 0 14px 40px hsl(220 30% 10% / 0.12);
+        --shadow-float: 0 26px 70px hsl(220 30% 10% / 0.16);
+        --shadow-inset: inset 0 1px 0 hsl(0 0% 100% / 0.55);
+        --focus-ring: 0 0 0 4px hsl(205 85% 55% / 0.28);
 
-        --gradient-wave: linear-gradient(90deg, hsl(191 67% 26%) 0%, hsl(221 55% 45%) 100%);
+        --gradient-wave: linear-gradient(
+            90deg,
+            hsl(0 0% 12%) 0%,
+            hsl(205 85% 55%) 60%,
+            hsl(42 95% 72%) 100%
+        );
+        --sky-bg: linear-gradient(
+            180deg,
+            hsl(200 100% 88%) 0%,
+            hsl(203 100% 93%) 34%,
+            hsl(205 100% 97%) 68%,
+            hsl(0 0% 100%) 100%
+        );
     }
 
     .dark {
-        --background: 195 100% 8%;
-        --foreground: 36 33% 94%;
-        --card: 195 100% 10%;
-        --card-foreground: 36 33% 94%;
-        --popover: 195 100% 10%;
-        --popover-foreground: 36 33% 94%;
+        --background: 220 18% 10%;
+        --foreground: 0 0% 96%;
+        --card: 220 16% 13%;
+        --card-foreground: 0 0% 96%;
+        --popover: 220 16% 13%;
+        --popover-foreground: 0 0% 96%;
 
-        --primary: 191 67% 38%;
-        --primary-foreground: 195 100% 8%;
+        --primary: 0 0% 96%;
+        --primary-foreground: 0 0% 12%;
 
-        --secondary: 195 40% 14%;
-        --secondary-foreground: 36 33% 94%;
-        --muted: 195 35% 14%;
-        --muted-foreground: 36 12% 72%;
+        --secondary: 220 14% 18%;
+        --secondary-foreground: 0 0% 96%;
+        --muted: 220 12% 18%;
+        --muted-foreground: 0 0% 72%;
 
-        --accent: 28 55% 52%;
-        --accent-foreground: 195 100% 8%;
+        --accent: 38 35% 22%;
+        --accent-foreground: 0 0% 96%;
         --destructive: 0 72% 52%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 195 35% 18%;
-        --input: 195 35% 18%;
-        --ring: 191 67% 38%;
+        --border: 220 12% 22%;
+        --input: 220 12% 22%;
+        --ring: 205 85% 60%;
 
-        --navy: 195 100% 8%;
-        --sand-surface: 195 40% 14%;
-        --cloud: 195 35% 14%;
-        --gold: 28 55% 52%;
-        --teal-hover: 191 67% 34%;
-        --success: 191 67% 38%;
+        --sky: 205 35% 18%;
+        --sky-deep: 205 70% 62%;
+        --panel: 220 16% 13%;
+        --panel-2: 220 14% 16%;
+        --charcoal: 0 0% 96%;
+        --charcoal-2: 0 0% 88%;
+        --cream-tag: 42 70% 55%;
 
-        --brand-green: 191 67% 38%;
-        --brand-green-soft: 191 35% 18%;
-        --brand-green-deep: 195 100% 8%;
-        --brand-copper: 28 55% 52%;
-        --brand-royal: 221 55% 55%;
+        --navy: 220 18% 10%;
+        --sand-surface: 220 14% 16%;
+        --cloud: 220 12% 18%;
+        --gold: 38 70% 58%;
+        --teal-hover: 0 0% 88%;
+        --success: 158 50% 48%;
+
+        --brand-green: 205 70% 62%;
+        --brand-green-soft: 205 35% 20%;
+        --brand-green-deep: 0 0% 96%;
+        --brand-copper: 38 70% 58%;
+        --brand-royal: 205 70% 62%;
         --brand-red: 0 72% 52%;
-        --brand-black: 195 100% 8%;
+        --brand-black: 0 0% 96%;
         --brand-white: 0 0% 100%;
 
-        --status-success: 191 67% 38%;
-        --status-warning: 32 90% 55%;
-        --status-info: 221 55% 55%;
+        --status-success: 158 50% 48%;
+        --status-warning: 38 80% 58%;
+        --status-info: 205 70% 62%;
         --status-danger: 0 72% 52%;
 
-        --chart-1: 191 67% 38%;
-        --chart-2: 28 55% 52%;
-        --chart-3: 221 55% 55%;
-        --chart-4: 36 12% 72%;
-        --chart-5: 195 18% 60%;
+        --chart-1: 205 70% 62%;
+        --chart-2: 0 0% 82%;
+        --chart-3: 38 70% 58%;
+        --chart-4: 205 30% 42%;
+        --chart-5: 0 0% 62%;
 
-        --shadow-soft: 0 10px 30px hsl(195 80% 2% / 0.35);
-        --shadow-card: 0 8px 20px hsl(195 80% 2% / 0.28);
-        --shadow-float: 0 18px 50px hsl(195 80% 2% / 0.42);
-        --focus-ring: 0 0 0 4px hsl(191 67% 38% / 0.22);
+        --shadow-soft: 0 10px 30px hsl(0 0% 0% / 0.4);
+        --shadow-card: 0 14px 40px hsl(0 0% 0% / 0.34);
+        --shadow-float: 0 26px 70px hsl(0 0% 0% / 0.45);
+        --shadow-inset: inset 0 1px 0 hsl(0 0% 100% / 0.06);
+        --focus-ring: 0 0 0 4px hsl(205 85% 60% / 0.3);
 
-        --gradient-wave: linear-gradient(90deg, hsl(191 67% 38%) 0%, hsl(221 55% 55%) 100%);
+        --gradient-wave: linear-gradient(
+            90deg,
+            hsl(0 0% 96%) 0%,
+            hsl(205 70% 62%) 60%,
+            hsl(42 70% 55%) 100%
+        );
+        --sky-bg: linear-gradient(
+            180deg,
+            hsl(205 30% 14%) 0%,
+            hsl(210 22% 12%) 45%,
+            hsl(220 18% 10%) 100%
+        );
     }
 }
 
@@ -168,32 +209,26 @@
     h5,
     .font-heading {
         font-family: var(--font-heading);
-        /* Tinos yalnızca 400/700 içerir; tarayıcının sahte kalın üretmesini
-           engellemek için başlık ağırlığı 700'de sabitlenir. */
+        /* Figtree geometrik grotesk: referanstaki Google Sans hissi için
+           sıkı harf aralığı + gerçek kalın ağırlıklar. */
         font-weight: 700;
-        letter-spacing: -0.005em;
+        letter-spacing: -0.02em;
         /* Tek kelime sarkmasını (orphan) engeller - dizgi zanaatı detayı */
         text-wrap: balance;
-        /* Serif rakamları eski stil görünmesin: hizalı ve orantılı */
         font-variant-numeric: lining-nums proportional-nums;
     }
-    /* Utility sınıflarıyla 800/900 istenen başlıklarda da gerçek kalın kullan */
-    .font-heading.font-extrabold,
-    .font-heading.font-black,
-    h1.font-extrabold,
-    h1.font-black,
-    h2.font-extrabold,
-    h2.font-black,
-    h3.font-extrabold,
-    h3.font-black {
-        font-weight: 700;
-    }
-    /* Büyük başlıklarda serif için optik sıkılaştırma */
+    /* Büyük başlıklarda optik sıkılaştırma */
     h1,
     .font-heading.text-4xl,
     .font-heading.text-5xl,
     .font-heading.text-6xl {
-        letter-spacing: -0.018em;
+        letter-spacing: -0.032em;
+        line-height: 1.04;
+    }
+    /* Referanstaki italik display vurgusu */
+    .display-italic {
+        font-style: italic;
+        letter-spacing: -0.03em;
     }
     p,
     li {
@@ -221,7 +256,7 @@
         transform: translateY(1px);
     }
     ::selection {
-        background-color: hsl(var(--brand-green) / 0.18);
+        background-color: hsl(var(--sky-deep) / 0.22);
         color: hsl(var(--foreground));
     }
     :focus-visible {
@@ -253,8 +288,57 @@
     .section {
         @apply py-14 sm:py-20;
     }
+    /* Pazarlama sayfaları: gökyüzü zemin + üzerinde yüzen açık paneller */
+    .sky-shell {
+        background-image: var(--sky-bg);
+        background-repeat: no-repeat;
+        background-size: 100% 1100px;
+        background-color: hsl(var(--background));
+    }
+    .sky-shell::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 1100px;
+        pointer-events: none;
+        opacity: 0.5;
+        background-image:
+            radial-gradient(
+                62% 42% at 12% 8%,
+                hsl(0 0% 100% / 0.9) 0%,
+                hsl(0 0% 100% / 0) 70%
+            ),
+            radial-gradient(
+                48% 34% at 82% 14%,
+                hsl(0 0% 100% / 0.75) 0%,
+                hsl(0 0% 100% / 0) 72%
+            ),
+            radial-gradient(
+                70% 40% at 50% 42%,
+                hsl(0 0% 100% / 0.65) 0%,
+                hsl(0 0% 100% / 0) 74%
+            );
+    }
+    .dark .sky-shell::before {
+        opacity: 0.14;
+    }
+    /* Yüzen panel: bölümleri taşıyan geniş yuvarlak yüzey */
+    .panel-float {
+        @apply rounded-[var(--radius-xl)] border border-border/70 bg-card;
+        box-shadow: var(--shadow-float);
+    }
+    .panel-cream {
+        @apply rounded-[var(--radius-lg)] border border-border/60;
+        background-color: hsl(var(--panel-2));
+        box-shadow: var(--shadow-card);
+    }
+    .panel-dark {
+        @apply rounded-[var(--radius-xl)] border border-white/10 text-white;
+        background-color: hsl(0 0% 12%);
+        box-shadow: var(--shadow-float);
+    }
     .card-surface {
-        @apply rounded-xl border border-border bg-card;
+        @apply rounded-[var(--radius-lg)] border border-border/70 bg-card;
         box-shadow: var(--shadow-card);
     }
     .card-hoverable {
@@ -262,10 +346,10 @@
             transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
             box-shadow 180ms ease,
             border-color 180ms ease;
-        @apply hover:border-primary/40;
+        @apply hover:border-foreground/20;
     }
     .card-hoverable:hover {
-        box-shadow: var(--shadow-soft);
+        box-shadow: var(--shadow-float);
         transform: translateY(-2px);
     }
     @media (prefers-reduced-motion: reduce) {
@@ -273,38 +357,50 @@
             transform: none;
         }
     }
+    /* Segment kontrolü: aktif sekme antrasit pill */
+    .segment-group {
+        @apply inline-flex items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1;
+        box-shadow: var(--shadow-soft);
+    }
+    .segment-item {
+        @apply rounded-full px-4 py-2 text-sm font-semibold text-foreground/65;
+        transition:
+            background-color 160ms ease,
+            color 160ms ease;
+    }
+    .segment-item:hover {
+        @apply text-foreground;
+    }
+    .segment-item[data-active="true"] {
+        @apply bg-primary text-primary-foreground;
+    }
     .eyebrow {
-        @apply inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[hsl(var(--brand-copper))];
+        @apply inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-foreground/55;
     }
     .font-mono-code {
         font-family: var(--font-mono);
         letter-spacing: 0.02em;
     }
-    /* Marka şeridi: logodaki teal → royal mavi dalga + bakır vurgu */
+    /* Marka şeridi: antrasit → gök mavisi → krem */
     .flag-strip {
         height: 3px;
         width: 100%;
-        background: linear-gradient(
-            to right,
-            hsl(var(--brand-green)) 0%,
-            hsl(var(--brand-royal)) 45%,
-            hsl(var(--brand-copper)) 100%
-        );
-        border-left: 6px solid hsl(var(--brand-copper));
+        background: var(--gradient-wave);
+        border-left: 6px solid hsl(var(--charcoal));
     }
     .hero-glow {
         background:
             radial-gradient(
-                1000px circle at 12% 0%,
-                hsl(var(--brand-green) / 0.14),
-                transparent 58%
+                1000px circle at 15% 0%,
+                hsl(0 0% 100% / 0.85),
+                transparent 60%
             ),
             radial-gradient(
-                760px circle at 88% 4%,
-                hsl(var(--brand-copper) / 0.1),
-                transparent 62%
+                800px circle at 85% 6%,
+                hsl(var(--sky-deep) / 0.16),
+                transparent 64%
             ),
-            linear-gradient(180deg, hsl(var(--sand-surface) / 0.85) 0%, transparent 70%);
+            linear-gradient(180deg, hsl(var(--sky) / 0.85) 0%, transparent 76%);
     }
     .marquee {
         overflow: hidden;

@@ -1,446 +1,489 @@
 {
-  "brand": {
-    "name": "Dubai Vize Online",
-    "design_personality": [
-      "kurumsal + güven veren",
-      "premium (pasaport/ödeme akışı için ciddi)",
-      "editorial (serif başlıklarla otorite)",
-      "sıcak kum nötrleri + soğuk petrol teal kontrastı",
-      "minimal ama zengin detay (hairline border + noise + kontrollü gradyan)"
-    ],
-    "non_negotiables": [
-      "KIRMIZI tema tamamen kaldırılacak; kırmızı sadece destructive/error semantiği için kalacak.",
-      "Renk paleti logodan türetilecek: petrol teal + bakır/bronz ana ikili; royal mavi ikincil vurgu; kırık beyaz/kum nötrleri.",
-      "Gradyan sadece dekoratif/hero arka planlarında ve büyük yüzeylerde; viewport'un %20'sini aşmayacak.",
-      "Mevcut JSX yapısı bozulmadan: öncelik CSS token değişimi.",
-      "Tüm interaktif ve kritik bilgi öğelerinde data-testid zorunlu."
-    ]
+  "design_system_name": "Dubai Vize Online — Flightin Sky Panels (Reference Match)",
+  "version": "2026-09",
+  "brand_attributes": [
+    "airy",
+    "trustworthy",
+    "modern travel-tech",
+    "premium but friendly",
+    "mobile-first conversion"
+  ],
+  "reference_images": {
+    "1_buttons_typography": "https://customer-assets-rejwkqb3.emergentagent.net/job_visa-application-ae/artifacts/xj711b60_IMG_1046.jpeg",
+    "2_sections_on_sky": "https://customer-assets-rejwkqb3.emergentagent.net/job_visa-application-ae/artifacts/iwwznrcq_IMG_1047.jpeg",
+    "3_desktop_landing_right_column": "https://customer-assets-rejwkqb3.emergentagent.net/job_visa-application-ae/artifacts/7rchuhx6_IMG_1048.jpeg",
+    "4_hero_desktop_mobile": "https://customer-assets-rejwkqb3.emergentagent.net/job_visa-application-ae/artifacts/v42eitr3_IMG_1049.jpeg"
   },
 
-  "typography": {
-    "font_pairing": {
-      "heading": {
-        "css_var": "--font-heading",
-        "recommended": "Playfair Display",
-        "fallbacks": ["Crimson Text", "Montserrat", "serif"],
-        "usage": "H1/H2/H3, sayfa başlıkları, fiyat başlıkları, hero headline"
+  "font_selection": {
+    "reasoning": "Reference uses Google Sans/Product Sans (not open-licensed). Closest from approved list is Figtree (geometric grotesque, friendly, modern). Montserrat is also close but feels more display/rigid; use Figtree for the full system.",
+    "google_fonts": {
+      "primary": {
+        "family": "Figtree",
+        "weights": ["400", "500", "600", "700", "800"],
+        "use_for": ["headings", "body", "buttons", "forms"]
       },
-      "body": {
-        "css_var": "--font-body",
-        "recommended": "Figtree",
-        "fallbacks": ["Montserrat", "system-ui", "sans-serif"],
-        "usage": "paragraflar, form label/help text, tablo içerikleri"
-      },
-      "mono": {
-        "css_var": "--font-mono",
-        "recommended": "Roboto Mono",
-        "fallbacks": ["Source Code Pro", "ui-monospace", "monospace"],
-        "usage": "referans kodu, başvuru numarası, ödeme/işlem id"
-      }
+      "fallback": ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"]
     },
-    "text_size_hierarchy": {
-      "h1": "text-4xl sm:text-5xl lg:text-6xl",
-      "h2": "text-base md:text-lg",
-      "body": "text-sm md:text-base",
-      "small": "text-xs"
-    },
-    "type_rules": [
-      "Başlıklarda serif + daha düşük letter-spacing: h1/h2 için tracking-[-0.02em] korunabilir.",
-      "UI etiketleri (badge/eyebrow) uppercase + tracking-[0.16em] kullanılabilir; renk artık bakır/teal olacak.",
-      "Form alanlarında okunabilirlik için body font-weight 400-500; kritik değerlerde 600."
-    ]
+    "italic_usage": {
+      "where": [
+        "Home hero H1: italicize 1–3 key words (e.g., 'Dubai vizenizi' or 'online') to match reference hero variant",
+        "Pricing page hero: optional italic emphasis",
+        "Never italicize long paragraphs"
+      ],
+      "how": "Use font-style: italic on a span with slightly tighter tracking (tracking-[-0.02em])"
+    }
+  },
+
+  "typography_scale": {
+    "h1": "text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-[-0.03em] leading-[1.02]",
+    "h2": "text-2xl sm:text-3xl font-bold tracking-[-0.02em] leading-tight",
+    "h3": "text-xl sm:text-2xl font-bold tracking-[-0.015em]",
+    "body": "text-sm sm:text-base leading-relaxed",
+    "small": "text-xs sm:text-sm",
+    "eyebrow": "text-xs font-extrabold uppercase tracking-[0.18em]",
+    "numbers": "tabular-nums"
   },
 
   "color_system": {
-    "source_palette_from_logo": {
-      "copper_bronze": ["#A06030", "#B0733C", "#B08050"],
-      "sand_neutrals": ["#C0A080", "#F7F4EF", "#FFFFFF"],
-      "petrol_teal": ["#003040", "#0E5A66", "#146070"],
-      "bright_teal": ["#2090A0"],
-      "royal_navy": ["#1E3A8A", "#2B4B9B"]
-    },
+    "notes": [
+      "Palette must follow reference: sky blues + off-white panels + charcoal buttons + tiny warm cream/yellow accent.",
+      "Keep logo harmony: logo is dark navy/teal badge; charcoal UI neutrals will not clash; avoid teal as primary UI color.",
+      "All values below are expressed as HSL triplets for shadcn tokens (space-separated)."
+    ],
 
-    "token_strategy": {
-      "goal": "Shadcn HSL tokenlarını (index.css) logoya göre yeniden map etmek; eski token isimlerini kırmadan yeni değerlere taşımak.",
-      "backward_compat": {
-        "--brand-green": "Artık PRIMARY teal olacak (isim kalsa da değer teal).",
-        "--brand-red": "Sadece destructive/error için kullanılacak; UI vurgusu olmayacak.",
-        "--gold": "Bakır/bronz accent olarak kullanılacak.",
-        "--navy": "Petrol teal'in en koyu tonu olarak kullanılacak (admin sidebar/hero dark)."
-      }
-    },
+    "light": {
+      "core_tokens_hsl": {
+        "--background": "205 100% 97%",
+        "--foreground": "0 0% 12%",
 
-    "css_tokens_light": {
-      "note": "Tüm değerler HSL formatında (Tailwind/shadcn uyumlu). Hex -> HSL yaklaşık dönüşüm; uygulamada görsel QA ile küçük ayar yapılabilir.",
+        "--card": "60 20% 98%",
+        "--card-foreground": "0 0% 12%",
 
-      "--background": "36 33% 97%",
-      "--foreground": "195 100% 12%",
+        "--popover": "60 20% 98%",
+        "--popover-foreground": "0 0% 12%",
 
-      "--card": "0 0% 100%",
-      "--card-foreground": "195 100% 12%",
+        "--primary": "0 0% 12%",
+        "--primary-foreground": "0 0% 100%",
 
-      "--popover": "0 0% 100%",
-      "--popover-foreground": "195 100% 12%",
+        "--secondary": "205 55% 92%",
+        "--secondary-foreground": "0 0% 12%",
 
-      "--primary": "191 67% 26%",
-      "--primary-foreground": "0 0% 100%",
+        "--muted": "210 25% 94%",
+        "--muted-foreground": "0 0% 38%",
 
-      "--secondary": "36 28% 93%",
-      "--secondary-foreground": "195 100% 14%",
+        "--accent": "38 78% 88%",
+        "--accent-foreground": "0 0% 12%",
 
-      "--muted": "36 18% 92%",
-      "--muted-foreground": "195 18% 34%",
+        "--destructive": "0 72% 52%",
+        "--destructive-foreground": "0 0% 100%",
 
-      "--accent": "28 55% 42%",
-      "--accent-foreground": "0 0% 100%",
-
-      "--destructive": "0 72% 50%",
-      "--destructive-foreground": "0 0% 100%",
-
-      "--border": "36 16% 86%",
-      "--input": "36 16% 86%",
-      "--ring": "191 67% 26%",
-
-      "--radius": "0.9rem",
-
-      "brand_legacy_tokens": {
-        "--navy": "195 100% 12%",
-        "--sand-surface": "36 28% 93%",
-        "--cloud": "36 33% 97%",
-        "--gold": "28 55% 42%",
-        "--teal-hover": "191 67% 22%",
-        "--success": "191 67% 22%",
-
-        "--brand-green": "191 67% 26%",
-        "--brand-green-soft": "191 35% 92%",
-        "--brand-green-deep": "195 100% 12%",
-
-        "--brand-red": "0 72% 50%",
-        "--brand-black": "195 100% 12%",
-        "--brand-white": "0 0% 100%",
-
-        "--status-success": "191 67% 22%",
-        "--status-warning": "32 90% 45%",
-        "--status-info": "210 70% 40%",
-        "--status-danger": "0 72% 50%"
+        "--border": "210 18% 88%",
+        "--input": "210 18% 88%",
+        "--ring": "205 85% 55%"
       },
 
-      "charts": {
-        "--chart-1": "191 67% 26%",
-        "--chart-2": "28 55% 42%",
-        "--chart-3": "221 55% 45%",
-        "--chart-4": "36 18% 60%",
-        "--chart-5": "195 18% 34%"
-      },
-
-      "shadows": {
-        "--shadow-soft": "0 10px 30px hsl(195 60% 10% / 0.10)",
-        "--shadow-card": "0 8px 20px hsl(195 60% 10% / 0.08)",
-        "--shadow-float": "0 18px 50px hsl(195 60% 10% / 0.14)",
-        "--focus-ring": "0 0 0 4px hsl(191 67% 26% / 0.22)"
+      "brand_extension_tokens_hsl": {
+        "--sky": "205 95% 92%",
+        "--sky-deep": "205 85% 55%",
+        "--panel": "60 20% 98%",
+        "--panel-2": "38 78% 96%",
+        "--charcoal": "0 0% 12%",
+        "--charcoal-2": "0 0% 18%",
+        "--ink": "0 0% 10%",
+        "--cream-tag": "42 95% 72%",
+        "--focus": "205 85% 55%"
       },
 
       "gradients": {
-        "--gradient-hero": "linear-gradient(135deg, hsl(191 67% 26% / 0.14) 0%, hsl(221 55% 45% / 0.10) 55%, hsl(36 33% 97% / 0.0) 100%)",
-        "--gradient-wave": "linear-gradient(90deg, hsl(191 67% 26%) 0%, hsl(221 55% 45%) 100%)",
-        "--gradient-sand": "linear-gradient(180deg, hsl(36 33% 97%) 0%, hsl(36 28% 93%) 100%)"
+        "sky_backdrop": "linear-gradient(180deg, hsl(205 100% 96%) 0%, hsl(205 95% 92%) 35%, hsl(0 0% 100%) 100%)",
+        "sky_glow_spots": "radial-gradient(900px circle at 18% 8%, hsl(205 95% 92% / 0.85), transparent 55%), radial-gradient(700px circle at 82% 12%, hsl(205 85% 55% / 0.18), transparent 60%)",
+        "allowed_usage": [
+          "Only as page background/backdrop (not on cards).",
+          "Keep gradients behind content; content sits on solid panels.",
+          "If readability suffers, reduce opacity or remove glow spots."
+        ]
       }
     },
 
-    "css_tokens_dark": {
-      "note": "Dark mod: petrol teal yüzey + kum tonlu metin; bakır accent daha kontrollü. Okunabilirlik için kontrast yüksek tutulur.",
+    "dark": {
+      "core_tokens_hsl": {
+        "--background": "220 18% 10%",
+        "--foreground": "0 0% 96%",
 
-      "--background": "195 100% 8%",
-      "--foreground": "36 33% 94%",
+        "--card": "220 16% 13%",
+        "--card-foreground": "0 0% 96%",
 
-      "--card": "195 100% 10%",
-      "--card-foreground": "36 33% 94%",
+        "--popover": "220 16% 13%",
+        "--popover-foreground": "0 0% 96%",
 
-      "--popover": "195 100% 10%",
-      "--popover-foreground": "36 33% 94%",
+        "--primary": "0 0% 96%",
+        "--primary-foreground": "0 0% 12%",
 
-      "--primary": "191 67% 38%",
-      "--primary-foreground": "195 100% 8%",
+        "--secondary": "220 14% 18%",
+        "--secondary-foreground": "0 0% 96%",
 
-      "--secondary": "195 40% 14%",
-      "--secondary-foreground": "36 33% 94%",
+        "--muted": "220 12% 18%",
+        "--muted-foreground": "0 0% 72%",
 
-      "--muted": "195 35% 14%",
-      "--muted-foreground": "36 12% 72%",
+        "--accent": "38 35% 22%",
+        "--accent-foreground": "0 0% 96%",
 
-      "--accent": "28 55% 52%",
-      "--accent-foreground": "195 100% 8%",
+        "--destructive": "0 72% 52%",
+        "--destructive-foreground": "0 0% 100%",
 
-      "--destructive": "0 72% 52%",
-      "--destructive-foreground": "0 0% 100%",
-
-      "--border": "195 35% 18%",
-      "--input": "195 35% 18%",
-      "--ring": "191 67% 38%",
-
-      "--radius": "0.9rem",
-
-      "brand_legacy_tokens": {
-        "--navy": "195 100% 8%",
-        "--sand-surface": "195 40% 14%",
-        "--cloud": "195 35% 14%",
-        "--gold": "28 55% 52%",
-        "--teal-hover": "191 67% 34%",
-        "--success": "191 67% 38%",
-
-        "--brand-green": "191 67% 38%",
-        "--brand-green-soft": "191 35% 18%",
-        "--brand-green-deep": "195 100% 8%",
-
-        "--brand-red": "0 72% 52%",
-        "--brand-black": "195 100% 8%",
-        "--brand-white": "0 0% 100%",
-
-        "--status-success": "191 67% 38%",
-        "--status-warning": "32 90% 55%",
-        "--status-info": "221 55% 55%",
-        "--status-danger": "0 72% 52%"
+        "--border": "220 12% 22%",
+        "--input": "220 12% 22%",
+        "--ring": "205 85% 60%"
       },
 
-      "charts": {
-        "--chart-1": "191 67% 38%",
-        "--chart-2": "28 55% 52%",
-        "--chart-3": "221 55% 55%",
-        "--chart-4": "36 12% 72%",
-        "--chart-5": "195 18% 60%"
-      },
-
-      "shadows": {
-        "--shadow-soft": "0 10px 30px hsl(195 80% 2% / 0.35)",
-        "--shadow-card": "0 8px 20px hsl(195 80% 2% / 0.28)",
-        "--shadow-float": "0 18px 50px hsl(195 80% 2% / 0.42)",
-        "--focus-ring": "0 0 0 4px hsl(191 67% 38% / 0.22)"
+      "brand_extension_tokens_hsl": {
+        "--sky": "205 35% 18%",
+        "--sky-deep": "205 55% 60%",
+        "--panel": "220 16% 13%",
+        "--panel-2": "220 14% 16%",
+        "--charcoal": "0 0% 96%",
+        "--charcoal-2": "0 0% 88%",
+        "--ink": "0 0% 98%",
+        "--cream-tag": "42 70% 55%",
+        "--focus": "205 85% 60%"
       },
 
       "gradients": {
-        "--gradient-hero": "linear-gradient(135deg, hsl(191 67% 38% / 0.18) 0%, hsl(221 55% 55% / 0.12) 55%, hsl(195 100% 8% / 0.0) 100%)",
-        "--gradient-wave": "linear-gradient(90deg, hsl(191 67% 38%) 0%, hsl(221 55% 55%) 100%)",
-        "--gradient-sand": "linear-gradient(180deg, hsl(195 100% 10%) 0%, hsl(195 100% 8%) 100%)"
+        "sky_backdrop": "linear-gradient(180deg, hsl(220 18% 10%) 0%, hsl(205 28% 14%) 45%, hsl(220 16% 12%) 100%)",
+        "allowed_usage": [
+          "Dark mode keeps a subtle sky tint only in marketing pages.",
+          "Admin screens should use solid background for readability."
+        ]
       }
-    },
-
-    "contrast_notes": {
-      "aa_safe_pairs": [
-        {
-          "pair": "Primary button",
-          "bg": "--primary (petrol teal)",
-          "text": "--primary-foreground (white)",
-          "note": "Teal koyu tutulduğu için beyaz metin AA geçer. Eğer primary daha açık yapılırsa metni --primary-foreground yerine --background (dark) yapmayın; primary'yi koyulaştırın."
-        },
-        {
-          "pair": "Copper accent button",
-          "bg": "--accent (bakır)",
-          "text": "--accent-foreground (white)",
-          "note": "Bakır tonu yeterince koyu seçildi (L düşük). Eğer tasarımda daha açık kum-bakır istenirse metni beyaz yerine --foreground (petrol) yapın."
-        }
-      ],
-      "avoid": [
-        "Açık kum (#C0A080 benzeri) zemin üstüne beyaz metin kullanmayın.",
-        "Bakır üstüne ince font-weight (300-400) kullanmayın; en az 600."
-      ]
     }
   },
 
-  "role_mapping_table": {
-    "primary_actions": {
-      "use": "--primary",
-      "examples": [
-        "Hero: 'Hemen Başvur'",
-        "Wizard: 'Devam Et'",
-        "Ödeme: 'Ödemeyi Tamamla'"
-      ],
-      "tailwind": "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring"
+  "design_tokens_css": {
+    "instructions": [
+      "Implement in /app/frontend/src/index.css under :root and .dark.",
+      "Replace existing petrol/copper tokens; keep variable names stable where possible (see migration_map).",
+      "Set --font-heading and --font-body to Figtree.",
+      "Do not use transition: all anywhere."
+    ],
+    "radius_scale": {
+      "--radius": "1.25rem",
+      "--radius-sm": "0.875rem",
+      "--radius-lg": "1.75rem",
+      "--radius-xl": "2rem",
+      "usage": [
+        "Panels: radius-xl (32px)",
+        "Cards: radius-lg (28px)",
+        "Inputs: radius (20px)",
+        "Pills/buttons: fully rounded (9999px) via Tailwind rounded-full"
+      ]
     },
-    "secondary_actions": {
-      "use": "--secondary + border",
-      "examples": ["Hero: 'Fiyatları Gör'", "Wizard: 'Geri'"],
-      "tailwind": "bg-secondary text-secondary-foreground border border-border hover:bg-secondary/70"
+    "shadow_scale": {
+      "--shadow-soft": "0 10px 30px hsl(220 30% 10% / 0.10)",
+      "--shadow-card": "0 14px 40px hsl(220 30% 10% / 0.12)",
+      "--shadow-float": "0 26px 70px hsl(220 30% 10% / 0.16)",
+      "--shadow-inset": "inset 0 1px 0 hsl(0 0% 100% / 0.55)",
+      "notes": [
+        "Shadows should be diffuse (large blur, low alpha) like the reference.",
+        "In dark mode, reduce blur alpha: use hsl(0 0% 0% / 0.45) but keep subtle."
+      ]
     },
-    "accent_actions": {
-      "use": "--accent",
-      "examples": ["Cross-sell: 'eSIM Ekle'", "Sigorta: 'Pakete Ekle'"]
-    },
-    "links": {
-      "use": "--primary",
-      "tailwind": "text-primary underline-offset-4 hover:underline"
-    },
-    "badges": {
-      "info": "bg-primary/10 text-primary border-primary/20",
-      "copper": "bg-[hsl(var(--accent)/0.12)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.25)]"
-    },
-    "stepper_timeline": {
-      "active": "dot/bg: --primary, text: --foreground",
-      "completed": "dot/bg: --accent (bakır) veya --primary (teal) + check icon",
-      "upcoming": "dot/bg: --muted, text: --muted-foreground",
-      "connector": "border --border"
-    },
-    "pricing": {
-      "price": "text-foreground",
-      "discount": "badge copper",
-      "total": "text-primary font-semibold"
-    },
-    "admin_sidebar": {
-      "bg": "--navy (petrol teal en koyu)",
-      "item_active": "bg-primary/15 text-foreground",
-      "item_hover": "bg-primary/10",
-      "divider": "border-border/60"
-    },
-    "semantic": {
-      "success": "--status-success (teal)",
-      "warning": "--status-warning (amber)",
-      "info": "--status-info (royal)",
-      "destructive": "--destructive (red)"
+    "spacing_system": {
+      "principle": "2–3x more spacing than feels comfortable; panels breathe.",
+      "panel_padding": "p-5 sm:p-7 lg:p-8",
+      "section_padding": "py-14 sm:py-20",
+      "grid_gutters": "gap-4 sm:gap-6 lg:gap-8"
     }
   },
 
-  "layout_and_grid": {
-    "global": {
-      "container": "container-page (max-w-6xl px-4 sm:px-6)",
-      "spacing": [
-        "section: py-14 sm:py-20",
-        "cards: p-5 sm:p-6",
-        "forms: gap-4 sm:gap-6",
-        "wizard footer: sticky bottom-0 bg-background/90 backdrop-blur border-t"
-      ]
-    },
-    "public_home": {
-      "hero": {
-        "structure": [
-          "Left: headline + trust bullets + CTA row",
-          "Right: skyline image card + mini 'fiyat hesapla' widget",
-          "Background: hero-glow + noise-overlay (opacity düşük)"
+  "layout_principles": {
+    "page_backdrop": {
+      "pattern": "Sky background + floating off-white panels",
+      "implementation": {
+        "marketing_pages": [
+          "Wrap page in <div className='min-h-screen bg-[image:var(--sky-bg)]'> via a utility class that sets background-image using CSS var.",
+          "Add a fixed cloud image layer (compressed .webp) with opacity 0.18–0.28 and blur-sm; keep it decorative only.",
+          "Place content inside a centered panel container with max-w-6xl and large rounded corners."
         ],
-        "gradient_usage": "Sadece hero arka planında --gradient-hero; içerik kartlarında gradient yok."
-      },
-      "trust_sections": [
-        "'Neden Biz' 3-4 kart: KVKK/SSL, iade politikası, canlı destek/WhatsApp, şeffaf fiyat",
-        "'Süreç' 4 adım: timeline/stepper görsel",
-        "'Yorumlar' pull-quote style (editorial)"
+        "admin_pages": [
+          "No sky background.",
+          "Use solid bg-background and standard container; keep panels/cards for hierarchy."
+        ],
+        "performance": [
+          "Use a single cloud image (webp) repeated no-repeat; avoid huge multi-layer gradients.",
+          "Prefer static noise overlay (already present in index.css) but tune opacity to 0.025–0.04 in light mode for this airy theme.",
+          "Animate only opacity/transform for entrance; never animate background-position."
+        ]
+      }
+    },
+
+    "floating_panel_pattern": {
+      "what": "Large rounded panel that holds each major section (hero widget, pricing, FAQ, testimonials)",
+      "classes": [
+        "bg-card/90 backdrop-blur-[2px]",
+        "rounded-[var(--radius-xl)]",
+        "border border-border/70",
+        "shadow-[var(--shadow-float)]"
+      ],
+      "notes": [
+        "Panels should not be full-bleed; keep 16px side padding on mobile.",
+        "Use subtle translucency only if text contrast remains AA."
       ]
     },
-    "application_wizard": {
-      "pattern": "shadcn multi-step form + sticky footer navigation",
-      "mobile_first": "Stepper üstte yatay scroll veya condensed timeline; CTA footer sabit"
-    },
-    "admin": {
-      "pattern": "Sidebar + topbar + content cards",
-      "density": "Tablo sayfalarında daha sıkı padding (p-4), detay sayfalarında p-6"
+
+    "home_page_structure_adaptation": {
+      "mapping_from_flight_reference": {
+        "flight_search_widget": "Visa type + travel date selector widget",
+        "airlines_strip": "Trust/authority strip (GDRFA, TÜRSAB, banks, payment providers)",
+        "destinations_grid": "Visa types grid (Tourist 30/60, Express, Multiple entry, etc.)",
+        "special_offer_right_column": "Lead capture: WhatsApp support + discount code / campaign",
+        "our_services_dark_panel": "Services block: Visa processing, OCR, eSIM, insurance, tracking"
+      },
+      "desktop_layout": "Use a 12-col grid: main content col-span-8, right rail col-span-4. On mobile, stack with right rail after hero.",
+      "mobile_layout": "Single column; hero heading then widget panel; trust strip; visa cards; guides; testimonials; FAQ."
     }
   },
 
   "components": {
     "component_path": {
-      "buttons": "/app/frontend/src/components/ui/button.jsx",
-      "cards": "/app/frontend/src/components/ui/card.jsx",
-      "badges": "/app/frontend/src/components/ui/badge.jsx",
-      "forms": "/app/frontend/src/components/ui/form.jsx",
-      "inputs": "/app/frontend/src/components/ui/input.jsx",
-      "select": "/app/frontend/src/components/ui/select.jsx",
-      "tabs": "/app/frontend/src/components/ui/tabs.jsx",
-      "table": "/app/frontend/src/components/ui/table.jsx",
-      "progress": "/app/frontend/src/components/ui/progress.jsx",
-      "calendar": "/app/frontend/src/components/ui/calendar.jsx",
-      "dialog": "/app/frontend/src/components/ui/dialog.jsx",
-      "sheet_drawer": "/app/frontend/src/components/ui/sheet.jsx",
-      "sonner_toast": "/app/frontend/src/components/ui/sonner.jsx",
-      "accordion_faq": "/app/frontend/src/components/ui/accordion.jsx",
-      "breadcrumb": "/app/frontend/src/components/ui/breadcrumb.jsx",
-      "navigation_menu": "/app/frontend/src/components/ui/navigation-menu.jsx"
+      "shadcn_primary": [
+        "/app/frontend/src/components/ui/button.jsx",
+        "/app/frontend/src/components/ui/card.jsx",
+        "/app/frontend/src/components/ui/tabs.jsx",
+        "/app/frontend/src/components/ui/toggle-group.jsx",
+        "/app/frontend/src/components/ui/input.jsx",
+        "/app/frontend/src/components/ui/select.jsx",
+        "/app/frontend/src/components/ui/calendar.jsx",
+        "/app/frontend/src/components/ui/accordion.jsx",
+        "/app/frontend/src/components/ui/badge.jsx",
+        "/app/frontend/src/components/ui/avatar.jsx",
+        "/app/frontend/src/components/ui/progress.jsx",
+        "/app/frontend/src/components/ui/table.jsx",
+        "/app/frontend/src/components/ui/sonner.jsx",
+        "/app/frontend/src/components/ui/dialog.jsx",
+        "/app/frontend/src/components/ui/sheet.jsx",
+        "/app/frontend/src/components/ui/separator.jsx"
+      ],
+      "optional_external": {
+        "framer_motion": {
+          "why": "Entrance animations for panels/cards and subtle hover motion.",
+          "install": "npm i framer-motion",
+          "usage_note": "Only animate transform/opacity; respect prefers-reduced-motion."
+        }
+      }
     },
-    "recommended_new_ui_patterns_without_rewriting_logic": {
+
+    "buttons": {
+      "primary_pill_charcoal": {
+        "visual": "Charcoal pill with white text + trailing icon (plane/bolt/rocket).",
+        "tailwind": "rounded-full bg-primary text-primary-foreground px-5 py-3 text-sm font-semibold shadow-[var(--shadow-soft)] hover:bg-[hsl(var(--charcoal-2))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--focus))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "icon": "Use lucide-react icons (Plane, Zap, Rocket) sized 18-20.",
+        "data_testid_examples": [
+          "data-testid=\"hero-apply-now-button\"",
+          "data-testid=\"visa-widget-submit-button\""
+        ]
+      },
+      "secondary_pill_light": {
+        "visual": "Light pill (transparent/sky tint) with charcoal text; subtle border.",
+        "tailwind": "rounded-full bg-transparent text-foreground px-5 py-3 text-sm font-semibold border border-border/80 hover:bg-secondary/60",
+        "data_testid_examples": ["data-testid=\"hero-secondary-cta-button\""]
+      },
+      "icon_button_round": {
+        "visual": "Circular charcoal icon button.",
+        "tailwind": "h-11 w-11 rounded-full bg-primary text-primary-foreground shadow-[var(--shadow-soft)] hover:bg-[hsl(var(--charcoal-2))]",
+        "data_testid_examples": ["data-testid=\"visa-widget-swap-button\""]
+      },
+      "press_motion": {
+        "rules": [
+          "Hover: translateY(-1px) + shadow slightly stronger.",
+          "Active: translateY(1px) (already in base CSS).",
+          "Disabled: opacity-50 cursor-not-allowed; no hover lift."
+        ]
+      }
+    },
+
+    "segmented_tabs": {
+      "use": "Visa type selector (Tourist/Express/Multiple), also Apply wizard step switch (if needed).",
+      "shadcn": "tabs.jsx OR toggle-group.jsx (preferred for pill segments)",
+      "visual": "Pill container; active segment charcoal with white text; inactive transparent.",
+      "tailwind_container": "inline-flex rounded-full border border-border/80 bg-card/70 p-1",
+      "tailwind_item_inactive": "rounded-full px-4 py-2 text-sm font-semibold text-foreground/70 hover:text-foreground",
+      "tailwind_item_active": "rounded-full bg-primary text-primary-foreground shadow-[var(--shadow-soft)]"
+    },
+
+    "cards_and_panels": {
+      "card_white": {
+        "tailwind": "rounded-[var(--radius-lg)] bg-card border border-border/70 shadow-[var(--shadow-card)]",
+        "use": ["visa type cards", "blog cards", "testimonial cards"]
+      },
+      "card_cream": {
+        "tailwind": "rounded-[var(--radius-lg)] bg-[hsl(var(--panel-2))] border border-border/60 shadow-[var(--shadow-card)]",
+        "use": ["sale tag container", "highlighted pricing card", "add-ons (eSIM/insurance)"]
+      },
+      "panel_dark_services": {
+        "tailwind": "rounded-[var(--radius-xl)] bg-[hsl(0_0%_12%)] text-white border border-white/10 shadow-[var(--shadow-float)]",
+        "inner_cards": "Use cream cards inside: bg-[hsl(var(--panel-2))] text-foreground",
+        "use": ["Home: Our Services block"]
+      }
+    },
+
+    "forms": {
+      "field_style": {
+        "inputs": "Use shadcn Input/Select/Textarea. Apply rounded-full or rounded-[var(--radius)] depending on density.",
+        "tailwind_input": "h-12 rounded-full bg-white/80 dark:bg-card border border-border/80 shadow-[var(--shadow-inset)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--focus))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "labels": "Use Label with text-xs font-semibold text-foreground/70",
+        "help_text": "text-xs text-muted-foreground",
+        "touch_targets": "Minimum 44px height for all primary inputs/buttons"
+      },
+      "file_upload": {
+        "use": "Passport OCR + photo upload",
+        "pattern": "Large dashed dropzone card with icon + helper text; show thumbnail preview in a small rounded card.",
+        "tailwind_dropzone": "rounded-[var(--radius-lg)] border border-dashed border-border/80 bg-card/70 p-6 hover:bg-secondary/40"
+      },
       "stepper": {
-        "reference": [
-          "https://www.shadcn.io/blocks/form-multi-step",
-          "https://www.shadcn.io/blocks/stepper-condensed-timeline",
-          "https://www.shadcn.io/blocks/stepper-booking-reservation"
-        ],
-        "implementation_note_js": "Projede .jsx var; bloklardan alınan JSX direkt kullanılabilir. Stepper için ekstra component yazılacaksa export const Stepper = ... şeklinde named export kullanın."
+        "use": "Apply wizard (4 steps)",
+        "pattern": "Top sticky stepper inside a floating panel; each step is a pill with number.",
+        "tailwind": "sticky top-2 z-20 rounded-full bg-card/80 backdrop-blur px-2 py-2 border border-border/70 shadow-[var(--shadow-soft)]"
+      }
+    },
+
+    "tracking_timeline": {
+      "use": "/takip application tracking",
+      "pattern": "Vertical timeline inside a floating panel; each step is a card row with status dot + connector.",
+      "status_colors": {
+        "done": "bg-[hsl(205_85%_55%)]",
+        "current": "bg-[hsl(var(--cream-tag))]",
+        "pending": "bg-muted"
+      },
+      "tailwind": {
+        "container": "rounded-[var(--radius-xl)] bg-card border border-border/70 shadow-[var(--shadow-float)] p-6",
+        "row": "grid grid-cols-[20px_1fr] gap-4 py-4",
+        "dot": "h-3 w-3 rounded-full",
+        "connector": "ml-[5px] mt-1 w-px flex-1 bg-border"
+      },
+      "data_testid_examples": [
+        "data-testid=\"tracking-timeline\"",
+        "data-testid=\"tracking-step-current\""
+      ]
+    },
+
+    "admin_panel_adaptation": {
+      "principle": "Calmer subset: no sky background, tighter density, same typography and buttons.",
+      "layout": "Use solid bg-background; cards for filters and tables; keep radius-lg but reduce shadow intensity.",
+      "tables": {
+        "shadcn": "table.jsx",
+        "row_hover": "hover:bg-secondary/40",
+        "header": "bg-muted/60",
+        "data_testid_examples": ["data-testid=\"admin-applications-table\""]
       }
     }
   },
 
   "motion_and_microinteractions": {
     "principles": [
-      "Hover: sadece color/shadow/border transition (transition-colors, transition-shadow).",
-      "Press: button active: scale-[0.98] (transform transition ayrı).",
-      "Scroll: hero'da çok hafif parallax (background image translateY) opsiyonel.",
-      "Reduced motion: App.css zaten reduce-motion override içeriyor; yeni animasyonlar buna saygılı olmalı."
+      "Animate only transform and opacity.",
+      "Use short durations: 140–220ms.",
+      "Use easing: cubic-bezier(0.2, 0.8, 0.2, 1).",
+      "Respect prefers-reduced-motion (already present in App.css)."
     ],
-    "token_suggestions": {
-      "durations": {
-        "fast": "150ms",
-        "base": "200ms",
-        "slow": "320ms"
-      },
-      "easings": {
-        "standard": "cubic-bezier(0.2, 0.8, 0.2, 1)",
-        "emphasized": "cubic-bezier(0.2, 0.9, 0.2, 1)"
-      }
-    },
-    "examples": {
-      "card_hover": "hover:border-primary/40 hover:shadow-[var(--shadow-soft)] transition-shadow duration-200",
-      "primary_button": "transition-colors duration-200 hover:bg-primary/90 active:scale-[0.98]"
+    "recommended_interactions": {
+      "panel_entrance": "Fade + slight rise (y: 8 -> 0).",
+      "card_hover": "translateY(-2px) + shadow-soft.",
+      "segmented_control": "Active pill slides with layout animation (Framer Motion optional).",
+      "scroll": "No parallax on text; optional subtle parallax on decorative plane/cloud images only."
     }
   },
 
   "accessibility": {
     "requirements": [
-      "WCAG AA kontrast: özellikle bakır üstünde beyaz metin QA ile doğrulanmalı.",
-      "Focus-visible: index.css :focus-visible box-shadow var(--focus-ring) ile korunacak.",
-      "Form error states: destructive kırmızı sadece hata metni/border için; arka planı çok geniş alanlarda kırmızı yapmayın.",
-      "Touch targets: mobilde butonlar min-h-11, input min-h-11 önerilir."
+      "WCAG AA contrast for text on panels and buttons.",
+      "Visible focus ring on all interactive elements (use --focus / --ring).",
+      "44px minimum touch targets.",
+      "Do not rely on color alone for status (timeline uses icon + label)."
     ],
-    "data_testid_rules": {
-      "convention": "kebab-case; rol odaklı",
-      "examples": [
-        "data-testid=\"hero-primary-cta-button\"",
-        "data-testid=\"application-stepper\"",
-        "data-testid=\"wizard-next-button\"",
-        "data-testid=\"payment-total-amount\"",
-        "data-testid=\"admin-sidebar-nav\""
-      ]
-    }
+    "focus_style": "Use :focus-visible with ring + ring-offset; avoid removing outlines without replacement."
   },
 
   "image_urls": {
-    "logo": [
-      {
-        "category": "brand",
-        "description": "Header ve footer için şeffaf logo",
-        "url": "/brand/logo.png"
-      }
+    "notes": [
+      "Prefer local assets for clouds/sky to avoid third-party latency.",
+      "Add 1–2 compressed .webp cloud backdrops in /public/brand/ or /public/images.",
+      "Use existing logo assets at /app/frontend/public/brand/."
     ],
-    "hero": [
+    "categories": [
       {
-        "category": "public_home",
-        "description": "Dubai skyline (hero sağ görsel kartı / arka plan görseli).",
-        "url": "https://images.pexels.com/photos/18341554/pexels-photo-18341554.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
-      }
-    ],
-    "supporting": [
+        "category": "background_clouds",
+        "description": "Soft cloud photographic overlay behind panels (opacity 0.18–0.28).",
+        "urls": [
+          "LOCAL: /brand/sky-clouds-1.webp (to be added)",
+          "LOCAL: /brand/sky-clouds-2.webp (to be added)"
+        ]
+      },
       {
-        "category": "public_sections",
-        "description": "Desert dunes (rehber/blog kapakları veya süreç bölümü arka planı - düşük opaklık).",
-        "url": "https://images.unsplash.com/photo-1553324533-33616fe1c4de?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85"
+        "category": "trust_strip_logos",
+        "description": "Authority/payment logos in original colors on white strip.",
+        "urls": [
+          "LOCAL: /brand/trust/gdrfa.svg",
+          "LOCAL: /brand/trust/tursab.svg",
+          "LOCAL: /brand/trust/visa.svg",
+          "LOCAL: /brand/trust/mastercard.svg"
+        ]
       }
     ]
   },
 
+  "migration_map": {
+    "goal": "Remap existing token names so most components keep working without rewriting.",
+    "token_remaps": [
+      {
+        "old": "--brand-green",
+        "new": "--sky-deep",
+        "note": "Previously petrol teal; now use sky-deep for info accents and focus rings. Avoid using it as primary button fill."
+      },
+      {
+        "old": "--brand-copper",
+        "new": "--cream-tag",
+        "note": "Copper accent becomes warm cream/yellow used sparingly (sale tag, highlight chips)."
+      },
+      {
+        "old": "--brand-black",
+        "new": "--charcoal",
+        "note": "Ensure primary buttons and key text use charcoal."
+      },
+      {
+        "old": "--sand-surface",
+        "new": "--panel",
+        "note": "Sand surfaces become off-white floating panels."
+      },
+      {
+        "old": "--navy",
+        "new": "--charcoal",
+        "note": "Dark blocks now charcoal (not teal)."
+      },
+      {
+        "old": "--font-heading",
+        "new": "Figtree",
+        "note": "Remove Tinos/Times look; headings become geometric sans."
+      }
+    ],
+    "component_level_notes": [
+      "Buttons: ensure shadcn Button variants map primary to charcoal (hsl(var(--primary))).",
+      "Badges: use cream-tag for SALE/urgent; otherwise muted.",
+      "Cards: increase radius and shadow to match floating panel aesthetic."
+    ]
+  },
+
   "instructions_to_main_agent": [
-    "Öncelik: /app/frontend/src/index.css içindeki :root tokenlarını bu guideline'daki light tokenlarla değiştir; ardından .dark selector ekleyip dark tokenları tanımla (mevcut dosyada dark yok).",
-    "Mevcut legacy token isimlerini KIRMA: --brand-green artık teal olacak; --gold bakır accent; --navy petrol teal.",
-    "index.css içindeki .eyebrow rengi şu an brand-red; bunu brand tokenlara göre bakır veya primary yap (tercihen accent/bakır).",
-    "flag-strip ve hero-glow gradientleri kırmızıya bağlı; bunları --gradient-wave ve --gradient-hero ile değiştir. Gradient alanı hero ile sınırlı kalsın.",
-    "Button/Badge gibi shadcn bileşenleri tokenları otomatik tüketir; JSX'e dokunmadan tema değişimi büyük ölçüde gerçekleşir.",
-    "Admin sidebar varsa (navy token kullanan), arka plan artık petrol teal olacak; aktif item primary/15.",
-    "Favicon için /public/brand/logo.png'den üretim gerekiyorsa build pipeline'a dokunmadan mevcut favicon yolunu güncelle (varsa).",
-    "Tüm yeni eklenen interaktif öğelere data-testid ekle; mevcutlarda eksikse kritik akışlarda tamamla (başvuru wizard, ödeme, takip)."
+    "1) Update /app/frontend/src/index.css :root and .dark tokens to the new sky/charcoal system above; set --font-heading and --font-body to Figtree.",
+    "2) Introduce a marketing-page wrapper class (e.g., .sky-shell) that applies the sky gradient + optional cloud overlay; keep admin pages on solid background.",
+    "3) Increase radii across Card/Popover/Dialog/Sheet to match 24–32px feel; use rounded-full for pills.",
+    "4) Update Button variants in /components/ui/button.jsx so primary = charcoal pill, secondary = light pill, icon = round.",
+    "5) Implement segmented controls using ToggleGroup/Tabs with pill container styling.",
+    "6) Ensure every interactive element and key info element has data-testid in kebab-case.",
+    "7) Keep dark mode: marketing pages can have subtle dark-sky backdrop; admin stays solid for readability.",
+    "8) Do not change backend APIs or routes; only UI styling/layout.",
+    "9) Verify contrast on sky background: all text must sit on solid panels; never place paragraphs directly on sky photo."
   ],
 
-  "general_ui_ux_design_guidelines_appendix": "<General UI UX Design Guidelines>\n    - You must **not** apply universal transition. Eg: `transition: all`. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms\n    - You must **not** center align the app container, ie do not add `.App { text-align: center; }` in the css file. This disrupts the human natural reading flow of text\n   - NEVER: use AI assistant Emoji characters like`🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons. Always use **FontAwesome cdn** or **lucid-react** library already installed in the package.json\n\n **GRADIENT RESTRICTION RULE**\nNEVER use dark/saturated gradient combos (e.g., purple/pink) on any UI element.  Prohibited gradients: blue-500 to purple 600, purple 500 to pink-500, green-500 to blue-500, red to pink etc\nNEVER use dark gradients for logo, testimonial, footer etc\nNEVER let gradients cover more than 20% of the viewport.\nNEVER apply gradients to text-heavy content or reading areas.\nNEVER use gradients on small UI elements (<100px width).\nNEVER stack multiple gradient layers in the same viewport.\n\n**ENFORCEMENT RULE:**\n    • Id gradient area exceeds 20% of viewport OR affects readability, **THEN** use solid colors\n\n**How and where to use:**\n   • Section backgrounds (not content backgrounds)\n   • Hero section header content. Eg: dark to light to dark color\n   • Decorative overlays and accent elements only\n   • Hero section with 2-3 mild color\n   • Gradients creation can be done for any angle say horizontal, vertical or diagonal\n\n- For AI chat, voice application, **do not use purple color. Use color like light green, ocean blue, peach orange etc\n\n</Font Guidelines>\n\n- Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead. \n   \n- Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.\n\n- Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.\n   \n- Before generating UI, infer the visual style from the problem statement (palette, contrast, mood, motion) and immediately instantiate it by setting global design tokens (primary, secondary/accent, background, foreground, ring, state colors), rather than relying on any library defaults. Don't make the background dark as a default step, always understand problem first and define colors accordingly\n    Eg: - if it implies playful/energetic, choose a colorful scheme\n           - if it implies monochrome/minimal, choose a black–white/neutral scheme\n\n**Component Reuse:**\n\t- Prioritize using pre-existing components from src/components/ui when applicable\n\t- Create new components that match the style and conventions of existing components when needed\n\t- Examine existing components to understand the project's component patterns before creating new ones\n\n**IMPORTANT**: Do not use HTML based component like dropdown, calendar, toast etc. You **MUST** always use `/app/frontend/src/components/ui/ ` only as a primary components as these are modern and stylish component\n\n**Best Practices:**\n\t- Use Shadcn/UI as the primary component library for consistency and accessibility\n\t- Import path: ./components/[component-name]\n\n**Export Conventions:**\n\t- Components MUST use named exports (export const ComponentName = ...)\n\t- Pages MUST use default exports (export default function PageName() {...})\n\n**Toasts:**\n  - Use `sonner` for toasts\"\n  - Sonner component are located in `/app/src/components/ui/sonner.tsx`\n\nUse 2–4 color gradients, subtle textures/noise overlays, or CSS-based noise to avoid flat visuals.\n</General UI UX Design Guidelines>"
+  "general_ui_ux_design_guidelines": "<General UI UX Design Guidelines>  \n    - You must **not** apply universal transition. Eg: `transition: all`. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms\n    - You must **not** center align the app container, ie do not add `.App { text-align: center; }` in the css file. This disrupts the human natural reading flow of text\n   - NEVER: use AI assistant Emoji characters like`🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons. Always use **FontAwesome cdn** or **lucid-react** library already installed in the package.json\n\n **GRADIENT RESTRICTION RULE**\nNEVER use dark/saturated gradient combos (e.g., purple/pink) on any UI element.  Prohibited gradients: blue-500 to purple 600, purple 500 to pink-500, green-500 to blue-500, red to pink etc\nNEVER use dark gradients for logo, testimonial, footer etc\nNEVER let gradients cover more than 20% of the viewport.\nNEVER apply gradients to text-heavy content or reading areas.\nNEVER use gradients on small UI elements (<100px width).\nNEVER stack multiple gradient layers in the same viewport.\n\n**ENFORCEMENT RULE:**\n    • Id gradient area exceeds 20% of viewport OR affects readability, **THEN** use solid colors\n\n**How and where to use:**\n   • Section backgrounds (not content backgrounds)\n   • Hero section header content. Eg: dark to light to dark color\n   • Decorative overlays and accent elements only\n   • Hero section with 2-3 mild color\n   • Gradients creation can be done for any angle say horizontal, vertical or diagonal\n\n- For AI chat, voice application, **do not use purple color. Use color like light green, ocean blue, peach orange etc**\n\n</Font Guidelines>\n\n- Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead. \n   \n- Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.\n\n- Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.\n   \n- Before generating UI, infer the visual style from the problem statement (palette, contrast, mood, motion) and immediately instantiate it by setting global design tokens (primary, secondary/accent, background, foreground, ring, state colors), rather than relying on any library defaults. Don't make the background dark as a default step, always understand problem first and define colors accordingly\n    Eg: - if it implies playful/energetic, choose a colorful scheme\n           - if it implies monochrome/minimal, choose a black–white/neutral scheme\n\n**Component Reuse:**\n\t- Prioritize using pre-existing components from src/components/ui when applicable\n\t- Create new components that match the style and conventions of existing components when needed\n\t- Examine existing components to understand the project's component patterns before creating new ones\n\n**IMPORTANT**: Do not use HTML based component like dropdown, calendar, toast etc. You **MUST** always use `/app/frontend/src/components/ui/ ` only as a primary components as these are modern and stylish component\n\n**Best Practices:**\n\t- Use Shadcn/UI as the primary component library for consistency and accessibility\n\t- Import path: ./components/[component-name]\n\n**Export Conventions:**\n\t- Components MUST use named exports (export const ComponentName = ...)\n\t- Pages MUST use default exports (export default function PageName() {...})\n\n**Toasts:**\n  - Use `sonner` for toasts\"\n  - Sonner component are located in `/app/src/components/ui/sonner.tsx`\n\nUse 2–4 color gradients, subtle textures/noise overlays, or CSS-based noise to avoid flat visuals.\n</General UI UX Design Guidelines>"
 }

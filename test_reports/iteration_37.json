@@ -1,0 +1,56 @@
+{
+  "summary": "Completed frontend regression testing for design system overhaul (sky-blue background, charcoal pill buttons, Figtree font, floating panels). All major functionality working correctly. No console errors. Mobile viewport passes (no horizontal scroll). Admin pages render without breakage.",
+  "backend_issues": {
+    "critical_bugs": [],
+    "flaky_endpoints": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "Home page loads without console errors",
+    "Hero elements render correctly (eyebrow, title, buttons, trust strip, stats, marquee)",
+    "Hero 'Hizmet Bedellerini Gör' button navigates to /vize-tipleri",
+    "/vize-tipleri: All 4 pricing tabs found and working (Tek Girişli, Çok Girişli, Çocuk Vizesi, Diğer Hizmetler)",
+    "/vize-tipleri: Tab content switches correctly, prices render (6 price elements)",
+    "/basvuru: Email field accepts input, passenger add button works, price summary visible",
+    "/takip: Tracking form submits and shows validation error gracefully",
+    "/iletisim: Name and email fields accept input, submit button found",
+    "UI/UX: Primary buttons are pill-shaped (rounded-full), 10 buttons found",
+    "UI/UX: Floating panels found (3 panels with proper styling)",
+    "Mobile viewport (390x844): Home page has no horizontal scroll",
+    "Mobile viewport (390x844): /vize-tipleri has no horizontal scroll",
+    "Mobile viewport (390x844): /basvuru has no horizontal scroll",
+    "Admin login page renders correctly",
+    "Admin login successful with credentials admin@vizeatlas.com / Dubai2026!",
+    "Admin dashboard renders without breakage",
+    "/admin/zami page renders without breakage",
+    "Text contrast readable on sky background",
+    "Charcoal pill buttons visible and clickable",
+    "Off-white floating panels with large rounded corners visible"
+  ],
+  "test_report_links": [
+    ".screenshots/01_home_hero.png",
+    ".screenshots/02_vize_tipleri.png",
+    ".screenshots/03_basvuru_step1.png",
+    ".screenshots/04_takip.png",
+    ".screenshots/05_esim.png",
+    ".screenshots/06_seyahat_sigortasi.png",
+    ".screenshots/07_iletisim.png",
+    ".screenshots/08_mobile_home.png",
+    ".screenshots/09_mobile_vize_tipleri.png",
+    ".screenshots/10_mobile_basvuru.png",
+    ".screenshots/11_admin_dashboard.png",
+    ".screenshots/12_admin_zami.png"
+  ],
+  "success_percentage": {
+    "frontend": "95%",
+    "backend": "N/A (skipped per testing_type: frontend only)"
+  },
+  "updated_files": [],
+  "action_item_for_main_agent": "",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": false
+}

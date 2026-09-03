@@ -36,7 +36,7 @@ export const IconTile = ({ icon: Icon, tone = "teal" }) => {
     const tones = {
         teal: "bg-primary/10 text-primary",
         sand: "bg-[hsl(var(--sand-surface))] text-[hsl(var(--navy))]",
-        gold: "bg-[hsl(var(--brand-copper)/0.10)] text-[hsl(var(--brand-copper))]",
+        gold: "bg-[hsl(var(--cream-tag)/0.35)] text-foreground",
     };
     return (
         <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${tones[tone]}`}>

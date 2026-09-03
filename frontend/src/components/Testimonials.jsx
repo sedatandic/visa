@@ -2,7 +2,7 @@ import React from "react";
 import { BadgeCheck, Quote, Star } from "lucide-react";
 import { formatDate } from "../lib/site";
 
-const RED = "text-[hsl(var(--brand-copper))]";
+const RED = "text-[hsl(var(--gold))]";
 
 const Stars = ({ rating = 5, size = "h-4 w-4" }) => (
     <div className={`flex items-center gap-0.5 ${RED}`} aria-label={`${rating} / 5 puan`}>
@@ -20,10 +20,10 @@ export const ReviewSummary = ({ summary }) => {
     if (!summary) return null;
     return (
         <div
-            className="grid gap-6 rounded-2xl border border-[hsl(var(--brand-copper)/0.28)] bg-[hsl(var(--brand-copper)/0.05)] p-6 sm:p-8 lg:grid-cols-[280px_1fr]"
+            className="grid gap-6 rounded-[var(--radius-lg)] border border-border/70 bg-[hsl(var(--panel-2))] p-6 sm:p-8 lg:grid-cols-[280px_1fr]"
             data-testid="review-summary"
         >
-            <div className="flex flex-col justify-center border-b border-[hsl(var(--brand-copper)/0.2)] pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
+            <div className="flex flex-col justify-center border-b border-border/70 pb-6 lg:border-b-0 lg:border-r lg:border-border/70 lg:pb-0 lg:pr-8">
                 <div className="flex items-end gap-2">
                     <span
                         className={`font-heading text-5xl font-bold leading-none ${RED}`}
@@ -49,9 +49,9 @@ export const ReviewSummary = ({ summary }) => {
                             <span className="text-sm font-medium">{h.label}</span>
                             <span className={`font-heading text-sm font-bold ${RED}`}>%{h.value}</span>
                         </div>
-                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[hsl(var(--brand-copper)/0.14)]">
+                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
                             <div
-                                className="h-full rounded-full bg-[hsl(var(--brand-copper))]"
+                                className="h-full rounded-full bg-primary"
                                 style={{ width: `${h.value}%` }}
                             />
                         </div>
@@ -110,7 +110,7 @@ export const FeaturedTestimonial = ({ item }) => {
     if (!item) return null;
     return (
         <figure
-            className="flex h-full flex-col justify-between rounded-2xl border border-[hsl(var(--brand-copper)/0.28)] bg-card p-6 sm:p-7"
+            className="flex h-full flex-col justify-between rounded-[var(--radius-lg)] border border-border/70 bg-card p-6 sm:p-7"
             style={{ boxShadow: "var(--shadow-soft)" }}
             data-testid="featured-testimonial"
         >

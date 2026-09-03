@@ -227,6 +227,7 @@ async def lifespan(app: FastAPI):
     reminder_task = None
     zami_task = None
     keepalive_task = None
+    otp_task = None
     try:
         from doc_reminders import default_origin, reminder_loop
 
@@ -244,9 +245,17 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.error("zami status scheduler failed to start: %s", exc)
 
+    try:
+        from otp_reminders import reminder_loop as otp_reminder_loop
+
+        otp_task = asyncio.create_task(otp_reminder_loop())
+        logger.info("zami otp reminder scheduler started")
+    except Exception as exc:
+        logger.error("otp reminder scheduler failed to start: %s", exc)
+
     yield
 
-    for task in (reminder_task, zami_task, keepalive_task):
+    for task in (reminder_task, zami_task, keepalive_task, otp_task):
         if task:
             task.cancel()
             try:

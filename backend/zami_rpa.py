@@ -450,6 +450,9 @@ async def session_status() -> dict:
         "last_auto_login_at": value.get("last_auto_login_at"),
         "auto_login_count": int(value.get("auto_login_count") or 0),
         "next_otp_due": _next_otp_due(value.get("last_otp_at")),
+        "otp_reminder_kind": value.get("otp_reminder_kind"),
+        "otp_reminder_sent_at": value.get("otp_reminder_sent_at"),
+        "otp_reminder_wa_link": value.get("otp_reminder_wa_link"),
     }
 
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
     AlertTriangle,
+    BellRing,
     CheckCircle2,
     ExternalLink,
     ListChecks,
@@ -410,6 +411,26 @@ export default function AdminZami() {
         } finally {
             setBusy(false);
             loadLogs();
+        }
+    };
+
+    const testOtpReminder = async () => {
+        setBusy(true);
+        try {
+            const { data } = await api.post("/admin/zami/session/otp-reminder?force=true");
+            if (data.whatsapp === "manual" && data.whatsapp_link) {
+                window.open(data.whatsapp_link, "_blank", "noopener");
+                toast.success("E-posta gönderildi; WhatsApp mesajı yeni sekmede hazırlandı.");
+            } else if (data.whatsapp === "sent") {
+                toast.success("Hatırlatma e-posta ve WhatsApp ile gönderildi.");
+            } else {
+                toast.success("Hatırlatma e-postası gönderildi (WhatsApp: " + (data.whatsapp || "-") + ").");
+            }
+            load();
+        } catch (e) {
+            toast.error(apiError(e, "Hatırlatma gönderilemedi."));
+        } finally {
+            setBusy(false);
         }
     };
 
@@ -842,6 +863,16 @@ export default function AdminZami() {
                                     type="button"
                                     variant="secondary"
                                     className="border border-border"
+                                    onClick={testOtpReminder}
+                                    disabled={busy}
+                                    data-testid="zami-otp-reminder-test-button"
+                                >
+                                    <BellRing className="mr-2 h-4 w-4" /> Hatırlatmayı test et
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="border border-border"
                                     onClick={clearSession}
                                     disabled={busy}
                                     data-testid="zami-session-clear-button"
@@ -880,6 +911,31 @@ export default function AdminZami() {
                                             ? ` · ${new Date(session.last_auto_login_at).toLocaleString("tr-TR")}`
                                             : ""}
                                     </div>
+                                </div>
+                                <div className="sm:col-span-3">
+                                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Son hatırlatma</div>
+                                    <div className="mt-1 flex flex-wrap items-center gap-3 font-medium" data-testid="zami-otp-reminder-state">
+                                        {session?.otp_reminder_sent_at
+                                            ? `${new Date(session.otp_reminder_sent_at).toLocaleString("tr-TR")} · ${
+                                                  session.otp_reminder_kind === "due_now" ? "OTP şimdi gerekiyor" : "Tarih yaklaşıyor"
+                                              }`
+                                            : "Henüz hatırlatma gönderilmedi"}
+                                        {session?.otp_reminder_wa_link && (
+                                            <a
+                                                href={session.otp_reminder_wa_link}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                                                data-testid="zami-otp-reminder-wa-link"
+                                            >
+                                                WhatsApp mesajını aç
+                                            </a>
+                                        )}
+                                    </div>
+                                    <p className="mt-2 text-xs text-muted-foreground">
+                                        Sistem 6 saatte bir kontrol eder; OTP tarihine 3 gün kalınca ve portal OTP
+                                        istediğinde size e-posta + WhatsApp hatırlatması gönderir.
+                                    </p>
                                 </div>
                             </div>
 

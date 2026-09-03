@@ -3,12 +3,14 @@
 import asyncio
 import logging
 import os
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
+import whatsapp
 import zami
 import zami_rpa
 from db import applications_col, serialize_doc, zami_logs_col
@@ -475,6 +477,39 @@ def _session_check(session: dict) -> dict:
     }
 
 
+PLACEHOLDER_PHONES = {"908500000000", "905321234567", "900000000000"}
+
+
+def _is_placeholder_phone(phone: str | None) -> bool:
+    """Ornek/placeholder numaralari tespit eder (uyarilar bosa gitmesin)."""
+    digits = re.sub(r"\D", "", phone or "")
+    if not digits:
+        return True
+    if digits in PLACEHOLDER_PHONES:
+        return True
+    tail = digits[-10:]
+    return len(set(tail)) <= 2 or tail in {"5321234567", "5551234567"}
+
+
+async def _alert_channel_check() -> dict:
+    """OTP hatirlatmalarinin gercekten ulasabilecegi kanal var mi?"""
+    email = os.environ.get("ADMIN_EMAIL") or ""
+    phone = await whatsapp.admin_whatsapp_number()
+    phone_ok = not _is_placeholder_phone(phone)
+    parts = []
+    if email:
+        parts.append(f"E-posta: {email}")
+    else:
+        parts.append("E-posta tanımlı değil (ADMIN_EMAIL)")
+    parts.append(f"WhatsApp: {phone}" if phone_ok else "WhatsApp numarası örnek/eksik")
+    return {
+        "key": "alerts",
+        "label": "OTP hatırlatma kanalları",
+        "ok": bool(email) and phone_ok,
+        "detail": " · ".join(parts),
+    }
+
+
 @router.get("/admin/zami/readiness")
 async def zami_readiness(admin: dict = Depends(require_admin)) -> dict:
     """Ilk gercek aktarim oncesi hazirlik kontrolu."""
@@ -488,6 +523,7 @@ async def zami_readiness(admin: dict = Depends(require_admin)) -> dict:
         _traveler_check(mapping),
         _browser_check(),
         _session_check(session),
+        await _alert_channel_check(),
     ]
     by_key = {c["key"]: c["ok"] for c in checks}
     ready_bookmarklet = all(by_key.get(key) for key in ("form_url", "fields", "traveler"))
@@ -691,6 +727,14 @@ async def zami_session_login(payload: LoginIn, admin: dict = Depends(require_adm
 async def zami_session_auto_renew(admin: dict = Depends(require_admin)):
     """Oturumu OTP'siz (trusted device + AI captcha) yenilemeyi dener."""
     return await zami_rpa.auto_relogin(actor=admin.get("sub", "") or "admin")
+
+
+@router.post("/admin/zami/session/otp-reminder")
+async def zami_otp_reminder(force: bool = False, admin: dict = Depends(require_admin)):
+    """OTP hatirlatmasini kontrol eder; `force=true` ile test gonderimi yapar."""
+    import otp_reminders
+
+    return await otp_reminders.check_and_notify(force_kind="upcoming" if force else "")
 
 
 @router.delete("/admin/zami/session")
