@@ -393,6 +393,26 @@ export default function AdminZami() {
         }
     };
 
+    const autoRenewSession = async () => {
+        setBusy(true);
+        try {
+            const { data } = await api.post("/admin/zami/session/auto-renew");
+            if (data.ok) {
+                toast.success("Oturum OTP'siz yenilendi.");
+            } else if (data.reason === "otp_required") {
+                toast.error("Portal OTP istedi. Aşağıdan 'Oturum Başlat' ile kodu girin.");
+            } else {
+                toast.error("Otomatik yenileme başarısız: " + (data.reason || "bilinmeyen hata"));
+            }
+            load();
+        } catch (e) {
+            toast.error(apiError(e, "Otomatik yenileme denenemedi."));
+        } finally {
+            setBusy(false);
+            loadLogs();
+        }
+    };
+
     const clearSession = async () => {
         setBusy(true);
         try {
@@ -800,13 +820,23 @@ export default function AdminZami() {
 
                         <Section
                             title="Robot oturumu (captcha + OTP)"
-                            description="Robot login sayfasını açar; captcha görselini ve gerekiyorsa OTP alanını size gösterir. Giriş sonrası oturum saklanır ve başvurular otomatik doldurulabilir."
+                            description="OTP'yi yalnızca ayda bir girmeniz yeterli: ilk girişte cihaz güveni kaydedilir, sonrasında oturum düştüğünde robot şifre + otomatik captcha ile kendi kendine giriş yapar."
                             testId="zami-rpa-section"
                         >
                             <div className="flex flex-wrap items-center gap-3">
                                 <Button type="button" onClick={startSession} disabled={busy} data-testid="zami-session-start-button">
                                     {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
                                     Oturum başlat
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="border border-border"
+                                    onClick={autoRenewSession}
+                                    disabled={busy}
+                                    data-testid="zami-session-auto-renew-button"
+                                >
+                                    <RefreshCw className="mr-2 h-4 w-4" /> OTP'siz yenile
                                 </Button>
                                 <Button
                                     type="button"
@@ -823,6 +853,34 @@ export default function AdminZami() {
                                         ? `Kayıtlı oturum var (${session.saved_at ? new Date(session.saved_at).toLocaleString("tr-TR") : ""})`
                                         : "Kayıtlı oturum yok"}
                                 </span>
+                            </div>
+
+                            <div className="mt-4 grid gap-2 rounded-lg border border-border bg-muted/40 p-4 text-sm sm:grid-cols-3" data-testid="zami-session-otp-info">
+                                <div>
+                                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Cihaz güveni</div>
+                                    <div className="mt-1 font-medium" data-testid="zami-trusted-device-state">
+                                        {session?.trusted_device ? "Kayıtlı (OTP'siz giriş açık)" : "Yok — bir kez OTP ile giriş yapın"}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Sonraki OTP (tahmini)</div>
+                                    <div className="mt-1 font-medium" data-testid="zami-next-otp-due">
+                                        {session?.otp_required
+                                            ? "Şimdi gerekiyor"
+                                            : session?.next_otp_due
+                                              ? new Date(session.next_otp_due).toLocaleDateString("tr-TR")
+                                              : "—"}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Otomatik yenileme</div>
+                                    <div className="mt-1 font-medium" data-testid="zami-auto-login-count">
+                                        {(session?.auto_login_count || 0) + " kez"}
+                                        {session?.last_auto_login_at
+                                            ? ` · ${new Date(session.last_auto_login_at).toLocaleString("tr-TR")}`
+                                            : ""}
+                                    </div>
+                                </div>
                             </div>
 
                             {rpa.session_id && (

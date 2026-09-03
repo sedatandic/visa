@@ -687,6 +687,12 @@ async def zami_session_login(payload: LoginIn, admin: dict = Depends(require_adm
     )
 
 
+@router.post("/admin/zami/session/auto-renew")
+async def zami_session_auto_renew(admin: dict = Depends(require_admin)):
+    """Oturumu OTP'siz (trusted device + AI captcha) yenilemeyi dener."""
+    return await zami_rpa.auto_relogin(actor=admin.get("sub", "") or "admin")
+
+
 @router.delete("/admin/zami/session")
 async def zami_session_clear(admin: dict = Depends(require_admin)):
     return await zami_rpa.clear_session()

@@ -221,8 +221,9 @@ async def sweep_statuses(actor: str = "", force: bool = False) -> dict:
 async def keepalive_loop():
     """Portal oturumunu 10 dakikada bir yoklayarak canli tutar.
 
-    Zami oturumu kisa surede dustugu icin otomatik durum takibinin calismasi
-    buna bagli. Oturum dustugunde admin bir kez e-posta ile uyarilir.
+    Oturum dustugunde once OTP'siz otomatik giris denenir (trusted-device
+    cerezi + AI captcha). Yalnizca portal gercekten OTP isterse (ayda bir
+    civari) admin e-posta ile uyarilir.
     """
     import zami_rpa
 
@@ -230,15 +231,7 @@ async def keepalive_loop():
     warned = False
     while True:
         try:
-            state = await zami_rpa.session_status()
-            if state.get("has_session"):
-                out = await zami_rpa.keepalive_session()
-                if out.get("ok"):
-                    warned = False
-                elif out.get("reason") == "expired" and not warned:
-                    warned = True
-                    await _warn_admin_session_expired()
-                    logger.warning("zami session expired - admin bilgilendirildi")
+            warned = await _keepalive_tick(zami_rpa, warned)
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -246,16 +239,48 @@ async def keepalive_loop():
         await asyncio.sleep(SESSION_KEEPALIVE_SECONDS)
 
 
-async def _warn_admin_session_expired() -> None:
+async def _keepalive_tick(zami_rpa, warned: bool) -> bool:
+    """Tek yoklama adimi; admin uyarisi yapildi mi bilgisini dondurur."""
+    state = await zami_rpa.session_status()
+    if not state.get("has_session"):
+        return warned
+    out = await zami_rpa.keepalive_session()
+    if out.get("ok"):
+        return False
+    if out.get("reason") != "expired":
+        return warned
+
+    relogin = await zami_rpa.auto_relogin()
+    if relogin.get("ok"):
+        logger.info("zami session auto-renewed without OTP")
+        return False
+    if not warned:
+        await _warn_admin_session_expired(reason=relogin.get("reason") or "")
+        logger.warning("zami session expired (%s) - admin bilgilendirildi", relogin.get("reason"))
+        return True
+    return warned
+
+
+async def _warn_admin_session_expired(reason: str = "") -> None:
     admin_email = os.environ.get("ADMIN_EMAIL")
     if not admin_email:
         return
+    detail = {
+        "otp_required": "Portal bu kez OTP kodu istedi (normalde ayda bir olur).",
+        "captcha_failed": "Otomatik giriş captcha'yı okuyamadı, elle giriş gerekiyor.",
+        "no_credentials": "Portal kullanıcı adı/şifresi kayıtlı değil.",
+        "browser": "Sunucuda tarayıcı motoru başlatılamadı.",
+    }.get(reason, "Otomatik yenileme başarısız oldu.")
     html = (
         '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">'
-        "<p><b>Zami portal oturumu düştü.</b></p>"
-        "<p>Otomatik durum takibi ve aktarım için panelden yeniden giriş yapmanız gerekiyor:</p>"
+        "<p><b>Zami portal oturumu düştü ve otomatik yenilenemedi.</b></p>"
+        f"<p>{detail}</p>"
+        "<p>Panelden bir kez giriş yapmanız yeterli:</p>"
         "<p>Admin → Zami Aktarım → <b>Robot Oturumu</b> → Oturum Başlat "
         "(captcha otomatik okunur, yalnızca e-postanıza gelen OTP kodunu girin).</p>"
+        "<p style=\"color:#555\">Girişte cihaz güveni kaydedildiği için sonraki "
+        "düşüşlerde robot OTP'siz kendi kendine giriş yapacak; OTP'yi yaklaşık "
+        "ayda bir girmeniz beklenir.</p>"
         "</div>"
     )
     try:

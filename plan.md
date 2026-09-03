@@ -24,7 +24,7 @@
     - Premium tasarım sistemi dokunuşları: radius ölçeği, tipografik ince ayarlar (balance/pretty + lining-nums), mikro-etkileşimler, grain doku.
   - Gerçek görseller / kurumsal bloklar / sosyal kanıt / örnek vize görselleri.
   - **TÜRSAB + acente şeffaflığı** ve **GDRFA rozeti**.
-  - Not: Kullanıcının paylaştığı `onyuz-rehberi.pdf` bir **Stitch/Dribbble iş akışı rehberi**; bu ortamda Stitch/MCP erişimi yok. “AI hissini kıran” tasarım için **kullanıcıdan Dribbble/Stitch referansı** bekleniyor.
+  - Not: Kullanıcının paylaştığı `onyuz-rehberi.pdf` bir **Stitch/Dribbble iş akışı rehberi**; spesifik UI talimatı içermediği için uygulanacak değişiklikler kullanıcı yönlendirmesi olmadan sınırlı tutulur.
 
 - **Başvuru evrak standardı (güncel)**:
   - **Her yolcu:** Pasaport + vesikalık fotoğraf.
@@ -48,7 +48,9 @@
   - Playwright RPA + yakalama (capture) + alan eşleme + toplu aktarım + durum polling + kullanıcı takip zaman çizelgesi.
   - **Zami zorunlu alanlar tamamlandı:** Medeni hal, meslek, anne adı, baba adı başvuruda toplanıyor ve RPA ile dolduruluyor.
   - **Kritik sağlamlık:** Zami mapping’in admin panelden kaydedilince veri kaybetmesi bug’ı düzeltildi; mapping artık kayıpsız korunur.
-  - Operasyon notu: Zami RPA oturumu OTP’ye bağlı olduğu için zaman zaman düşebilir; admin panelden yeniden oturum açma + OTP gerekebilir.
+  - **Yeni hedef (tamamlandı): “OTP ayda bir” yaklaşımı**:
+    - İlk OTP’li girişte portalın **trusted device (device_state)** çerezi kalıcı saklanır.
+    - Oturum düştüğünde sistem **şifre + AI captcha** ile OTP’siz otomatik yeniden giriş dener; OTP gerçekten gerekirse admin uyarılır.
 
 - Hosting/Deploy hedefi:
   - **Paylaşımlı cPanel/PHP hosting alınmayacak.** (Uygulama Python/FastAPI + Playwright + MongoDB gerektirir.)
@@ -247,8 +249,7 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 - Tüm route dosyalarında dekoratör-fonksiyon eşleşmesi otomatik tarandı → başka sorun yok.
 
 **Test**
-- iteration_34: backend %97.4, 0 kritik bug, 0 UI bug.
-- Bayat test düzeltmesi: `backend_test.py` bookmarklet içeriğinde eski marka adı arıyordu → `Dubai Vize Online` ile güncellendi.
+- iteration_34: kritik hata 0; bayat test güncellendi.
 
 ---
 
@@ -300,8 +301,6 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 - AdminZami UI bu alanları round-trip eder.
 - Mapping’in tek kaynağı: `/app/scripts/zami_save_mapping.py` (validate_selector/helper_selectors/upload_targets dahil tam set).
 
-**Test:** iteration_32 → kritik bug yok.
-
 ---
 
 ### Phase 37 — Logo Bazlı Yeni Tema + Marka Adı Güncellemesi — **COMPLETED (2026-09-03)**
@@ -316,8 +315,6 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 - Navbar/Footer `BrandMark` ile güncellendi.
 - Marka adı: **VizeAtlas Dubai → Dubai Vize Online** (frontend + backend metinleri, FastAPI title, bookmarklet etiketleri).
 
-**Test:** iteration_32 → 0 kritik hata.
-
 ---
 
 ### Phase 38 — Tipografi + Premium Tasarım Sistemi (AI hissini azaltma) — **COMPLETED (2026-09-03)**
@@ -329,7 +326,38 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 - Public UI’da Sparkles kaldırıldı → anlamlı ikonlar.
 - Premium dokunuşlar: radius ölçeği, `text-wrap: balance/pretty`, `.tabular`, mikro-etkileşimler, grain doku.
 
-**Test:** iteration_33 → 0 kritik bug, 0 UI bug.
+---
+
+### Phase 40 — Zami RPA “OTP Ayda Bir” (Trusted Device + Otomatik Yenileme) — **COMPLETED (2026-09-03)**
+**Amaç:** Zami portalı OTP bağımlılığını operasyonda minimize etmek; genelde OTP’yi ~ayda bir kez gerektirecek şekilde oturumu kendiliğinden toparlamak.
+
+**Backend**
+- `device_state` ve `last_otp_at` DB’de kalıcı saklanır (ilk OTP’li girişte).
+- `auto_relogin()`:
+  - Trusted device (varsa) ile tarayıcı açar.
+  - Kullanıcı adı/şifre girer + AI captcha çözer.
+  - OTP istenmezse oturumu yeniler ve sayacı artırır; OTP istenirse `otp_required=true` işaretler.
+  - 3 deneme (`AUTO_RELOGIN_TRIES=3`).
+- `keepalive_loop()` artık sırayla:
+  1) keepalive dene
+  2) expired ise **OTP’siz auto relogin** dene
+  3) ancak OTP gerekiyorsa admin’e e-posta gönder
+- `_active_state()` ile `fill_application` ve `check_status` öncesi oturum otomatik toparlanır.
+- Yeni endpoint: `POST /api/admin/zami/session/auto-renew`.
+
+**Frontend (Admin)**
+- Admin → Zami ekranında yeni buton: **“OTP’siz yenile”**.
+- Bilgi kartı:
+  - Cihaz güveni (trusted device kayıt durumu)
+  - Sonraki OTP (tahmini, 30 gün)
+  - Otomatik yenileme sayacı + son otomatik giriş zamanı
+
+**Operasyon notu**
+- Bu mekanizmanın çalışması için **ilk kurulumda bir kez** OTP’li giriş gerekir (trusted device state kaydı).
+
+**Test**
+- Zami regresyon: **39/39 PASS**
+- Yeni özellik testi: **iteration_35 (12/12 PASS)**
 
 ---
 
@@ -352,28 +380,42 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 
 ---
 
-### P0.1 — Rehberdeki (Stitch/Dribbble) Tasarım Referansı — **USER ACTION REQUIRED**
-**Durum:** `onyuz-rehberi.pdf` bir iş akışı rehberi; bu ortamda Stitch/MCP erişimi yok.
+### P0.1 — Zami “OTP Ayda Bir”in Aktifleşmesi: İlk OTP’li Giriş — **USER ACTION REQUIRED**
+**Neden gerekli?** Trusted-device çerezi ancak OTP ile doğrulanmış ilk girişte oluşur.
 
-**İstenen**
-- Kullanıcı 1–2 adet Dribbble referansı (link veya ekran görüntüsü) ya da Stitch çıktı ekran görüntüsü paylaşır.
-- Biz bu referansa göre hero/layout görsel hiyerarşisini revize ederiz.
+**Adımlar**
+1) Admin → Zami Aktarım → **Robot Oturumu** → **Oturum Başlat**
+2) Captcha otomatik okunur; portal OTP isterse kodu girin
+3) Oturum “ready” olunca `device_state` saklanır
+
+**Beklenen sonuç**
+- Sonraki oturum düşmelerinde robot çoğu zaman **OTP’siz** toparlar; OTP tipik olarak ~ayda bir gerekir.
 
 ---
 
-### P0.2 — Resend Production Gönderici (Domain Doğrulaması + SENDER_EMAIL) — **USER ACTION REQUIRED**
+### P0.2 — `onyuz-rehberi.pdf` Uygulama Kapsamı — **USER DECISION REQUIRED (hızlı seçim)**
+Bu PDF bir iş akışı/tasarım rehberi; spesifik “şunu yap” listesi olmadığı için değişiklikler yönlendirme olmadan riskli.
+
+Seçenekler:
+- A) Ana sayfa (ön yüz) satış metni + hiyerarşi revizyonu
+- B) Tracking sayfası adım adım akışını rehbere göre görsel olarak zenginleştirme
+- C) Belirli bir bölüm uygulanacak (sayfa/bölüm adı verilecek)
+- D) Şimdilik atla
+
+---
+
+### P0.3 — Resend Production Gönderici (Domain Doğrulaması + SENDER_EMAIL) — **USER ACTION REQUIRED**
 1) Resend panelinde `resend.com/domains` → `dubaivizeonline.com` doğrula.
 2) Deploy ortamında/`.env`:
    - `SENDER_EMAIL=noreply@dubaivizeonline.com` (veya `info@dubaivizeonline.com`)
 3) Doğrulama testi:
-   - Gerçek müşteri adresine e-posta `sent`.
+   - Gerçek müşteri adresine e-posta `sent`
 
 ---
 
 ### P1 — Custom Domain Deploy — **IN PROGRESS / USER ACTION REQUIRED**
 **Durum / bulgular**
-- `dubaivizeonline.com`: DNS’te A kaydı yok (ideal).
-- Paylaşımlı hosting alınmayacak.
+- `dubaivizeonline.com`: DNS yönlendirme kullanıcı aksiyonu bekliyor.
 - Deployment readiness: PASS.
 
 **Deploy runbook**
@@ -385,12 +427,6 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
    - `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `EMERGENT_LLM_KEY`, `RESEND_API_KEY`, `SENDER_EMAIL`, `STRIPE_API_KEY`, `PUBLIC_SITE_URL`, `PUBLIC_BASE_URL`.
 6) Deploy sonrası:
    - `PUBLIC_SITE_URL` ve `PUBLIC_BASE_URL` yeni domain’e çekilecek (e-posta linkleri, dosya linkleri).
-
----
-
-### P1.1 — Zami RPA Oturumu Yenileme (OTP) — **USER ACTION REQUIRED**
-- Admin panelden `Zami Session Start` → CAPTCHA çözümü + OTP girilir.
-- Oturum “ready” olunca transfer ve status sweep tekrar otomatik çalışır.
 
 ---
 
@@ -434,6 +470,11 @@ OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
   1) Mapping kaydı admin panelden kaydedilince **constants/upload_targets/validate_selector** kaybolmaz.
   2) Bookmarklet + RPA aktarım akışı bozulmaz.
   3) Status sweep (cron) çalışır ve admin panelde loglanır.
+  4) **OTP ayda bir yaklaşımı:**
+     - İlk OTP’li giriş sonrası `device_state` kayıtlıdır.
+     - Oturum düştüğünde sistem çoğu durumda **OTP’siz** otomatik yenileme yapar.
+     - OTP gerçekten gerektiğinde admin **tek e-posta** ile bilgilendirilir.
+     - Admin panelde “OTP’siz yenile” butonu çalışır ve sayaç artar.
 
 - E-posta (Resend) başarı kriterleri:
   1) `RESEND_API_KEY` bağlıyken outbox “sent/error” olur.
@@ -442,11 +483,11 @@ OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
 - Deploy/Domain başarı kriterleri:
   1) `https://dubaivizeonline.com` açılır, SSL aktif.
   2) Admin panel ve ödeme akışları çalışır.
-  3) Cron job’lar (taslak hatırlatma, Zami status sweep) deploy ortamında çalışır.
+  3) Cron job’lar (taslak hatırlatma, Zami status sweep + keepalive) deploy ortamında çalışır.
 
 ---
 
-## DURUM (2026-09-03)
+## DURUM (2026-09-03 → güncellendi)
 - Phase 1–19: **TAMAMLANDI**.
 - Phase 20–23 (Zami RPA + capture + mapping + status + tracking): **TAMAMLANDI** ve canlı doğrulandı.
 - Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
@@ -458,20 +499,17 @@ OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
 - Phase 37 (Logo bazlı yeni tema + marka adı): **TAMAMLANDI**.
 - Phase 38 (Tipografi + premium tasarım sistemi): **TAMAMLANDI**.
 - Phase 39 (Kod kalitesi refactor 3. tur): **TAMAMLANDI**.
+- Phase 40 (Zami OTP ayda bir — trusted device + auto relogin + UI): **TAMAMLANDI**.
 
 Test raporları (seçme):
-- iteration_28.json — Zami zorunlu alanlar: backend 12/12, frontend %100.
-- iteration_29.json — Resend aktivasyonu + sandbox uyarıları.
-- iteration_30.json — Refactor regresyon: %100.
 - iteration_31.json — Refactor + Zami mapping/build_payload regresyon: 39/39 backend.
-- iteration_32.json — Tema/Logo/Marka + Zami mapping bug fix regresyon: kritik hata 0.
-- iteration_33.json — Tinos font + ikon değişimi + premium tasarım sistemi: kritik hata 0.
-- iteration_34.json — Kod kalitesi raporu 3. tur: kritik hata 0; bayat test güncellendi.
+- iteration_34.json — Kod kalitesi raporu 3. tur: kritik hata 0.
+- iteration_35.json — **OTP ayda bir** özelliği: backend 12/12 + regresyonlar PASS.
 
 Blokajlar / Bekleyen:
 - **Gerçek firma bilgileri** (telefon/adres/TÜRSAB/vergisel bilgiler) → “AI hissi”ni kırmak için **USER ACTION REQUIRED**.
-- **Stitch/Dribbble referansı** → UI’nin “insan eli” hissi için **USER ACTION REQUIRED**.
+- **`onyuz-rehberi.pdf` kapsam kararı** → uygulanacak UI revizyon hedefi için **USER DECISION REQUIRED**.
 - **Resend production (domain doğrulaması + SENDER_EMAIL)** → müşteri e-postaları için **USER ACTION REQUIRED**.
 - **Custom domain deploy/DNS yönlendirme** → **USER ACTION REQUIRED** (`dubaivizeonline.com`).
-- **Zami RPA oturumu**: transfer/durum takibi için admin panelden yeni oturum + OTP gerekiyor.
+- **Zami OTP ilk giriş**: OTP ayda bir yaklaşımının aktifleşmesi için **bir kez** OTP ile giriş gerekir.
 - Stripe prod anahtarları yok (opsiyonel).

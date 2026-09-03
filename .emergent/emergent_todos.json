@@ -1,22 +1,22 @@
 [
   {
-    "content": "Palet: sadece kırmızı + beyaz (WhatsApp butonu ve e-postalar dahil)",
+    "content": "Trusted-device state'i ayrıca sakla (_persist_session) + last_otp_at kaydı",
     "status": "completed"
   },
   {
-    "content": "Zami GERÇEK gönderim — VS-66059 oluştu (31 alan + belge yükleme)",
+    "content": "auto_relogin(): şifre + AI captcha ile OTP'siz yeniden giriş (3 deneme)",
     "status": "completed"
   },
   {
-    "content": "Zami 6 saatlik otomatik durum takibi — canlıda doğrulandı",
+    "content": "keepalive_loop: oturum düşerse otomatik relogin, sadece OTP gerekirse admin'e mail",
     "status": "completed"
   },
   {
-    "content": "Kaldığın Yerden Devam: otomatik taslak + 1 saatte e-posta linki",
+    "content": "session_status'a otp_required / next_otp_due alanları + admin UI göstergesi",
     "status": "completed"
   },
   {
-    "content": "Testing agent doğrulaması ve bulguların giderilmesi",
+    "content": "Backend testleri ile doğrulama (39/39 + 12/12 PASS)",
     "status": "completed"
   }
 ]

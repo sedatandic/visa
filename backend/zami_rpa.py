@@ -17,7 +17,7 @@ import re
 import shutil
 import tempfile
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from db import settings_col
 from captcha_ai import read_captcha
@@ -88,6 +88,8 @@ async def _launch_browser(pw):
 
 _sessions: dict = {}
 SESSION_IDLE_LIMIT = 900  # 15 dk
+AUTO_RELOGIN_TRIES = 3  # captcha yanlis okunursa tekrar dene
+OTP_TRUST_DAYS = 30  # portal trusted-device guveni ~1 ay
 
 LOGIN_PATH = "/login"
 CAPTCHA_IMG = 'img[alt="Captcha"]'
@@ -350,19 +352,37 @@ async def _run_login_attempt(page, entry: dict, creds: dict, captcha: str, otp: 
     return None
 
 
-async def _persist_session(entry: dict) -> None:
-    """Basarili girisin cerezlerini (storage_state) DB'ye saklar."""
+async def _persist_session(entry: dict, *, via_otp: bool = False) -> None:
+    """Basarili girisin cerezlerini (storage_state) DB'ye saklar.
+
+    `via_otp=True` (insan OTP girdi) durumunda ayni cerezler `device_state`
+    olarak da saklanir: portal bu cihazi "trusted device" kabul ettigi icin
+    sonraki otomatik girisler OTP istemeden yapilabilir. Boylece OTP
+    ihtiyaci aylik seviyeye iner.
+    """
     state = await entry["context"].storage_state()
-    await settings_col.update_one(
-        {"key": SESSION_KEY},
-        {
-            "$set": {
-                "key": SESSION_KEY,
-                "value": {"storage_state": state, "saved_at": _now().isoformat()},
-            }
+    now = _now().isoformat()
+    payload = {
+        "key": SESSION_KEY,
+        "value": {
+            "storage_state": state,
+            "saved_at": now,
+            "expired": False,
+            "otp_required": False,
+            "last_alive_at": now,
         },
-        upsert=True,
-    )
+    }
+    if via_otp:
+        payload["value"]["device_state"] = state
+        payload["value"]["last_otp_at"] = now
+    else:
+        existing = await settings_col.find_one({"key": SESSION_KEY})
+        old = (existing or {}).get("value") or {}
+        if old.get("device_state"):
+            payload["value"]["device_state"] = old["device_state"]
+        if old.get("last_otp_at"):
+            payload["value"]["last_otp_at"] = old["last_otp_at"]
+    await settings_col.update_one({"key": SESSION_KEY}, {"$set": payload}, upsert=True)
 
 
 async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str = "") -> dict:
@@ -372,6 +392,7 @@ async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str 
     page = entry["page"]
     entry["touched"] = _now()
 
+    used_otp = entry.get("stage") == "otp"
     failure = await _run_login_attempt(page, entry, await raw_credentials(), captcha, otp)
     if failure:
         return failure
@@ -401,7 +422,7 @@ async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str 
             "screenshot": await _shot(page),
         }
 
-    await _persist_session(entry)
+    await _persist_session(entry, via_otp=used_otp)
     entry["stage"] = "ready"
     await log_event(None, None, "rpa_login_ok", "RPA oturumu acildi ve cerezler saklandi", actor=actor)
     return {
@@ -423,7 +444,127 @@ async def session_status() -> dict:
         "active_browsers": len(_sessions),
         "expired": bool(value.get("expired")),
         "last_alive_at": value.get("last_alive_at"),
+        "trusted_device": bool(value.get("device_state")),
+        "otp_required": bool(value.get("otp_required")),
+        "last_otp_at": value.get("last_otp_at"),
+        "last_auto_login_at": value.get("last_auto_login_at"),
+        "auto_login_count": int(value.get("auto_login_count") or 0),
+        "next_otp_due": _next_otp_due(value.get("last_otp_at")),
     }
+
+
+def _next_otp_due(last_otp_at: str | None) -> str | None:
+    """Trusted-device guveni ~30 gun surdugu icin bir sonraki OTP tarihi."""
+    if not last_otp_at:
+        return None
+    try:
+        base = datetime.fromisoformat(last_otp_at)
+    except Exception:
+        return None
+    if base.tzinfo is None:
+        base = base.replace(tzinfo=timezone.utc)
+    return (base + timedelta(days=OTP_TRUST_DAYS)).isoformat()
+
+
+async def _mark_otp_required(reason: str) -> None:
+    await settings_col.update_one(
+        {"key": SESSION_KEY},
+        {
+            "$set": {
+                "value.expired": True,
+                "value.otp_required": True,
+                "value.otp_required_reason": reason,
+                "value.otp_required_at": _now().isoformat(),
+            }
+        },
+    )
+
+
+async def _auto_login_attempt(page, creds: dict) -> str:
+    """Tek bir OTP'siz giris denemesi. Sonuc: ok | otp | retry."""
+    await page.goto(
+        creds["portal_url"].rstrip("/") + LOGIN_PATH,
+        wait_until="domcontentloaded",
+        timeout=45000,
+    )
+    await asyncio.sleep(1.0)
+    if await page.locator('input[name="pw"]').count() == 0:
+        # login formu yok: zaten oturum acik
+        return "ok"
+
+    data = await _captcha_bytes(page)
+    guess = await read_captcha(data) if data else ""
+    if not guess:
+        return "retry"
+    await _login_credentials_step(page, creds, guess)
+    await page.wait_for_load_state("domcontentloaded", timeout=45000)
+    await asyncio.sleep(2.0)
+
+    still_login = await page.locator('input[name="pw"]').count() > 0
+    if not still_login and await _find_otp_input(page) is not None:
+        return "otp"
+    if still_login:
+        return "retry"
+    return "ok"
+
+
+async def auto_relogin(actor: str = "auto") -> dict:
+    """Oturum dustugunde OTP olmadan yeniden giris dener.
+
+    Kayitli `device_state` (portalin "trusted device" cerezi) ile acilan
+    tarayicida kullanici adi + sifre girilir, captcha AI ile okunur. Portal
+    yine de OTP istiyorsa admin bilgilendirilir ve `otp_required` isaretlenir.
+    """
+    creds = await raw_credentials()
+    if not creds.get("username") or not creds.get("password"):
+        return {"ok": False, "reason": "no_credentials"}
+
+    doc = await settings_col.find_one({"key": SESSION_KEY})
+    value = (doc or {}).get("value") or {}
+    device_state = value.get("device_state")
+
+    try:
+        if device_state:
+            pw, browser, context, page = await _launch_with_state(device_state)
+        else:
+            pw, browser, context, page = await _launch()
+    except Exception as exc:
+        logger.warning("auto relogin launch failed: %s", exc)
+        return {"ok": False, "reason": "browser", "error": str(exc)}
+
+    entry = {"pw": pw, "browser": browser, "context": context}
+    try:
+        for attempt in range(AUTO_RELOGIN_TRIES):
+            try:
+                outcome = await _auto_login_attempt(page, creds)
+            except Exception as exc:
+                logger.warning("auto relogin attempt %s failed: %s", attempt + 1, exc)
+                outcome = "retry"
+            if outcome == "ok":
+                await _persist_session({"context": context}, via_otp=False)
+                await settings_col.update_one(
+                    {"key": SESSION_KEY},
+                    {
+                        "$set": {"value.last_auto_login_at": _now().isoformat()},
+                        "$inc": {"value.auto_login_count": 1},
+                    },
+                )
+                await log_event(
+                    None, None, "rpa_auto_login",
+                    "Oturum otomatik yenilendi (OTP gerekmedi)", actor=actor,
+                )
+                return {"ok": True, "attempts": attempt + 1}
+            if outcome == "otp":
+                await _mark_otp_required("portal_otp")
+                await log_event(
+                    None, None, "rpa_otp_required",
+                    "Otomatik giriste portal OTP istedi - manuel giris gerekiyor", actor=actor,
+                )
+                return {"ok": False, "reason": "otp_required"}
+            await asyncio.sleep(2.0)
+        return {"ok": False, "reason": "captcha_failed"}
+    finally:
+        await _close(entry)
 
 
 async def keepalive_session() -> dict:
@@ -475,6 +616,24 @@ async def keepalive_session() -> dict:
         await _close({"pw": pw, "browser": browser, "context": context})
 
 
+async def _active_state() -> dict | None:
+    """Kayitli oturum cerezlerini dondurur.
+
+    Oturum `expired` isaretliyse once OTP'siz otomatik giris denenir; boylece
+    aktarim/durum sorgusu admin mudahalesi olmadan devam eder.
+    """
+    doc = await settings_col.find_one({"key": SESSION_KEY})
+    value = (doc or {}).get("value") or {}
+    if value.get("storage_state") and not value.get("expired"):
+        return value["storage_state"]
+    if value.get("storage_state") or value.get("device_state"):
+        out = await auto_relogin()
+        if out.get("ok"):
+            doc = await settings_col.find_one({"key": SESSION_KEY})
+            return ((doc or {}).get("value") or {}).get("storage_state")
+    return value.get("storage_state")
+
+
 async def clear_session() -> dict:
     await settings_col.delete_one({"key": SESSION_KEY})
     for sid, entry in list(_sessions.items()):
@@ -493,8 +652,7 @@ async def check_status(app_doc: dict) -> dict:
     if not mapping.get("status_url"):
         return {"ok": False, "error": "Durum sayfası adresi (status_url) tanımlı değil. Zami ekranından girin."}
 
-    doc = await settings_col.find_one({"key": SESSION_KEY})
-    state = ((doc or {}).get("value") or {}).get("storage_state")
+    state = await _active_state()
     if not state:
         return {"ok": False, "error": "Kayıtlı portal oturumu yok. Önce RPA oturumu açın (captcha + OTP)."}
 
@@ -665,8 +823,7 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
     if not mapping.get("fields") and not mapping.get("traveler_fields"):
         return {"ok": False, "error": "Alan eşlemesi boş. Önce Zami form alanlarını eşleyin."}
 
-    doc = await settings_col.find_one({"key": SESSION_KEY})
-    state = ((doc or {}).get("value") or {}).get("storage_state")
+    state = await _active_state()
     if not state:
         return {"ok": False, "error": "Kayıtlı portal oturumu yok. Önce RPA oturumu açın (captcha + OTP)."}
 
