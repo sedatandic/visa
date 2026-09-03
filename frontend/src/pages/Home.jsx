@@ -32,6 +32,7 @@ import { ReviewSpotlight } from "../components/ReviewSpotlight";
 import { SampleVisa } from "../components/SampleVisa";
 import { RouteFlags } from "../components/FlagIcons";
 import { AuthorityStrip } from "../components/AuthorityStrip";
+import { VisaShowcase } from "../components/VisaShowcase";
 import { VisaGuideLinks } from "../components/VisaGuideLinks";
 import { FxNote } from "../components/FxNote";
 import {
@@ -215,6 +216,9 @@ export default function Home() {
 
             {/* AUTHORITIES / TRUST STRIP */}
             <AuthorityStrip />
+
+            {/* VIZE TIPI VITRINI — tek dokunuşla seçim */}
+            <VisaShowcase />
 
             {/* MUSTERI YORUMU VITRINI (ust bolum) */}
             <ReviewSpotlight summary={content?.review_summary} testimonials={content?.testimonials} />

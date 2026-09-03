@@ -1,0 +1,39 @@
+{
+  "summary": "Completed comprehensive frontend testing of the new visa showcase feature on Home page. All 6 visa cards render correctly with proper images, overlay text, and navigation. Card clicks successfully navigate to /basvuru with preselected visa types, and pricing reflects the chosen visa accurately (verified 3 different visa types). Mobile viewport testing confirms responsive design with proper tap targets and no overflow. All regression tests passed - hero, pricing, testimonials, and FAQ sections remain functional.",
+  "backend_issues": {
+    "critical_bugs": [],
+    "flaky_endpoints": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "Home page renders visa showcase section with data-testid='landing-visa-showcase'",
+    "All 6 visa cards present with correct data-testids (visa_30_single, visa_60_single, visa_30_multi, visa_30_child, visa_transit_48, visa_extension_30)",
+    "All card images load successfully (no broken images)",
+    "Overlay text and dark glass label bars visible on all cards",
+    "'Tüm vize tipleri' button navigates to /vize-tipleri",
+    "Clicking visa_30_single card navigates to /basvuru?vize=visa_30_single with correct pricing (5,420 TL)",
+    "Clicking visa_30_child card navigates to /basvuru?vize=visa_30_child with correct pricing (2,710 TL - child discount applied)",
+    "Clicking visa_60_single card navigates to /basvuru?vize=visa_60_single with correct pricing (10,850 TL)",
+    "Wizard stepper TOPLAM badge displays correct price for each preselected visa type",
+    "Summary panel shows correct visa pricing in 'Başvuru özeti'",
+    "Mobile viewport (390x844): All 6 cards stack properly",
+    "Mobile: Card tap targets meet minimum 44px requirement (232px height)",
+    "Mobile: No horizontal page overflow (page width = viewport width)",
+    "Mobile: Cards are tappable and navigate correctly",
+    "Mobile: 'Tüm vize tipleri' button is tappable (44px height) and works",
+    "Regression: Hero section, CTAs, pricing tabs, testimonials, and FAQ all render correctly",
+    "No console errors on desktop or mobile"
+  ],
+  "test_report_links": [],
+  "success_percentage": {
+    "frontend": "100%"
+  },
+  "action_item_for_main_agent": "",
+  "updated_files": [],
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": false
+}

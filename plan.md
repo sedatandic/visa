@@ -377,6 +377,26 @@ Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca 
 
 ---
 
+### Phase 43 — Vize Kartları Vitrini (Ana Sayfa, Tek Dokunuşla Seçim) — **COMPLETED (2026-09-03)**
+**Amaç:** Ana sayfadan vize tipini görselli bir ızgaradan seçtirerek başvuruya tek dokunuşta yönlendirmek (referanstaki “destination grid” mantığı).
+
+**Frontend**
+- Yeni bileşen: `/app/frontend/src/components/VisaShowcase.jsx`
+  - AuthorityStrip’ten hemen sonra, **yüzen panel** içinde 6 görselli vize kartı (3×2 ızgara).
+  - Kartlar: koyu cam overlay + sol üstte rozet + sağ altta yuvarlak ok butonu.
+  - Skeleton yükleme ve boş durum ele alındı.
+  - Görseller: `lib/site.js` içindeki `IMAGES` URL’leri.
+- Navigasyon:
+  - Kartlar `/basvuru?vize=<id>` adresine gider.
+  - `Apply.jsx`’in mevcut `vize` query param desteği ile sihirbaz **seçili vize türüyle** açılır (tek dokunuşla seçim).
+
+**Test**
+- iteration_38: frontend **%100**, `ui_bugs=0`.
+- 3 farklı vize türünde ön-seçim + fiyat doğrulandı.
+- Mobil 390×844: taşma yok, dokunma hedefleri uygun.
+
+---
+
 ## 3. Next Actions
 
 ### P0 — “AI Hissi”ni Kıran En Kritik İş: Gerçek Firma Bilgileri — **USER ACTION REQUIRED**
@@ -492,6 +512,10 @@ OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
   3) “VizeAtlas” metinleri public alanlarda kalmaz.
   4) Tipografi: başlıklarda **Figtree**; gerektiğinde kısa italik display vurgusu; okunabilirlik AA.
   5) Mobilde yatay kaydırma yok; 44px dokunma hedefleri korunur.
+  6) **Vize Kartları Vitrini**:
+     - Ana sayfada 6 kart render olur ve görseller bozuk değildir.
+     - Kart tıklaması `/basvuru?vize=<id>` ile sihirbazı açar.
+     - Seçili vize türüne göre özet/Toplam fiyat doğru güncellenir.
 
 - Zami entegrasyonu başarı kriterleri:
   1) Mapping kaydı admin panelden kaydedilince **constants/upload_targets/validate_selector** kaybolmaz.
@@ -531,11 +555,13 @@ OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
 - Phase 40 (Zami OTP ayda bir — trusted device + auto relogin + admin UI): **TAMAMLANDI**.
 - Phase 41 (Zami OTP hatırlatıcı — e-posta + WhatsApp + admin UI + readiness kanalı kontrolü): **TAMAMLANDI**.
 - Phase 42 (Sky Panels tasarım sistemi — tokenlar + bileşenler + Home hero + layout): **TAMAMLANDI**.
+- Phase 43 (Vize Kartları Vitrini — tek dokunuşla seçim): **TAMAMLANDI**.
 
 Test raporları (seçme):
 - iteration_35.json — **OTP ayda bir**: backend 12/12 + regresyonlar PASS.
 - iteration_36.json — **OTP hatırlatıcı**: kritik hata 0; canlı test + dedupe doğrulandı.
 - iteration_37.json — **Sky Panels UI**: frontend regresyon ~%95; ui_bugs=0; mobil overflow yok; admin akışı sağlam.
+- iteration_38.json — **Vize Kartları Vitrini**: frontend %100; tek dokunuşla seçim + fiyat ön-seçimi doğrulandı.
 
 Blokajlar / Bekleyen:
 - **Gerçek firma bilgileri** (telefon/adres/TÜRSAB/vergisel bilgiler) → güven için **USER ACTION REQUIRED**.
