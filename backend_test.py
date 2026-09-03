@@ -389,6 +389,329 @@ class TestRunner:
             else:
                 print(f"   ❌ Application DV-CV681445 not found")
 
+    def test_email_system(self):
+        """Test email system configuration and sending"""
+        print("\n\n📧 TESTING EMAIL SYSTEM")
+        print("=" * 60)
+        
+        if not self.admin_token:
+            print("❌ Skipping - No admin token")
+            return
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Test 1: GET /api/admin/emails - check new fields
+        success, response = self.test(
+            "GET /admin/emails - Check Configuration",
+            "GET",
+            "admin/emails",
+            200,
+            headers=headers
+        )
+        
+        if success:
+            email_configured = response.get('email_configured')
+            sender_email = response.get('sender_email')
+            sandbox_sender = response.get('sandbox_sender')
+            
+            print(f"   Email Configured: {email_configured}")
+            print(f"   Sender Email: {sender_email}")
+            print(f"   Sandbox Sender: {sandbox_sender}")
+            
+            if email_configured == True:
+                print(f"   ✅ email_configured is True")
+            else:
+                print(f"   ❌ email_configured is {email_configured}, expected True")
+            
+            if sender_email == "onboarding@resend.dev":
+                print(f"   ✅ sender_email is onboarding@resend.dev")
+            else:
+                print(f"   ⚠️  sender_email is {sender_email}, expected onboarding@resend.dev")
+            
+            if sandbox_sender == True:
+                print(f"   ✅ sandbox_sender is True")
+            else:
+                print(f"   ❌ sandbox_sender is {sandbox_sender}, expected True")
+        
+        # Test 2: Create application with sandbox-allowed email (info@dubaivizeonline.com)
+        print("\n   Creating application with sandbox-allowed email...")
+        
+        # Get visa types first
+        success, visa_response = self.test(
+            "Get Visa Types for Application",
+            "GET",
+            "visa-types",
+            200
+        )
+        
+        if not success or not visa_response:
+            print("   ❌ Cannot create application without visa types")
+            return
+        
+        adult_visas = [v for v in visa_response if v.get('category') != 'child']
+        if not adult_visas:
+            print("   ❌ No adult visa types found")
+            return
+        
+        visa_id = adult_visas[0]['id']
+        
+        # Upload dummy passport file
+        import io
+        import base64
+        
+        # Create a minimal valid JPEG (1x1 pixel)
+        jpeg_data = base64.b64decode('/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=')
+        
+        # Upload passport file
+        try:
+            files = {'file': ('passport.jpg', io.BytesIO(jpeg_data), 'image/jpeg')}
+            form_data = {'doc_type': 'passport'}
+            upload_response = requests.post(
+                f"{API_BASE}/uploads",
+                files=files,
+                data=form_data,
+                timeout=30
+            )
+            
+            if upload_response.status_code != 200:
+                print(f"   ❌ Failed to upload passport file: {upload_response.status_code}")
+                return
+            
+            passport_file_id = upload_response.json().get('file_id')
+            print(f"   ✅ Passport file uploaded: {passport_file_id}")
+            
+            # Upload photo file
+            files = {'file': ('photo.jpg', io.BytesIO(jpeg_data), 'image/jpeg')}
+            form_data = {'doc_type': 'photo'}
+            upload_response = requests.post(
+                f"{API_BASE}/uploads",
+                files=files,
+                data=form_data,
+                timeout=30
+            )
+            
+            if upload_response.status_code != 200:
+                print(f"   ❌ Failed to upload photo file: {upload_response.status_code}")
+                return
+            
+            photo_file_id = upload_response.json().get('file_id')
+            print(f"   ✅ Photo file uploaded: {photo_file_id}")
+            
+        except Exception as e:
+            print(f"   ❌ File upload error: {str(e)}")
+            return
+        
+        # Create application with sandbox-allowed email
+        from datetime import datetime, timedelta
+        today = datetime.now()
+        arrival = (today + timedelta(days=30)).strftime('%Y-%m-%d')
+        departure = (today + timedelta(days=37)).strftime('%Y-%m-%d')
+        
+        app_data = {
+            "contact": {
+                "full_name": "Test User Sandbox",
+                "email": "info@dubaivizeonline.com",  # Sandbox-allowed email
+                "phone": "05551234567",
+                "address_city": "Istanbul",
+                "whatsapp_optin": False
+            },
+            "travelers": [{
+                "first_name": "AHMET",
+                "last_name": "YILMAZ",
+                "birth_date": "1990-01-01",
+                "gender": "male",
+                "applicant_type": "adult",
+                "nationality": "TR",
+                "national_id": "12345678901",
+                "passport_no": "U12345678",
+                "passport_expiry": "2030-12-31",
+                "marital_status": "single",
+                "profession": "Engineer",
+                "mother_name": "AYSE",
+                "father_name": "MEHMET",
+                "visa_type_id": visa_id,
+                "passport_file_id": passport_file_id,
+                "photo_file_id": photo_file_id
+            }],
+            "travel": {
+                "arrival_date": arrival,
+                "departure_date": departure,
+                "purpose": "tourism",
+                "birth_country": "TR",
+                "accommodation": "Hotel",
+                "flight_no": "TK123",
+                "notes": ""
+            },
+            "addons": {"express": False, "insurance": False},
+            "store_items": [],
+            "extra_documents": {
+                "ticket_file_id": None,
+                "hotel_file_id": None,
+                "other_file_ids": []
+            },
+            "kvkk_accepted": True
+        }
+        
+        success, app_response = self.test(
+            "Create Application (Sandbox Email)",
+            "POST",
+            "applications",
+            200,
+            data=app_data
+        )
+        
+        if success:
+            ref_code = app_response.get('reference_code')
+            email_notification = app_response.get('email_notification')
+            
+            print(f"   Reference Code: {ref_code}")
+            print(f"   Email Notification Status: {email_notification}")
+            
+            if email_notification == 'sent':
+                print(f"   ✅ Email status is 'sent' (not 'skipped')")
+            else:
+                print(f"   ❌ Email status is '{email_notification}', expected 'sent'")
+            
+            # Check email_outbox via admin/emails
+            success, emails_response = self.test(
+                "Check Email Outbox",
+                "GET",
+                "admin/emails",
+                200,
+                headers=headers
+            )
+            
+            if success:
+                items = emails_response.get('items', [])
+                recent_email = next((e for e in items if e.get('to') == 'info@dubaivizeonline.com'), None)
+                
+                if recent_email:
+                    status = recent_email.get('status')
+                    print(f"   Email Outbox Status: {status}")
+                    
+                    if status == 'sent':
+                        print(f"   ✅ Email outbox shows 'sent'")
+                    else:
+                        print(f"   ❌ Email outbox shows '{status}', expected 'sent'")
+        
+        # Test 3: Create application with non-sandbox email (should get 'error' but application still created)
+        print("\n   Creating application with non-sandbox email (graceful degradation test)...")
+        
+        # Upload new files for second application
+        try:
+            files = {'file': ('passport2.jpg', io.BytesIO(jpeg_data), 'image/jpeg')}
+            form_data = {'doc_type': 'passport'}
+            upload_response = requests.post(f"{API_BASE}/uploads", files=files, data=form_data, timeout=30)
+            passport_file_id2 = upload_response.json().get('file_id')
+            
+            files = {'file': ('photo2.jpg', io.BytesIO(jpeg_data), 'image/jpeg')}
+            form_data = {'doc_type': 'photo'}
+            upload_response = requests.post(f"{API_BASE}/uploads", files=files, data=form_data, timeout=30)
+            photo_file_id2 = upload_response.json().get('file_id')
+        except:
+            print(f"   ⚠️  Skipping non-sandbox test (file upload failed)")
+            return
+        
+        app_data2 = {
+            "contact": {
+                "full_name": "Test User NonSandbox",
+                "email": "test@example.com",  # Non-sandbox email
+                "phone": "05559876543",
+                "address_city": "Ankara",
+                "whatsapp_optin": False
+            },
+            "travelers": [{
+                "first_name": "MEHMET",
+                "last_name": "DEMIR",
+                "birth_date": "1985-05-15",
+                "gender": "male",
+                "applicant_type": "adult",
+                "nationality": "TR",
+                "national_id": "98765432109",
+                "passport_no": "U98765432",
+                "passport_expiry": "2029-06-30",
+                "marital_status": "married",
+                "profession": "Teacher",
+                "mother_name": "FATMA",
+                "father_name": "ALI",
+                "visa_type_id": visa_id,
+                "passport_file_id": passport_file_id2,
+                "photo_file_id": photo_file_id2
+            }],
+            "travel": {
+                "arrival_date": arrival,
+                "departure_date": departure,
+                "purpose": "tourism",
+                "birth_country": "TR",
+                "accommodation": "Hotel",
+                "flight_no": "TK456",
+                "notes": ""
+            },
+            "addons": {"express": False, "insurance": False},
+            "store_items": [],
+            "extra_documents": {
+                "ticket_file_id": None,
+                "hotel_file_id": None,
+                "other_file_ids": []
+            },
+            "kvkk_accepted": True
+        }
+        
+        success, app_response2 = self.test(
+            "Create Application (Non-Sandbox Email - Graceful Degradation)",
+            "POST",
+            "applications",
+            200,  # Application should still be created successfully
+            data=app_data2
+        )
+        
+        if success:
+            ref_code2 = app_response2.get('reference_code')
+            email_notification2 = app_response2.get('email_notification')
+            
+            print(f"   Reference Code: {ref_code2}")
+            print(f"   Email Notification Status: {email_notification2}")
+            
+            if ref_code2:
+                print(f"   ✅ Application created successfully (graceful degradation)")
+            
+            if email_notification2 == 'error':
+                print(f"   ✅ Email status is 'error' (expected for non-sandbox email)")
+            else:
+                print(f"   ⚠️  Email status is '{email_notification2}', expected 'error'")
+        
+        # Test 4: POST /api/drafts with sandbox email
+        print("\n   Testing draft save with sandbox email...")
+        
+        draft_data_sandbox = {
+            "email": "info@dubaivizeonline.com",
+            "data": {
+                "contact": {"full_name": "Draft Test", "email": "info@dubaivizeonline.com", "phone": "05551112233"},
+                "travelers": [{"first_name": "Test", "last_name": "Draft"}],
+                "step": 1
+            },
+            "title": "Sandbox Draft Test",
+            "step": 1,
+            "traveler_count": 1
+        }
+        
+        success, draft_response = self.test(
+            "Create Draft (Sandbox Email)",
+            "POST",
+            "drafts",
+            200,
+            data=draft_data_sandbox
+        )
+        
+        if success:
+            email_status = draft_response.get('email_status')
+            print(f"   Email Status: {email_status}")
+            
+            if email_status == 'sent':
+                print(f"   ✅ Draft email status is 'sent'")
+            else:
+                print(f"   ❌ Draft email status is '{email_status}', expected 'sent'")
+
     def run_all_tests(self):
         """Run all tests"""
         print("\n" + "=" * 60)
@@ -402,6 +725,7 @@ class TestRunner:
             return 1
         
         # Run all test suites
+        self.test_email_system()  # NEW: Test email system first
         self.test_drafts()
         self.test_zami_admin_endpoints()
         self.test_passport_read_regression()

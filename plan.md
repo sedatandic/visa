@@ -6,9 +6,10 @@
 - Çekirdek iş akışı: **başvuru oluşturma → dosya yükleme → ödeme (kart / havale) → takip kodu**.
 - Başvuruları MongoDB’ye kaydetme, admin panelde listeleme/detay/güncelleme.
 - Bildirimler:
-  - E-posta bildirimleri (başvuru sahibine + admin’e):
-    - **RESEND_API_KEY yoksa akışı bozmadan “skipped” olarak outbox’a yaz**.
-    - Canlı Resend anahtarı ile gerçek e-posta gönderimini E2E doğrulama (**beklemede: anahtar gerekli**).
+  - **E-posta bildirimleri (Resend)**:
+    - Resend entegrasyonu canlı (API anahtarı bağlı) ve outbox kayıtları admin panelde görünür.
+    - **Kritik kısıt:** Gönderici `onboarding@resend.dev` (sandbox) ise Resend sadece hesap sahibine mail atar; müşteri mailleri “error” olur ama akış bozulmaz (graceful degradation).
+    - Hedef: Resend’de **domain doğrulaması** + `SENDER_EMAIL=noreply@<domain>` ile gerçek müşteri e-postalarını üretime almak.
   - WhatsApp bildirimleri: **manuel mod** (wa.me link üretimi) tamam; otomatik sağlayıcı (Twilio/Meta) **beklemede**.
 - Güven ve “insan eliyle tasarlanmış” kurumsal görünüm:
   - **Sadece kırmızı + beyaz** palet (yeşil tamamen kaldırıldı).
@@ -257,11 +258,7 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
 
 **Yapılanlar**
 - Frontend: `Apply.jsx`
-  - Yolcu başına yeni alanlar eklendi:
-    - `marital_status` (Medeni hal)
-    - `profession` (Meslek)
-    - `mother_name` (Anne adı)
-    - `father_name` (Baba adı)
+  - Yolcu başına yeni alanlar eklendi: `marital_status`, `profession`, `mother_name`, `father_name`
   - Validasyon eklendi (boş bırakılırsa adım ilerlemez).
   - Çocuk yolcu seçilince otomatik: `marital_status=single`, `profession=Student`.
 - Backend: `models.py`
@@ -281,20 +278,36 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
   - Yeni alanlar yolcu kartında görüntüleniyor.
 
 **Test**
-- `testing_agent_v3` iteration_28.json
-  - Backend **12/12 %100 PASS**
-  - Frontend **%100 PASS**
-  - Sıfır bug
+- `testing_agent_v3` iteration_28.json → backend **12/12**, frontend **%100**.
 
 ---
 
-### P1 — Canlı E-posta (Resend) Aktivasyonu — **BLOCKED**
-**Gerekenler:**
-- `RESEND_API_KEY`
-- `SENDER_EMAIL` (Resend’de doğrulanmış gönderici)
+### P1 — Canlı E-posta (Resend) Aktivasyonu — **COMPLETED (2026-09-03)**
+**Amaç:** Taslak hatırlatma, ödeme makbuzu, vize PDF teslimi ve durum e-postalarını canlıya almak.
 
-**Kazanım:**
-- Taslak hatırlatma (“kaldığın yerden devam”), ödeme makbuzu, vize PDF teslimi ve durum bildirimleri gerçek e-posta ile çalışır.
+**Yapılanlar**
+- `backend/.env` içine kullanıcı tarafından sağlanan **RESEND_API_KEY** eklendi (send-only restricted key).
+- Admin bildirimlerinin sandbox modda da hemen çalışması için `ADMIN_EMAIL=info@dubaivizeonline.com` yapıldı.
+- `GET /api/admin/emails` artık aşağıdaki bilgileri döndürüyor:
+  - `email_configured`
+  - `sender_email`
+  - `sandbox_sender`
+- `AdminEmails.jsx`:
+  - Sandbox uyarı bloğu eklendi (`data-testid=email-sandbox-warning`).
+  - Üretim gönderici bilgi bloğu eklendi (`data-testid=email-sender-info`).
+- E2E doğrulama:
+  - Sandbox izinli adrese (`info@dubaivizeonline.com`) gönderim **sent**.
+  - Diğer alıcılara gönderim **error**, fakat başvuru/taslak akışı bozulmuyor (graceful degradation).
+
+**Test**
+- `testing_agent_v3` iteration_29.json → backend **%95**, frontend **%100**.
+  - Not: “/admin/zami/mapping GET 405” bir bug değil; bu endpoint PUT-only, GET için `/admin/zami/config` kullanılıyor.
+
+**Kullanıcı aksiyonu (kritik)**
+- Şu an gönderici `onboarding@resend.dev` olduğu için Resend sandbox kısıtı var.
+- Üretim için:
+  1) Resend panelinde `resend.com/domains` üzerinden **dubaivizeonline.com** domain doğrulaması
+  2) `SENDER_EMAIL=noreply@dubaivizeonline.com` (veya `info@dubaivizeonline.com`) olarak güncelleme
 
 ---
 
@@ -303,10 +316,34 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
 
 ---
 
-### P2 — Custom Domain Deploy — **BEKLEMEDE**
-**Not:**
-- IHS vb. yerlerden **paylaşımlı hosting alınmayacak**.
-- Sadece domain satın alındıktan sonra DNS yönlendirme ile Emergent’e bağlanacak.
+### P2 — Custom Domain Deploy — **IN PROGRESS / USER ACTION REQUIRED**
+**Durum / bulgular**
+- Domainler:
+  - `dubaivizeonline.com`: DNS’te A kaydı yok (şu an yönlenmiyor) → **deploy için ideal**
+  - `dubaivizemerkezi.com`: 194.31.150.134’e yönlü
+- Paylaşımlı hosting (cPanel/PHP) **alınmayacak**.
+- Deployment readiness kontrolü: **PASS** (bloklayıcı yok).
+- Temizlik: `/app/scripts/out` ekran görüntü klasörü silindi.
+
+**Uygulanacak adımlar (deploy runbook)**
+1) Emergent’te **Deploy → Deploy Now** (yaklaşık 10–15 dk; 50 kredi/ay)
+2) Deploy sonrası **Link domain** → `dubaivizeonline.com`
+3) Emergent’in verdiği DNS kayıtlarını domain sağlayıcı panelinde ekle:
+   - kök domain (`@`) için A veya CNAME
+   - `www` için CNAME
+4) DNS yayılımını bekle (genelde 5–30 dk; nadiren 24 saat)
+5) SSL otomatik aktif (https)
+6) Deploy ortamında env var’ları gir:
+   - `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `EMERGENT_LLM_KEY`, `RESEND_API_KEY`, `SENDER_EMAIL`, `STRIPE_API_KEY`, `PUBLIC_SITE_URL`, `PUBLIC_BASE_URL`
+7) Domain açıldıktan sonra:
+   - `PUBLIC_SITE_URL` ve `PUBLIC_BASE_URL` yeni domain’e çekilecek
+   - Resend domain doğrulaması + `SENDER_EMAIL` production’a alınacak
+
+**Test hedefi (deploy sonrası)**
+- Ana sayfa + başvuru akışı
+- Admin login
+- Resend e-posta outbox → gerçek müşteri maili “sent”
+- Zami readiness ve cron’lar (status sweep logları)
 
 ---
 
@@ -337,12 +374,17 @@ Not: Bu alanlar şu an formda sorulmuyor (Phase 31 kararı). İstenirse “opsiy
   2) Bookmarklet ile kullanıcı Zami formunu doldurabilir (captcha/OTP kendisi).
   3) Playwright RPA ile admin, insan onayıyla login olup başvuruyu doldurabilir (dry-run + submit).
   4) Aktarım kayıtları/loglar ve hata ayıklama çıktıları admin panelinde görünür.
-  5) Canlı portalda gerçek kayıt (Waiting list) oluşturulabildi (VS-66059) ve otomatik durum takibi çalışır.
-  6) **Yeni P0 alanları ile** (medeni hal/meslek/anne/baba) RPA aktarımında manuel giriş ihtiyacı azalır.
+  5) Canlı portalda gerçek kayıt (Waiting list) oluşturulabildi ve otomatik durum takibi çalışır.
+  6) Zami zorunlu alanları (medeni hal/meslek/anne/baba) artık public formdan toplanır ve otomatik doldurulur.
 - WhatsApp (Phase 24):
   - Manuel modda wa.me linkleri doğru mesaj şablonlarıyla üretilir ve operasyon akışına uygun olur.
-- E-posta (Resend) başarı kriterleri (P1):
-  - API key girildiğinde outbox “skipped” yerine “sent” olur; taslak hatırlatma + vize PDF + ödeme e-postaları E2E doğrulanır.
+- E-posta (Resend) başarı kriterleri:
+  1) `RESEND_API_KEY` bağlıyken outbox kayıtları “skipped” yerine “sent/error” olur.
+  2) Domain doğrulaması sonrası müşteri e-postaları **sent** olur (sandbox kısıtı kalkar).
+- Deploy/Domain başarı kriterleri:
+  1) `https://dubaivizeonline.com` açılır, SSL aktif.
+  2) Admin panel ve ödeme akışları çalışır.
+  3) Cron job’lar (taslak hatırlatma, Zami status sweep) deploy ortamında çalışır.
 
 ---
 
@@ -359,17 +401,17 @@ Not: Bu alanlar şu an formda sorulmuyor (Phase 31 kararı). İstenirse “opsiy
 - Phase 31 (Kısa soru seti; uçuş/otel soru değil): **TAMAMLANDI**.
 - Phase 32 (Pasaportla tek adım): **TAMAMLANDI**.
 - Phase 33 (Fotoğraf kontrolü): **TAMAMLANDI**.
-- Phase 35–42 (Zami canlı çalışma + palet kırmızı/beyaz + taslak otomasyon + durum takibi): **TAMAMLANDI**.
 - **P0 Zami zorunlu alanlar (Medeni Hal/Meslek/Anne/Baba)**: **TAMAMLANDI**.
+- **P1 Canlı E-posta (Resend) aktivasyonu**: **TAMAMLANDI** (sandbox mod kısıtlı; domain doğrulaması bekliyor).
 
-Test:
+Test raporları (seçme):
 - iteration_23.json — Pasaportla Tek Adım: backend 5/5, frontend 6/6, **%100**.
 - iteration_24.json — Fotoğraf Kontrolü: backend 12/12, **%100**.
-- iteration_27.json — UI palet + regresyon: sonrasında **%100**.
-- **iteration_28.json — Zami zorunlu alanlar**: backend **12/12**, frontend **%100**, sıfır bug.
+- iteration_27.json — UI palet + regresyon: **%100**.
+- iteration_28.json — Zami zorunlu alanlar: backend **12/12**, frontend **%100**.
+- iteration_29.json — Resend aktivasyonu + sandbox uyarıları: backend **%95**, frontend **%100**.
 
 Blokajlar / Bekleyen:
-- **RESEND_API_KEY yok** → canlı e-posta devreye alınamıyor.
+- **Resend production (domain doğrulaması + SENDER_EMAIL)** → müşteri e-postaları için **USER ACTION REQUIRED**.
 - Stripe prod anahtarları yok (opsiyonel).
-- Domain satın alınmadıysa: önce domain, sonra DNS yönlendirme.
-- Kullanıcının IHS paylaşımlı hosting satın almaması gerekir (uyarı verildi).
+- Custom domain deploy/DNS yönlendirme → **USER ACTION REQUIRED** (özellikle `dubaivizeonline.com` için).

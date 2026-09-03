@@ -14,6 +14,8 @@ const STATUS_UI = {
 export default function AdminEmails() {
     const [items, setItems] = useState([]);
     const [configured, setConfigured] = useState(false);
+    const [sender, setSender] = useState("");
+    const [sandbox, setSandbox] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -21,6 +23,8 @@ export default function AdminEmails() {
             .then(({ data }) => {
                 setItems(data.items);
                 setConfigured(data.email_configured);
+                setSender(data.sender_email || "");
+                setSandbox(!!data.sandbox_sender);
             })
             .catch((err) => toast.error(apiError(err, "E-posta kayıtları yüklenemedi.")))
             .finally(() => setLoading(false));
@@ -42,6 +46,43 @@ export default function AdminEmails() {
                                 alacağınız API anahtarını (<code>RESEND_API_KEY</code>) sistemimize eklemesi
                                 için bize ilettiğinizde tüm geçmiş ve yeni bildirimler otomatik olarak
                                 gönderilmeye başlar.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {configured && sandbox && (
+                    <div
+                        className="mb-6 flex items-start gap-3 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-5"
+                        data-testid="email-sandbox-warning"
+                    >
+                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--status-warning))]" />
+                        <div className="text-sm leading-6 text-[hsl(var(--status-warning))]">
+                            <p className="font-semibold">
+                                E-posta servisi bağlı, ancak hâlâ test göndericisi kullanılıyor
+                            </p>
+                            <p className="mt-1">
+                                Gönderici adresi <code>{sender}</code>. Resend'in test göndericisi yalnızca
+                                hesap sahibinin adresine mail atabilir; müşterilere gönderim{" "}
+                                <strong>başarısız olur</strong>. Çözüm: Resend panelinde{" "}
+                                <code>resend.com/domains</code> adresinden kendi alan adınızı doğrulayın,
+                                ardından gönderici adresinin (<code>SENDER_EMAIL</code>) örneğin{" "}
+                                <code>noreply@alanadiniz.com</code> olarak güncellenmesini isteyin.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {configured && !sandbox && !!sender && (
+                    <div
+                        className="mb-6 flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-5"
+                        data-testid="email-sender-info"
+                    >
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                        <div className="text-sm leading-6">
+                            <p className="font-semibold">E-posta servisi aktif</p>
+                            <p className="mt-1 text-muted-foreground">
+                                Bildirimler <code>{sender}</code> adresinden gönderiliyor.
                             </p>
                         </div>
                     </div>

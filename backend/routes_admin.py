@@ -433,7 +433,16 @@ async def admin_mark_read(message_id: str, admin: dict = Depends(require_admin))
 async def admin_emails(admin: dict = Depends(require_admin), limit: int = Query(50, ge=1, le=200)) -> dict:
     docs = await email_outbox_col.find({}).sort("created_at", -1).limit(limit).to_list(limit)
     configured = bool((os.environ.get("RESEND_API_KEY") or "").strip())
-    return {"email_configured": configured, "items": serialize_doc(docs)}
+    sender = (os.environ.get("SENDER_EMAIL") or "onboarding@resend.dev").strip()
+    # Resend'in test gondericisi yalnizca hesap sahibine mail atabilir. Gercek
+    # musterilere gonderim icin kendi alan adi Resend'de dogrulanmalidir.
+    sandbox = sender.endswith("@resend.dev")
+    return {
+        "email_configured": configured,
+        "sender_email": sender,
+        "sandbox_sender": sandbox,
+        "items": serialize_doc(docs),
+    }
 
 
 @router.post("/admin/applications/{application_id}/mark-paid")
