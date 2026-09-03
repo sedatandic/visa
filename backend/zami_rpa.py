@@ -17,7 +17,15 @@ import uuid
 from datetime import datetime, timezone
 
 from db import settings_col
-from zami import SESSION_KEY, get_mapping, log_event, match_status, raw_credentials
+from captcha_ai import read_captcha
+from zami import (
+    MANUAL_FIELDS,
+    SESSION_KEY,
+    get_mapping,
+    log_event,
+    match_status,
+    raw_credentials,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -154,15 +162,32 @@ async def _shot(page) -> str:
     return "data:image/jpeg;base64," + base64.b64encode(data).decode()
 
 
-async def _captcha_b64(page) -> str | None:
+async def _captcha_bytes(page) -> bytes | None:
+    """Captcha gorselinin ham PNG baytlarini dondurur."""
     try:
         el = page.locator(CAPTCHA_IMG).first
         await el.wait_for(timeout=8000)
-        data = await el.screenshot()
-        return "data:image/png;base64," + base64.b64encode(data).decode()
+        return await el.screenshot()
     except Exception as exc:
         logger.warning("captcha capture failed: %s", exc)
         return None
+
+
+async def _captcha_payload(page) -> tuple[str | None, str]:
+    """(data_url, ai_tahmini) dondurur; AI okumasi best-effort'tur."""
+    data = await _captcha_bytes(page)
+    if not data:
+        return None, ""
+    data_url = "data:image/png;base64," + base64.b64encode(data).decode()
+    guess = await read_captcha(data)
+    return data_url, guess
+
+
+async def _captcha_b64(page) -> str | None:
+    data = await _captcha_bytes(page)
+    if not data:
+        return None
+    return "data:image/png;base64," + base64.b64encode(data).decode()
 
 
 async def start_session(actor: str = "") -> dict:
@@ -194,11 +219,13 @@ async def start_session(actor: str = "") -> dict:
         "stage": "captcha",
     }
     await log_event(None, None, "rpa_session_start", "RPA oturumu baslatildi", actor=actor)
+    captcha_image, captcha_guess = await _captcha_payload(page)
     return {
         "ok": True,
         "session_id": session_id,
         "stage": "captcha",
-        "captcha_image": await _captcha_b64(page),
+        "captcha_image": captcha_image,
+        "captcha_guess": captcha_guess,
         "screenshot": await _shot(page),
         "username": creds["username"],
     }
@@ -215,7 +242,8 @@ async def refresh_captcha(session_id: str) -> dict:
     except Exception:
         await page.reload(wait_until="domcontentloaded")
     entry["touched"] = _now()
-    return {"ok": True, "captcha_image": await _captcha_b64(page)}
+    captcha_image, captcha_guess = await _captcha_payload(page)
+    return {"ok": True, "captcha_image": captcha_image, "captcha_guess": captcha_guess}
 
 
 async def _find_otp_input(page):
@@ -229,6 +257,54 @@ async def _find_otp_input(page):
     return None
 
 
+OTP_SUBMIT_SELECTORS = [
+    'button:has-text("VALIDATE OTP")',
+    'button:has-text("Validate OTP")',
+    'button:has-text("Validate")',
+    'button:has-text("Verify")',
+    'button[type="submit"]',
+    'input[type="submit"]',
+]
+TRUSTED_DEVICE_SELECTORS = ['input[name="si"][value="2"]', 'input[name="si"][value="3"]']
+
+
+async def _click_first(page, selectors: list[str]) -> bool:
+    """Verilen seciciler icinden gorunur ilkine tiklar; tiklanirsa True."""
+    for sel in selectors:
+        try:
+            loc = page.locator(sel).first
+            if await loc.count() > 0 and await loc.is_visible():
+                await loc.click(timeout=8000)
+                return True
+        except Exception:
+            continue
+    return False
+
+
+async def _mark_trusted_device(page) -> None:
+    """Varsa 'Trusted Device' secenegini isaretler; sonraki girislerde OTP azalir."""
+    for sel in TRUSTED_DEVICE_SELECTORS:
+        try:
+            loc = page.locator(sel).first
+            if await loc.count() > 0:
+                await loc.check(timeout=5000)
+                return
+        except Exception:
+            continue
+
+
+async def _submit_otp(page, otp: str) -> dict | None:
+    """OTP kodunu yazar ve dogrulama butonuna basar. Hata varsa dict dondurur."""
+    otp_input = await _find_otp_input(page)
+    if not otp_input:
+        return {"ok": False, "error": "OTP alanı bulunamadı.", "screenshot": await _shot(page)}
+    await otp_input.fill((otp or "").strip())
+    await _mark_trusted_device(page)
+    if not await _click_first(page, OTP_SUBMIT_SELECTORS):
+        await page.keyboard.press("Enter")
+    return None
+
+
 async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str = "") -> dict:
     entry = _sessions.get(session_id)
     if not entry:
@@ -239,11 +315,9 @@ async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str 
 
     try:
         if entry.get("stage") == "otp":
-            otp_input = await _find_otp_input(page)
-            if not otp_input:
-                return {"ok": False, "error": "OTP alanı bulunamadı.", "screenshot": await _shot(page)}
-            await otp_input.fill((otp or "").strip())
-            await page.keyboard.press("Enter")
+            failure = await _submit_otp(page, otp)
+            if failure:
+                return failure
         else:
             await page.fill('input[name="un"]', creds["username"])
             await page.fill('input[name="pw"]', creds["password"])
@@ -251,7 +325,7 @@ async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str 
                 await page.fill('input[name="captcha"]', (captcha or "").strip())
             await page.click('button[type="submit"]')
         await page.wait_for_load_state("domcontentloaded", timeout=45000)
-        await asyncio.sleep(1.5)
+        await asyncio.sleep(2.0)
     except Exception as exc:
         return {"ok": False, "error": f"Giriş denemesi başarısız: {exc}", "screenshot": await _shot(page)}
 
@@ -270,11 +344,13 @@ async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str 
         }
     if still_login:
         entry["stage"] = "captcha"
+        captcha_image, captcha_guess = await _captcha_payload(page)
         return {
             "ok": False,
             "stage": "captcha",
             "error": "Giriş yapılamadı (captcha, şifre veya OTP hatası olabilir). Captcha yenilenip tekrar denenebilir.",
-            "captcha_image": await _captcha_b64(page),
+            "captcha_image": captcha_image,
+            "captcha_guess": captcha_guess,
             "screenshot": await _shot(page),
         }
 
@@ -398,6 +474,33 @@ async def check_status(app_doc: dict) -> dict:
         await _close({"pw": pw, "browser": browser, "context": context})
 
 
+AUTOCOMPLETE_JS = """
+async ({selector, wanted}) => {
+    const $ = window.jQuery || window.$;
+    const el = document.querySelector(selector);
+    if (!el) return {ok: false, reason: 'element yok'};
+    el.focus();
+    el.value = wanted;
+    if ($) {
+        try { $(el).autocomplete('search', wanted); } catch (e) { /* widget degil */ }
+    }
+    el.dispatchEvent(new Event('input', {bubbles: true}));
+    await new Promise(r => setTimeout(r, 1600));
+    const menus = Array.from(document.querySelectorAll('.ui-autocomplete')).filter(m => !!m.offsetParent);
+    const items = menus.flatMap(m => Array.from(m.querySelectorAll('li'))).filter(li => (li.innerText || '').trim());
+    const norm = s => (s || '').trim().toLowerCase();
+    const target = items.find(li => norm(li.innerText) === norm(wanted))
+                || items.find(li => norm(li.innerText).startsWith(norm(wanted)))
+                || items[0];
+    if (target) {
+        (target.querySelector('a') || target).click();
+        await new Promise(r => setTimeout(r, 600));
+    }
+    return {ok: !!(el.value || '').trim(), value: (el.value || '').trim(), picked: target ? (target.innerText || '').trim() : null};
+}
+"""
+
+
 async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, actor: str = "") -> dict:
     """Saklanan oturumla Zami basvuru formunu doldurur (ve dry_run kapaliysa gonderir)."""
     mapping = await get_mapping()
@@ -417,6 +520,7 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
         logger.error("browser launch failed: %s", exc)
         return {"ok": False, "error": BROWSER_MISSING_MSG}
     filled, missing = [], []
+    skipped_disabled: list[str] = []
     try:
         await page.goto(mapping["form_url"], wait_until="domcontentloaded", timeout=45000)
         await asyncio.sleep(1.0)
@@ -434,7 +538,15 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
             if await loc.count() == 0:
                 missing.append(selector)
                 return False
+            try:
+                if await loc.is_disabled():
+                    # Portal bu alani kendisi yonetiyor (ornegin Medeni Hal, Group Membership)
+                    skipped_disabled.append(selector)
+                    return False
+            except Exception:
+                pass
             tag = (await loc.evaluate("el => el.tagName.toLowerCase()")) or ""
+            input_type = ((await loc.evaluate("el => el.type || ''")) or "").lower()
             if tag == "select":
                 try:
                     await loc.select_option(label=value)
@@ -444,10 +556,61 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
                     except Exception:
                         missing.append(selector)
                         return False
+            elif input_type == "radio":
+                # Ayni isimli radiolar icinde etiketi/degeri eslesen secilir
+                try:
+                    group = page.locator(selector)
+                    count = await group.count()
+                    chosen = False
+                    for i in range(count):
+                        item = group.nth(i)
+                        raw_val = ((await item.evaluate("el => el.value || ''")) or "").strip()
+                        label_txt = (
+                            await item.evaluate(
+                                "el => (el.closest('label')?.innerText || el.parentElement?.innerText || '')"
+                            )
+                        ) or ""
+                        target = str(value).strip().lower()
+                        if target in (raw_val.lower(), label_txt.strip().lower()) or (
+                            target and target in label_txt.lower()
+                        ):
+                            await item.check(timeout=8000)
+                            chosen = True
+                            break
+                    if not chosen:
+                        missing.append(selector)
+                        return False
+                except Exception:
+                    missing.append(selector)
+                    return False
+            elif input_type == "checkbox":
+                truthy = str(value).strip().lower() in {"1", "true", "yes", "evet", "on"}
+                if truthy:
+                    await loc.check(timeout=8000)
+                else:
+                    return False
             else:
-                await loc.fill(str(value))
+                class_name = ((await loc.evaluate("el => el.className || ''")) or "").lower()
+                if "ui-autocomplete-input" in class_name:
+                    # jQuery UI autocomplete: deger yazilip oneri listesinden secilmeli
+                    result = await page.evaluate(
+                        AUTOCOMPLETE_JS, {"selector": selector, "wanted": str(value)}
+                    )
+                    if not (result or {}).get("ok"):
+                        missing.append(selector)
+                        return False
+                else:
+                    await loc.fill(str(value))
+                    try:
+                        await loc.dispatch_event("input")
+                    except Exception:
+                        pass
             filled.append(selector)
             return True
+
+        # Sabit degerler (mapping.constants): portalda her basvuruda ayni girilen alanlar
+        for selector, const_value in (mapping.get("constants") or {}).items():
+            await set_value(selector, const_value)
 
         for our_key, selector in (mapping.get("fields") or {}).items():
             await set_value(selector, payload["globals"].get(our_key, ""))
@@ -458,6 +621,18 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
                 await set_value(selector, traveler.get(our_key, ""))
 
         screenshot = await _shot(page)
+        # Portalda zorunlu olup bizim doldurmadigimiz alanlari raporla
+        manual_pending = []
+        for item in MANUAL_FIELDS:
+            try:
+                loc = page.locator(item["selector"]).first
+                if await loc.count() == 0:
+                    continue
+                value = ((await loc.input_value()) or "").strip()
+                if not value:
+                    manual_pending.append(item["label"])
+            except Exception:
+                continue
         submitted = False
         if not dry_run and mapping.get("submit_selector"):
             try:
@@ -490,6 +665,8 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
             "filled_count": len(filled),
             "filled": filled,
             "missing": missing,
+            "skipped_disabled": skipped_disabled,
+            "manual_pending": manual_pending,
             "current_url": page.url,
             "screenshot": screenshot,
         }

@@ -29,55 +29,57 @@
   },
 
   "design_tokens": {
-    "note": "Token isimleri korunur. Aşağıdaki değerler rafine öneridir; uygulama index.css :root altında yapılır.",
+    "note": "GÜNCELLENDİ (kullanıcı isteği 2026-09-03): Palet kırmızı + beyaz + AÇIK YEŞİL. Siyah tonlar sitede kullanılmaz; koyu bloklar (hero, footer, admin login) orta-açık bayrak yeşiline çevrildi. Token isimleri korunur; uygulama index.css :root altında yapılır.",
     "css_variables": {
-      "--background": "40 18% 98%",
-      "--foreground": "210 22% 7%",
+      "--background": "150 30% 98%",
+      "--foreground": "155 22% 15%",
       "--card": "0 0% 100%",
-      "--card-foreground": "210 22% 7%",
+      "--card-foreground": "155 22% 15%",
       "--popover": "0 0% 100%",
-      "--popover-foreground": "210 22% 7%",
+      "--popover-foreground": "155 22% 15%",
 
-      "--primary": "152 78% 22%",
+      "--primary": "150 62% 32%",
       "--primary-foreground": "0 0% 100%",
 
-      "--secondary": "150 18% 95%",
-      "--secondary-foreground": "210 22% 10%",
-      "--muted": "210 16% 95%",
-      "--muted-foreground": "214 14% 30%",
+      "--secondary": "148 34% 95%",
+      "--secondary-foreground": "155 24% 18%",
+      "--muted": "148 26% 95%",
+      "--muted-foreground": "155 12% 34%",
 
-      "--accent": "352 78% 38%",
+      "--accent": "352 78% 42%",
       "--accent-foreground": "0 0% 100%",
-      "--destructive": "352 78% 38%",
+      "--destructive": "352 78% 42%",
       "--destructive-foreground": "0 0% 100%",
 
-      "--border": "214 18% 86%",
-      "--input": "214 18% 86%",
-      "--ring": "152 78% 22%",
+      "--border": "150 20% 86%",
+      "--input": "150 20% 86%",
+      "--ring": "150 62% 32%",
 
       "--radius": "0.9rem",
 
-      "--navy": "210 24% 8%",
-      "--sand-surface": "150 22% 95%",
-      "--cloud": "210 16% 96%",
-      "--gold": "352 78% 40%",
-      "--teal-hover": "152 82% 18%",
-      "--success": "152 82% 26%",
+      "--navy": "152 46% 22%",
+      "--sand-surface": "148 42% 95%",
+      "--cloud": "150 30% 97%",
+      "--gold": "352 78% 44%",
+      "--teal-hover": "150 62% 26%",
+      "--success": "150 60% 30%",
 
-      "--brand-green": "152 78% 22%",
-      "--brand-red": "352 78% 38%",
+      "--brand-green": "150 62% 32%",
+      "--brand-green-soft": "148 52% 88%",
+      "--brand-green-deep": "152 46% 22%",
+      "--brand-red": "352 78% 42%",
       "--brand-black": "210 24% 8%",
       "--brand-white": "0 0% 100%",
 
-      "--status-success": "152 82% 26%",
-      "--status-warning": "34 72% 38%",
-      "--status-info": "206 72% 27%",
-      "--status-danger": "352 78% 38%",
+      "--status-success": "150 60% 30%",
+      "--status-warning": "34 72% 40%",
+      "--status-info": "175 45% 30%",
+      "--status-danger": "352 78% 42%",
 
-      "--shadow-soft": "0 14px 34px rgba(11, 15, 20, 0.10)",
-      "--shadow-card": "0 10px 24px rgba(11, 15, 20, 0.08)",
-      "--shadow-float": "0 22px 60px rgba(11, 15, 20, 0.14)",
-      "--focus-ring": "0 0 0 4px rgba(11, 107, 58, 0.22)"
+      "--shadow-soft": "0 10px 30px hsl(152 40% 20% / 0.12)",
+      "--shadow-card": "0 8px 20px hsl(152 40% 20% / 0.08)",
+      "--shadow-float": "0 18px 50px hsl(152 40% 20% / 0.16)",
+      "--focus-ring": "0 0 0 4px hsl(150 62% 32% / 0.26)"
     },
     "gradients": {
       "allowed_usage": [

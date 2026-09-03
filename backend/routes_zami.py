@@ -345,7 +345,9 @@ CAPTURE_JS = r"""
 """
 
 
-CRITICAL_TRAVELER_FIELDS = ("first_name", "last_name", "passport_no", "birth_date", "birth_date_dmy")
+CRITICAL_TRAVELER_FIELDS = ("first_name", "last_name", "passport_no", "birth_date")
+BIRTH_DATE_KEYS = {"birth_date", "birth_date_dmy", "birth_date_mdy", "birth_date_dmy_dash"}
+NAME_KEYS = {"first_name", "last_name", "full_name"}
 
 
 def _capture_check(captured: dict) -> dict:
@@ -392,13 +394,19 @@ def _mapping_checks(mapping: dict) -> list[dict]:
 def _traveler_check(mapping: dict) -> dict:
     """Yolcu alanlarinin (ad, pasaport, dogum tarihi) eşlenip eşlenmediğini kontrol eder."""
     traveler_keys = set((mapping.get("traveler_fields") or {}).keys())
-    has_name = bool(traveler_keys & {"first_name", "last_name", "full_name"})
+    has_name = bool(traveler_keys & NAME_KEYS)
     has_passport = "passport_no" in traveler_keys
-    has_birth = bool(traveler_keys & {"birth_date", "birth_date_dmy", "birth_date_mdy"})
-    missing_critical = [k for k in CRITICAL_TRAVELER_FIELDS if k not in traveler_keys]
+    has_birth = bool(traveler_keys & BIRTH_DATE_KEYS)
+    missing_critical = []
+    if not has_name:
+        missing_critical.append("ad/soyad")
+    if not has_passport:
+        missing_critical.append("pasaport no")
+    if not has_birth:
+        missing_critical.append("doğum tarihi")
     detail = f"{len(traveler_keys)} alan eşlendi"
     if missing_critical:
-        detail += f" · eksik: {', '.join(missing_critical[:3])}"
+        detail += f" · eksik: {', '.join(missing_critical)}"
     return {
         "key": "traveler",
         "label": "Yolcu alanları (ad, pasaport, doğum tarihi)",

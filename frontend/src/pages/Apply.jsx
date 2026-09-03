@@ -66,6 +66,10 @@ const newTraveler = (type = "adult") => ({
     national_id: "",
     passport_no: "",
     passport_expiry: "",
+    // Pasaport OCR'dan sessizce doldurulan alanlar (kullanıcıya sorulmaz)
+    passport_issue_date: "",
+    birth_place: "",
+    passport_issue_place: "",
     visa_type_id: "",
     passportFile: null,
     photoFile: null,
@@ -560,6 +564,10 @@ export default function Apply() {
                 "passport_expiry",
                 "national_id",
                 "nationality",
+                // Kullaniciya sorulmayan, sadece Zami aktarimi icin kullanilan alanlar
+                "passport_issue_date",
+                "birth_place",
+                "passport_issue_place",
             ];
             setTravelers((list) =>
                 list.map((t) => {
@@ -740,6 +748,9 @@ export default function Apply() {
                     national_id: t.national_id,
                     passport_no: t.passport_no,
                     passport_expiry: t.passport_expiry,
+                    passport_issue_date: t.passport_issue_date || "",
+                    birth_place: t.birth_place || "",
+                    passport_issue_place: t.passport_issue_place || "",
                     visa_type_id: t.visa_type_id,
                     passport_file_id: t.passportFile.file_id,
                     photo_file_id: t.photoFile.file_id,

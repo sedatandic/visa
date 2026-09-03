@@ -57,7 +57,7 @@ export default function Home() {
     useEffect(() => {
         setMeta(
             "Dubai Vizesi | Online Başvuru, Fiyatlar ve Aile Başvurusu | VizeAtlas Dubai",
-            "Dubai (BAE) vizesi için online başvuru: net fiyatlar, tek formda aile başvurusu, çocuk vizesi indirimi, ekspres hizmet ve ortalama 3 iş gününde sonuç."
+            "Dubai (BAE) vizesi için online başvuru: net fiyatlar, tek formda aile başvurusu, çocuk vizesi indirimi, ekspres hizmet ve ortalama 2 iş gününde sonuç."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
     }, []);
@@ -89,7 +89,7 @@ export default function Home() {
                         <h1 className="mt-6 font-heading text-4xl font-extrabold leading-[1.06] text-white sm:text-5xl lg:text-[56px]">
                             Dubai vizeniz
                             <br />
-                            <span className="text-[hsl(var(--brand-red))]">3 iş gününde</span> hazır
+                            <span className="text-[hsl(var(--brand-red))]">2 iş gününde</span> hazır
                         </h1>
                         <div className="mt-5 flex items-center gap-1.5" aria-hidden="true">
                             <span className="h-1 w-10 rounded-full bg-[hsl(var(--brand-red))]" />
@@ -138,7 +138,7 @@ export default function Home() {
                             {[
                                 { icon: Users, title: "Aile başvurusu", detail: "Tek formda çoklu yolcu" },
                                 { icon: BadgeCheck, title: "Evrak kontrolü", detail: "Başvuru öncesi ücretsiz" },
-                                { icon: Clock, title: "Ortalama 3 gün", detail: "Ekspreste 24 saat" },
+                                { icon: Clock, title: "Ortalama 2 gün", detail: "Ekspreste 24 saat" },
                             ].map(({ icon: Icon, title, detail }) => (
                                 <div key={title} className="flex min-w-0 items-center gap-2.5 sm:px-3.5 sm:first:pl-0 sm:last:pr-0">
                                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
@@ -224,7 +224,7 @@ export default function Home() {
                         {[
                             { value: "4.500+", label: "Tamamlanan başvuru" },
                             { value: "%98", label: "Onay oranı" },
-                            { value: "3 gün", label: "Ortalama sonuç süresi" },
+                            { value: "2 gün", label: "Ortalama sonuç süresi" },
                             { value: "7+ yıl", label: "Acente deneyimi" },
                         ].map(({ value, label }) => (
                             <div key={label} className="px-2 py-3 sm:px-6">
@@ -704,7 +704,7 @@ export default function Home() {
                         </p>
                         <p>
                             Belgeleriniz tamamlandıktan sonra başvurunuz yetkili mercilere iletilir. Standart
-                            başvurular ortalama 3 iş günü içinde sonuçlanır. Uçuşuna az kalan yolcular için
+                            başvurular ortalama 2 iş günü içinde sonuçlanır. Uçuşuna az kalan yolcular için
                             ekspres başvuru vardır; sonuç genellikle 24 saat içinde çıkar. Vizeniz
                             onaylandığında PDF olarak e-postanıza ve takip sayfanıza iletilir.
                         </p>

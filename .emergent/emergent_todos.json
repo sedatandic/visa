@@ -1,18 +1,30 @@
 [
   {
-    "content": "Backend: passport_ai.py AI vesikalık fotoğraf doğrulama fonksiyonu",
+    "content": "Pasaport OCR'a veriliş tarihi, doğum yeri, veriliş yeri alanlarını ekle",
     "status": "completed"
   },
   {
-    "content": "Backend: POST /api/photo/check endpoint'i",
+    "content": "Backend model + kayıt: yeni OCR alanlarını yolcuda sakla",
     "status": "completed"
   },
   {
-    "content": "Frontend: Apply.jsx fotoğraf kontrolü + uyarı UI (engellemesiz)",
+    "content": "Apply.jsx: OCR'dan gelen yeni alanları sessizce taşı",
     "status": "completed"
   },
   {
-    "content": "Test: backend endpoint + frontend uyarı akışı (12/12 PASS)",
+    "content": "Zami mapping: pd/bp/pp + Language/Medeni hal/Din sabitleri (25 alan otomatik)",
     "status": "completed"
+  },
+  {
+    "content": "Admin: aktarım sonrası 'operatör doldurmalı' alan listesi",
+    "status": "completed"
+  },
+  {
+    "content": "Canlı dry-run doğrulandı (25 alan, 0 hata) + readiness ready_robot=True",
+    "status": "completed"
+  },
+  {
+    "content": "Testing agent: OCR yeni alanları + başvuru oluşturma regresyonu",
+    "status": "in_progress"
   }
 ]

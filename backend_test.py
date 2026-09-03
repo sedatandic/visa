@@ -1,1438 +1,637 @@
-#!/usr/bin/env python3
-"""
-VizeAtlas Dubai Backend API Test Suite
-Tests 4 new features: FX, Document Reminders, Visa Guides, Customer Account
-"""
-
+"""Backend API tests for VizeAtlas Dubai - Round: Passport OCR extended fields, Zami RPA, family discount, processing time"""
 import requests
 import sys
 import time
-from datetime import datetime
+from pathlib import Path
 
 BASE_URL = "https://visa-application-ae.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@vizeatlas.com"
 ADMIN_PASSWORD = "Dubai2026!"
 
-class Colors:
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    END = '\033[0m'
-
-class APITester:
+class VizeAtlasBackendTester:
     def __init__(self):
-        self.admin_token = None
-        self.customer_token = None
         self.tests_run = 0
         self.tests_passed = 0
-        self.tests_failed = 0
-        self.test_application_id = None
-        self.test_reference_code = None
-        self.test_draft_id = None
-        self.test_resume_code = None
-        self.original_fx_settings = None
-        self.original_transit_price = None
-
-    def log(self, message, color=Colors.BLUE):
-        print(f"{color}{message}{Colors.END}")
-
-    def test(self, name, method, endpoint, expected_status, data=None, headers=None, params=None):
-        """Run a single API test"""
-        url = f"{BASE_URL}{endpoint}"
-        h = {'Content-Type': 'application/json'}
-        if headers:
-            h.update(headers)
+        self.admin_token = None
+        self.passport_file_id = None
+        self.photo_file_id = None
+        self.non_passport_file_id = None
         
+    def log(self, message, status="INFO"):
+        symbols = {"PASS": "✅", "FAIL": "❌", "INFO": "🔍", "WARN": "⚠️"}
+        print(f"{symbols.get(status, '•')} {message}")
+    
+    def admin_login(self):
+        """Login as admin to get token"""
+        self.log("Logging in as admin...", "INFO")
+        try:
+            response = requests.post(
+                f"{BASE_URL}/admin/login",
+                json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
+                timeout=10
+            )
+            if response.status_code == 200:
+                result = response.json()
+                self.admin_token = result.get("token")
+                self.log(f"Admin login successful", "PASS")
+                return True
+            else:
+                self.log(f"Admin login failed: {response.status_code} - {response.text}", "FAIL")
+                return False
+        except Exception as e:
+            self.log(f"Admin login error: {str(e)}", "FAIL")
+            return False
+    
+    def test_passport_ocr_extended_fields(self):
+        """Test POST /api/passport/read returns new fields: passport_issue_date, birth_place, passport_issue_place"""
         self.tests_run += 1
-        self.log(f"\n🔍 Test {self.tests_run}: {name}")
+        self.log("Testing passport OCR with extended fields...", "INFO")
+        
+        # Upload passport image first
+        passport_path = Path("/app/tests/fixtures/test_passport.png")
+        if not passport_path.exists():
+            self.log(f"Test passport file not found: {passport_path}", "FAIL")
+            return False
         
         try:
-            if method == 'GET':
-                response = requests.get(url, headers=h, params=params, timeout=10)
-            elif method == 'POST':
-                response = requests.post(url, json=data, headers=h, params=params, timeout=10)
-            elif method == 'PUT':
-                response = requests.put(url, json=data, headers=h, timeout=10)
-            elif method == 'PATCH':
-                response = requests.patch(url, json=data, headers=h, timeout=10)
-            elif method == 'DELETE':
-                response = requests.delete(url, headers=h, timeout=10)
+            # Upload passport
+            with open(passport_path, "rb") as f:
+                files = {"file": ("test_passport.png", f, "image/png")}
+                data = {"doc_type": "passport"}
+                upload_response = requests.post(
+                    f"{BASE_URL}/uploads",
+                    files=files,
+                    data=data,
+                    timeout=30
+                )
             
-            success = response.status_code == expected_status
+            if upload_response.status_code != 200:
+                self.log(f"Passport upload failed: {upload_response.status_code}", "FAIL")
+                return False
             
-            if success:
+            self.passport_file_id = upload_response.json().get("file_id")
+            self.log(f"Passport uploaded: {self.passport_file_id}", "INFO")
+            
+            # Read passport with OCR
+            time.sleep(1)
+            response = requests.post(
+                f"{BASE_URL}/passport/read",
+                data={"file_id": self.passport_file_id},
+                timeout=60
+            )
+            
+            if response.status_code != 200:
+                self.log(f"Passport OCR failed: {response.status_code} - {response.text}", "FAIL")
+                return False
+            
+            result = response.json()
+            
+            if not result.get("ok"):
+                self.log(f"OCR not ok: {result.get('message')}", "FAIL")
+                return False
+            
+            data = result.get("data", {})
+            
+            # Check for NEW extended fields
+            required_new_fields = ["passport_issue_date", "birth_place", "passport_issue_place"]
+            existing_fields = ["first_name", "last_name", "passport_no", "birth_date", "passport_expiry", "gender", "nationality", "national_id", "confidence", "is_passport"]
+            
+            all_fields_present = True
+            for field in required_new_fields + existing_fields:
+                if field not in data:
+                    self.log(f"Missing field in OCR response: {field}", "FAIL")
+                    all_fields_present = False
+                else:
+                    value = data[field]
+                    # New fields may be empty strings if unreadable, that's OK
+                    self.log(f"  {field}: {value if value else '(empty)'}", "INFO")
+            
+            if all_fields_present:
+                self.log("All OCR fields (including new extended fields) present in response", "PASS")
                 self.tests_passed += 1
-                self.log(f"✅ PASS - Status: {response.status_code}", Colors.GREEN)
-                try:
-                    return True, response.json()
-                except:
-                    return True, {}
+                return True
             else:
-                self.tests_failed += 1
-                self.log(f"❌ FAIL - Expected {expected_status}, got {response.status_code}", Colors.RED)
-                try:
-                    error_data = response.json()
-                    self.log(f"   Error: {error_data}", Colors.RED)
-                except:
-                    self.log(f"   Response: {response.text[:200]}", Colors.RED)
-                return False, {}
+                return False
                 
         except Exception as e:
-            self.tests_failed += 1
-            self.log(f"❌ FAIL - Exception: {str(e)}", Colors.RED)
-            return False, {}
-
-    def admin_login(self):
-        """Login as admin"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("ADMIN LOGIN", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
-        
-        success, response = self.test(
-            "Admin login",
-            "POST",
-            "/admin/login",
-            200,
-            data={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
-        )
-        
-        if success and 'token' in response:
-            self.admin_token = response['token']
-            self.log(f"✅ Admin token obtained", Colors.GREEN)
-            return True
-        return False
-
-    def test_fx_apis(self):
-        """Test FX (USD/TRY) APIs"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 1: FX (USD/TRY) TRANSPARENCY", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
-        
-        # Test public FX endpoint (no auth required)
-        success, public_fx = self.test(
-            "GET /api/fx - Public FX endpoint (no auth)",
-            "GET",
-            "/fx",
-            200
-        )
-        
-        if success:
-            # Check required fields
-            required_fields = ['effective_rate', 'currency_pair', 'fetched_at', 'source']
-            for field in required_fields:
-                if field in public_fx:
-                    self.log(f"   ✅ Field present: {field} = {public_fx[field]}", Colors.GREEN)
-                else:
-                    self.log(f"   ❌ Missing required field: {field}", Colors.RED)
-            
-            # Check sensitive fields are NOT exposed
-            sensitive_fields = ['manual_rate', 'margin_pct', 'base_rate', 'mode']
-            for field in sensitive_fields:
-                if field in public_fx:
-                    self.log(f"   ❌ SECURITY ISSUE: Sensitive field exposed: {field}", Colors.RED)
-                else:
-                    self.log(f"   ✅ Sensitive field NOT exposed: {field}", Colors.GREEN)
-            
-            # Verify currency_pair
-            if public_fx.get('currency_pair') == 'USD/TRY':
-                self.log(f"   ✅ currency_pair is USD/TRY", Colors.GREEN)
-            else:
-                self.log(f"   ❌ currency_pair should be USD/TRY, got {public_fx.get('currency_pair')}", Colors.RED)
-        
-        headers = {'Authorization': f'Bearer {self.admin_token}'}
-        
-        # Get current FX settings (admin)
-        success, fx = self.test(
-            "GET /api/admin/fx - Get current FX settings (admin)",
-            "GET",
-            "/admin/fx",
-            200,
-            headers=headers
-        )
-        
-        if success:
-            self.original_fx_settings = fx
-            self.log(f"   Base rate: {fx.get('base_rate')} TRY", Colors.BLUE)
-            self.log(f"   Effective rate: {fx.get('effective_rate')} TRY", Colors.BLUE)
-            self.log(f"   Margin: {fx.get('margin_pct')}%", Colors.BLUE)
-            self.log(f"   Mode: {fx.get('mode')}", Colors.BLUE)
-            self.log(f"   Source: {fx.get('source')}", Colors.BLUE)
-            
-            # Check required fields
-            required_fields = ['base_rate', 'effective_rate', 'margin_pct', 'mode', 'source']
-            for field in required_fields:
-                if field not in fx:
-                    self.log(f"   ⚠️  Missing field: {field}", Colors.RED)
-        
-        # Refresh FX rate
-        success, fx_refreshed = self.test(
-            "GET /api/admin/fx?refresh=true - Fetch live rate",
-            "GET",
-            "/admin/fx",
-            200,
-            headers=headers,
-            params={'refresh': 'true'}
-        )
-        
-        if success:
-            self.log(f"   Refreshed base rate: {fx_refreshed.get('base_rate')} TRY", Colors.BLUE)
-        
-        # Update margin
-        success, fx_margin = self.test(
-            "PUT /api/admin/fx - Set margin to 5%",
-            "PUT",
-            "/admin/fx",
-            200,
-            data={'margin_pct': 5},
-            headers=headers
-        )
-        
-        if success:
-            expected_effective = fx_margin.get('base_rate', 0) * 1.05
-            actual_effective = fx_margin.get('effective_rate', 0)
-            if abs(actual_effective - expected_effective) < 0.1:
-                self.log(f"   ✅ Effective rate correctly calculated: {actual_effective} TRY", Colors.GREEN)
-            else:
-                self.log(f"   ❌ Effective rate mismatch: expected ~{expected_effective}, got {actual_effective}", Colors.RED)
-        
-        # Set manual rate
-        success, fx_manual = self.test(
-            "PUT /api/admin/fx - Set manual rate to 40",
-            "PUT",
-            "/admin/fx",
-            200,
-            data={'manual_rate': 40},
-            headers=headers
-        )
-        
-        if success:
-            if fx_manual.get('mode') == 'manual' and fx_manual.get('effective_rate') == 40:
-                self.log(f"   ✅ Manual rate mode working correctly", Colors.GREEN)
-            else:
-                self.log(f"   ❌ Manual rate not applied correctly", Colors.RED)
-        
-        # Return to live rate
-        success, fx_live = self.test(
-            "PUT /api/admin/fx - Return to live rate (manual_rate=null)",
-            "PUT",
-            "/admin/fx",
-            200,
-            data={'manual_rate': None, 'margin_pct': 2},
-            headers=headers
-        )
-        
-        if success and fx_live.get('mode') == 'live':
-            self.log(f"   ✅ Returned to live rate mode", Colors.GREEN)
-        
-        # Check visa types have USD prices
-        success, visa_types = self.test(
-            "GET /api/visa-types - Check USD prices",
-            "GET",
-            "/visa-types",
-            200
-        )
-        
-        if success:
-            visa_30 = next((v for v in visa_types if v.get('id') == 'visa_30_single'), None)
-            if visa_30:
-                price_usd = visa_30.get('price_usd')
-                price_try = visa_30.get('price')
-                fx_rate = visa_30.get('fx_rate')
-                
-                self.log(f"   30-day visa: {price_usd} USD = {price_try} TRY (rate: {fx_rate})", Colors.BLUE)
-                
-                if price_usd == 110:
-                    self.log(f"   ✅ visa_30_single price_usd is 110 USD", Colors.GREEN)
-                else:
-                    self.log(f"   ❌ visa_30_single price_usd should be 110, got {price_usd}", Colors.RED)
-                
-                # Check TRY price is calculated correctly (rounded to 10 TRY)
-                if price_try and fx_rate:
-                    expected_try = int(round((price_usd * fx_rate) / 10)) * 10
-                    if abs(price_try - expected_try) < 20:  # Allow small variance
-                        self.log(f"   ✅ TRY price correctly calculated and rounded", Colors.GREEN)
-                    else:
-                        self.log(f"   ⚠️  TRY price: expected ~{expected_try}, got {price_try}", Colors.YELLOW)
-        
-        # Test pricing quote with FX
-        success, quote = self.test(
-            "POST /api/pricing/quote - Check FX in quote",
-            "POST",
-            "/pricing/quote",
-            200,
-            data={
-                'visa_type_ids': ['visa_30_single'],
-                'addons': {'express': False, 'insurance': False}
-            }
-        )
-        
-        if success:
-            if 'fx' in quote:
-                self.log(f"   ✅ FX object present in quote", Colors.GREEN)
-                self.log(f"   FX effective rate: {quote['fx'].get('effective_rate')} TRY", Colors.BLUE)
-            else:
-                self.log(f"   ❌ FX object missing in quote", Colors.RED)
-        
-        # Update visa transit price
-        success, transit = self.test(
-            "PATCH /api/admin/visa-types/visa_transit_48 - Update price_usd to 80",
-            "PATCH",
-            "/admin/visa-types/visa_transit_48",
-            200,
-            data={'price_usd': 80},
-            headers=headers
-        )
-        
-        if success:
-            self.original_transit_price = 70  # Store original for cleanup
-            price_try = transit.get('price')
-            fx_rate = transit.get('fx_rate')
-            if price_try and fx_rate:
-                self.log(f"   ✅ Transit visa updated: 80 USD = {price_try} TRY", Colors.GREEN)
-            
-            # Restore original price
-            self.test(
-                "PATCH /api/admin/visa-types/visa_transit_48 - Restore price_usd to 70",
-                "PATCH",
-                "/admin/visa-types/visa_transit_48",
-                200,
-                data={'price_usd': 70},
-                headers=headers
-            )
-
-    def test_document_reminders(self):
-        """Test document reminder automation"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 2: DOCUMENT REMINDER AUTOMATION", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
-        
-        headers = {'Authorization': f'Bearer {self.admin_token}'}
-        
-        # Get pending reminders
-        success, pending = self.test(
-            "GET /api/admin/document-reminders/pending - List applications with missing docs",
-            "GET",
-            "/admin/document-reminders/pending",
-            200,
-            headers=headers
-        )
-        
-        if success:
-            items = pending.get('items', [])
-            due_count = pending.get('due', 0)
-            self.log(f"   Found {len(items)} applications with missing documents", Colors.BLUE)
-            self.log(f"   {due_count} are due for reminder", Colors.BLUE)
-            
-            # If we have applications, test reminder on first one
-            if items:
-                app = items[0]
-                app_id = app.get('id')
-                self.log(f"   Testing with application: {app.get('reference_code')}", Colors.BLUE)
-                
-                # Get missing documents for this application
-                success, missing = self.test(
-                    f"GET /api/admin/applications/{app_id}/missing-documents",
-                    "GET",
-                    f"/admin/applications/{app_id}/missing-documents",
-                    200,
-                    headers=headers
-                )
-                
-                if success:
-                    missing_docs = missing.get('missing', [])
-                    reminder_count = missing.get('reminder_count', 0)
-                    self.log(f"   Missing documents: {len(missing_docs)}", Colors.BLUE)
-                    self.log(f"   Reminder count: {reminder_count}", Colors.BLUE)
-                    
-                    # Send reminder
-                    success, reminder_result = self.test(
-                        f"POST /api/admin/applications/{app_id}/send-document-reminder",
-                        "POST",
-                        f"/admin/applications/{app_id}/send-document-reminder",
-                        200,
-                        data={'origin_url': 'https://visa-application-ae.preview.emergentagent.com'},
-                        headers=headers
-                    )
-                    
-                    if success:
-                        result = reminder_result.get('result', {})
-                        email_status = result.get('status')
-                        updated_app = reminder_result.get('application', {})
-                        
-                        self.log(f"   Email status: {email_status}", Colors.BLUE)
-                        
-                        if email_status == 'skipped':
-                            self.log(f"   ✅ Email skipped (RESEND_API_KEY not configured - expected)", Colors.GREEN)
-                        elif email_status == 'sent':
-                            self.log(f"   ✅ Email sent successfully", Colors.GREEN)
-                        
-                        # Check if reminder_count increased
-                        new_reminder = updated_app.get('document_reminder', {})
-                        new_count = new_reminder.get('count', 0)
-                        if new_count > reminder_count:
-                            self.log(f"   ✅ Reminder count increased: {reminder_count} -> {new_count}", Colors.GREEN)
-                        
-                        # Check if status changed to documents_pending
-                        if updated_app.get('status') == 'documents_pending':
-                            self.log(f"   ✅ Status changed to documents_pending", Colors.GREEN)
-        
-        # Test reminder sweep
-        success, sweep = self.test(
-            "POST /api/admin/document-reminders/run - Run reminder sweep with force=true",
-            "POST",
-            "/admin/document-reminders/run",
-            200,
-            data={'force': True, 'origin_url': 'https://visa-application-ae.preview.emergentagent.com'},
-            headers=headers
-        )
-        
-        if success:
-            sent = sweep.get('sent', 0)
-            skipped = sweep.get('skipped', 0)
-            self.log(f"   Sweep results: {sent} sent, {skipped} skipped", Colors.BLUE)
-            self.log(f"   ✅ Reminder sweep completed", Colors.GREEN)
-
-    def test_customer_account(self):
-        """Test customer account features"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 3: CUSTOMER ACCOUNT", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
-        
-        test_email = f"test{int(time.time())}@example.com"
-        test_lastname = "TESTUSER"
-        
-        # Request login code
-        success, code_response = self.test(
-            "POST /api/account/request-code - Request login code",
-            "POST",
-            "/account/request-code",
-            200,
-            data={'email': test_email}
-        )
-        
-        if success:
-            email_status = code_response.get('email_status')
-            self.log(f"   Email status: {email_status}", Colors.BLUE)
-            
-            if email_status == 'skipped':
-                self.log(f"   ✅ Email skipped (RESEND_API_KEY not configured - expected)", Colors.GREEN)
-            
-            # Get the code from admin endpoint
-            headers = {'Authorization': f'Bearer {self.admin_token}'}
-            success, codes = self.test(
-                f"GET /api/admin/login-codes?email={test_email} - Get login code",
-                "GET",
-                "/admin/login-codes",
-                200,
-                headers=headers,
-                params={'email': test_email}
-            )
-            
-            if success and codes.get('items'):
-                code = codes['items'][0].get('code')
-                self.log(f"   Retrieved code: {code}", Colors.BLUE)
-                
-                # Verify code
-                success, verify = self.test(
-                    "POST /api/account/verify-code - Verify login code",
-                    "POST",
-                    "/account/verify-code",
-                    200,
-                    data={'email': test_email, 'code': code}
-                )
-                
-                if success and 'token' in verify:
-                    self.customer_token = verify['token']
-                    self.log(f"   ✅ Customer token obtained via code", Colors.GREEN)
-                
-                # Test wrong code
-                success, wrong = self.test(
-                    "POST /api/account/verify-code - Test wrong code (should fail)",
-                    "POST",
-                    "/account/verify-code",
-                    400,
-                    data={'email': test_email, 'code': '999999'}
-                )
-                
-                if success:
-                    self.log(f"   ✅ Wrong code correctly rejected", Colors.GREEN)
-        
-        # Test lastname login (will fail as no application exists)
-        success, lastname_login = self.test(
-            "POST /api/account/login-lastname - Login with email+lastname (should fail - no application)",
-            "POST",
-            "/account/login-lastname",
-            404,
-            data={'email': test_email, 'last_name': test_lastname}
-        )
-        
-        if success:
-            self.log(f"   ✅ Correctly returns 404 when no application exists", Colors.GREEN)
-        
-        # Test account/me without token
-        success, me_no_token = self.test(
-            "GET /api/account/me - Without token (should fail)",
-            "GET",
-            "/account/me",
-            401
-        )
-        
-        if success:
-            self.log(f"   ✅ Correctly requires authentication", Colors.GREEN)
-        
-        # Test account/me with token
-        if self.customer_token:
-            headers = {'Authorization': f'Bearer {self.customer_token}'}
-            success, me = self.test(
-                "GET /api/account/me - Get account info",
-                "GET",
-                "/account/me",
-                200,
-                headers=headers
-            )
-            
-            if success:
-                applications = me.get('applications', [])
-                drafts = me.get('drafts', [])
-                self.log(f"   Applications: {len(applications)}", Colors.BLUE)
-                self.log(f"   Drafts: {len(drafts)}", Colors.BLUE)
-                self.log(f"   ✅ Account info retrieved", Colors.GREEN)
-
-    def test_draft_reminders(self):
-        """Test draft reminder (cart recovery) automation"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 4: DRAFT REMINDERS (CART RECOVERY)", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
-        
-        headers = {'Authorization': f'Bearer {self.admin_token}'}
-        
-        # Create a draft first
-        test_email = f"cartrecovery{int(time.time())}@example.com"
-        success, draft = self.test(
-            "POST /api/drafts - Create draft for cart recovery test",
-            "POST",
-            "/drafts",
-            200,
-            data={
-                'email': test_email,
-                'title': 'Cart Recovery Test',
-                'step': 2,
-                'traveler_count': 1,
-                'data': {'contact': {'email': test_email}}
-            }
-        )
-        
-        if success:
-            draft_id = draft.get('draft_id')
-            self.log(f"   Draft created: {draft_id}", Colors.BLUE)
-        
-        # Get pending draft reminders
-        success, pending = self.test(
-            "GET /api/admin/draft-reminders/pending - List drafts needing reminders",
-            "GET",
-            "/admin/draft-reminders/pending",
-            200,
-            headers=headers
-        )
-        
-        if success:
-            items = pending.get('items', [])
-            total = pending.get('total', 0)
-            due = pending.get('due', 0)
-            
-            self.log(f"   Total drafts: {total}", Colors.BLUE)
-            self.log(f"   Due for reminder: {due}", Colors.BLUE)
-            
-            # Check required fields in items
-            if items:
-                item = items[0]
-                required_fields = ['id', 'email', 'traveler_count', 'reminder_count', 'due']
-                for field in required_fields:
-                    if field in item:
-                        self.log(f"   ✅ Field present in item: {field}", Colors.GREEN)
-                    else:
-                        self.log(f"   ❌ Missing field in item: {field}", Colors.RED)
-        
-        # Run draft reminder sweep with force=true
-        success, sweep = self.test(
-            "POST /api/admin/draft-reminders/run - Run sweep with force=true",
-            "POST",
-            "/admin/draft-reminders/run",
-            200,
-            data={'force': True, 'origin_url': 'https://visa-application-ae.preview.emergentagent.com'},
-            headers=headers
-        )
-        
-        if success:
-            sent = sweep.get('sent', 0)
-            skipped = sweep.get('skipped', 0)
-            ran_at = sweep.get('ran_at')
-            
-            self.log(f"   Sent: {sent}", Colors.BLUE)
-            self.log(f"   Skipped: {skipped}", Colors.BLUE)
-            self.log(f"   Ran at: {ran_at}", Colors.BLUE)
-            
-            if 'sent' in sweep and 'skipped' in sweep and 'ran_at' in sweep:
-                self.log(f"   ✅ Sweep completed with all required fields", Colors.GREEN)
-            
-            # Run again without force - should respect reminder count limit
-            success, sweep2 = self.test(
-                "POST /api/admin/draft-reminders/run - Run sweep again (should skip due to count limit)",
-                "POST",
-                "/admin/draft-reminders/run",
-                200,
-                data={'force': False, 'origin_url': 'https://visa-application-ae.preview.emergentagent.com'},
-                headers=headers
-            )
-            
-            if success:
-                sent2 = sweep2.get('sent', 0)
-                skipped2 = sweep2.get('skipped', 0)
-                self.log(f"   Second sweep: {sent2} sent, {skipped2} skipped", Colors.BLUE)
-                
-                # With force=false, same drafts should be skipped (reminder count limit)
-                if skipped2 >= skipped:
-                    self.log(f"   ✅ Reminder count limit working (skipped increased)", Colors.GREEN)
+            self.log(f"Passport OCR test error: {str(e)}", "FAIL")
+            return False
     
-    def test_saved_travelers(self):
-        """Test family profile (saved travelers) feature"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 5: FAMILY PROFILE (SAVED TRAVELERS)", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
+    def test_passport_ocr_non_passport_graceful(self):
+        """Test POST /api/passport/read with non-passport image returns is_passport=false gracefully (no 500)"""
+        self.tests_run += 1
+        self.log("Testing passport OCR with non-passport image (should return is_passport=false)...", "INFO")
         
-        # Create a customer account
-        test_email = f"family{int(time.time())}@example.com"
+        # Upload a non-passport image (solid color or portrait)
+        solid_path = Path("/app/tests/fixtures/solid_blue.png")
+        if not solid_path.exists():
+            self.log(f"Test non-passport file not found: {solid_path}", "FAIL")
+            return False
         
-        # Request login code
-        success, code_response = self.test(
-            "POST /api/account/request-code - Create customer account",
-            "POST",
-            "/account/request-code",
-            200,
-            data={'email': test_email}
-        )
-        
-        # Get code from admin endpoint
-        admin_headers = {'Authorization': f'Bearer {self.admin_token}'}
-        success, codes = self.test(
-            f"GET /api/admin/login-codes?email={test_email}",
-            "GET",
-            "/admin/login-codes",
-            200,
-            headers=admin_headers,
-            params={'email': test_email}
-        )
-        
-        customer_token = None
-        if success and codes.get('items'):
-            code = codes['items'][0].get('code')
-            
-            # Verify code to get customer token
-            success, verify = self.test(
-                "POST /api/account/verify-code - Get customer token",
-                "POST",
-                "/account/verify-code",
-                200,
-                data={'email': test_email, 'code': code}
-            )
-            
-            if success and 'token' in verify:
-                customer_token = verify['token']
-                self.log(f"   ✅ Customer token obtained", Colors.GREEN)
-        
-        if not customer_token:
-            self.log(f"   ❌ Could not get customer token, skipping saved travelers tests", Colors.RED)
-            return
-        
-        headers = {'Authorization': f'Bearer {customer_token}'}
-        
-        # Test GET /api/account/travelers (should be empty initially)
-        success, travelers = self.test(
-            "GET /api/account/travelers - Get saved travelers (should be empty)",
-            "GET",
-            "/account/travelers",
-            200,
-            headers=headers
-        )
-        
-        if success:
-            items = travelers.get('items', [])
-            self.log(f"   Initial travelers count: {len(items)}", Colors.BLUE)
-            if len(items) == 0:
-                self.log(f"   ✅ Initially empty as expected", Colors.GREEN)
-        
-        # Test POST /api/account/travelers - Add new traveler
-        traveler_data = {
-            'first_name': 'AHMET',
-            'last_name': 'YILMAZ',
-            'birth_date': '1990-01-15',
-            'gender': 'male',
-            'passport_no': 'U12345678',
-            'passport_expiry': '2030-12-31',
-            'applicant_type': 'adult'
-        }
-        
-        success, new_traveler = self.test(
-            "POST /api/account/travelers - Add new traveler",
-            "POST",
-            "/account/travelers",
-            200,
-            data=traveler_data,
-            headers=headers
-        )
-        
-        traveler_id = None
-        if success:
-            traveler_id = new_traveler.get('id')
-            self.log(f"   Traveler ID: {traveler_id}", Colors.BLUE)
-            
-            # Check all fields are returned
-            for field in ['first_name', 'last_name', 'birth_date', 'passport_no']:
-                if new_traveler.get(field) == traveler_data[field]:
-                    self.log(f"   ✅ Field {field} saved correctly", Colors.GREEN)
-                else:
-                    self.log(f"   ❌ Field {field} mismatch", Colors.RED)
-        
-        # Test adding same traveler again (should not create duplicate)
-        success, duplicate = self.test(
-            "POST /api/account/travelers - Add same traveler again (should upsert)",
-            "POST",
-            "/account/travelers",
-            200,
-            data=traveler_data,
-            headers=headers
-        )
-        
-        # Get travelers list again
-        success, travelers2 = self.test(
-            "GET /api/account/travelers - Get travelers after adding",
-            "GET",
-            "/account/travelers",
-            200,
-            headers=headers
-        )
-        
-        if success:
-            items = travelers2.get('items', [])
-            self.log(f"   Travelers count after adding: {len(items)}", Colors.BLUE)
-            
-            # Should still be 1 (no duplicate)
-            if len(items) == 1:
-                self.log(f"   ✅ No duplicate created (upsert working)", Colors.GREEN)
-            else:
-                self.log(f"   ⚠️  Expected 1 traveler, got {len(items)}", Colors.YELLOW)
-        
-        # Test POST with id (update existing)
-        if traveler_id:
-            update_data = {
-                **traveler_data,
-                'id': traveler_id,
-                'first_name': 'MEHMET'  # Change first name
-            }
-            
-            success, updated = self.test(
-                f"POST /api/account/travelers - Update existing traveler",
-                "POST",
-                "/account/travelers",
-                200,
-                data=update_data,
-                headers=headers
-            )
-            
-            if success and updated.get('first_name') == 'MEHMET':
-                self.log(f"   ✅ Traveler updated successfully", Colors.GREEN)
-        
-        # Test DELETE /api/account/travelers/{id}
-        if traveler_id:
-            success, deleted = self.test(
-                f"DELETE /api/account/travelers/{traveler_id} - Delete traveler",
-                "DELETE",
-                f"/account/travelers/{traveler_id}",
-                200,
-                headers=headers
-            )
-            
-            if success:
-                self.log(f"   ✅ Traveler deleted", Colors.GREEN)
-                
-                # Verify it's gone
-                success, travelers3 = self.test(
-                    "GET /api/account/travelers - Verify deletion",
-                    "GET",
-                    "/account/travelers",
-                    200,
-                    headers=headers
+        try:
+            # Upload non-passport image
+            with open(solid_path, "rb") as f:
+                files = {"file": ("solid_blue.png", f, "image/png")}
+                data = {"doc_type": "passport"}
+                upload_response = requests.post(
+                    f"{BASE_URL}/uploads",
+                    files=files,
+                    data=data,
+                    timeout=30
                 )
+            
+            if upload_response.status_code != 200:
+                self.log(f"Non-passport upload failed: {upload_response.status_code}", "FAIL")
+                return False
+            
+            self.non_passport_file_id = upload_response.json().get("file_id")
+            
+            # Read with OCR
+            time.sleep(1)
+            response = requests.post(
+                f"{BASE_URL}/passport/read",
+                data={"file_id": self.non_passport_file_id},
+                timeout=60
+            )
+            
+            # Should NOT return 500
+            if response.status_code == 500:
+                self.log(f"Non-passport image caused 500 error (should be graceful)", "FAIL")
+                return False
+            
+            if response.status_code != 200:
+                self.log(f"Non-passport OCR returned {response.status_code}: {response.text}", "WARN")
+                # This might be acceptable if it's a 400 with proper error message
+                if response.status_code == 400:
+                    self.log("Non-passport gracefully rejected with 400", "PASS")
+                    self.tests_passed += 1
+                    return True
+                return False
+            
+            result = response.json()
+            data = result.get("data", {})
+            
+            # Check is_passport field
+            if data.get("is_passport") == False:
+                self.log(f"Non-passport correctly identified: is_passport=false", "PASS")
+                self.tests_passed += 1
+                return True
+            else:
+                self.log(f"Non-passport not identified correctly: is_passport={data.get('is_passport')}", "FAIL")
+                return False
                 
-                if success:
-                    items = travelers3.get('items', [])
-                    if len(items) == 0:
-                        self.log(f"   ✅ Traveler successfully removed from list", Colors.GREEN)
+        except Exception as e:
+            self.log(f"Non-passport OCR test error: {str(e)}", "FAIL")
+            return False
+    
+    def test_photo_check_regression(self):
+        """Test POST /api/photo/check still works (regression)"""
+        self.tests_run += 1
+        self.log("Testing photo check regression...", "INFO")
         
-        # Test without token (should fail with 401)
-        success, no_auth = self.test(
-            "GET /api/account/travelers - Without token (should fail)",
-            "GET",
-            "/account/travelers",
-            401
-        )
+        # Upload portrait photo
+        photo_path = Path("/app/tests/fixtures/test_portrait.png")
+        if not photo_path.exists():
+            self.log(f"Test portrait file not found: {photo_path}", "FAIL")
+            return False
         
-        if success:
-            self.log(f"   ✅ Correctly requires authentication", Colors.GREEN)
-
-    def test_drafts(self):
-        """Test draft save and resume"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 6: DRAFT SAVE & RESUME", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
-        
-        test_email = f"draft{int(time.time())}@example.com"
-        
-        # Save draft
-        success, draft = self.test(
-            "POST /api/drafts - Save draft",
-            "POST",
-            "/drafts",
-            200,
-            data={
-                'email': test_email,
-                'title': 'Test Draft',
-                'step': 1,
-                'traveler_count': 2,
-                'data': {
-                    'contact': {'full_name': 'Test User', 'email': test_email},
-                    'travelers': [{'first_name': 'John', 'last_name': 'Doe'}]
-                }
-            }
-        )
-        
-        if success:
-            self.test_draft_id = draft.get('draft_id')
-            self.test_resume_code = draft.get('resume_code')
-            email_status = draft.get('email_status')
+        try:
+            # Upload photo
+            with open(photo_path, "rb") as f:
+                files = {"file": ("test_portrait.png", f, "image/png")}
+                data = {"doc_type": "photo"}
+                upload_response = requests.post(
+                    f"{BASE_URL}/uploads",
+                    files=files,
+                    data=data,
+                    timeout=30
+                )
             
-            self.log(f"   Draft ID: {self.test_draft_id}", Colors.BLUE)
-            self.log(f"   Resume code: {self.test_resume_code}", Colors.BLUE)
-            self.log(f"   Email status: {email_status}", Colors.BLUE)
-            self.log(f"   ✅ Draft saved", Colors.GREEN)
+            if upload_response.status_code != 200:
+                self.log(f"Photo upload failed: {upload_response.status_code}", "FAIL")
+                return False
             
-            # Get draft with correct code
-            success, get_draft = self.test(
-                f"GET /api/drafts/{self.test_draft_id}?code={self.test_resume_code} - Get draft",
-                "GET",
-                f"/drafts/{self.test_draft_id}",
-                200,
-                params={'code': self.test_resume_code}
+            self.photo_file_id = upload_response.json().get("file_id")
+            
+            # Check photo
+            time.sleep(1)
+            response = requests.post(
+                f"{BASE_URL}/photo/check",
+                data={"file_id": self.photo_file_id},
+                timeout=60
             )
             
-            if success:
-                self.log(f"   ✅ Draft retrieved with correct code", Colors.GREEN)
+            if response.status_code != 200:
+                self.log(f"Photo check failed: {response.status_code} - {response.text}", "FAIL")
+                return False
             
-            # Try with wrong code
-            success, wrong_code = self.test(
-                f"GET /api/drafts/{self.test_draft_id}?code=WRONGCODE - Get draft with wrong code (should fail)",
-                "GET",
-                f"/drafts/{self.test_draft_id}",
-                404,
-                params={'code': 'WRONGCODE'}
-            )
+            result = response.json()
             
-            if success:
-                self.log(f"   ✅ Wrong code correctly rejected", Colors.GREEN)
+            # Check for expected keys
+            required_keys = ["checked", "ok", "is_photo", "checks", "issues", "advice", "score"]
+            missing_keys = [k for k in required_keys if k not in result]
             
-            # Update draft (same draft_id and resume_code)
-            success, update_draft = self.test(
-                "POST /api/drafts - Update existing draft",
-                "POST",
-                "/drafts",
-                200,
-                data={
-                    'email': test_email,
-                    'draft_id': self.test_draft_id,
-                    'resume_code': self.test_resume_code,
-                    'title': 'Updated Draft',
-                    'step': 2,
-                    'traveler_count': 2,
-                    'data': {
-                        'contact': {'full_name': 'Test User Updated', 'email': test_email},
-                        'travelers': [{'first_name': 'Jane', 'last_name': 'Doe'}]
+            if missing_keys:
+                self.log(f"Missing keys in photo check response: {missing_keys}", "FAIL")
+                return False
+            
+            self.log(f"Photo check returned all expected keys: checked={result['checked']}, ok={result['ok']}, score={result['score']}", "PASS")
+            self.tests_passed += 1
+            return True
+                
+        except Exception as e:
+            self.log(f"Photo check test error: {str(e)}", "FAIL")
+            return False
+    
+    def test_application_with_new_fields(self):
+        """Test POST /api/applications accepts and persists new optional fields"""
+        self.tests_run += 1
+        self.log("Testing application creation WITH new optional fields...", "INFO")
+        
+        if not self.passport_file_id or not self.photo_file_id:
+            self.log("Missing file IDs for application test", "FAIL")
+            return False
+        
+        try:
+            application_data = {
+                "contact": {
+                    "full_name": "Test User",
+                    "email": f"test_{int(time.time())}@example.com",
+                    "phone": "05551234567",
+                    "address_city": "Istanbul",
+                    "whatsapp_optin": False
+                },
+                "travelers": [
+                    {
+                        "first_name": "AHMET",
+                        "last_name": "YILMAZ",
+                        "birth_date": "1990-08-15",
+                        "gender": "male",
+                        "applicant_type": "adult",
+                        "nationality": "TR",
+                        "national_id": "12345678901",
+                        "passport_no": "U12345678",
+                        "passport_expiry": "2032-01-20",
+                        # NEW OPTIONAL FIELDS
+                        "passport_issue_date": "2022-01-20",
+                        "birth_place": "ANKARA",
+                        "passport_issue_place": "ANKARA",
+                        "visa_type_id": "visa_30_single",
+                        "passport_file_id": self.passport_file_id,
+                        "photo_file_id": self.photo_file_id
                     }
-                }
+                ],
+                "travel": {
+                    "arrival_date": "2026-12-01",
+                    "departure_date": "2026-12-15",
+                    "purpose": "tourism",
+                    "birth_country": "TR",
+                    "accommodation": "Test Hotel",
+                    "flight_no": "TK123",
+                    "notes": ""
+                },
+                "addons": {
+                    "express": False
+                },
+                "store_items": [],
+                "extra_documents": {
+                    "ticket_file_id": None,
+                    "hotel_file_id": None,
+                    "other_file_ids": []
+                },
+                "kvkk_accepted": True
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/applications",
+                json=application_data,
+                timeout=30
             )
             
-            if success:
-                self.log(f"   ✅ Draft updated", Colors.GREEN)
-
-    def test_visa_guides(self):
-        """Test visa guide content management"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 7: VISA GUIDE CONTENT MANAGEMENT", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
-        
-        headers = {'Authorization': f'Bearer {self.admin_token}'}
-        
-        # List guides
-        success, guides = self.test(
-            "GET /api/admin/visa-guides - List all guides",
-            "GET",
-            "/admin/visa-guides",
-            200,
-            headers=headers
-        )
-        
-        if success:
-            items = guides.get('items', [])
-            self.log(f"   Found {len(items)} visa guides", Colors.BLUE)
+            if response.status_code != 200:
+                self.log(f"Application creation failed: {response.status_code} - {response.text}", "FAIL")
+                return False
             
-            if items:
-                # Test with first guide
-                guide = items[0]
-                slug = guide.get('slug')
-                has_override = guide.get('has_override')
+            result = response.json()
+            
+            # Check if application was created
+            if not result.get("id"):
+                self.log("Application created but no ID returned", "FAIL")
+                return False
+            
+            self.log(f"Application created with new fields: {result.get('reference_code')}", "PASS")
+            self.tests_passed += 1
+            return True
                 
-                self.log(f"   Testing with guide: {slug}", Colors.BLUE)
-                self.log(f"   Has override: {has_override}", Colors.BLUE)
+        except Exception as e:
+            self.log(f"Application creation test error: {str(e)}", "FAIL")
+            return False
+    
+    def test_application_without_new_fields(self):
+        """Test POST /api/applications works WITHOUT new fields (backwards compatibility)"""
+        self.tests_run += 1
+        self.log("Testing application creation WITHOUT new optional fields (backwards compatibility)...", "INFO")
+        
+        if not self.passport_file_id or not self.photo_file_id:
+            self.log("Missing file IDs for application test", "FAIL")
+            return False
+        
+        try:
+            application_data = {
+                "contact": {
+                    "full_name": "Test User 2",
+                    "email": f"test2_{int(time.time())}@example.com",
+                    "phone": "05551234568",
+                    "address_city": "Izmir",
+                    "whatsapp_optin": False
+                },
+                "travelers": [
+                    {
+                        "first_name": "MEHMET",
+                        "last_name": "DEMIR",
+                        "birth_date": "1985-05-10",
+                        "gender": "male",
+                        "applicant_type": "adult",
+                        "nationality": "TR",
+                        "national_id": "98765432109",
+                        "passport_no": "U98765432",
+                        "passport_expiry": "2030-06-15",
+                        # NO NEW FIELDS - testing backwards compatibility
+                        "visa_type_id": "visa_30_single",
+                        "passport_file_id": self.passport_file_id,
+                        "photo_file_id": self.photo_file_id
+                    }
+                ],
+                "travel": {
+                    "arrival_date": "2026-12-10",
+                    "departure_date": "2026-12-20",
+                    "purpose": "tourism",
+                    "birth_country": "TR",
+                    "accommodation": "Test Hotel 2",
+                    "flight_no": "TK456",
+                    "notes": ""
+                },
+                "addons": {
+                    "express": False
+                },
+                "store_items": [],
+                "extra_documents": {
+                    "ticket_file_id": None,
+                    "hotel_file_id": None,
+                    "other_file_ids": []
+                },
+                "kvkk_accepted": True
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/applications",
+                json=application_data,
+                timeout=30
+            )
+            
+            if response.status_code != 200:
+                self.log(f"Application creation (without new fields) failed: {response.status_code} - {response.text}", "FAIL")
+                return False
+            
+            result = response.json()
+            
+            if not result.get("id"):
+                self.log("Application created but no ID returned", "FAIL")
+                return False
+            
+            self.log(f"Application created without new fields (backwards compatible): {result.get('reference_code')}", "PASS")
+            self.tests_passed += 1
+            return True
                 
-                # Get guide details
-                success, detail = self.test(
-                    f"GET /api/admin/visa-guides/{slug} - Get guide details",
-                    "GET",
-                    f"/admin/visa-guides/{slug}",
-                    200,
-                    headers=headers
-                )
+        except Exception as e:
+            self.log(f"Application creation (backwards compat) test error: {str(e)}", "FAIL")
+            return False
+    
+    def test_family_discount_rate(self):
+        """Test GET /api/pricing/quote returns family_discount_rate = 0.1 for 2+ travelers, 0.0 for 1"""
+        self.tests_run += 1
+        self.log("Testing family discount rate (10% for 2+ travelers)...", "INFO")
+        
+        try:
+            # Test with 1 traveler (no discount)
+            response_1 = requests.post(
+                f"{BASE_URL}/pricing/quote",
+                json={
+                    "visa_type_ids": ["visa_30_single"],
+                    "addons": {"express": False},
+                    "store_items": []
+                },
+                timeout=10
+            )
+            
+            if response_1.status_code != 200:
+                self.log(f"Pricing quote (1 traveler) failed: {response_1.status_code}", "FAIL")
+                return False
+            
+            result_1 = response_1.json()
+            discount_rate_1 = result_1.get("family_discount_rate", -1)
+            
+            # Test with 2 travelers (10% discount)
+            response_2 = requests.post(
+                f"{BASE_URL}/pricing/quote",
+                json={
+                    "visa_type_ids": ["visa_30_single", "visa_30_single"],
+                    "addons": {"express": False},
+                    "store_items": []
+                },
+                timeout=10
+            )
+            
+            if response_2.status_code != 200:
+                self.log(f"Pricing quote (2 travelers) failed: {response_2.status_code}", "FAIL")
+                return False
+            
+            result_2 = response_2.json()
+            discount_rate_2 = result_2.get("family_discount_rate", -1)
+            
+            # Check discount rates
+            if discount_rate_1 == 0.0 and discount_rate_2 == 0.1:
+                self.log(f"Family discount correct: 1 traveler={discount_rate_1}, 2 travelers={discount_rate_2}", "PASS")
+                self.tests_passed += 1
+                return True
+            else:
+                self.log(f"Family discount incorrect: 1 traveler={discount_rate_1} (expected 0.0), 2 travelers={discount_rate_2} (expected 0.1)", "FAIL")
+                return False
                 
-                if success:
-                    effective = detail.get('effective', {})
-                    defaults = detail.get('defaults', {})
-                    override = detail.get('override', {})
-                    
-                    self.log(f"   Effective H1: {effective.get('h1', '')[:50]}...", Colors.BLUE)
-                    self.log(f"   Has override: {detail.get('has_override')}", Colors.BLUE)
-                    self.log(f"   ✅ Guide details retrieved", Colors.GREEN)
-                    
-                    # Update guide
-                    success, updated = self.test(
-                        f"PUT /api/admin/visa-guides/{slug} - Update guide",
-                        "PUT",
-                        f"/admin/visa-guides/{slug}",
-                        200,
-                        data={
-                            'h1': 'Test Updated H1',
-                            'seo_title': 'Test SEO Title',
-                            'seo_description': 'Test SEO Description',
-                            'intro': ['Test intro paragraph'],
-                            'faqs': [{'q': 'Test question?', 'a': 'Test answer'}]
-                        },
-                        headers=headers
-                    )
-                    
-                    if success:
-                        self.log(f"   ✅ Guide updated", Colors.GREEN)
-                        
-                        # Verify public endpoint returns updated content
-                        success, public = self.test(
-                            f"GET /api/visa-guides/{slug} - Verify public endpoint",
-                            "GET",
-                            f"/visa-guides/{slug}",
-                            200
-                        )
-                        
-                        if success:
-                            public_h1 = public.get('h1', '')
-                            if public_h1 == 'Test Updated H1':
-                                self.log(f"   ✅ Public endpoint returns updated content", Colors.GREEN)
-                            else:
-                                self.log(f"   ⚠️  Public H1: {public_h1}", Colors.YELLOW)
-                        
-                        # Reset to default
-                        success, reset = self.test(
-                            f"DELETE /api/admin/visa-guides/{slug} - Reset to default",
-                            "DELETE",
-                            f"/admin/visa-guides/{slug}",
-                            200,
-                            headers=headers
-                        )
-                        
-                        if success:
-                            reset_detail = reset.get('effective', {})
-                            if reset_detail.get('h1') != 'Test Updated H1':
-                                self.log(f"   ✅ Guide reset to default", Colors.GREEN)
-                            else:
-                                self.log(f"   ⚠️  Guide may not have reset correctly", Colors.YELLOW)
-
-    def test_pre_evaluation(self):
-        """Test Pre-Evaluation Wizard"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 9: PRE-EVALUATION WIZARD (ÖN DEĞERLENDİRME)", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
+        except Exception as e:
+            self.log(f"Family discount test error: {str(e)}", "FAIL")
+            return False
+    
+    def test_content_site_processing_time(self):
+        """Test GET /api/content/site mentions '2 iş günü' and %10 family discount"""
+        self.tests_run += 1
+        self.log("Testing content/site for '2 iş günü' and %10 family discount...", "INFO")
         
-        headers = {'Authorization': f'Bearer {self.admin_token}'}
-        
-        # Test 1: GET /api/pre-evaluation/questions - Get questions
-        success, questions_response = self.test(
-            "GET /api/pre-evaluation/questions - Get 4 questions",
-            "GET",
-            "/pre-evaluation/questions",
-            200
-        )
-        
-        if success:
-            questions = questions_response.get('questions', [])
-            self.log(f"   Found {len(questions)} questions", Colors.BLUE)
+        try:
+            response = requests.get(f"{BASE_URL}/content/site", timeout=10)
             
-            if len(questions) == 4:
-                self.log(f"   ✅ Correct number of questions (4)", Colors.GREEN)
+            if response.status_code != 200:
+                self.log(f"Content/site failed: {response.status_code}", "FAIL")
+                return False
+            
+            result = response.json()
+            
+            # Check for '2 iş günü' in processing_days or visa_types
+            content_str = str(result).lower()
+            
+            has_2_days = "2 iş günü" in content_str or "2 is gunu" in content_str
+            has_10_percent = "%10" in str(result) or "10%" in str(result)
+            
+            if has_2_days and has_10_percent:
+                self.log(f"Content correct: '2 iş günü' found={has_2_days}, '%10' found={has_10_percent}", "PASS")
+                self.tests_passed += 1
+                return True
             else:
-                self.log(f"   ❌ Expected 4 questions, got {len(questions)}", Colors.RED)
-            
-            # Check required fields in questions
-            required_fields = ['key', 'title', 'options']
-            for q in questions:
-                key = q.get('key')
-                self.log(f"   Question: {key}", Colors.BLUE)
-                for field in required_fields:
-                    if field not in q:
-                        self.log(f"     ❌ Missing field: {field}", Colors.RED)
+                self.log(f"Content missing: '2 iş günü' found={has_2_days}, '%10' found={has_10_percent}", "FAIL")
+                return False
                 
-                # Check if optional field is present for purpose question
-                if key == 'purpose' and q.get('optional') == True:
-                    self.log(f"     ✅ Purpose question marked as optional", Colors.GREEN)
-                elif key != 'purpose' and not q.get('optional'):
-                    self.log(f"     ✅ {key} is mandatory", Colors.GREEN)
+        except Exception as e:
+            self.log(f"Content/site test error: {str(e)}", "FAIL")
+            return False
+    
+    def test_zami_readiness(self):
+        """Test GET /api/admin/zami/readiness returns ready flags and checks array"""
+        self.tests_run += 1
+        self.log("Testing Zami readiness endpoint...", "INFO")
         
-        # Test 2: POST /api/pre-evaluation - Best scenario (high score)
-        success, best_result = self.test(
-            "POST /api/pre-evaluation - Best scenario (6_plus/recent/none/tourism)",
-            "POST",
-            "/pre-evaluation",
-            200,
-            data={
-                'passport_validity': '6_plus',
-                'visa_history': 'recent',
-                'refusal_history': 'none',
-                'purpose': 'tourism'
-            }
-        )
+        if not self.admin_token:
+            self.log("No admin token available for Zami readiness test", "FAIL")
+            return False
         
-        if success:
-            score = best_result.get('score')
-            level = best_result.get('level')
-            level_title = best_result.get('level_title')
-            factors = best_result.get('factors', [])
-            tips = best_result.get('tips', [])
-            blockers = best_result.get('blockers', [])
-            can_apply = best_result.get('can_apply')
-            recommended_visa_type_id = best_result.get('recommended_visa_type_id')
-            recommended_visa = best_result.get('recommended_visa')
-            disclaimer = best_result.get('disclaimer')
-            result_id = best_result.get('id')
+        try:
+            response = requests.get(
+                f"{BASE_URL}/admin/zami/readiness",
+                headers={"Authorization": f"Bearer {self.admin_token}"},
+                timeout=10
+            )
             
-            self.log(f"   Score: {score}%", Colors.BLUE)
-            self.log(f"   Level: {level} ({level_title})", Colors.BLUE)
-            self.log(f"   Factors: {len(factors)}", Colors.BLUE)
-            self.log(f"   Tips: {len(tips)}", Colors.BLUE)
-            self.log(f"   Blockers: {len(blockers)}", Colors.BLUE)
-            self.log(f"   Can apply: {can_apply}", Colors.BLUE)
-            self.log(f"   Recommended visa: {recommended_visa_type_id}", Colors.BLUE)
-            self.log(f"   Result ID: {result_id}", Colors.BLUE)
+            if response.status_code != 200:
+                self.log(f"Zami readiness failed: {response.status_code} - {response.text}", "FAIL")
+                return False
             
-            # Check score is in valid range (8-96)
-            if 8 <= score <= 96:
-                self.log(f"   ✅ Score in valid range (8-96)", Colors.GREEN)
-            else:
-                self.log(f"   ❌ Score out of range: {score}", Colors.RED)
+            result = response.json()
             
-            # Best scenario should have high score
-            if score >= 75:
-                self.log(f"   ✅ Best scenario has high score (>= 75)", Colors.GREEN)
-            else:
-                self.log(f"   ⚠️  Expected high score for best scenario, got {score}", Colors.YELLOW)
+            # Check for required fields
+            required_fields = ["ready_bookmarklet", "ready_robot", "checks"]
+            missing_fields = [f for f in required_fields if f not in result]
             
-            # Check required fields
-            if level and level_title and disclaimer and result_id:
-                self.log(f"   ✅ All required fields present", Colors.GREEN)
+            if missing_fields:
+                self.log(f"Missing fields in Zami readiness: {missing_fields}", "FAIL")
+                return False
             
-            # Check recommended visa
-            if recommended_visa:
-                self.log(f"   ✅ Recommended visa object present", Colors.GREEN)
-                self.log(f"     Name: {recommended_visa.get('name')}", Colors.BLUE)
-                self.log(f"     Price: {recommended_visa.get('price')} TRY", Colors.BLUE)
+            # Check checks array has expected keys
+            checks = result.get("checks", [])
+            if not isinstance(checks, list) or len(checks) == 0:
+                self.log(f"Checks array is empty or not a list", "FAIL")
+                return False
             
-            # Best scenario should have no blockers
-            if len(blockers) == 0:
-                self.log(f"   ✅ No blockers for best scenario", Colors.GREEN)
+            # Verify checks have required keys
+            expected_check_keys = ["key", "label", "ok", "detail"]
+            for check in checks:
+                missing_check_keys = [k for k in expected_check_keys if k not in check]
+                if missing_check_keys:
+                    self.log(f"Check missing keys: {missing_check_keys}", "FAIL")
+                    return False
             
-            if can_apply == True:
-                self.log(f"   ✅ can_apply is True for best scenario", Colors.GREEN)
+            self.log(f"Zami readiness OK: ready_bookmarklet={result['ready_bookmarklet']}, ready_robot={result['ready_robot']}, checks={len(checks)}", "PASS")
+            self.tests_passed += 1
+            return True
+                
+        except Exception as e:
+            self.log(f"Zami readiness test error: {str(e)}", "FAIL")
+            return False
+    
+    def test_regression_endpoints(self):
+        """Test regression endpoints: /products, /visa-types, /applications/track, /uploads"""
+        endpoints = [
+            ("GET", "/products", None),
+            ("GET", "/visa-types", None),
+            ("GET", "/visa-guides", None),
+        ]
         
-        # Test 3: POST /api/pre-evaluation - Worst scenario (low score)
-        success, worst_result = self.test(
-            "POST /api/pre-evaluation - Worst scenario (expired/none/uae)",
-            "POST",
-            "/pre-evaluation",
-            200,
-            data={
-                'passport_validity': 'expired',
-                'visa_history': 'none',
-                'refusal_history': 'uae',
-                'purpose': ''
-            }
-        )
-        
-        if success:
-            score = worst_result.get('score')
-            level = worst_result.get('level')
-            blockers = worst_result.get('blockers', [])
-            can_apply = worst_result.get('can_apply')
-            
-            self.log(f"   Score: {score}%", Colors.BLUE)
-            self.log(f"   Level: {level}", Colors.BLUE)
-            self.log(f"   Blockers: {len(blockers)}", Colors.BLUE)
-            self.log(f"   Can apply: {can_apply}", Colors.BLUE)
-            
-            # Worst scenario should have low score
-            if score <= 30:
-                self.log(f"   ✅ Worst scenario has low score (<= 30)", Colors.GREEN)
-            else:
-                self.log(f"   ⚠️  Expected low score for worst scenario, got {score}", Colors.YELLOW)
-            
-            # Should have blockers
-            if len(blockers) > 0:
-                self.log(f"   ✅ Blockers present for worst scenario", Colors.GREEN)
-                for blocker in blockers:
-                    self.log(f"     - {blocker}", Colors.BLUE)
-            
-            if can_apply == False:
-                self.log(f"   ✅ can_apply is False for worst scenario", Colors.GREEN)
-        
-        # Test 4: POST /api/pre-evaluation - Invalid enum values (should return 422)
-        success, invalid = self.test(
-            "POST /api/pre-evaluation - Invalid enum values (should fail)",
-            "POST",
-            "/pre-evaluation",
-            422,
-            data={
-                'passport_validity': 'invalid_value',
-                'visa_history': 'recent',
-                'refusal_history': 'none'
-            }
-        )
-        
-        if success:
-            self.log(f"   ✅ Invalid enum values correctly rejected (422)", Colors.GREEN)
-        
-        # Test 5: POST /api/pre-evaluation - Missing required fields (should return 422)
-        success, missing = self.test(
-            "POST /api/pre-evaluation - Missing required fields (should fail)",
-            "POST",
-            "/pre-evaluation",
-            422,
-            data={
-                'passport_validity': '6_plus'
-                # Missing visa_history and refusal_history
-            }
-        )
-        
-        if success:
-            self.log(f"   ✅ Missing required fields correctly rejected (422)", Colors.GREEN)
-        
-        # Test 6: POST /api/pre-evaluation - With lead information
-        test_email = f"preeval{int(time.time())}@test.com"
-        success, lead_result = self.test(
-            "POST /api/pre-evaluation - With lead information (name/email/phone)",
-            "POST",
-            "/pre-evaluation",
-            200,
-            data={
-                'passport_validity': 'under_6',
-                'visa_history': 'old',
-                'refusal_history': 'other_country',
-                'purpose': 'business',
-                'name': 'Test User',
-                'email': test_email,
-                'phone': '+905551234567'
-            }
-        )
-        
-        if success:
-            result_id = lead_result.get('id')
-            self.log(f"   ✅ Pre-evaluation with lead info created", Colors.GREEN)
-            self.log(f"   Result ID: {result_id}", Colors.BLUE)
-        
-        # Test 7: GET /api/admin/pre-evaluations - List all (admin)
-        success, admin_list = self.test(
-            "GET /api/admin/pre-evaluations - List all evaluations (admin)",
-            "GET",
-            "/admin/pre-evaluations",
-            200,
-            headers=headers
-        )
-        
-        if success:
-            total = admin_list.get('total', 0)
-            leads = admin_list.get('leads', 0)
-            average_score = admin_list.get('average_score', 0)
-            items = admin_list.get('items', [])
-            
-            self.log(f"   Total evaluations: {total}", Colors.BLUE)
-            self.log(f"   Leads (with contact): {leads}", Colors.BLUE)
-            self.log(f"   Average score: {average_score}%", Colors.BLUE)
-            self.log(f"   Items returned: {len(items)}", Colors.BLUE)
-            
-            if total > 0:
-                self.log(f"   ✅ Evaluations found", Colors.GREEN)
-            
-            # Check required fields in response
-            required_fields = ['total', 'leads', 'average_score', 'items']
-            for field in required_fields:
-                if field in admin_list:
-                    self.log(f"   ✅ Field present: {field}", Colors.GREEN)
+        for method, endpoint, data in endpoints:
+            self.tests_run += 1
+            try:
+                if method == "GET":
+                    response = requests.get(f"{BASE_URL}{endpoint}", timeout=10)
                 else:
-                    self.log(f"   ❌ Missing field: {field}", Colors.RED)
+                    response = requests.post(f"{BASE_URL}{endpoint}", json=data, timeout=10)
+                
+                if response.status_code == 200:
+                    self.log(f"{method} {endpoint}: OK", "PASS")
+                    self.tests_passed += 1
+                else:
+                    self.log(f"{method} {endpoint}: Failed with status {response.status_code}", "FAIL")
+            except Exception as e:
+                self.log(f"{method} {endpoint}: Error - {str(e)}", "FAIL")
+    
+    def run_all_tests(self):
+        """Run all backend tests"""
+        self.log("=" * 80, "INFO")
+        self.log("VizeAtlas Dubai - Backend API Tests", "INFO")
+        self.log("Round: Passport OCR extended, Zami RPA, family discount, processing time", "INFO")
+        self.log("=" * 80, "INFO")
         
-        # Test 8: GET /api/admin/pre-evaluations?only_leads=true - Filter leads only
-        success, leads_only = self.test(
-            "GET /api/admin/pre-evaluations?only_leads=true - Filter leads only",
-            "GET",
-            "/admin/pre-evaluations",
-            200,
-            headers=headers,
-            params={'only_leads': True}
-        )
+        # Admin login first
+        if not self.admin_login():
+            self.log("Admin login failed, some tests will be skipped", "WARN")
         
-        if success:
-            items = leads_only.get('items', [])
-            self.log(f"   Leads only: {len(items)} items", Colors.BLUE)
-            
-            # All items should have contact info
-            all_have_contact = all(
-                item.get('email') or item.get('phone') 
-                for item in items
-            )
-            if all_have_contact:
-                self.log(f"   ✅ All items have contact info", Colors.GREEN)
-            else:
-                self.log(f"   ⚠️  Some items missing contact info", Colors.YELLOW)
+        # Test new passport OCR extended fields
+        self.log("\n--- Feature: Passport OCR Extended Fields ---", "INFO")
+        self.test_passport_ocr_extended_fields()
         
-        # Test 9: GET /api/admin/pre-evaluations - Without token (should fail)
-        success, no_auth = self.test(
-            "GET /api/admin/pre-evaluations - Without token (should fail)",
-            "GET",
-            "/admin/pre-evaluations",
-            401
-        )
+        # Test non-passport graceful handling
+        self.log("\n--- Feature: Non-Passport Graceful Handling ---", "INFO")
+        self.test_passport_ocr_non_passport_graceful()
         
-        if success:
-            self.log(f"   ✅ Correctly requires admin authentication", Colors.GREEN)
-
-    def test_store_items_in_application(self):
-        """Test eSIM and insurance products in visa application"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("FEATURE 8: STORE ITEMS IN VISA APPLICATION", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
+        # Test photo check regression
+        self.log("\n--- Regression: Photo Check ---", "INFO")
+        self.test_photo_check_regression()
         
-        headers = {'Authorization': f'Bearer {self.admin_token}'}
+        # Test application with new fields
+        self.log("\n--- Feature: Application with New Fields ---", "INFO")
+        self.test_application_with_new_fields()
         
-        # Test 1: GET /api/products - List all store products
-        success, products = self.test(
-            "GET /api/products - List store products",
-            "GET",
-            "/products",
-            200
-        )
+        # Test application without new fields (backwards compatibility)
+        self.log("\n--- Feature: Application Backwards Compatibility ---", "INFO")
+        self.test_application_without_new_fields()
         
-        if success:
-            items = products.get('items', [])
-            self.log(f"   Found {len(items)} products", Colors.BLUE)
-            esim_products = [p for p in items if p.get('kind') == 'esim']
-            insurance_products = [p for p in items if p.get('kind') == 'insurance']
-            self.log(f"   eSIM products: {len(esim_products)}", Colors.BLUE)
-            self.log(f"   Insurance products: {len(insurance_products)}", Colors.BLUE)
-            
-            if len(esim_products) >= 4 and len(insurance_products) >= 2:
-                self.log(f"   ✅ All expected products present", Colors.GREEN)
+        # Test family discount rate
+        self.log("\n--- Feature: Family Discount Rate (10% for 2+) ---", "INFO")
+        self.test_family_discount_rate()
         
-        # Test 2: POST /api/pricing/quote with store_items
-        success, quote = self.test(
-            "POST /api/pricing/quote - Quote with store_items",
-            "POST",
-            "/pricing/quote",
-            200,
-            data={
-                'visa_type_ids': ['visa_30_single', 'visa_30_single'],
-                'addons': {'express': False},
-                'store_items': [
-                    {'product_id': 'esim_3gb', 'quantity': 2},
-                    {'product_id': 'ins_basic', 'quantity': 2}
-                ]
-            }
-        )
+        # Test content/site for processing time and family discount text
+        self.log("\n--- Feature: Content Site (2 iş günü, %10) ---", "INFO")
+        self.test_content_site_processing_time()
         
-        if success:
-            store_items = quote.get('store_items', [])
-            store_total = quote.get('store_total', 0)
-            total = quote.get('total', 0)
-            subtotal = quote.get('subtotal', 0)
-            
-            self.log(f"   Store items count: {len(store_items)}", Colors.BLUE)
-            self.log(f"   Store total: {store_total} TRY", Colors.BLUE)
-            self.log(f"   Visa subtotal: {subtotal} TRY", Colors.BLUE)
-            self.log(f"   Grand total: {total} TRY", Colors.BLUE)
-            
-            if len(store_items) == 2:
-                self.log(f"   ✅ Store items returned correctly", Colors.GREEN)
-            if store_total > 0:
-                self.log(f"   ✅ Store total calculated", Colors.GREEN)
-            if total > subtotal:
-                self.log(f"   ✅ Total includes store items", Colors.GREEN)
-        
-        # Test 3: POST /api/pricing/quote with invalid product_id (should return 400)
-        success, error = self.test(
-            "POST /api/pricing/quote - Invalid product_id (should fail)",
-            "POST",
-            "/pricing/quote",
-            400,
-            data={
-                'visa_type_ids': ['visa_30_single'],
-                'addons': {'express': False},
-                'store_items': [{'product_id': 'invalid_product', 'quantity': 1}]
-            }
-        )
-        
-        if success:
-            self.log(f"   ✅ Invalid product_id correctly rejected", Colors.GREEN)
-        
-        # Test 4: POST /api/pricing/quote with quantity > 10 (should return 422)
-        success, error = self.test(
-            "POST /api/pricing/quote - Quantity > 10 (should fail)",
-            "POST",
-            "/pricing/quote",
-            422,
-            data={
-                'visa_type_ids': ['visa_30_single'],
-                'addons': {'express': False},
-                'store_items': [{'product_id': 'esim_3gb', 'quantity': 11}]
-            }
-        )
-        
-        if success:
-            self.log(f"   ✅ Quantity > 10 correctly rejected", Colors.GREEN)
-        
-        # Test 5: Create application without store_items (regression test)
-        success, app_no_store = self.test(
-            "POST /api/applications - Without store_items (regression)",
-            "POST",
-            "/applications",
-            200,
-            data={
-                'contact': {
-                    'full_name': 'Test User NoStore',
-                    'email': f'nostore{int(time.time())}@test.com',
-                    'phone': '+905551234567',
-                    'address_city': 'Istanbul'
-                },
-                'travelers': [{
-                    'first_name': 'AHMET',
-                    'last_name': 'TEST',
-                    'birth_date': '1990-01-01',
-                    'gender': 'male',
-                    'applicant_type': 'adult',
-                    'nationality': 'TR',
-                    'passport_no': 'U12345678',
-                    'passport_expiry': '2030-12-31',
-                    'visa_type_id': 'visa_30_single',
-                    'passport_file_id': 'dummy-file-id-1',
-                    'photo_file_id': 'dummy-file-id-2'
-                }],
-                'travel': {
-                    'arrival_date': '2026-12-01',
-                    'departure_date': '2026-12-15',
-                    'purpose': 'tourism'
-                },
-                'addons': {'express': False},
-                'extra_documents': {
-                    'ticket_file_id': 'dummy-ticket-id',
-                    'hotel_file_id': 'dummy-hotel-id'
-                },
-                'kvkk_accepted': True
-            }
-        )
-        
-        if success:
-            pricing = app_no_store.get('pricing', {})
-            store_total = pricing.get('store_total', 0)
-            linked_order_id = app_no_store.get('linked_order_id')
-            
-            if store_total == 0:
-                self.log(f"   ✅ No store_total when no items", Colors.GREEN)
-            if not linked_order_id:
-                self.log(f"   ✅ No linked order created", Colors.GREEN)
-        
-        # Test 6: GET /api/admin/orders - Check if orders endpoint works (regression)
-        success, orders = self.test(
-            "GET /api/admin/orders - List orders (regression)",
-            "GET",
-            "/admin/orders",
-            200,
-            headers=headers
-        )
-        
-        if success:
-            items = orders.get('items', [])
-            self.log(f"   Found {len(items)} orders", Colors.BLUE)
-            self.log(f"   ✅ Orders endpoint working", Colors.GREEN)
-
-    def print_summary(self):
-        """Print test summary"""
-        self.log("\n" + "="*60, Colors.YELLOW)
-        self.log("TEST SUMMARY", Colors.YELLOW)
-        self.log("="*60, Colors.YELLOW)
-        
-        pass_rate = (self.tests_passed / self.tests_run * 100) if self.tests_run > 0 else 0
-        
-        self.log(f"\nTotal Tests: {self.tests_run}", Colors.BLUE)
-        self.log(f"Passed: {self.tests_passed}", Colors.GREEN)
-        self.log(f"Failed: {self.tests_failed}", Colors.RED)
-        self.log(f"Pass Rate: {pass_rate:.1f}%", Colors.YELLOW)
-        
-        if pass_rate >= 90:
-            self.log("\n🎉 Excellent! Backend APIs are working well.", Colors.GREEN)
-        elif pass_rate >= 70:
-            self.log("\n⚠️  Good, but some issues need attention.", Colors.YELLOW)
+        # Test Zami readiness
+        self.log("\n--- Feature: Zami RPA Readiness ---", "INFO")
+        if self.admin_token:
+            self.test_zami_readiness()
         else:
-            self.log("\n❌ Critical issues found. Main agent should fix before frontend testing.", Colors.RED)
+            self.log("Skipping Zami readiness test (no admin token)", "WARN")
         
-        return 0 if self.tests_failed == 0 else 1
+        # Test regression endpoints
+        self.log("\n--- Regression: Other Endpoints ---", "INFO")
+        self.test_regression_endpoints()
+        
+        # Print summary
+        self.log("=" * 80, "INFO")
+        self.log(f"Tests completed: {self.tests_passed}/{self.tests_run} passed", "INFO")
+        success_rate = (self.tests_passed / self.tests_run * 100) if self.tests_run > 0 else 0
+        self.log(f"Success rate: {success_rate:.1f}%", "INFO")
+        self.log("=" * 80, "INFO")
+        
+        return 0 if self.tests_passed == self.tests_run else 1
 
 def main():
-    tester = APITester()
-    
-    print(f"\n{Colors.BLUE}{'='*60}")
-    print("VizeAtlas Dubai Backend API Test Suite")
-    print(f"Testing 9 Features (Iteration 25 - Pre-Evaluation Wizard)")
-    print(f"Base URL: {BASE_URL}")
-    print(f"{'='*60}{Colors.END}\n")
-    
-    # Login as admin
-    if not tester.admin_login():
-        print(f"{Colors.RED}❌ Admin login failed. Cannot continue.{Colors.END}")
-        return 1
-    
-    # Run all feature tests
-    tester.test_fx_apis()
-    tester.test_document_reminders()
-    tester.test_customer_account()
-    tester.test_draft_reminders()
-    tester.test_saved_travelers()
-    tester.test_drafts()
-    tester.test_visa_guides()
-    tester.test_store_items_in_application()
-    tester.test_pre_evaluation()
-    
-    # Print summary
-    return tester.print_summary()
+    tester = VizeAtlasBackendTester()
+    return tester.run_all_tests()
 
 if __name__ == "__main__":
     sys.exit(main())

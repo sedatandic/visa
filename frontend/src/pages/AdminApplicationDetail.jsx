@@ -759,6 +759,35 @@ export default function AdminApplicationDetail() {
                                             ? `${zamiResult.filled_count} alan dolduruldu${zamiResult.submitted ? " ve form gönderildi" : " (gönderilmedi)"}.`
                                             : zamiResult.error}
                                     </p>
+                                    {zamiResult.ok && zamiResult.manual_pending?.length > 0 && (
+                                        <div
+                                            className="mt-3 rounded-lg border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.08)] p-3"
+                                            data-testid="zami-manual-pending"
+                                        >
+                                            <p className="flex items-center gap-1.5 text-xs font-bold">
+                                                <AlertTriangle className="h-3.5 w-3.5 text-[hsl(var(--status-warning))]" />
+                                                Zami formunda elle doldurulması gereken alanlar
+                                            </p>
+                                            <ul className="mt-2 flex flex-wrap gap-1.5">
+                                                {zamiResult.manual_pending.map((label) => (
+                                                    <li
+                                                        key={label}
+                                                        className="rounded-md bg-background px-2 py-1 text-xs text-muted-foreground"
+                                                    >
+                                                        {label}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <p className="mt-2 text-xs text-muted-foreground">
+                                                Bu bilgileri başvuru formunda toplamıyoruz; portalda tamamlayın.
+                                            </p>
+                                        </div>
+                                    )}
+                                    {zamiResult.ok && zamiResult.missing?.length > 0 && (
+                                        <p className="mt-2 text-xs text-destructive" data-testid="zami-missing-fields">
+                                            Eşlemede bulunamayan alanlar: {zamiResult.missing.join(", ")}
+                                        </p>
+                                    )}
                                     {zamiResult.screenshot && (
                                         <img
                                             src={zamiResult.screenshot}

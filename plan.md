@@ -342,3 +342,76 @@ Test:
 
 **Test**
 - `testing_agent_v3` iteration_25.json → backend **30/30 %100 PASS**, davranış regresyonu yok.
+
+---
+
+### Phase 35 — Zami CANLI Aktarim (İlk Gerçek Test) — **COMPLETED (2026-09-03)**
+**Sonuç: Robot canlı Zami portalında çalışıyor.** `DV-CV681445` test başvurusu gerçek
+"New Visa Request (Dubai)" formuna dolduruldu, **gönderilmedi** (dry-run).
+
+**Yapılanlar**
+- Doğru portal kullanıcısı tespit edildi: `s.andic@mediterra.com.tr` (2 'r'; kullanıcının verdiği 3 'r'lı adres hatalıydı).
+- `zami.normalize_portal_url()` eklendi — kayıtlı adres `/login` ile bittiği için robot `/login/login` → 404 alıyordu.
+- **AI Captcha**: yeni `backend/captcha_ai.py` (Emergent LLM vision + PIL upscale/autocontrast).
+  Captcha admin panelde otomatik okunup input'a ön-dolduruluyor (`captcha_guess`, `zami-captcha-ai-hint`).
+- OTP adımı düzeltildi: Enter yerine "VALIDATE OTP" butonuna tıklanıyor, ayrıca "Trusted Device" işaretleniyor.
+- Giriş başarılı (OTP kullanıcıdan alındı), `storage_state` DB'ye kaydedildi → sonraki aktarımlar OTP'siz.
+- Gerçek form yakalandı: **84 alan**, `form_url = https://visa.zamitours.ae/?_=203&s=smrtch.edit`.
+- Doldurma motoru güçlendirildi: DD-MM-YYYY tarih formatı (`dmy_dash`), radio (Male/Female) seçimi,
+  checkbox, `mapping.constants` (sabit değerler) ve **jQuery UI autocomplete** desteği
+  (ülke/meslek alanları öneri listesinden seçiliyor — `AUTOCOMPLETE_JS`).
+- Mapping kaydedildi (`scripts/zami_save_mapping.py`).
+
+**Sonuç: 20 alan otomatik doldu, 0 hata**
+Arrival Date, Your Reference, Visa Comments, Visa Type (30 Days), Source Type (dubai), Normal,
+Present Nationality (Turkey/792), Passport No, Male, Birth Date, Expiration Date, Birth Country,
+Coming From, Residing Country, Visit Reason (Tourism), First/Last Name, Passport Issuing Country,
+Applicant Mobile.
+
+**Zami'de zorunlu ama bizde OLMAYAN alanlar (operatör dolduruyor)**
+Date of Issue, Birth Place, Passport Issue Place, Father Name, Mother Name, Marital Status,
+Profession, Group Membership, Language, Religion, Flight Date/No (gidiş-dönüş).
+→ Bunların bir kısmı pasaport OCR ile alınabilir (issue date, birth place, issue place).
+→ Karar kullanıcıya soruldu.
+
+**Scriptler**: `scripts/zami_live_login.py`, `zami_session_step.py`, `zami_explore.py`,
+`zami_save_mapping.py`, `zami_autocomplete_probe.py`, `zami_nt_probe.py`
+**Ekranlar**: `scripts/out/transfer2.png` (dolu form), `s_otp_result.jpg` (giriş)
+
+### Phase 36 — Renk Paleti Güncellemesi (kullanıcı isteği) — **COMPLETED**
+- Siyah tonlar kaldırıldı; palet **kırmızı + beyaz + açık yeşil**.
+- `--navy` (tüm koyu bloklar) → `152 46% 22%`; primary `150 62% 32%`; yüzeyler yeşile çalan beyaz.
+- Bayrak şeridi yeşil/beyaz/kırmızı; gölgeler yeşil tonlu.
+- `design_guidelines.md` token bloğu güncellendi.
+
+### Phase 37 — İçerik/Fiyat Güncellemeleri — **COMPLETED**
+- "3 iş günü" → **"2 iş günü"** (hero, istatistik, SSS, rehberler, content.py).
+- Aile indirimi: kademeli %5/%8 yerine **2 kişi ve üzeri sabit %10** (`FAMILY_DISCOUNT_TIERS = [(2, 0.10)]`).
+- Fiyat kartları: 2 kart kaldığında grid tam genişliğe yayılıyor (`PricingTabs`).
+
+---
+
+### Phase 38 — Zami Tam Otomasyon (OCR Genişletme) — **COMPLETED (2026-09-03)**
+Kullanıcı "en iyi kararını ver" dedi; form UZATILMADI, veriler pasaporttan okundu.
+
+**Pasaport OCR genişletildi** (`passport_ai.py`): `passport_issue_date`, `birth_place`,
+`passport_issue_place` da okunuyor. Bu alanlar kullanıcıya **sorulmuyor**; `Apply.jsx`
+içinde sessizce taşınıp yolcu kaydına yazılıyor (`models.py` opsiyonel alanlar).
+
+**Zami mapping tamamlandı** → canlı dry-run: **25 alan otomatik, 0 hata**
+- Yeni: Date of Issue (pd), Birth Place (bp) — portal Arapçaya otomatik çeviriyor, Passport Issue Place (pp)
+- Sabitler: Source Type=dubai, Normal, Tourism, Language=Turkish, Medeni Hal=Unknown, Din=Unknown, ülkeler=Turkey
+- Dinamik: Group Membership (tek yolcu 'None / Alone', aile 'Family Main Person' + üye sayısı)
+- Portal tarafından kilitli alanlar (`ms`, `gp`) artık `skipped_disabled` olarak raporlanıyor, hata sayılmıyor
+
+**Operatörün elle dolduracağı alanlar** (`zami.MANUAL_FIELDS`) admin başvuru detayında
+uyarı kutusunda listeleniyor (`zami-manual-pending`): Baba Adı, Anne Adı, Meslek, Eğitim,
+gidiş/dönüş uçuş tarihi ve numarası.
+
+**Readiness**: `ready_bookmarklet=True`, `ready_robot=True` (yolcu alan kontrolü
+`dmy_dash` varyantını da kabul edecek şekilde düzeltildi).
+
+**Gerçek gönderim YAPILMADI** — `submit_selector` bilinçli olarak boş; test başvurusunun
+canlı portala gönderilmesi ücretli gerçek talep yaratacağı için kullanıcı onayı bekleniyor.
+
+**Test**: iteration_26.json → backend 11/11 %100, frontend %100, hata yok.

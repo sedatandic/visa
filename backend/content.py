@@ -17,7 +17,7 @@ VISA_TYPES = [
         "price": 1999.0,
         "price_usd": 110.0,
         "currency": "TRY",
-        "processing_days": "ortalama 3 iş günü",
+        "processing_days": "ortalama 2 iş günü",
         "popular": True,
         "order": 1,
         "description": "Dubai seyahatiniz 1-30 gün arasıysa ve tek seferlik gidiş-dönüş yapacaksanız bu vize uygundur.",
@@ -42,7 +42,7 @@ VISA_TYPES = [
         "price": 3999.0,
         "price_usd": 220.0,
         "currency": "TRY",
-        "processing_days": "ortalama 3 iş günü",
+        "processing_days": "ortalama 2 iş günü",
         "popular": False,
         "order": 2,
         "description": "Dubai seyahatiniz 1-60 gün arasıysa ve tek seferlik gidiş-dönüş yapacaksanız bu vize uygundur.",
@@ -117,7 +117,7 @@ VISA_TYPES = [
         "price": 999.0,
         "price_usd": 55.0,
         "currency": "TRY",
-        "processing_days": "ortalama 3 iş günü",
+        "processing_days": "ortalama 2 iş günü",
         "popular": True,
         "order": 5,
         "description": "18 yaş altı çocukların aileleriyle birlikte 1-30 gün tek girişli seyahati için indirimli vize.",
@@ -283,9 +283,10 @@ LEGACY_ADDONS = {
 }
 
 # (minimum traveller count, discount rate on visa subtotal)
-FAMILY_DISCOUNT_TIERS = [(5, 0.08), (3, 0.05)]
+# Aile basvurusu (2 kisi ve uzeri) icin sabit %10 indirim
+FAMILY_DISCOUNT_TIERS = [(2, 0.10)]
 
-FAMILY_DISCOUNT_TEXT = "3 ve 4 kişilik başvurularda %5, 5 kişi ve üzerinde %8 aile indirimi otomatik uygulanır."
+FAMILY_DISCOUNT_TEXT = "Aile başvurularında (2 kişi ve üzeri) %10 aile indirimi otomatik uygulanır."
 
 MAX_TRAVELERS = 10
 
@@ -340,7 +341,7 @@ PROCESS_STEPS = [
 WHY_US = [
     {"title": "Şeffaf fiyat", "detail": "Gizli masraf yok. Dosya açma veya danışmanlık adı altında ek kalem çıkarmayız."},
     {"title": "Evrak kontrolü bizde", "detail": "Yüklediğiniz her belgeyi başvuru öncesi kontrol ediyoruz. Eksik varsa sizi arıyoruz."},
-    {"title": "Hızlı sonuç", "detail": "Standart başvurular ortalama 3 iş günü, ekspres başvurular 24 saat içinde sonuçlanır."},
+    {"title": "Hızlı sonuç", "detail": "Standart başvurular ortalama 2 iş günü, ekspres başvurular 24 saat içinde sonuçlanır."},
     {"title": "Gerçek insan desteği", "detail": "WhatsApp ve telefonla ulaşabileceğiniz Türkçe danışman ekibi."},
 ]
 
@@ -445,11 +446,11 @@ FAQ = [
     },
     {
         "q": "Ailemle birlikte tek başvuru yapabilir miyim?",
-        "a": "Evet. Başvuru formunda 'Yolcu ekle' butonuyla eşinizi ve çocuklarınızı aynı başvuruya ekleyebilirsiniz. 18 yaş altı yolcular için indirimli çocuk vizesi, 3 kişi ve üzeri başvurularda ise aile indirimi otomatik uygulanır.",
+        "a": "Evet. Başvuru formunda 'Yolcu ekle' butonuyla eşinizi ve çocuklarınızı aynı başvuruya ekleyebilirsiniz. 18 yaş altı yolcular için indirimli çocuk vizesi, 2 kişi ve üzeri başvurularda ise %10 aile indirimi otomatik uygulanır.",
     },
     {
         "q": "Vize işlemi ne kadar sürüyor?",
-        "a": "Belgeleriniz eksiksiz olduğunda standart başvurular ortalama 3 iş günü içinde sonuçlanır. Ekspres vize hizmetiyle sonuç genellikle 24 saat içinde çıkar.",
+        "a": "Belgeleriniz eksiksiz olduğunda standart başvurular ortalama 2 iş günü içinde sonuçlanır. Ekspres vize hizmetiyle sonuç genellikle 24 saat içinde çıkar.",
     },
     {
         "q": "Pasaportumu göndermem gerekiyor mu?",
@@ -693,7 +694,7 @@ def compute_pricing(
 # --------------------------------------------------------------- Odeme / hukuk
 
 PROMO = {
-    "title": "Aile başvurularında %8'e varan indirim",
+    "title": "Aile başvurularında %10 indirim",
     "detail": "Tek formda birden fazla yolcu eklediğinizde aile indirimi otomatik uygulanır; çocuk vizelerinde ayrıca indirimli fiyat geçerlidir.",
 }
 

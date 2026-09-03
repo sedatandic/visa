@@ -69,7 +69,16 @@ export const PricingTabs = ({ compactHeading = false }) => {
                 </div>
             )}
 
-            <div className="mt-7 grid gap-6 md:grid-cols-2 lg:grid-cols-3" data-testid="pricing-grid">
+            <div
+                className={`mt-7 grid gap-6 ${
+                    loading || visible.length >= 3
+                        ? "md:grid-cols-2 lg:grid-cols-3"
+                        : visible.length === 2
+                          ? "md:grid-cols-2"
+                          : "md:grid-cols-1"
+                }`}
+                data-testid="pricing-grid"
+            >
                 {loading
                     ? [0, 1, 2].map((i) => (
                           <div key={i} className="card-surface p-6" data-testid={`pricing-skeleton-${i}`}>

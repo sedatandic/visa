@@ -17,7 +17,7 @@ COMMON_FAQ = [
     },
     {
         "q": "Vize başvurumu ne kadar önce yapmalıyım?",
-        "a": "Standart başvurularda sonuç ortalama 3 iş gününde çıktığı için seyahatinizden en az 7-10 gün önce başvurmanızı öneririz. Uçuşa 48 saatten az kaldıysa ekspres hizmet ile başvurunuzu önceliklendirebiliriz.",
+        "a": "Standart başvurularda sonuç ortalama 2 iş gününde çıktığı için seyahatinizden en az 7-10 gün önce başvurmanızı öneririz. Uçuşa 48 saatten az kaldıysa ekspres hizmet ile başvurunuzu önceliklendirebiliriz.",
     },
     {
         "q": "Ödemeyi nasıl yapabilirim?",
@@ -33,7 +33,7 @@ GUIDES = {
     "30-gun-tek-giris": {
         "h1": "30 Günlük Tek Girişli Dubai Vizesi",
         "seo_title": "30 Günlük Dubai Vizesi 2026 | Fiyat, Şartlar ve Online Başvuru",
-        "seo_description": "30 günlük tek girişli Dubai vizesi nasıl alınır? 2026 fiyatı, gerekli belgeler, başvuru süresi ve onay şartları. Tek formda aile başvurusu, ortalama 3 iş gününde sonuç.",
+        "seo_description": "30 günlük tek girişli Dubai vizesi nasıl alınır? 2026 fiyatı, gerekli belgeler, başvuru süresi ve onay şartları. Tek formda aile başvurusu, ortalama 2 iş gününde sonuç.",
         "keywords": ["30 günlük dubai vizesi", "dubai vizesi fiyat", "dubai turistik vize", "dubai vize başvurusu"],
         "intro": [
             "30 günlük tek girişli Dubai vizesi, Birleşik Arap Emirlikleri'ne turistik ya da kısa iş amaçlı seyahat edenlerin en çok tercih ettiği vize tipidir. Vize, ülkeye ilk giriş yaptığınız günden itibaren 30 gün kalış hakkı verir ve tek giriş için geçerlidir; ülkeden çıktığınızda vizeniz kullanılmış sayılır.",
@@ -49,7 +49,7 @@ GUIDES = {
         "highlights": [
             "Ülkeye girişten itibaren 30 gün kesintisiz kalış hakkı",
             "Konsolosluk randevusu ve pasaport teslimi gerekmez",
-            "Aile başvurusunda %8'e varan indirim, çocuk vizelerinde ayrıca indirimli fiyat",
+            "Aile başvurusunda %10 indirim, çocuk vizelerinde ayrıca indirimli fiyat",
             "Ekspres hizmet ile genellikle 24 saat içinde sonuç",
         ],
         "tips": [
@@ -64,7 +64,7 @@ GUIDES = {
             },
             {
                 "q": "30 günlük Dubai vizesi kaç günde çıkar?",
-                "a": "Standart başvurularda sonuç ortalama 3 iş günü içinde çıkar. Yoğun dönemlerde bu süre 5 iş gününe kadar uzayabilir; acil seyahatlerde ekspres hizmetle genellikle 24 saat içinde sonuç alınır.",
+                "a": "Standart başvurularda sonuç ortalama 2 iş günü içinde çıkar. Yoğun dönemlerde bu süre 5 iş gününe kadar uzayabilir; acil seyahatlerde ekspres hizmetle genellikle 24 saat içinde sonuç alınır.",
             },
             {
                 "q": "Vize süresini Dubai'de uzatabilir miyim?",

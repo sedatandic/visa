@@ -9,6 +9,7 @@ import {
     RefreshCw,
     Save,
     Send,
+    Sparkles,
     Trash2,
     Wand2,
 } from "lucide-react";
@@ -313,9 +314,13 @@ export default function AdminZami() {
                 toast.error(data.error || "Oturum başlatılamadı.");
             } else {
                 setRpa(data);
-                setCaptcha("");
+                setCaptcha(data.captcha_guess || "");
                 setOtp("");
-                toast.success("Portal login sayfası açıldı. Captcha'yı girin.");
+                toast.success(
+                    data.captcha_guess
+                        ? `Login sayfası açıldı. Captcha yapay zeka ile okundu (${data.captcha_guess}) — kontrol edip giriş yapın.`
+                        : "Portal login sayfası açıldı. Captcha'yı girin."
+                );
             }
         } catch (e) {
             toast.error(apiError(e, "Oturum başlatılamadı."));
@@ -330,8 +335,10 @@ export default function AdminZami() {
         setBusy(true);
         try {
             const { data } = await api.post("/admin/zami/session/captcha", { session_id: rpa.session_id });
-            if (data.ok) setRpa((r) => ({ ...r, captcha_image: data.captcha_image }));
-            else toast.error(data.error || "Captcha yenilenemedi.");
+            if (data.ok) {
+                setRpa((r) => ({ ...r, captcha_image: data.captcha_image, captcha_guess: data.captcha_guess }));
+                setCaptcha(data.captcha_guess || "");
+            } else toast.error(data.error || "Captcha yenilenemedi.");
         } finally {
             setBusy(false);
         }
@@ -347,6 +354,7 @@ export default function AdminZami() {
                 otp,
             });
             setRpa((r) => ({ ...r, ...data, session_id: r.session_id }));
+            if (data.captcha_guess) setCaptcha(data.captcha_guess);
             if (data.ok && data.stage === "ready") {
                 toast.success(data.message || "Giriş başarılı.");
                 load();
@@ -827,6 +835,15 @@ export default function AdminZami() {
                                                     placeholder="3 haneli kod"
                                                     data-testid="zami-captcha-input"
                                                 />
+                                                {rpa.captcha_guess && (
+                                                    <p
+                                                        className="mt-2 flex items-center gap-1.5 text-xs font-medium text-primary"
+                                                        data-testid="zami-captcha-ai-hint"
+                                                    >
+                                                        <Sparkles className="h-3.5 w-3.5" />
+                                                        Yapay zeka okudu: {rpa.captcha_guess} — yanlışsa düzeltin.
+                                                    </p>
+                                                )}
                                             </div>
                                         )}
                                         {rpa.stage === "otp" && (

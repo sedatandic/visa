@@ -21,6 +21,11 @@ class TravelerIn(BaseModel):
     national_id: Optional[str] = Field(default="", max_length=20)
     passport_no: str = Field(..., min_length=4, max_length=20)
     passport_expiry: str = Field(..., min_length=4, max_length=20)
+    # Pasaport OCR'dan otomatik gelen ek alanlar (kullaniciya soru sorulmaz).
+    # Zami formunda zorunlu olduklari icin aktarimda kullanilir.
+    passport_issue_date: Optional[str] = Field(default="", max_length=20)
+    birth_place: Optional[str] = Field(default="", max_length=60)
+    passport_issue_place: Optional[str] = Field(default="", max_length=60)
     visa_type_id: str = Field(..., min_length=3)
     passport_file_id: str = Field(..., min_length=8)
     photo_file_id: str = Field(..., min_length=8)

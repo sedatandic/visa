@@ -84,6 +84,7 @@ DEFAULT_MAPPING = {
     "submit_selector": "",
     "dry_run": True,
     "fields": {},
+    "constants": {},
     "traveler_fields": {},
     # --- durum takibi ---
     "status_url": "",
@@ -115,9 +116,39 @@ def _fmt(value: str | None, style: str) -> str:
     d = parsed
     if style == "dmy":
         return d.strftime("%d/%m/%Y")
+    if style == "dmy_dash":
+        return d.strftime("%d-%m-%Y")
     if style == "mdy":
         return d.strftime("%m/%d/%Y")
     return d.strftime("%Y-%m-%d")
+
+
+# Zami "Dubai Application" formundaki Visa Type secenekleri ile bizim vize
+# tiplerimizin eslesmesi (select option etiketleri birebir kullanilir).
+ZAMI_VISA_TYPE_LABELS = {
+    "visa_30_single": "30 Days",
+    "visa_30_multi": "30 Days Multi",
+    "visa_60_single": "60 Days",
+    "visa_60_multi": "60 Days Multi",
+    "visa_30_child": "30 Days",
+    "visa_60_child": "60 Days",
+}
+
+# Ulke kodlarindan portalda beklenen ingilizce ulke adlari
+COUNTRY_LABELS = {
+    "TR": "TURKEY",
+    "TC": "TURKEY",
+    "TUR": "TURKEY",
+}
+
+
+def country_label(code: str | None) -> str:
+    raw = (code or "").strip()
+    return COUNTRY_LABELS.get(raw.upper(), raw.upper())
+
+
+def zami_visa_label(visa_type_id: str | None, fallback: str = "") -> str:
+    return ZAMI_VISA_TYPE_LABELS.get((visa_type_id or "").strip(), fallback)
 
 
 def build_payload(app_doc: dict, file_base_url: str = "") -> dict:
@@ -135,15 +166,25 @@ def build_payload(app_doc: dict, file_base_url: str = "") -> dict:
         "contact.address_city": contact.get("address_city", ""),
         "travel.arrival_date": _fmt(travel.get("arrival_date"), "iso"),
         "travel.arrival_date_dmy": _fmt(travel.get("arrival_date"), "dmy"),
+        "travel.arrival_date_dmy_dash": _fmt(travel.get("arrival_date"), "dmy_dash"),
         "travel.arrival_date_mdy": _fmt(travel.get("arrival_date"), "mdy"),
         "travel.departure_date": _fmt(travel.get("departure_date"), "iso"),
         "travel.departure_date_dmy": _fmt(travel.get("departure_date"), "dmy"),
+        "travel.departure_date_dmy_dash": _fmt(travel.get("departure_date"), "dmy_dash"),
         "travel.departure_date_mdy": _fmt(travel.get("departure_date"), "mdy"),
         "travel.purpose": travel.get("purpose", ""),
         "travel.accommodation": travel.get("accommodation", ""),
         "travel.flight_no": travel.get("flight_no", ""),
         "travel.notes": travel.get("notes", ""),
         "visa_type_name": app_doc.get("visa_type_name", ""),
+        "zami_visa_type": zami_visa_label(
+            (travelers[0] or {}).get("visa_type_id") if travelers else "",
+            app_doc.get("visa_type_name", ""),
+        ),
+        "birth_country_label": country_label(travel.get("birth_country") or "TR"),
+        # Zami "Group Membership": tek yolcu ise 'None / Alone', aile ise ana kisi
+        "zami_group_membership": "None / Alone" if len(travelers) <= 1 else "Family Main Person",
+        "zami_total_members": str(len(travelers)) if len(travelers) > 1 else "",
         "traveler_count": str(len(travelers)),
     }
 
@@ -156,18 +197,30 @@ def build_payload(app_doc: dict, file_base_url: str = "") -> dict:
                 "full_name": f"{t.get('first_name','')} {t.get('last_name','')}".strip(),
                 "birth_date": _fmt(t.get("birth_date"), "iso"),
                 "birth_date_dmy": _fmt(t.get("birth_date"), "dmy"),
+                "birth_date_dmy_dash": _fmt(t.get("birth_date"), "dmy_dash"),
                 "birth_date_mdy": _fmt(t.get("birth_date"), "mdy"),
                 "gender": t.get("gender", ""),
                 "gender_label": GENDER_LABELS.get(t.get("gender", ""), ""),
+                "gender_en": "Male" if t.get("gender") == "male" else "Female",
                 "nationality": t.get("nationality", "TR"),
+                "nationality_label": country_label(t.get("nationality") or "TR"),
+                "passport_country_label": country_label(t.get("nationality") or "TR"),
                 "national_id": t.get("national_id", ""),
                 "passport_no": t.get("passport_no", ""),
                 "passport_expiry": _fmt(t.get("passport_expiry"), "iso"),
                 "passport_expiry_dmy": _fmt(t.get("passport_expiry"), "dmy"),
+                "passport_expiry_dmy_dash": _fmt(t.get("passport_expiry"), "dmy_dash"),
                 "passport_expiry_mdy": _fmt(t.get("passport_expiry"), "mdy"),
+                "passport_issue_date": _fmt(t.get("passport_issue_date"), "iso"),
+                "passport_issue_date_dmy": _fmt(t.get("passport_issue_date"), "dmy"),
+                "passport_issue_date_dmy_dash": _fmt(t.get("passport_issue_date"), "dmy_dash"),
+                "birth_place": (t.get("birth_place") or "").strip(),
+                "passport_issue_place": (t.get("passport_issue_place") or "").strip(),
                 "applicant_type": t.get("applicant_type", "adult"),
                 "applicant_type_label": APPLICANT_LABELS.get(t.get("applicant_type", "adult"), ""),
                 "visa_type_name": t.get("visa_type_name", ""),
+                "zami_visa_type": zami_visa_label(t.get("visa_type_id"), t.get("visa_type_name", "")),
+                "phone": contact.get("phone", ""),
             }
         )
 
@@ -201,6 +254,20 @@ def build_payload(app_doc: dict, file_base_url: str = "") -> dict:
 
 
 # ------------------------------------------------------------------ mapping
+# Zami formunda zorunlu olup bizim basvuru formumuzda toplanmayan alanlar.
+# Aktarim sonrasi operatore hatirlatilir (robot bu alanlari bos birakir).
+MANUAL_FIELDS = [
+    {"selector": '[name="fa"]', "label": "Baba Adı"},
+    {"selector": '[name="mo"]', "label": "Anne Adı"},
+    {"selector": '[name="pf_tt"]', "label": "Meslek"},
+    {"selector": '[name="eu"]', "label": "Eğitim"},
+    {"selector": '[name="tr_a_d"]', "label": "Geliş uçuş tarihi"},
+    {"selector": '[name="tr_a_fn"]', "label": "Geliş uçuş no"},
+    {"selector": '[name="tr_d_d"]', "label": "Dönüş uçuş tarihi"},
+    {"selector": '[name="tr_d_fn"]', "label": "Dönüş uçuş no"},
+]
+
+
 async def get_mapping() -> dict:
     doc = await settings_col.find_one({"key": MAPPING_KEY})
     mapping = dict(DEFAULT_MAPPING)
@@ -220,6 +287,7 @@ async def save_mapping(value: dict) -> dict:
             "submit_selector": (value.get("submit_selector") or "").strip(),
             "dry_run": bool(value.get("dry_run", True)),
             "fields": {k: v for k, v in (value.get("fields") or {}).items() if v},
+            "constants": {k: v for k, v in (value.get("constants") or {}).items() if v},
             "traveler_fields": {k: v for k, v in (value.get("traveler_fields") or {}).items() if v},
             "status_url": (value.get("status_url") or "").strip(),
             "status_search_selector": (value.get("status_search_selector") or "").strip(),
@@ -253,11 +321,22 @@ def match_status(raw_text: str, keywords: dict) -> str | None:
     return None
 
 
+def normalize_portal_url(value: str) -> str:
+    """Portal adresini taban adrese indirir (sonundaki /login vb. temizlenir)."""
+    url = (value or "").strip().rstrip("/")
+    for suffix in ("/login", "/signin", "/sign-in"):
+        if url.lower().endswith(suffix):
+            url = url[: -len(suffix)].rstrip("/")
+    return url or DEFAULT_PORTAL_URL
+
+
 async def get_settings() -> dict:
     doc = await settings_col.find_one({"key": SETTINGS_KEY})
     value = (doc or {}).get("value") or {}
     return {
-        "portal_url": value.get("portal_url") or os.environ.get("ZAMI_PORTAL_URL") or DEFAULT_PORTAL_URL,
+        "portal_url": normalize_portal_url(
+            value.get("portal_url") or os.environ.get("ZAMI_PORTAL_URL") or DEFAULT_PORTAL_URL
+        ),
         "username": value.get("username") or os.environ.get("ZAMI_USERNAME") or "",
         "has_password": bool(value.get("password") or os.environ.get("ZAMI_PASSWORD")),
     }
@@ -267,7 +346,9 @@ async def save_settings(value: dict) -> dict:
     doc = await settings_col.find_one({"key": SETTINGS_KEY})
     current = (doc or {}).get("value") or {}
     new_value = {
-        "portal_url": (value.get("portal_url") or current.get("portal_url") or DEFAULT_PORTAL_URL).strip(),
+        "portal_url": normalize_portal_url(
+            value.get("portal_url") or current.get("portal_url") or DEFAULT_PORTAL_URL
+        ),
         "username": (value.get("username") or current.get("username") or "").strip(),
         "password": value.get("password") or current.get("password") or "",
     }
@@ -281,7 +362,9 @@ async def raw_credentials() -> dict:
     doc = await settings_col.find_one({"key": SETTINGS_KEY})
     value = (doc or {}).get("value") or {}
     return {
-        "portal_url": value.get("portal_url") or os.environ.get("ZAMI_PORTAL_URL") or DEFAULT_PORTAL_URL,
+        "portal_url": normalize_portal_url(
+            value.get("portal_url") or os.environ.get("ZAMI_PORTAL_URL") or DEFAULT_PORTAL_URL
+        ),
         "username": value.get("username") or os.environ.get("ZAMI_USERNAME") or "",
         "password": value.get("password") or os.environ.get("ZAMI_PASSWORD") or "",
     }

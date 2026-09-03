@@ -4,60 +4,63 @@
 
 @layer base {
     :root {
-        /* --- Surfaces & text (beyaz / siyah) --- */
-        --background: 40 18% 98%;
-        --foreground: 210 22% 7%;
+        /* --- Yüzeyler & metin: beyaz zemin, açık yeşil vurgular --- */
+        --background: 150 30% 98%;
+        --foreground: 155 22% 15%;
         --card: 0 0% 100%;
-        --card-foreground: 210 22% 7%;
+        --card-foreground: 155 22% 15%;
         --popover: 0 0% 100%;
-        --popover-foreground: 210 22% 7%;
+        --popover-foreground: 155 22% 15%;
 
-        /* --- BAE bayrağı: yeşil (primary) --- */
-        --primary: 152 82% 23%;
+        /* --- Açık bayrak yeşili (primary) --- */
+        --primary: 150 62% 32%;
         --primary-foreground: 0 0% 100%;
 
-        --secondary: 150 16% 95%;
-        --secondary-foreground: 210 22% 10%;
-        --muted: 210 16% 95%;
-        --muted-foreground: 214 14% 30%;
+        --secondary: 148 34% 95%;
+        --secondary-foreground: 155 24% 18%;
+        --muted: 148 26% 95%;
+        --muted-foreground: 155 12% 34%;
 
         /* --- BAE bayrağı: kırmızı (accent / destructive) --- */
-        --accent: 352 78% 38%;
+        --accent: 352 78% 42%;
         --accent-foreground: 0 0% 100%;
-        --destructive: 352 78% 38%;
+        --destructive: 352 78% 42%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 214 16% 87%;
-        --input: 214 16% 87%;
-        --ring: 152 82% 23%;
+        --border: 150 20% 86%;
+        --input: 150 20% 86%;
+        --ring: 150 62% 32%;
         --radius: 0.9rem;
 
         /* --- Marka tokenları (bileşenlerde kullanılıyor) --- */
-        --navy: 210 24% 8%; /* bayrak siyahı - footer / koyu bloklar */
-        --sand-surface: 150 22% 95%; /* çok açık yeşil zemin */
-        --cloud: 210 16% 96%; /* nötr açık zemin */
-        --gold: 352 78% 40%; /* vurgu: bayrak kırmızısı */
-        --teal-hover: 152 82% 18%;
-        --success: 152 82% 26%;
+        /* koyu bloklar: siyah yerine orta-açık bayrak yeşili */
+        --navy: 152 46% 22%;
+        --sand-surface: 148 42% 95%; /* açık yeşil zemin */
+        --cloud: 150 30% 97%; /* çok açık yeşil zemin */
+        --gold: 352 78% 44%; /* vurgu: bayrak kırmızısı */
+        --teal-hover: 150 62% 26%;
+        --success: 150 60% 30%;
 
-        --brand-green: 152 82% 23%;
-        --brand-red: 352 78% 38%;
-        --brand-black: 210 24% 8%;
+        --brand-green: 150 62% 32%;
+        --brand-green-soft: 148 52% 88%;
+        --brand-green-deep: 152 46% 22%;
+        --brand-red: 352 78% 42%;
+        --brand-black: 210 24% 8%; /* kullanımdan kaldırıldı */
         --brand-white: 0 0% 100%;
 
-        --status-success: 152 82% 26%;
-        --status-warning: 34 72% 38%;
-        --status-info: 206 72% 27%;
-        --status-danger: 352 78% 38%;
+        --status-success: 150 60% 30%;
+        --status-warning: 34 72% 40%;
+        --status-info: 175 45% 30%;
+        --status-danger: 352 78% 42%;
 
         --font-heading: "Montserrat", "Segoe UI", Roboto, sans-serif;
         --font-body: "Figtree", "Segoe UI", Roboto, sans-serif;
         --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 
-        --shadow-soft: 0 10px 30px rgba(11, 15, 20, 0.1);
-        --shadow-card: 0 8px 20px rgba(11, 15, 20, 0.07);
-        --shadow-float: 0 18px 50px rgba(11, 15, 20, 0.16);
-        --focus-ring: 0 0 0 4px rgba(11, 107, 58, 0.24);
+        --shadow-soft: 0 10px 30px hsl(152 40% 20% / 0.12);
+        --shadow-card: 0 8px 20px hsl(152 40% 20% / 0.08);
+        --shadow-float: 0 18px 50px hsl(152 40% 20% / 0.16);
+        --focus-ring: 0 0 0 4px hsl(150 62% 32% / 0.26);
     }
 
 }
@@ -120,7 +123,7 @@
         font-family: var(--font-mono);
         letter-spacing: 0.02em;
     }
-    /* BAE bayrağı şeridi: yeşil / beyaz / siyah + kırmızı */
+    /* Marka şeridi: yeşil / beyaz / kırmızı (siyah kullanılmaz) */
     .flag-strip {
         height: 3px;
         width: 100%;
@@ -128,12 +131,12 @@
             to right,
             hsl(var(--brand-green)) 0%,
             hsl(var(--brand-green)) 33.33%,
-            hsl(0 0% 96%) 33.33%,
-            hsl(0 0% 96%) 66.66%,
-            hsl(var(--brand-black)) 66.66%,
-            hsl(var(--brand-black)) 100%
+            hsl(0 0% 97%) 33.33%,
+            hsl(0 0% 97%) 66.66%,
+            hsl(var(--brand-red)) 66.66%,
+            hsl(var(--brand-red)) 100%
         );
-        border-left: 6px solid hsl(var(--brand-red));
+        border-left: 6px solid hsl(var(--brand-green-deep));
     }
     .hero-glow {
         background:
