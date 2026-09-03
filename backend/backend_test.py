@@ -1,4 +1,4 @@
-"""Backend API tests for VizeAtlas Dubai - REGRESSION TESTING for Code Quality Refactoring"""
+"""Backend API tests for Dubai Vize Online - REGRESSION TESTING for Code Quality Refactoring"""
 import requests
 import sys
 import time
@@ -1192,8 +1192,8 @@ class MandatoryFieldsTester:
                 self.log(f"Zami bookmarklet.js still contains __BASE__ placeholder", "FAIL")
                 return False
             
-            # Check if it contains expected JavaScript
-            if "VizeAtlas" not in content or "function" not in content:
+            # Check if it contains expected JavaScript (marka adı: Dubai Vize Online)
+            if "Dubai Vize Online" not in content or "function" not in content:
                 self.log(f"Zami bookmarklet.js content seems invalid", "FAIL")
                 return False
             
@@ -1518,7 +1518,7 @@ class MandatoryFieldsTester:
     def run_all_tests(self):
         """Run all backend tests"""
         self.log("=" * 70, "INFO")
-        self.log("VizeAtlas Dubai - REGRESSION TESTING (Code Quality Refactoring)", "INFO")
+        self.log("Dubai Vize Online - REGRESSION TESTING (Code Quality Refactoring)", "INFO")
         self.log("=" * 70, "INFO")
         
         # Test basic endpoints first (regression)

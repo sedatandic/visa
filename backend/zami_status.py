@@ -23,11 +23,93 @@ SESSION_KEEPALIVE_SECONDS = 10 * 60
 FINAL_STATUSES = {"approved", "rejected", "cancelled"}
 
 
+async def _notify_status_email(app_id: str, matched: str) -> str:
+    """Durum degisimini musteriye e-posta ile bildirir."""
+    fresh = await applications_col.find_one({"id": app_id})
+    to_email = (fresh.get("contact") or {}).get("email")
+    if not to_email:
+        return "skipped"
+    res = await send_email(
+        to_email,
+        f"Başvuru durumu güncellendi - {fresh['reference_code']}",
+        status_change_html(serialize_doc(fresh), STATUS_LABELS[matched], ""),
+        kind="status_change",
+        meta={"reference_code": fresh["reference_code"], "status": matched, "source": "zami"},
+    )
+    return res.get("status", "skipped")
+
+
+async def _notify_status_whatsapp(app_id: str, matched: str) -> str:
+    """Sonuc bildirimini WhatsApp uzerinden gonderir (hata akisi kesmez)."""
+    try:
+        import whatsapp
+
+        fresh = await applications_col.find_one({"id": app_id})
+        out = await whatsapp.notify_result(
+            fresh, matched, os.environ.get("PUBLIC_BASE_URL", "https://vizeatlas.com")
+        )
+        return out.get("status", "skipped")
+    except Exception as exc:  # pragma: no cover
+        logger.error("whatsapp notify failed: %s", exc)
+        return "skipped"
+
+
+async def _auto_deliver_visa(app_id: str) -> str:
+    """Onaylanan vize belgesini portaldan indirip musteriye iletir."""
+    try:
+        from visa_delivery import deliver_visa_document
+
+        fresh = await applications_col.find_one({"id": app_id})
+        origin = os.environ.get("PUBLIC_BASE_URL", "https://vizeatlas.com")
+        out = await deliver_visa_document(fresh, origin)
+        return "sent" if out.get("ok") else (out.get("reason") or "failed")
+    except Exception as exc:  # pragma: no cover
+        logger.error("visa auto delivery failed: %s", exc)
+        return "error"
+
+
+async def _write_status_update(app_id: str, update: dict, matched: str, raw: str, changed: bool) -> None:
+    """Durum alanlarini yazar; degisim varsa durum gecmisine kayit ekler."""
+    if not changed:
+        await applications_col.update_one({"id": app_id}, {"$set": update})
+        return
+    push = {
+        "status_history": {
+            "status": matched,
+            "at": update["zami_status_checked_at"],
+            "note": f"Zami portalından otomatik güncellendi: {raw[:120]}",
+        }
+    }
+    await applications_col.update_one({"id": app_id}, {"$set": update, "$push": push})
+
+
+async def _run_status_notifications(app_id: str, matched: str, notify: bool) -> dict:
+    """Durum degisiminde e-posta / WhatsApp / vize teslimi akislarini yurutur."""
+    out = {"email": "skipped", "whatsapp": "skipped", "visa_delivery": "skipped"}
+    if notify:
+        out["email"] = await _notify_status_email(app_id, matched)
+    if matched in {"approved", "rejected"}:
+        out["whatsapp"] = await _notify_status_whatsapp(app_id, matched)
+    if matched == "approved":
+        out["visa_delivery"] = await _auto_deliver_visa(app_id)
+    return out
+
+
+def _status_log_note(matched: str | None, previous: str | None, changed: bool) -> str:
+    """Islem gunlugu icin insan okunur not uretir."""
+    note = f"Portal durumu: {matched or 'eşleşmedi'}"
+    if changed:
+        note += f" · başvuru {previous} → {matched} olarak güncellendi"
+    return note
+
+
 async def apply_status(app_doc: dict, result: dict, notify: bool = True, actor: str = "") -> dict:
     """Portal sonucunu basvuruya yazar; durum degistiyse musteriye e-posta atar."""
     now = datetime.now(timezone.utc)
     matched = result.get("matched_status")
     raw = (result.get("raw_text") or "")[:400]
+    app_id = app_doc["id"]
+    previous = app_doc.get("status")
 
     update = {
         "zami_status": matched or "",
@@ -35,131 +117,94 @@ async def apply_status(app_doc: dict, result: dict, notify: bool = True, actor: 
         "zami_status_checked_at": now,
         "updated_at": now,
     }
-    changed = False
-    email_status = "skipped"
-    previous = app_doc.get("status")
-
-    if matched and matched in STATUS_LABELS and matched != previous:
-        update["status"] = matched
-        changed = True
-
-    push = None
+    changed = bool(matched and matched in STATUS_LABELS and matched != previous)
     if changed:
-        push = {
-            "status_history": {
-                "status": matched,
-                "at": now,
-                "note": f"Zami portalından otomatik güncellendi: {raw[:120]}",
-            }
-        }
-        await applications_col.update_one({"id": app_doc["id"]}, {"$set": update, "$push": push})
-    else:
-        await applications_col.update_one({"id": app_doc["id"]}, {"$set": update})
+        update["status"] = matched
 
-    if changed and notify:
-        fresh = await applications_col.find_one({"id": app_doc["id"]})
-        to_email = (fresh.get("contact") or {}).get("email")
-        if to_email:
-            res = await send_email(
-                to_email,
-                f"Başvuru durumu güncellendi - {fresh['reference_code']}",
-                status_change_html(serialize_doc(fresh), STATUS_LABELS[matched], ""),
-                kind="status_change",
-                meta={"reference_code": fresh["reference_code"], "status": matched, "source": "zami"},
-            )
-            email_status = res.get("status", "skipped")
+    await _write_status_update(app_id, update, matched, raw, changed)
 
-    whatsapp_status = "skipped"
-    visa_delivery_status = "skipped"
-    if changed and matched in {"approved", "rejected"}:
-        try:
-            import os
-
-            import whatsapp
-
-            fresh = await applications_col.find_one({"id": app_doc["id"]})
-            out = await whatsapp.notify_result(
-                fresh, matched, os.environ.get("PUBLIC_BASE_URL", "https://vizeatlas.com")
-            )
-            whatsapp_status = out.get("status", "skipped")
-        except Exception as exc:  # pragma: no cover
-            logger.error("whatsapp notify failed: %s", exc)
-
-    # Vize onaylandiysa belgeyi portaldan indirip musteriye otomatik ilet
-    if changed and matched == "approved":
-        try:
-            from visa_delivery import deliver_visa_document
-
-            fresh = await applications_col.find_one({"id": app_doc["id"]})
-            origin = os.environ.get("PUBLIC_BASE_URL", "https://vizeatlas.com")
-            out = await deliver_visa_document(fresh, origin)
-            visa_delivery_status = "sent" if out.get("ok") else (out.get("reason") or "failed")
-        except Exception as exc:  # pragma: no cover
-            logger.error("visa auto delivery failed: %s", exc)
-            visa_delivery_status = "error"
+    sent = (
+        await _run_status_notifications(app_id, matched, notify)
+        if changed
+        else {"email": "skipped", "whatsapp": "skipped", "visa_delivery": "skipped"}
+    )
 
     await log_event(
         app_doc.get("id"),
         app_doc.get("reference_code"),
         "status_checked",
-        (
-            f"Portal durumu: {matched or 'eşleşmedi'}"
-            + (f" · başvuru {previous} → {matched} olarak güncellendi" if changed else "")
-        ),
+        _status_log_note(matched, previous, changed),
         actor=actor,
-        extra={
-            "raw": raw,
-            "email": email_status,
-            "whatsapp": whatsapp_status,
-            "visa_delivery": visa_delivery_status,
-        },
+        extra={"raw": raw, **sent},
     )
     return {
         "status_changed": changed,
         "new_status": matched if changed else previous,
         "previous_status": previous,
-        "email_notification": email_status,
-        "whatsapp_notification": whatsapp_status,
-        "visa_delivery": visa_delivery_status,
+        "email_notification": sent["email"],
+        "whatsapp_notification": sent["whatsapp"],
+        "visa_delivery": sent["visa_delivery"],
     }
 
 
-async def sweep_statuses(actor: str = "", force: bool = False) -> dict:
-    """Takip edilen basvurulari sirayla kontrol eder."""
+async def _check_one(doc: dict, mapping: dict, actor: str) -> dict:
+    """Tek basvurunun portal durumunu kontrol edip sonucunu ozetler."""
     import zami_rpa
 
-    mapping = await get_mapping()
+    res = await zami_rpa.check_status(doc)
+    if not res.get("ok"):
+        return {
+            "reference_code": doc.get("reference_code"),
+            "ok": False,
+            "error": res.get("error"),
+        }
+    applied = await apply_status(
+        doc, res, notify=bool(mapping.get("auto_notify", True)), actor=actor
+    )
+    return {
+        "reference_code": doc.get("reference_code"),
+        "ok": True,
+        "matched_status": res.get("matched_status"),
+        "raw_text": res.get("raw_text"),
+        "status_changed": applied["status_changed"],
+    }
+
+
+def _sweep_blocker(mapping: dict, force: bool) -> dict | None:
+    """Tarama on kosullari; engel varsa hazir yanit dondurur."""
     if not mapping.get("status_url"):
         return {"ok": False, "error": "Durum sayfası adresi tanımlı değil.", "checked": 0}
     if not force and not mapping.get("auto_check_enabled"):
         return {"ok": False, "error": "Otomatik durum takibi kapalı.", "checked": 0}
+    return None
 
-    query = {
-        "status": {"$in": TRACKABLE_STATUSES},
-        "$or": [
-            {"zami_reference": {"$nin": [None, ""]}},
-            {"zami_transferred_at": {"$ne": None}},
-        ],
-    }
-    docs = await applications_col.find(query).sort("created_at", -1).limit(30).to_list(30)
+
+# Takip edilecek basvuru sorgusu: Zami'ye aktarilmis ve sonuclanmamis olanlar
+_SWEEP_QUERY = {
+    "status": {"$in": TRACKABLE_STATUSES},
+    "$or": [
+        {"zami_reference": {"$nin": [None, ""]}},
+        {"zami_transferred_at": {"$ne": None}},
+    ],
+}
+
+
+async def sweep_statuses(actor: str = "", force: bool = False) -> dict:
+    """Takip edilen basvurulari sirayla kontrol eder."""
+    mapping = await get_mapping()
+    blocked = _sweep_blocker(mapping, force)
+    if blocked is not None:
+        return blocked
+
+    who = actor or "auto"
+    docs = await applications_col.find(_SWEEP_QUERY).sort("created_at", -1).limit(30).to_list(30)
     results = []
     for doc in docs:
-        res = await zami_rpa.check_status(doc)
-        if res.get("ok"):
-            applied = await apply_status(doc, res, notify=bool(mapping.get("auto_notify", True)), actor=actor or "auto")
-            results.append(
-                {
-                    "reference_code": doc.get("reference_code"),
-                    "ok": True,
-                    "matched_status": res.get("matched_status"),
-                    "raw_text": res.get("raw_text"),
-                    "status_changed": applied["status_changed"],
-                }
-            )
-        else:
-            results.append({"reference_code": doc.get("reference_code"), "ok": False, "error": res.get("error")})
-            if "oturum" in (res.get("error") or "").lower():
-                break
+        row = await _check_one(doc, mapping, who)
+        results.append(row)
+        # oturum dustuyse kalan basvurular icin denemeye devam etmenin anlami yok
+        if not row["ok"] and "oturum" in (row.get("error") or "").lower():
+            break
         await asyncio.sleep(1.5)
 
     changed = sum(1 for r in results if r.get("status_changed"))
@@ -168,7 +213,7 @@ async def sweep_statuses(actor: str = "", force: bool = False) -> dict:
         None,
         "status_sweep",
         f"{len(results)} başvuru kontrol edildi, {changed} durum güncellendi",
-        actor=actor or "auto",
+        actor=who,
     )
     return {"ok": True, "checked": len(results), "changed": changed, "results": results}
 

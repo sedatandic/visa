@@ -570,54 +570,73 @@ def _traveler_template(selector: str) -> str | None:
     return None
 
 
-def suggest_mapping(captured: dict) -> dict:
-    """Yakalanan form alanlarindan otomatik eslesme onerisi uretir."""
-    form = (captured or {}).get("form") or {}
-    fields = form.get("fields") or []
-    suggestions = {"fields": {}, "traveler_fields": {}, "notes": []}
-    used = set()
+def _match_hint(hay: str, hints, already: dict) -> str | None:
+    """Ipucu tablosunda ilk eslesen ve henuz kullanilmamis anahtari dondurur."""
+    for key, words in hints:
+        if key in already:
+            continue
+        if any(word in hay for word in words):
+            return key
+    return None
+
+
+def _field_bucket(field: dict) -> tuple[str, str, str]:
+    """Alanin grubunu (genel / yolcu), hedef seciciyi ve arama metnini belirler."""
+    selector = field.get("selector") or ""
+    hay = _haystack(field)
+    template = _traveler_template(selector)
+    if template or any(marker in hay for marker in TRAVELER_MARKERS):
+        return "traveler_fields", template or selector, hay
+    return "fields", selector, hay
+
+
+# Grup -> ipucu tablosu
+_BUCKET_HINTS = {"fields": GLOBAL_HINTS, "traveler_fields": TRAVELER_HINTS}
+
+
+def _collect_field_suggestions(fields: list) -> dict:
+    """Yakalanan alanlari genel / yolcu bazli eslesme onerilerine ayirir."""
+    result = {"fields": {}, "traveler_fields": {}}
+    used: set[str] = set()
 
     for field in fields:
         selector = field.get("selector")
         if not selector or selector in used:
             continue
-        hay = _haystack(field)
-        template = _traveler_template(selector)
-        is_traveler = bool(template) or any(m in hay for m in TRAVELER_MARKERS)
+        bucket, target, hay = _field_bucket(field)
+        key = _match_hint(hay, _BUCKET_HINTS[bucket], result[bucket])
+        if key:
+            result[bucket][key] = target
+            used.add(selector)
 
-        if is_traveler:
-            for key, words in TRAVELER_HINTS:
-                if key in suggestions["traveler_fields"]:
-                    continue
-                if any(w in hay for w in words):
-                    suggestions["traveler_fields"][key] = template or selector
-                    used.add(selector)
-                    break
-            continue
+    return result
 
-        for key, words in GLOBAL_HINTS:
-            if key in suggestions["fields"]:
-                continue
-            if any(w in hay for w in words):
-                suggestions["fields"][key] = selector
-                used.add(selector)
-                break
 
-    if form.get("submit_selector"):
-        suggestions["submit_selector"] = form["submit_selector"]
-    if form.get("url"):
-        suggestions["form_url"] = form["url"]
+# Yakalanan sayfadan dogrudan tasinan ayarlar: (kaynak sayfa, kaynak anahtar, hedef)
+_CAPTURE_PASSTHROUGH = (
+    ("form", "submit_selector", "submit_selector"),
+    ("form", "url", "form_url"),
+    ("status", "url", "status_url"),
+    ("status", "search_selector", "status_search_selector"),
+    ("status", "row_selector", "status_result_selector"),
+)
 
-    status = (captured or {}).get("status") or {}
-    if status.get("url"):
-        suggestions["status_url"] = status["url"]
-    if status.get("search_selector"):
-        suggestions["status_search_selector"] = status["search_selector"]
-    if status.get("row_selector"):
-        suggestions["status_result_selector"] = status["row_selector"]
+
+def suggest_mapping(captured: dict) -> dict:
+    """Yakalanan form alanlarindan otomatik eslesme onerisi uretir."""
+    captured = captured or {}
+    form = captured.get("form") or {}
+    suggestions = {**_collect_field_suggestions(form.get("fields") or []), "notes": []}
+
+    for page, source_key, target_key in _CAPTURE_PASSTHROUGH:
+        value = (captured.get(page) or {}).get(source_key)
+        if value:
+            suggestions[target_key] = value
 
     if not suggestions["fields"] and not suggestions["traveler_fields"]:
-        suggestions["notes"].append("Otomatik eşleşme bulunamadı; alanları elle seçmeniz gerekebilir.")
+        suggestions["notes"].append(
+            "Otomatik eşleşme bulunamadı; alanları elle seçmeniz gerekebilir."
+        )
     return suggestions
 
 
@@ -637,6 +656,44 @@ async def save_capture(page_type: str, data: dict) -> dict:
     return current
 
 
+# Doldurulmayan / gonderim amacli input tipleri
+_SKIP_INPUT_TYPES = {"hidden", "submit", "button", "reset", "image"}
+
+
+def _element_type(el) -> str:
+    """Input/select/textarea icin normalize edilmis tip adi."""
+    fallback = "select" if el.name == "select" else "text"
+    return (el.get("type") or fallback).lower()
+
+
+def _element_label(soup, el, name: str, el_id: str) -> str:
+    """Alan etiketini sirayla <label for>, sarmalayan <label>, placeholder'dan cozer.
+
+    Bos metin donen bir etiket bulunursa sonraki kaynaga gecilir.
+    """
+    if el_id:
+        lab = soup.find("label", attrs={"for": el_id})
+        if lab and lab.get_text(" ", strip=True):
+            return lab.get_text(" ", strip=True)
+    parent_label = el.find_parent("label")
+    if parent_label and parent_label.get_text(" ", strip=True):
+        return parent_label.get_text(" ", strip=True)
+    return el.get("placeholder") or el.get("aria-label") or name or el_id
+
+
+def _select_options(el) -> list:
+    """<select> seceneklerini deger/etiket ciftlerine cevirir."""
+    if el.name != "select":
+        return []
+    return [
+        {
+            "value": opt.get("value") or opt.get_text(strip=True),
+            "label": opt.get_text(strip=True),
+        }
+        for opt in el.find_all("option")
+    ]
+
+
 def parse_form_fields(html: str) -> list:
     """Zami form HTML'inden doldurulabilir alanlari cikarir."""
     from bs4 import BeautifulSoup
@@ -644,38 +701,23 @@ def parse_form_fields(html: str) -> list:
     soup = BeautifulSoup(html or "", "html.parser")
     fields = []
     for el in soup.find_all(["input", "select", "textarea"]):
-        el_type = (el.get("type") or ("select" if el.name == "select" else "text")).lower()
-        if el_type in {"hidden", "submit", "button", "reset", "image"}:
+        el_type = _element_type(el)
+        if el_type in _SKIP_INPUT_TYPES:
             continue
         name = el.get("name") or ""
         el_id = el.get("id") or ""
         if not name and not el_id:
             continue
-        selector = f'[name="{name}"]' if name else f"#{el_id}"
-        label = ""
-        if el_id:
-            lab = soup.find("label", attrs={"for": el_id})
-            if lab:
-                label = lab.get_text(" ", strip=True)
-        if not label:
-            parent_label = el.find_parent("label")
-            if parent_label:
-                label = parent_label.get_text(" ", strip=True)
-        if not label:
-            label = el.get("placeholder") or el.get("aria-label") or name or el_id
-        options = []
-        if el.name == "select":
-            for opt in el.find_all("option"):
-                options.append({"value": opt.get("value") or opt.get_text(strip=True), "label": opt.get_text(strip=True)})
+        label = _element_label(soup, el, name, el_id)
         fields.append(
             {
                 "tag": el.name,
                 "type": el_type,
                 "name": name,
                 "id": el_id,
-                "selector": selector,
+                "selector": f'[name="{name}"]' if name else f"#{el_id}",
                 "label": re.sub(r"\s+", " ", label)[:120],
-                "options": options[:40],
+                "options": _select_options(el)[:40],
             }
         )
     return fields

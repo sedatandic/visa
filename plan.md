@@ -5,6 +5,7 @@
 - Vize tipleri + fiyatlar + genel bilgilendirme + **rehber içerikler** + hızlı başvuru akışı.
 - Çekirdek iş akışı: **başvuru oluşturma → dosya yükleme → ödeme (kart / havale) → takip kodu**.
 - Başvuruları MongoDB’ye kaydetme, admin panelde listeleme/detay/güncelleme.
+
 - Bildirimler:
   - **E-posta bildirimleri (Resend)**:
     - Resend entegrasyonu canlı (API anahtarı bağlı) ve outbox kayıtları admin panelde görünür.
@@ -23,6 +24,7 @@
     - Premium tasarım sistemi dokunuşları: radius ölçeği, tipografik ince ayarlar (balance/pretty + lining-nums), mikro-etkileşimler, grain doku.
   - Gerçek görseller / kurumsal bloklar / sosyal kanıt / örnek vize görselleri.
   - **TÜRSAB + acente şeffaflığı** ve **GDRFA rozeti**.
+  - Not: Kullanıcının paylaştığı `onyuz-rehberi.pdf` bir **Stitch/Dribbble iş akışı rehberi**; bu ortamda Stitch/MCP erişimi yok. “AI hissini kıran” tasarım için **kullanıcıdan Dribbble/Stitch referansı** bekleniyor.
 
 - **Başvuru evrak standardı (güncel)**:
   - **Her yolcu:** Pasaport + vesikalık fotoğraf.
@@ -46,6 +48,7 @@
   - Playwright RPA + yakalama (capture) + alan eşleme + toplu aktarım + durum polling + kullanıcı takip zaman çizelgesi.
   - **Zami zorunlu alanlar tamamlandı:** Medeni hal, meslek, anne adı, baba adı başvuruda toplanıyor ve RPA ile dolduruluyor.
   - **Kritik sağlamlık:** Zami mapping’in admin panelden kaydedilince veri kaybetmesi bug’ı düzeltildi; mapping artık kayıpsız korunur.
+  - Operasyon notu: Zami RPA oturumu OTP’ye bağlı olduğu için zaman zaman düşebilir; admin panelden yeniden oturum açma + OTP gerekebilir.
 
 - Hosting/Deploy hedefi:
   - **Paylaşımlı cPanel/PHP hosting alınmayacak.** (Uygulama Python/FastAPI + Playwright + MongoDB gerektirir.)
@@ -196,25 +199,56 @@ Engel: girişte resimli CAPTCHA + OTP var → tam otomatik login sınırlı.
 **Amaç:** Karmaşıklığı düşürmek, test edilebilirliği artırmak, davranışı bozmadan refactor.
 
 **Kapsam (tamamı kapatıldı)**
-- `whatsapp.get_settings` (17 → 5): tablo tabanlı ayar çözümü.
-- `whatsapp.notify_result` (17 → 8): provider seçimi/engel kontrolü/modülerleştirme.
-- `visa_delivery.fetch_visa_document` (15 → 5): hazırlık + indirme + kaydetme adımları.
-- `passport_ai.normalize_photo_result` (14 → 4) ve `normalize_result` sadeleştirme.
-- `routes_zami`: `_base_url`, `zami_config`, `zami_candidates` sadeleştirme.
-- `routes_public`: `get_site_content`, `_tracking_last_names`, `_apply_traveler_documents` sadeleştirme.
-- `routes_admin.admin_send_visa` sadeleştirme.
-- `content.compute_pricing` (11 → 6): `_addon_lines` (boş listede `0.0` float).
-- `db.serialize_doc` daha okunur tip-dispatch.
-- Testler: `backend_test.py` pythonic True/False.
+- `whatsapp.get_settings` (17 → 5)
+- `whatsapp.notify_result` (17 → 8)
+- `visa_delivery.fetch_visa_document` (15 → 5)
+- `passport_ai.normalize_photo_result` (14 → 4) ve `normalize_result`
+- `routes_zami`: `_base_url`, `zami_config`, `zami_candidates`
+- `routes_public`: `get_site_content`, `_tracking_last_names`, `_apply_traveler_documents`
+- `routes_admin.admin_send_visa`
+- `content.compute_pricing` (11 → 6)
+- `db.serialize_doc` tip-dispatch
+- Testler: `backend_test.py` pythonic True/False
 - Ek (raporda yoktu ama risksiz): `zami.save_mapping` ve `zami.build_payload` saf yardımcı fonksiyonlara bölündü; JSON çıktısı birebir aynı doğrulandı.
 
 **Kalite/Tarama**
 - Ruff: F632/E712/E711/F821/F401/F811: **All checks passed**
-- Ortalama karmaşıklık: **A (≈4.24)**
-- Test: iteration_30 (%100), iteration_31 (39/39 backend)
+- Ortalama karmaşıklık: **A (≈4.2)**
 
 **Bilinçli ertelenen borç (riskli / canlı OTP gerektirir)**
-- `zami_rpa.fill_application`, `check_status`, `zami.suggest_mapping`, `parse_form_fields`, `zami_status.apply_status`.
+- `zami_rpa.fill_application` (44)
+- `zami_rpa.check_status` (30)
+- `zami_rpa._upload_documents` (13)
+
+---
+
+### Phase 39 — Kod Kalitesi Refactoring (3. Tur: Zami saf fonksiyonlar + login + reminders + status) — **COMPLETED (2026-09-03)**
+Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca **gerçek** sorunları kapattı.
+
+**Raporun 2 “kritik” maddesi yanlış pozitif çıktı (DEĞİŞTİRİLMEDİ)**
+1) `passport_ai.py:147` “number atanmadan kullanılabilir” → yanlış (except erken return). Ruff F821/F823 temiz.
+2) “24 adet `is` literal karşılaştırma” → yanlış; hepsi `is None`/`is not None` (doğru idiom). Ruff F632 temiz.
+
+**Gerçek karmaşıklık maddeleri kapatıldı**
+- `zami.suggest_mapping` **28 → 9**
+- `zami.parse_form_fields` **22 → 9**
+- `zami_rpa.submit_login` **64 satır → 47 satır** (cc 6)
+- `zami_rpa._click_first` iç içe **5 → 3** (cc 4)
+- `doc_reminders.send_document_reminder` **51 → 25** (cc 5)
+- `routes_public.check_photo_document` **51 → 33** (cc 7)
+- Ek güvenli refactor: `zami_status.apply_status` **22 → 8**, `zami_status.sweep_statuses` **12 → 9**
+
+**Davranış korunumu kanıtları**
+- `/app/scripts/zami_pure_snapshot.py`: `parse_form_fields` + `suggest_mapping` refactor öncesi/sonrası JSON çıktısı **birebir aynı**.
+- `POST /api/admin/zami/check-status-all`: `sweep_statuses` + `apply_status` zinciri canlı doğrulandı (oturum düşmüş olsa bile biçim ve erken çıkış mantığı korunuyor).
+
+**Yakalanan ciddi hata ve önlem**
+- Refactor sırasında `@router.post('/photo/check')` dekoratörünün private fonksiyona bağlanması hatası oluştu → tespit edilip düzeltildi.
+- Tüm route dosyalarında dekoratör-fonksiyon eşleşmesi otomatik tarandı → başka sorun yok.
+
+**Test**
+- iteration_34: backend %97.4, 0 kritik bug, 0 UI bug.
+- Bayat test düzeltmesi: `backend_test.py` bookmarklet içeriğinde eski marka adı arıyordu → `Dubai Vize Online` ile güncellendi.
 
 ---
 
@@ -289,19 +323,11 @@ Engel: girişte resimli CAPTCHA + OTP var → tam otomatik login sınırlı.
 ### Phase 38 — Tipografi + Premium Tasarım Sistemi (AI hissini azaltma) — **COMPLETED (2026-09-03)**
 **Kullanıcı geri bildirimi:** “yapay zekayla yapıldığı çok belli oluyor” + “bu fontu kullan” + Instagram reel: “implement these skills”.
 
-**Reel çözümlemesi**
-- Instagram auth-wall nedeniyle direkt crawl mümkün olmadı.
-- imginn aynası üzerinden görülen içerik: tasarım sistemi disiplini (tipografi/primary-secondary button/premium deneyim). Kilitli “skill paketi” içeriğine erişilemedi.
-
 **Uygulananlar**
-- **Font:** Headings/marka fontu Playfair Display → **Tinos** (Times ailesi; logoyla metrik uyumlu).
-  - Fake bold engelleme: headings weight 700’e sabitlendi; extrabold/black override edildi.
-- **AI parıltı ikonları kaldırıldı:** public UI’da Sparkles → anlamlı ikonlar (ShieldCheck/Star/ScanLine/Tag/Plus/CheckCircle2/Activity).
-- **Premium tasarım sistemi dokunuşları:**
-  - Radius ölçeği: tek `--radius` yerine `--radius-sm/lg/xl`.
-  - Tipografik zanaat: `text-wrap: balance/pretty`, `lining-nums` + `.tabular`.
-  - Mikro-etkileşimler: tutarlı 160ms transition + active feedback; hover’da yalnızca transform + shadow.
-  - **Grain doku:** body::after (pointer-events:none) → düz/dijital hissi azaltır.
+- **Font:** Headings/marka fontu → **Tinos** (Times ailesi; logoyla metrik uyumlu).
+- Fake bold engelleme: headings weight 700’e sabitlendi; extrabold/black override edildi.
+- Public UI’da Sparkles kaldırıldı → anlamlı ikonlar.
+- Premium dokunuşlar: radius ölçeği, `text-wrap: balance/pretty`, `.tabular`, mikro-etkileşimler, grain doku.
 
 **Test:** iteration_33 → 0 kritik bug, 0 UI bug.
 
@@ -326,7 +352,16 @@ Engel: girişte resimli CAPTCHA + OTP var → tam otomatik login sınırlı.
 
 ---
 
-### P0.1 — Resend Production Gönderici (Domain Doğrulaması + SENDER_EMAIL) — **USER ACTION REQUIRED**
+### P0.1 — Rehberdeki (Stitch/Dribbble) Tasarım Referansı — **USER ACTION REQUIRED**
+**Durum:** `onyuz-rehberi.pdf` bir iş akışı rehberi; bu ortamda Stitch/MCP erişimi yok.
+
+**İstenen**
+- Kullanıcı 1–2 adet Dribbble referansı (link veya ekran görüntüsü) ya da Stitch çıktı ekran görüntüsü paylaşır.
+- Biz bu referansa göre hero/layout görsel hiyerarşisini revize ederiz.
+
+---
+
+### P0.2 — Resend Production Gönderici (Domain Doğrulaması + SENDER_EMAIL) — **USER ACTION REQUIRED**
 1) Resend panelinde `resend.com/domains` → `dubaivizeonline.com` doğrula.
 2) Deploy ortamında/`.env`:
    - `SENDER_EMAIL=noreply@dubaivizeonline.com` (veya `info@dubaivizeonline.com`)
@@ -353,6 +388,12 @@ Engel: girişte resimli CAPTCHA + OTP var → tam otomatik login sınırlı.
 
 ---
 
+### P1.1 — Zami RPA Oturumu Yenileme (OTP) — **USER ACTION REQUIRED**
+- Admin panelden `Zami Session Start` → CAPTCHA çözümü + OTP girilir.
+- Oturum “ready” olunca transfer ve status sweep tekrar otomatik çalışır.
+
+---
+
 ### P2 — Stripe Prod Geçişi (opsiyonel) — **BEKLEMEDE**
 - Canlı anahtarlar + webhook secret + success/cancel URL’leri.
 
@@ -374,15 +415,14 @@ Not: Phase 31 kararı gereği formda soru olarak yok. İstenirse opsiyonel alan 
 ### Tech Debt — Canlı RPA Kodunda Karmaşıklık Azaltma — **BACKLOG (RISKLI)**
 OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
 - `zami_rpa.fill_application` (44)
-- `check_status` (30)
-- `zami.suggest_mapping` (28)
-- `parse_form_fields` (22)
-- `zami_status.apply_status` (22)
+- `zami_rpa.check_status` (30)
+- `zami_rpa._upload_documents` (13)
 
 ---
 
 ## 4. Success Criteria
 - POC/V1/SEO/Account/Drafts/FX/Reminders/Storefront akışları: mevcut kriterler korunur.
+
 - Tema/marka başarı kriterleri:
   1) Petrol teal + bakır/bronz tema tüm public/admin sayfalarda tutarlı.
   2) Favicon/ikon/wordmark doğru servis edilir (`/brand/*` 200).
@@ -417,6 +457,7 @@ OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
 - Phase 36 (Zami mapping veri kaybı bug fix): **TAMAMLANDI**.
 - Phase 37 (Logo bazlı yeni tema + marka adı): **TAMAMLANDI**.
 - Phase 38 (Tipografi + premium tasarım sistemi): **TAMAMLANDI**.
+- Phase 39 (Kod kalitesi refactor 3. tur): **TAMAMLANDI**.
 
 Test raporları (seçme):
 - iteration_28.json — Zami zorunlu alanlar: backend 12/12, frontend %100.
@@ -425,9 +466,12 @@ Test raporları (seçme):
 - iteration_31.json — Refactor + Zami mapping/build_payload regresyon: 39/39 backend.
 - iteration_32.json — Tema/Logo/Marka + Zami mapping bug fix regresyon: kritik hata 0.
 - iteration_33.json — Tinos font + ikon değişimi + premium tasarım sistemi: kritik hata 0.
+- iteration_34.json — Kod kalitesi raporu 3. tur: kritik hata 0; bayat test güncellendi.
 
 Blokajlar / Bekleyen:
 - **Gerçek firma bilgileri** (telefon/adres/TÜRSAB/vergisel bilgiler) → “AI hissi”ni kırmak için **USER ACTION REQUIRED**.
+- **Stitch/Dribbble referansı** → UI’nin “insan eli” hissi için **USER ACTION REQUIRED**.
 - **Resend production (domain doğrulaması + SENDER_EMAIL)** → müşteri e-postaları için **USER ACTION REQUIRED**.
 - **Custom domain deploy/DNS yönlendirme** → **USER ACTION REQUIRED** (`dubaivizeonline.com`).
+- **Zami RPA oturumu**: transfer/durum takibi için admin panelden yeni oturum + OTP gerekiyor.
 - Stripe prod anahtarları yok (opsiyonel).

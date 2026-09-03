@@ -97,6 +97,38 @@ def _reminder_state(app_doc: dict) -> dict:
     }
 
 
+async def _record_reminder_sent(app_doc: dict, missing: list, state: dict, result: dict) -> None:
+    """Hatirlatma sayacini, gecmisi ve gerekiyorsa basvuru durumunu guncelller."""
+    missing_keys = [m["key"] for m in missing]
+    now = datetime.now(timezone.utc)
+    await applications_col.update_one(
+        {"id": app_doc.get("id")},
+        {
+            "$set": {
+                "document_reminder": {
+                    "count": state["count"] + 1,
+                    "last_sent_at": now,
+                    "last_missing_keys": missing_keys,
+                },
+                "updated_at": now,
+            },
+            "$push": {
+                "reminders": {
+                    "kind": "document_reminder",
+                    "sent_at": now,
+                    "missing_keys": missing_keys,
+                    "email_status": result.get("status"),
+                }
+            },
+        },
+    )
+    # eksik belge varsa durumu belge bekleniyor olarak isaretle
+    if app_doc.get("status") in {"submitted", "reviewing"}:
+        await applications_col.update_one(
+            {"id": app_doc.get("id")}, {"$set": {"status": "documents_pending"}}
+        )
+
+
 async def send_document_reminder(app_doc: dict, origin: str, missing: list | None = None) -> dict:
     """Musteriye eksik belge hatirlatmasi gonderir. Asla exception atmaz."""
     missing = missing if missing is not None else missing_documents(app_doc)
@@ -108,11 +140,10 @@ async def send_document_reminder(app_doc: dict, origin: str, missing: list | Non
 
     state = _reminder_state(app_doc)
     upload_url = _track_url(origin, app_doc)
-    html = document_reminder_html(app_doc, missing, upload_url)
     result = await send_email(
         to_email,
         f"Eksik belge hatirlatmasi - {app_doc.get('reference_code', '')}",
-        html,
+        document_reminder_html(app_doc, missing, upload_url),
         kind="document_reminder",
         meta={
             "application_id": app_doc.get("id"),
@@ -121,33 +152,7 @@ async def send_document_reminder(app_doc: dict, origin: str, missing: list | Non
             "reminder_no": state["count"] + 1,
         },
     )
-    now = datetime.now(timezone.utc)
-    await applications_col.update_one(
-        {"id": app_doc.get("id")},
-        {
-            "$set": {
-                "document_reminder": {
-                    "count": state["count"] + 1,
-                    "last_sent_at": now,
-                    "last_missing_keys": [m["key"] for m in missing],
-                },
-                "updated_at": now,
-            },
-            "$push": {
-                "reminders": {
-                    "kind": "document_reminder",
-                    "sent_at": now,
-                    "missing_keys": [m["key"] for m in missing],
-                    "email_status": result.get("status"),
-                }
-            },
-        },
-    )
-    # eksik belge varsa durumu belge bekleniyor olarak isaretle
-    if app_doc.get("status") in {"submitted", "reviewing"}:
-        await applications_col.update_one(
-            {"id": app_doc.get("id")}, {"$set": {"status": "documents_pending"}}
-        )
+    await _record_reminder_sent(app_doc, missing, state, result)
     return {"status": result.get("status"), "missing": missing, "email": result}
 
 

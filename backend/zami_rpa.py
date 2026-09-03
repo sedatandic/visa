@@ -271,21 +271,27 @@ OTP_SUBMIT_SELECTORS = [
 TRUSTED_DEVICE_SELECTORS = ['input[name="si"][value="2"]', 'input[name="si"][value="3"]']
 
 
+async def _try_click_visible(group, count: int) -> bool:
+    """Locator grubundaki gorunur ilk ogeye tiklar."""
+    for i in range(count):
+        item = group.nth(i)
+        try:
+            if not await item.is_visible():
+                continue
+            await item.click(timeout=8000)
+            return True
+        except Exception:
+            continue
+    return False
+
+
 async def _click_first(page, selectors: list[str]) -> bool:
     """Verilen seciciler icinden gorunur ilkine tiklar; tiklanirsa True."""
     for sel in selectors:
         try:
             group = page.locator(sel)
-            count = min(await group.count(), 20)
-            for i in range(count):
-                item = group.nth(i)
-                try:
-                    if not await item.is_visible():
-                        continue
-                    await item.click(timeout=8000)
-                    return True
-                except Exception:
-                    continue
+            if await _try_click_visible(group, min(await group.count(), 20)):
+                return True
         except Exception:
             continue
     return False
@@ -315,29 +321,60 @@ async def _submit_otp(page, otp: str) -> dict | None:
     return None
 
 
-async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str = "") -> dict:
-    entry = _sessions.get(session_id)
-    if not entry:
-        return {"ok": False, "error": "Oturum bulunamadı veya zaman aşımına uğradı. Yeniden başlatın."}
-    page = entry["page"]
-    entry["touched"] = _now()
-    creds = await raw_credentials()
+async def _login_credentials_step(page, creds: dict, captcha: str) -> None:
+    """Kullanici adi/sifre/captcha alanlarini doldurup formu gonderir."""
+    await page.fill('input[name="un"]', creds["username"])
+    await page.fill('input[name="pw"]', creds["password"])
+    if captcha:
+        await page.fill('input[name="captcha"]', (captcha or "").strip())
+    await page.click('button[type="submit"]')
 
+
+async def _run_login_attempt(page, entry: dict, creds: dict, captcha: str, otp: str) -> dict | None:
+    """Asamaya gore OTP veya kimlik adimini calistirir; hata olursa dict doner."""
     try:
         if entry.get("stage") == "otp":
             failure = await _submit_otp(page, otp)
             if failure:
                 return failure
         else:
-            await page.fill('input[name="un"]', creds["username"])
-            await page.fill('input[name="pw"]', creds["password"])
-            if captcha:
-                await page.fill('input[name="captcha"]', (captcha or "").strip())
-            await page.click('button[type="submit"]')
+            await _login_credentials_step(page, creds, captcha)
         await page.wait_for_load_state("domcontentloaded", timeout=45000)
         await asyncio.sleep(2.0)
     except Exception as exc:
-        return {"ok": False, "error": f"Giriş denemesi başarısız: {exc}", "screenshot": await _shot(page)}
+        return {
+            "ok": False,
+            "error": f"Giriş denemesi başarısız: {exc}",
+            "screenshot": await _shot(page),
+        }
+    return None
+
+
+async def _persist_session(entry: dict) -> None:
+    """Basarili girisin cerezlerini (storage_state) DB'ye saklar."""
+    state = await entry["context"].storage_state()
+    await settings_col.update_one(
+        {"key": SESSION_KEY},
+        {
+            "$set": {
+                "key": SESSION_KEY,
+                "value": {"storage_state": state, "saved_at": _now().isoformat()},
+            }
+        },
+        upsert=True,
+    )
+
+
+async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str = "") -> dict:
+    entry = _sessions.get(session_id)
+    if not entry:
+        return {"ok": False, "error": "Oturum bulunamadı veya zaman aşımına uğradı. Yeniden başlatın."}
+    page = entry["page"]
+    entry["touched"] = _now()
+
+    failure = await _run_login_attempt(page, entry, await raw_credentials(), captcha, otp)
+    if failure:
+        return failure
 
     # hala login sayfasindaysa: OTP mi, hata mi?
     still_login = await page.locator('input[name="pw"]').count() > 0
@@ -364,12 +401,7 @@ async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str 
             "screenshot": await _shot(page),
         }
 
-    state = await entry["context"].storage_state()
-    await settings_col.update_one(
-        {"key": SESSION_KEY},
-        {"$set": {"key": SESSION_KEY, "value": {"storage_state": state, "saved_at": _now().isoformat()}}},
-        upsert=True,
-    )
+    await _persist_session(entry)
     entry["stage"] = "ready"
     await log_event(None, None, "rpa_login_ok", "RPA oturumu acildi ve cerezler saklandi", actor=actor)
     return {

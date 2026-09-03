@@ -506,6 +506,32 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
     }
 
 
+def _photo_check_message(result: dict) -> str:
+    """AI sonucuna gore kullaniciya gosterilecek ozet mesaji secer."""
+    if not result.get("is_photo"):
+        return "Bu goruntu vesikalik fotograf gibi gorunmuyor. Lutfen yuzunuzun net gorundugu bir portre yukleyin."
+    if result.get("ok"):
+        return "Fotograf vize standartlarina uygun gorunuyor."
+    return "Fotografta duzeltilmesi onerilen noktalar var."
+
+
+async def _store_photo_check(file_id: str, result: dict) -> None:
+    """Denetim sonucunu dosya kaydina isler."""
+    await uploads_col.update_one(
+        {"id": file_id},
+        {
+            "$set": {
+                "photo_check": {
+                    "at": datetime.now(timezone.utc),
+                    "ok": result.get("ok"),
+                    "score": result.get("score"),
+                    "failed": result.get("failed"),
+                }
+            }
+        },
+    )
+
+
 @router.post("/photo/check")
 async def check_photo_document(file_id: str = Form(...)) -> dict:
     """Yuklenen vesikalik fotografi yapay zeka ile denetler (uyari amacli, engellemez)."""
@@ -526,8 +552,6 @@ async def check_photo_document(file_id: str = Form(...)) -> dict:
         logger.error("photo fetch failed: %s", exc)
         raise HTTPException(502, "Dosya okunamadi.") from exc
 
-    result: dict = {}
-    message: str = ""
     try:
         result = await check_photo(data, content_type or ct)
     except Exception as exc:
@@ -539,26 +563,8 @@ async def check_photo_document(file_id: str = Form(...)) -> dict:
             "message": "Fotograf otomatik kontrol edilemedi; basvurunuza devam edebilirsiniz.",
         }
 
-    await uploads_col.update_one(
-        {"id": file_id},
-        {
-            "$set": {
-                "photo_check": {
-                    "at": datetime.now(timezone.utc),
-                    "ok": result.get("ok"),
-                    "score": result.get("score"),
-                    "failed": result.get("failed"),
-                }
-            }
-        },
-    )
-    if not result.get("is_photo"):
-        message = "Bu goruntu vesikalik fotograf gibi gorunmuyor. Lutfen yuzunuzun net gorundugu bir portre yukleyin."
-    elif result.get("ok"):
-        message = "Fotograf vize standartlarina uygun gorunuyor."
-    else:
-        message = "Fotografta duzeltilmesi onerilen noktalar var."
-    return {"checked": True, "message": message, **result}
+    await _store_photo_check(file_id, result)
+    return {"checked": True, "message": _photo_check_message(result), **result}
 
 
 @router.post("/passport/read")
