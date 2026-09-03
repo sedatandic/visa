@@ -389,7 +389,58 @@ async def session_status() -> dict:
         "has_session": bool(value.get("storage_state")),
         "saved_at": value.get("saved_at"),
         "active_browsers": len(_sessions),
+        "expired": bool(value.get("expired")),
+        "last_alive_at": value.get("last_alive_at"),
     }
+
+
+async def keepalive_session() -> dict:
+    """Portal oturumunu canli tutar.
+
+    Zami oturumu ~15-20 dk hareketsizlikte dusuyor. Bu fonksiyon kayitli
+    oturumla portal ana sayfasini acar; oturum ayaktaysa cerezleri tazeleyip
+    yeniden kaydeder, dusmusse `expired` isaretler (admin uyarilir).
+    """
+    doc = await settings_col.find_one({"key": SESSION_KEY})
+    value = (doc or {}).get("value") or {}
+    state = value.get("storage_state")
+    if not state:
+        return {"ok": False, "reason": "no_session"}
+
+    creds = await raw_credentials()
+    try:
+        pw, browser, context, page = await _launch_with_state(state)
+    except Exception as exc:
+        logger.warning("zami keepalive launch failed: %s", exc)
+        return {"ok": False, "reason": "browser", "error": str(exc)}
+
+    try:
+        await page.goto(creds["portal_url"], wait_until="domcontentloaded", timeout=45000)
+        await asyncio.sleep(1.5)
+        logged_out = await page.locator('input[name="pw"]').count() > 0
+        if logged_out:
+            await settings_col.update_one(
+                {"key": SESSION_KEY},
+                {"$set": {"value.expired": True, "value.expired_at": _now().isoformat()}},
+            )
+            return {"ok": False, "reason": "expired"}
+        fresh_state = await context.storage_state()
+        await settings_col.update_one(
+            {"key": SESSION_KEY},
+            {
+                "$set": {
+                    "value.storage_state": fresh_state,
+                    "value.last_alive_at": _now().isoformat(),
+                    "value.expired": False,
+                }
+            },
+        )
+        return {"ok": True, "url": page.url}
+    except Exception as exc:
+        logger.warning("zami keepalive failed: %s", exc)
+        return {"ok": False, "reason": "error", "error": str(exc)}
+    finally:
+        await _close({"pw": pw, "browser": browser, "context": context})
 
 
 async def clear_session() -> dict:

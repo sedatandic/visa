@@ -7,6 +7,7 @@
 
 import asyncio
 import logging
+import os
 from datetime import datetime, timezone
 
 from content import STATUS_LABELS
@@ -17,6 +18,8 @@ from zami import get_mapping, log_event
 logger = logging.getLogger(__name__)
 
 TRACKABLE_STATUSES = ["submitted", "payment_pending", "documents_pending", "reviewing"]
+# Portal oturumu ~15-20 dk hareketsizlikte dusuyor; 10 dakikada bir yokluyoruz
+SESSION_KEEPALIVE_SECONDS = 10 * 60
 FINAL_STATUSES = {"approved", "rejected", "cancelled"}
 
 
@@ -67,6 +70,7 @@ async def apply_status(app_doc: dict, result: dict, notify: bool = True, actor: 
             email_status = res.get("status", "skipped")
 
     whatsapp_status = "skipped"
+    visa_delivery_status = "skipped"
     if changed and matched in {"approved", "rejected"}:
         try:
             import os
@@ -81,6 +85,19 @@ async def apply_status(app_doc: dict, result: dict, notify: bool = True, actor: 
         except Exception as exc:  # pragma: no cover
             logger.error("whatsapp notify failed: %s", exc)
 
+    # Vize onaylandiysa belgeyi portaldan indirip musteriye otomatik ilet
+    if changed and matched == "approved":
+        try:
+            from visa_delivery import deliver_visa_document
+
+            fresh = await applications_col.find_one({"id": app_doc["id"]})
+            origin = os.environ.get("PUBLIC_BASE_URL", "https://vizeatlas.com")
+            out = await deliver_visa_document(fresh, origin)
+            visa_delivery_status = "sent" if out.get("ok") else (out.get("reason") or "failed")
+        except Exception as exc:  # pragma: no cover
+            logger.error("visa auto delivery failed: %s", exc)
+            visa_delivery_status = "error"
+
     await log_event(
         app_doc.get("id"),
         app_doc.get("reference_code"),
@@ -90,7 +107,12 @@ async def apply_status(app_doc: dict, result: dict, notify: bool = True, actor: 
             + (f" · başvuru {previous} → {matched} olarak güncellendi" if changed else "")
         ),
         actor=actor,
-        extra={"raw": raw, "email": email_status, "whatsapp": whatsapp_status},
+        extra={
+            "raw": raw,
+            "email": email_status,
+            "whatsapp": whatsapp_status,
+            "visa_delivery": visa_delivery_status,
+        },
     )
     return {
         "status_changed": changed,
@@ -98,6 +120,7 @@ async def apply_status(app_doc: dict, result: dict, notify: bool = True, actor: 
         "previous_status": previous,
         "email_notification": email_status,
         "whatsapp_notification": whatsapp_status,
+        "visa_delivery": visa_delivery_status,
     }
 
 
@@ -148,6 +171,57 @@ async def sweep_statuses(actor: str = "", force: bool = False) -> dict:
         actor=actor or "auto",
     )
     return {"ok": True, "checked": len(results), "changed": changed, "results": results}
+
+
+async def keepalive_loop():
+    """Portal oturumunu 10 dakikada bir yoklayarak canli tutar.
+
+    Zami oturumu kisa surede dustugu icin otomatik durum takibinin calismasi
+    buna bagli. Oturum dustugunde admin bir kez e-posta ile uyarilir.
+    """
+    import zami_rpa
+
+    await asyncio.sleep(90)
+    warned = False
+    while True:
+        try:
+            state = await zami_rpa.session_status()
+            if state.get("has_session"):
+                out = await zami_rpa.keepalive_session()
+                if out.get("ok"):
+                    warned = False
+                elif out.get("reason") == "expired" and not warned:
+                    warned = True
+                    await _warn_admin_session_expired()
+                    logger.warning("zami session expired - admin bilgilendirildi")
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.error("zami keepalive loop error: %s", exc)
+        await asyncio.sleep(SESSION_KEEPALIVE_SECONDS)
+
+
+async def _warn_admin_session_expired() -> None:
+    admin_email = os.environ.get("ADMIN_EMAIL")
+    if not admin_email:
+        return
+    html = (
+        '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">'
+        "<p><b>Zami portal oturumu düştü.</b></p>"
+        "<p>Otomatik durum takibi ve aktarım için panelden yeniden giriş yapmanız gerekiyor:</p>"
+        "<p>Admin → Zami Aktarım → <b>Robot Oturumu</b> → Oturum Başlat "
+        "(captcha otomatik okunur, yalnızca e-postanıza gelen OTP kodunu girin).</p>"
+        "</div>"
+    )
+    try:
+        await send_email(
+            admin_email,
+            "Zami portal oturumu düştü - yeniden giriş gerekiyor",
+            html,
+            kind="zami_session_expired",
+        )
+    except Exception as exc:
+        logger.warning("zami session warning email failed: %s", exc)
 
 
 async def status_loop():

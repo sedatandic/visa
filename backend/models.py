@@ -26,6 +26,11 @@ class TravelerIn(BaseModel):
     passport_issue_date: Optional[str] = Field(default="", max_length=20)
     birth_place: Optional[str] = Field(default="", max_length=60)
     passport_issue_place: Optional[str] = Field(default="", max_length=60)
+    # Zami formunda zorunlu olan ve basvuru formunda kullaniciya sorulan alanlar
+    marital_status: str = Field(default="single", pattern="^(single|married|divorced|widowed)$")
+    profession: str = Field(default="", max_length=60)
+    mother_name: str = Field(default="", max_length=80)
+    father_name: str = Field(default="", max_length=80)
     visa_type_id: str = Field(..., min_length=3)
     passport_file_id: str = Field(..., min_length=8)
     photo_file_id: str = Field(..., min_length=8)

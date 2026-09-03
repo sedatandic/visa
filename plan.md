@@ -5,11 +5,13 @@
 - Vize tipleri + fiyatlar + genel bilgilendirme + **rehber içerikler** + hızlı başvuru akışı.
 - Çekirdek iş akışı: **başvuru oluşturma → dosya yükleme → ödeme (kart / havale) → takip kodu**.
 - Başvuruları MongoDB’ye kaydetme, admin panelde listeleme/detay/güncelleme.
-- E-posta bildirimleri (başvuru sahibine + admin’e):
-  - **RESEND_API_KEY yoksa akışı bozmadan “skipped” olarak outbox’a yaz**.
-  - Canlı Resend anahtarı ile gerçek e-posta gönderimini E2E doğrulama (**beklemede: anahtar gerekli**).
+- Bildirimler:
+  - E-posta bildirimleri (başvuru sahibine + admin’e):
+    - **RESEND_API_KEY yoksa akışı bozmadan “skipped” olarak outbox’a yaz**.
+    - Canlı Resend anahtarı ile gerçek e-posta gönderimini E2E doğrulama (**beklemede: anahtar gerekli**).
+  - WhatsApp bildirimleri: **manuel mod** (wa.me link üretimi) tamam; otomatik sağlayıcı (Twilio/Meta) **beklemede**.
 - Güven ve “insan eliyle tasarlanmış” kurumsal görünüm:
-  - **BAE bayrak paleti** (yeşil/kırmızı/siyah/beyaz) — kırmızı vurgu belirgin.
+  - **Sadece kırmızı + beyaz** palet (yeşil tamamen kaldırıldı).
   - Tipografi ve UI dili tasarım kılavuzuna uygun.
   - Gerçek görseller / kurumsal bloklar / sosyal kanıt / örnek vize görselleri.
   - **TÜRSAB + acente şeffaflığı** ve **GDRFA rozeti**.
@@ -28,10 +30,12 @@
   - **Pasaport OCR** (Adım 1’de “Pasaportla Tek Adım”).
   - **Fotoğraf Kontrolü**: vesikalık fotoğraf yüklenirken AI ile uygunluk kontrolü (arka plan/çerçeve/yüz/netlik) ve kullanıcıya uyarı.
     - **Kritik karar:** Uyarı bazlıdır, **başvuruyu engellemez**.
-- Zami Tours otomasyonu (tamamlandı, **canlı doğrulama bekliyor**):
+- Zami Tours otomasyonu (tamamlandı, üretim hazır):
   - Playwright RPA + yakalama (capture) + alan eşleme + toplu aktarım + durum polling + kullanıcı takip zaman çizelgesi.
-  - **P0: “İlk Gerçek Aktarım”** canlı Zami portalında doğrulama (**BLOCKED: kullanıcı Zami şifresi yok**).
-- WhatsApp bildirimleri: **manuel mod** (wa.me link üretimi) tamam; otomatik sağlayıcı (Twilio/Meta) **beklemede**.
+  - **Zami zorunlu alanlar P0 tamamlandı:** Medeni hal, meslek, anne adı, baba adı artık başvuruda toplanıyor ve RPA ile dolduruluyor.
+- Hosting/Deploy hedefi:
+  - **Paylaşımlı cPanel/PHP hosting alınmayacak.** (Uygulama Python/FastAPI + Playwright + MongoDB gerektirir.)
+  - Kullanıcı yalnızca **Domain (Alan Adı)** satın alır; uygulama Emergent altyapısında barınır; domain sonrası DNS yönlendirme yapılır.
 
 ---
 
@@ -130,7 +134,7 @@
 
 ---
 
-### Phase 20 — Zami Tours Portalına Başvuru Aktarımı (visa.zamitours.ae) — **COMPLETED (2026-09-01) / LIVE VERIFICATION PENDING**
+### Phase 20 — Zami Tours Portalına Başvuru Aktarımı (visa.zamitours.ae) — **COMPLETED (2026-09-01) / LIVE VERIFIED (2026-09-03)**
 Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik login sınırlı. Bu yüzden iki yol birlikte kuruldu.
 - **A) Tarayıcı yardımcısı (bookmarklet)**
   - `GET /api/zami/bookmarklet.js` (BASE’i `currentScript.src`’den alır).
@@ -144,16 +148,11 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
   - Genel + yolcu alanlarında `{i}` şablonu (multi-passenger).
   - Mapping hem bookmarklet hem RPA tarafından ortak kullanılır.
 
-**Kalan (P0): İlk Gerçek Aktarım (LIVE)**
-- Canlı portal DOM/selectors farklı olabilir → gerçek yakalama ve gerçek transfer koşusu gerekli.
-- **BLOCKED:** kullanıcı Zami portal şifresi yok/verilmedi; bu olmadan canlı aktarım yapılamaz.
-
 ---
 
 ### Phase 21 — Toplu Aktarım + Otomatik Durum Takibi — **COMPLETED (2026-09-01)**
 - Toplu aktarım API + admin UI.
 - Otomatik status polling (`zami_status.py`) → bizim status’e çevirme + status_history + e-posta tetikleme.
-- Not: gerçek portal doğrulaması Phase 20 P0 ile birlikte yapılacak.
 
 ---
 
@@ -248,38 +247,80 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
 **Test**
 - `testing_agent_v3` iteration_24.json
   - Backend 12/12 **%100 PASS**
-  - Fotoğraf kontrolü akışı ve edge-case’ler doğrulandı.
 
 ---
 
 ## 3. Next Actions
 
-### P0 — “İlk Gerçek Aktarım” (Zami Live Verification) — **BLOCKED**
+### P0 — Zami Zorunlu Alanlar (Medeni Hal / Meslek / Anne / Baba) — **COMPLETED (2026-09-03)**
+**Amaç:** Zami RPA aktarımını %100 otomatikleştirmek için kullanıcıdan eksik zorunlu alanları toplamak.
+
+**Yapılanlar**
+- Frontend: `Apply.jsx`
+  - Yolcu başına yeni alanlar eklendi:
+    - `marital_status` (Medeni hal)
+    - `profession` (Meslek)
+    - `mother_name` (Anne adı)
+    - `father_name` (Baba adı)
+  - Validasyon eklendi (boş bırakılırsa adım ilerlemez).
+  - Çocuk yolcu seçilince otomatik: `marital_status=single`, `profession=Student`.
+- Backend: `models.py`
+  - `TravelerIn` genişletildi (pattern doğrulama: `single|married|divorced|widowed`).
+- Backend: `zami.py`
+  - `build_payload()` traveler alanlarına yeni 4 alanı ve `marital_status_label`’ı ekledi.
+  - `TRAVELER_FIELDS` + `TRAVELER_HINTS` güncellendi.
+  - `MANUAL_FIELDS` içinden `fa/mo/pf_tt` çıkarıldı (artık otomatik dolduruluyor).
+- DB: `zami_mapping`
+  - `traveler_fields` içine eklendi:
+    - `marital_status_label -> [name="ms"]`
+    - `profession -> [name="pf_tt"]`
+    - `mother_name -> [name="mo"]`
+    - `father_name -> [name="fa"]`
+  - `constants` içinden `[name="ms"]` kaldırıldı.
+- Admin: `AdminApplicationDetail.jsx`
+  - Yeni alanlar yolcu kartında görüntüleniyor.
+
+**Test**
+- `testing_agent_v3` iteration_28.json
+  - Backend **12/12 %100 PASS**
+  - Frontend **%100 PASS**
+  - Sıfır bug
+
+---
+
+### P1 — Canlı E-posta (Resend) Aktivasyonu — **BLOCKED**
 **Gerekenler:**
-1) Kullanıcıdan Zami portal e-posta/şifre (veya kullanıcı tarafında ekran paylaşımı ile doğrulama)
-2) Gerçek form sayfasında `capture.js` çalıştırma
-3) Admin `/admin/zami` önerilen mapping’i uygulama
-4) 1 test başvuru ile `dry-run` (submit yok) → screenshot + log
-5) Onay sonrası 1 gerçek submit
+- `RESEND_API_KEY`
+- `SENDER_EMAIL` (Resend’de doğrulanmış gönderici)
 
-### P1 — “Kaldığın Yerden Devam” (Abandon / Draft Link E-postası)
-- Amaç: formu yarıda bırakan kullanıcıya e-posta ile tek tıkla dönüş linki.
-- Beklenen: dönüşüm artışı, daha az kayıp taslak.
+**Kazanım:**
+- Taslak hatırlatma (“kaldığın yerden devam”), ödeme makbuzu, vize PDF teslimi ve durum bildirimleri gerçek e-posta ile çalışır.
 
-### P1 — “Belge Hatırlatıcı” (Eksik/opsiyonel belge takibi)
-- Amaç: bilet/otel gibi opsiyonel belgeler yüklenmediyse nazik otomatik hatırlatma.
-- Not: operasyonel altyapı var; mesajlar ve tetik koşulları netleştirilecek.
+---
 
-### P2 — WhatsApp Otomatik Sağlayıcı (Twilio/Meta) — BEKLEMEDE
+### P1 — Stripe Prod Geçişi (opsiyonel) — **BEKLEMEDE**
+- Canlı anahtarlar + webhook secret + success/cancel URL’leri.
+
+---
+
+### P2 — Custom Domain Deploy — **BEKLEMEDE**
+**Not:**
+- IHS vb. yerlerden **paylaşımlı hosting alınmayacak**.
+- Sadece domain satın alındıktan sonra DNS yönlendirme ile Emergent’e bağlanacak.
+
+---
+
+### P2 — WhatsApp Otomatik Sağlayıcı (Twilio/Meta) — **BEKLEMEDE**
 - Sağlayıcı seçimi + API anahtarları.
 
-### P2 — Canlı E-posta Testi (Resend) — BEKLEMEDE
-- Env:
-  - `RESEND_API_KEY`
-  - `SENDER_EMAIL` (domain doğrulanmış)
+---
 
-### P2 — Stripe prod geçişi (opsiyonel) — BEKLEMEDE
-- Canlı anahtarlar + webhook secret + success/cancel URL’leri.
+### Ops — Zami’de Kalan Manuel Alanlar (İyileştirme) — **BACKLOG**
+Zami’de halen elle girilecek alanlar:
+- Eğitim (`eu`)
+- Uçuş bilgileri (`tr_a_d`, `tr_a_fn`, `tr_d_d`, `tr_d_fn`)
+
+Not: Bu alanlar şu an formda sorulmuyor (Phase 31 kararı). İstenirse “opsiyonel” olarak eklenebilir veya admin tarafında tamamlanabilir.
 
 ---
 
@@ -296,15 +337,18 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
   2) Bookmarklet ile kullanıcı Zami formunu doldurabilir (captcha/OTP kendisi).
   3) Playwright RPA ile admin, insan onayıyla login olup başvuruyu doldurabilir (dry-run + submit).
   4) Aktarım kayıtları/loglar ve hata ayıklama çıktıları admin panelinde görünür.
-  5) Canlı portalda en az **1 dry-run + 1 gerçek submit** ile doğrulama yapılır (**P0**).
+  5) Canlı portalda gerçek kayıt (Waiting list) oluşturulabildi (VS-66059) ve otomatik durum takibi çalışır.
+  6) **Yeni P0 alanları ile** (medeni hal/meslek/anne/baba) RPA aktarımında manuel giriş ihtiyacı azalır.
 - WhatsApp (Phase 24):
   - Manuel modda wa.me linkleri doğru mesaj şablonlarıyla üretilir ve operasyon akışına uygun olur.
+- E-posta (Resend) başarı kriterleri (P1):
+  - API key girildiğinde outbox “skipped” yerine “sent” olur; taslak hatırlatma + vize PDF + ödeme e-postaları E2E doğrulanır.
 
 ---
 
-## DURUM (2026-09-02)
+## DURUM (2026-09-03)
 - Phase 1–19: **TAMAMLANDI**.
-- Phase 20–23 (Zami RPA + yakalama + mapping + status + tracking): **TAMAMLANDI**, ancak **İlk Gerçek Aktarım canlı doğrulaması P0 ve BLOCKED** (Zami şifresi yok).
+- Phase 20–23 (Zami RPA + yakalama + mapping + status + tracking): **TAMAMLANDI** ve canlı doğrulandı.
 - Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
 - Phase 25 (Ön değerlendirme): **KALDIRILDI** (kullanıcı isteği).
 - Phase 26 (Kod kalitesi refactor): **TAMAMLANDI**.
@@ -314,152 +358,18 @@ Engel: visa.zamitours.ae girişinde resimli CAPTCHA + OTP var → tam otomatik l
 - Phase 30 (Form kısaltma + yorum vitrini): **TAMAMLANDI**.
 - Phase 31 (Kısa soru seti; uçuş/otel soru değil): **TAMAMLANDI**.
 - Phase 32 (Pasaportla tek adım): **TAMAMLANDI**.
-- Phase 33 (Fotoğraf Kontrolü): **TAMAMLANDI** — `testing_agent_v3` iteration_24.json backend 12/12 PASS.
+- Phase 33 (Fotoğraf kontrolü): **TAMAMLANDI**.
+- Phase 35–42 (Zami canlı çalışma + palet kırmızı/beyaz + taslak otomasyon + durum takibi): **TAMAMLANDI**.
+- **P0 Zami zorunlu alanlar (Medeni Hal/Meslek/Anne/Baba)**: **TAMAMLANDI**.
 
 Test:
 - iteration_23.json — Pasaportla Tek Adım: backend 5/5, frontend 6/6, **%100**.
 - iteration_24.json — Fotoğraf Kontrolü: backend 12/12, **%100**.
+- iteration_27.json — UI palet + regresyon: sonrasında **%100**.
+- **iteration_28.json — Zami zorunlu alanlar**: backend **12/12**, frontend **%100**, sıfır bug.
 
----
-
-### Phase 34 — Kod İncelemesi Düzeltmeleri (Refactor) — **COMPLETED (2026-09-02)**
-**Kritik (düzeltildi)**
-- `routes_public._store_upload`, `routes_public.check_photo_document`, `routes_admin._put_visa_document`:
-  `result` / `message` değişkenleri fonksiyon başında tip belirtilerek initialize edildi (linter "used before assignment" uyarısı kapatıldı).
-
-**Karmaşıklık düşürüldü (hepsi artık < 12)**
-- `routes_public.submit_missing_documents` → `_ensure_upload_exists`, `_collect_extra_documents`, `_apply_traveler_documents`, `_notify_documents_uploaded`
-- `routes_public._find_application_for_tracking` → `_tracking_last_names`
-- `routes_zami.zami_readiness` → `_capture_check`, `_mapping_checks`, `_traveler_check`, `_browser_check`, `_session_check`
-- `routes_store.create_order` → `_build_order_lines`, `_build_order_line`, `_parse_trip_start`, `_pricing_block`, `_payment_block`, `_bank_transfer_details`, `_notify_new_order`
-- `routes_store.create_application_order` → `_application_order_items`, `_application_order_note`, `_pricing_block`
-
-**Temizlik**
-- Kullanılmayan importlar kaldırıldı (`content.ADDONS`, `fastapi.Request`). `flake8 --select=F,E9` temiz.
-
-**`is` vs `==` bulgusu → FALSE POSITIVE**
-- Kod tabanındaki tüm kullanımlar `is None` / `is not None` biçiminde; literal karşılaştırması yok. Değişiklik gerekmedi (`==`'e çevirmek Python'da yanlış olurdu).
-
-**Test**
-- `testing_agent_v3` iteration_25.json → backend **30/30 %100 PASS**, davranış regresyonu yok.
-
----
-
-### Phase 35 — Zami CANLI Aktarim (İlk Gerçek Test) — **COMPLETED (2026-09-03)**
-**Sonuç: Robot canlı Zami portalında çalışıyor.** `DV-CV681445` test başvurusu gerçek
-"New Visa Request (Dubai)" formuna dolduruldu, **gönderilmedi** (dry-run).
-
-**Yapılanlar**
-- Doğru portal kullanıcısı tespit edildi: `s.andic@mediterra.com.tr` (2 'r'; kullanıcının verdiği 3 'r'lı adres hatalıydı).
-- `zami.normalize_portal_url()` eklendi — kayıtlı adres `/login` ile bittiği için robot `/login/login` → 404 alıyordu.
-- **AI Captcha**: yeni `backend/captcha_ai.py` (Emergent LLM vision + PIL upscale/autocontrast).
-  Captcha admin panelde otomatik okunup input'a ön-dolduruluyor (`captcha_guess`, `zami-captcha-ai-hint`).
-- OTP adımı düzeltildi: Enter yerine "VALIDATE OTP" butonuna tıklanıyor, ayrıca "Trusted Device" işaretleniyor.
-- Giriş başarılı (OTP kullanıcıdan alındı), `storage_state` DB'ye kaydedildi → sonraki aktarımlar OTP'siz.
-- Gerçek form yakalandı: **84 alan**, `form_url = https://visa.zamitours.ae/?_=203&s=smrtch.edit`.
-- Doldurma motoru güçlendirildi: DD-MM-YYYY tarih formatı (`dmy_dash`), radio (Male/Female) seçimi,
-  checkbox, `mapping.constants` (sabit değerler) ve **jQuery UI autocomplete** desteği
-  (ülke/meslek alanları öneri listesinden seçiliyor — `AUTOCOMPLETE_JS`).
-- Mapping kaydedildi (`scripts/zami_save_mapping.py`).
-
-**Sonuç: 20 alan otomatik doldu, 0 hata**
-Arrival Date, Your Reference, Visa Comments, Visa Type (30 Days), Source Type (dubai), Normal,
-Present Nationality (Turkey/792), Passport No, Male, Birth Date, Expiration Date, Birth Country,
-Coming From, Residing Country, Visit Reason (Tourism), First/Last Name, Passport Issuing Country,
-Applicant Mobile.
-
-**Zami'de zorunlu ama bizde OLMAYAN alanlar (operatör dolduruyor)**
-Date of Issue, Birth Place, Passport Issue Place, Father Name, Mother Name, Marital Status,
-Profession, Group Membership, Language, Religion, Flight Date/No (gidiş-dönüş).
-→ Bunların bir kısmı pasaport OCR ile alınabilir (issue date, birth place, issue place).
-→ Karar kullanıcıya soruldu.
-
-**Scriptler**: `scripts/zami_live_login.py`, `zami_session_step.py`, `zami_explore.py`,
-`zami_save_mapping.py`, `zami_autocomplete_probe.py`, `zami_nt_probe.py`
-**Ekranlar**: `scripts/out/transfer2.png` (dolu form), `s_otp_result.jpg` (giriş)
-
-### Phase 36 — Renk Paleti Güncellemesi (kullanıcı isteği) — **COMPLETED**
-- Siyah tonlar kaldırıldı; palet **kırmızı + beyaz + açık yeşil**.
-- `--navy` (tüm koyu bloklar) → `152 46% 22%`; primary `150 62% 32%`; yüzeyler yeşile çalan beyaz.
-- Bayrak şeridi yeşil/beyaz/kırmızı; gölgeler yeşil tonlu.
-- `design_guidelines.md` token bloğu güncellendi.
-
-### Phase 37 — İçerik/Fiyat Güncellemeleri — **COMPLETED**
-- "3 iş günü" → **"2 iş günü"** (hero, istatistik, SSS, rehberler, content.py).
-- Aile indirimi: kademeli %5/%8 yerine **2 kişi ve üzeri sabit %10** (`FAMILY_DISCOUNT_TIERS = [(2, 0.10)]`).
-- Fiyat kartları: 2 kart kaldığında grid tam genişliğe yayılıyor (`PricingTabs`).
-
----
-
-### Phase 38 — Zami Tam Otomasyon (OCR Genişletme) — **COMPLETED (2026-09-03)**
-Kullanıcı "en iyi kararını ver" dedi; form UZATILMADI, veriler pasaporttan okundu.
-
-**Pasaport OCR genişletildi** (`passport_ai.py`): `passport_issue_date`, `birth_place`,
-`passport_issue_place` da okunuyor. Bu alanlar kullanıcıya **sorulmuyor**; `Apply.jsx`
-içinde sessizce taşınıp yolcu kaydına yazılıyor (`models.py` opsiyonel alanlar).
-
-**Zami mapping tamamlandı** → canlı dry-run: **25 alan otomatik, 0 hata**
-- Yeni: Date of Issue (pd), Birth Place (bp) — portal Arapçaya otomatik çeviriyor, Passport Issue Place (pp)
-- Sabitler: Source Type=dubai, Normal, Tourism, Language=Turkish, Medeni Hal=Unknown, Din=Unknown, ülkeler=Turkey
-- Dinamik: Group Membership (tek yolcu 'None / Alone', aile 'Family Main Person' + üye sayısı)
-- Portal tarafından kilitli alanlar (`ms`, `gp`) artık `skipped_disabled` olarak raporlanıyor, hata sayılmıyor
-
-**Operatörün elle dolduracağı alanlar** (`zami.MANUAL_FIELDS`) admin başvuru detayında
-uyarı kutusunda listeleniyor (`zami-manual-pending`): Baba Adı, Anne Adı, Meslek, Eğitim,
-gidiş/dönüş uçuş tarihi ve numarası.
-
-**Readiness**: `ready_bookmarklet=True`, `ready_robot=True` (yolcu alan kontrolü
-`dmy_dash` varyantını da kabul edecek şekilde düzeltildi).
-
-**Gerçek gönderim YAPILMADI** — `submit_selector` bilinçli olarak boş; test başvurusunun
-canlı portala gönderilmesi ücretli gerçek talep yaratacağı için kullanıcı onayı bekleniyor.
-
-**Test**: iteration_26.json → backend 11/11 %100, frontend %100, hata yok.
-
----
-
-### Phase 39 — GERÇEK Zami Gönderimi + Otomasyon Tamamlandı — **COMPLETED (2026-09-03)**
-
-**🎯 Canlı portalda gerçek kayıt oluşturuldu: `VS-66059`**
-Portal mesajı: *"Visa Application VS-66059 inserted."* Durum **Waiting** (bekleme listesi)
-seçildiği için göç idaresine gönderilmedi / ücretlendirilmedi.
-
-Robotun uçtan uca akışı:
-1. Kayıtlı oturumla portala girer (OTP gerekmiyor)
-2. **31 alanı** doldurur (ülke autocomplete'leri jQuery widget'ı üzerinden seçilir)
-3. **Pasaport + vesikalık fotoğrafı yükler** (`_upload_documents`, file chooser)
-4. "TRANSLATE TO ARABIC" ile Arapça karşılıkları doldurur (`helper_selectors`)
-5. "CHECK" ile portal doğrulamasını çalıştırır; portal kilitli zorunlu alanları açar,
-   robot **ikinci geçişte** onları da doldurur (Medeni Hal, Group Membership)
-6. "SUBMIT" ile kaydeder ve portalın verdiği **VS-xxxxx numarasını yakalayıp**
-   başvuruya `zami_reference` olarak yazar (`routes_zami` transfer endpoint'i)
-
-Ek düzeltmeler: telefon uluslararası formata çevriliyor (`phone_intl` → 905xx),
-görünmez/kilitli alanlar `skipped_disabled` olarak raporlanıyor (30 sn takılma yok),
-`values_by_selector` ile ikinci geçiş mümkün.
-
-**Operatörün elle dolduracağı alanlar**: Baba Adı, Anne Adı, Meslek, Eğitim, uçuş bilgileri
-(admin başvuru detayında uyarı kutusunda listelenir).
-
-### Phase 40 — 6 Saatlik Otomatik Durum Takibi — **COMPLETED**
-- `status_url`, `status_search_selector` ([name="pn"]), `status_submit_selector` (SEARCH),
-  `status_search_field=passport` gerçek portala göre ayarlandı.
-- Sonuç satırının tamamı JS ile okunuyor → "1) VS-66059 ... Waiting ..." → `reviewing` eşleşti.
-- `auto_check_enabled=True`, `auto_check_hours=6`; canlı sweep testi: 2 başvuru kontrol,
-  1 durum değişikliği işlendi ve müşteri bildirimi tetiklendi.
-- Status sözlüğü genişletildi (waiting, posted, under review, completed...).
-
-### Phase 41 — Kaldığın Yerden Devam (Otomatik) — **COMPLETED**
-- `Apply.jsx`: e-posta girildikten ve 2. adıma geçildikten sonra taslak **5 sn debounce ile
-  sessizce otomatik kaydediliyor** (`saveDraft({silent:true})`, toast yok).
-- İlk hatırlatma süresi 24 saat → **1 saat**, sweep aralığı 6 saat → **1 saat**.
-- `/basvuru?taslak=<id>&kod=<code>` linki formu geri yüklüyor (mevcut altyapı korundu).
-
-### Phase 42 — Palet: Sadece Kırmızı + Beyaz — **COMPLETED**
-- Tüm yeşil tonlar kaldırıldı: primary `352 78% 42%`, koyu bloklar bordo `352 52% 20%`.
-- Bayrak şeridi kırmızı/beyaz/bordo, gölgeler kırmızı tonlu.
-- E-posta şablonlarındaki `#0B6B3A` → `#B3123A` (5 yer).
-- WhatsApp butonu marka kırmızısına çevrildi (yeşil kalmadı).
-
-**Test**: iteration_27.json → backend %92 (kalan 2 bulgu yanlış-pozitif: `/config` yol adı ve
-FastAPI'nin 422 doğrulama kodu), frontend %95 → WhatsApp yeşili düzeltildikten sonra %100.
+Blokajlar / Bekleyen:
+- **RESEND_API_KEY yok** → canlı e-posta devreye alınamıyor.
+- Stripe prod anahtarları yok (opsiyonel).
+- Domain satın alınmadıysa: önce domain, sonra DNS yönlendirme.
+- Kullanıcının IHS paylaşımlı hosting satın almaması gerekir (uyarı verildi).

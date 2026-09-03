@@ -426,11 +426,15 @@ def _browser_check() -> dict:
 
 
 def _session_check(session: dict) -> dict:
+    expired = bool(session.get("expired"))
+    detail = session.get("last_alive_at") or session.get("saved_at") or "Robot Oturumu sekmesinden giriş yapın"
+    if expired:
+        detail = "Oturum düştü · Robot Oturumu sekmesinden yeniden giriş yapın"
     return {
         "key": "session",
         "label": "Portal oturumu (captcha + OTP ile açılmış)",
-        "ok": bool(session.get("has_session")),
-        "detail": session.get("saved_at") or "Robot Oturumu sekmesinden giriş yapın",
+        "ok": bool(session.get("has_session")) and not expired,
+        "detail": detail,
     }
 
 
@@ -692,6 +696,30 @@ async def zami_handoff_payload(token: str, request: Request):
     payload = zami.build_payload(app_doc, doc.get("base_url") or _base_url(request))
     payload["mapping"] = await zami.get_mapping()
     return payload
+
+
+@router.post("/admin/applications/{application_id}/visa-document/auto-fetch")
+async def admin_auto_fetch_visa(
+    application_id: str, request: Request, admin: dict = Depends(require_admin)
+) -> dict:
+    """Onaylanan vize belgesini Zami'den indirip musteriye e-postayla iletir."""
+    from visa_delivery import deliver_visa_document
+
+    app_doc = await applications_col.find_one({"id": application_id})
+    if not app_doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    if not app_doc.get("zami_reference"):
+        raise HTTPException(400, "Basvurunun Zami numarasi (VS-xxxxx) kayitli degil.")
+    result = await deliver_visa_document(app_doc, _base_url(request))
+    await zami.log_event(
+        application_id,
+        app_doc.get("reference_code"),
+        "visa_autofetch",
+        "Vize belgesi otomatik indirme denemesi: "
+        + ("basarili" if result.get("ok") else str(result.get("reason"))),
+        actor=admin.get("sub", ""),
+    )
+    return result
 
 
 @router.get("/zami/bookmarklet.js")

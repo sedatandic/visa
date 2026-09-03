@@ -1,4 +1,4 @@
-"""Backend API tests for VizeAtlas Dubai - Passport OCR & Photo Validation"""
+"""Backend API tests for VizeAtlas Dubai - New Mandatory Fields (marital_status, profession, mother_name, father_name)"""
 import requests
 import sys
 import time
@@ -6,7 +6,7 @@ from pathlib import Path
 
 BASE_URL = "https://visa-application-ae.preview.emergentagent.com/api"
 
-class PhotoValidationTester:
+class MandatoryFieldsTester:
     def __init__(self):
         self.tests_run = 0
         self.tests_passed = 0
@@ -382,13 +382,336 @@ class PhotoValidationTester:
             self.log(f"Photo check error: {str(e)}", "FAIL")
             return False
     
+    def test_application_with_new_fields(self):
+        """Test creating application with new mandatory fields"""
+        self.tests_run += 1
+        self.log("Testing application creation with marital_status, profession, mother_name, father_name...", "INFO")
+        
+        if not self.file_id or not self.photo_file_id:
+            self.log("Missing file IDs for application test", "FAIL")
+            return False, None
+        
+        try:
+            payload = {
+                "contact": {
+                    "full_name": "AHMET YILMAZ",
+                    "email": f"test_{int(time.time())}@test.com",
+                    "phone": "05551234567",
+                    "address_city": "Istanbul",
+                    "whatsapp_optin": False
+                },
+                "travelers": [{
+                    "first_name": "AHMET",
+                    "last_name": "YILMAZ",
+                    "birth_date": "1990-08-15",
+                    "gender": "male",
+                    "applicant_type": "adult",
+                    "nationality": "TR",
+                    "national_id": "12345678901",
+                    "passport_no": "U12345678",
+                    "passport_expiry": "2032-01-20",
+                    "marital_status": "married",
+                    "profession": "Engineer",
+                    "mother_name": "AYSE YILMAZ",
+                    "father_name": "MEHMET YILMAZ",
+                    "visa_type_id": "visa_30_single",
+                    "passport_file_id": self.file_id,
+                    "photo_file_id": self.photo_file_id
+                }],
+                "travel": {
+                    "arrival_date": "2026-03-15",
+                    "departure_date": "2026-03-25",
+                    "purpose": "tourism",
+                    "birth_country": "TR"
+                },
+                "addons": {
+                    "express": False,
+                    "insurance": False
+                },
+                "store_items": [],
+                "extra_documents": {},
+                "kvkk_accepted": True
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/applications",
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                app_id = result.get("id")
+                ref_code = result.get("reference_code")
+                self.log(f"Application created successfully. ID: {app_id}, Ref: {ref_code}", "PASS")
+                
+                # Verify new fields in response
+                traveler = result.get("travelers", [{}])[0]
+                if (traveler.get("marital_status") == "married" and 
+                    traveler.get("profession") == "Engineer" and
+                    traveler.get("mother_name") == "AYSE YILMAZ" and
+                    traveler.get("father_name") == "MEHMET YILMAZ"):
+                    self.log("New fields correctly saved in application", "PASS")
+                    self.tests_passed += 1
+                    return True, app_id
+                else:
+                    self.log(f"New fields not saved correctly: {traveler}", "FAIL")
+                    return False, app_id
+            else:
+                self.log(f"Application creation failed with status {response.status_code}: {response.text}", "FAIL")
+                return False, None
+                
+        except Exception as e:
+            self.log(f"Application creation error: {str(e)}", "FAIL")
+            return False, None
+    
+    def test_invalid_marital_status(self):
+        """Test that invalid marital_status returns 422"""
+        self.tests_run += 1
+        self.log("Testing invalid marital_status validation...", "INFO")
+        
+        if not self.file_id or not self.photo_file_id:
+            self.log("Missing file IDs for validation test", "FAIL")
+            return False
+        
+        try:
+            payload = {
+                "contact": {
+                    "full_name": "TEST USER",
+                    "email": f"test_{int(time.time())}@test.com",
+                    "phone": "05551234567"
+                },
+                "travelers": [{
+                    "first_name": "TEST",
+                    "last_name": "USER",
+                    "birth_date": "1990-01-01",
+                    "gender": "male",
+                    "applicant_type": "adult",
+                    "passport_no": "T12345678",
+                    "passport_expiry": "2030-01-01",
+                    "marital_status": "foo",  # Invalid value
+                    "profession": "Engineer",
+                    "mother_name": "MOTHER",
+                    "father_name": "FATHER",
+                    "visa_type_id": "visa_30_single",
+                    "passport_file_id": self.file_id,
+                    "photo_file_id": self.photo_file_id
+                }],
+                "travel": {
+                    "arrival_date": "2026-03-15",
+                    "departure_date": "2026-03-25",
+                    "birth_country": "TR"
+                },
+                "addons": {},
+                "extra_documents": {},
+                "kvkk_accepted": True
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/applications",
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code == 422:
+                self.log(f"Invalid marital_status correctly returned 422", "PASS")
+                self.tests_passed += 1
+                return True
+            else:
+                self.log(f"Expected 422, got {response.status_code}: {response.text}", "FAIL")
+                return False
+                
+        except Exception as e:
+            self.log(f"Validation test error: {str(e)}", "FAIL")
+            return False
+    
+    def test_backward_compatibility(self):
+        """Test that application works without new fields (defaults applied)"""
+        self.tests_run += 1
+        self.log("Testing backward compatibility (fields not sent, defaults applied)...", "INFO")
+        
+        if not self.file_id or not self.photo_file_id:
+            self.log("Missing file IDs for backward compatibility test", "FAIL")
+            return False
+        
+        try:
+            payload = {
+                "contact": {
+                    "full_name": "LEGACY USER",
+                    "email": f"legacy_{int(time.time())}@test.com",
+                    "phone": "05551234567"
+                },
+                "travelers": [{
+                    "first_name": "LEGACY",
+                    "last_name": "USER",
+                    "birth_date": "1990-01-01",
+                    "gender": "female",
+                    "applicant_type": "adult",
+                    "passport_no": "L12345678",
+                    "passport_expiry": "2030-01-01",
+                    # NOT sending marital_status, profession, mother_name, father_name
+                    "visa_type_id": "visa_30_single",
+                    "passport_file_id": self.file_id,
+                    "photo_file_id": self.photo_file_id
+                }],
+                "travel": {
+                    "arrival_date": "2026-03-15",
+                    "departure_date": "2026-03-25",
+                    "birth_country": "TR"
+                },
+                "addons": {},
+                "extra_documents": {},
+                "kvkk_accepted": True
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/applications",
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                traveler = result.get("travelers", [{}])[0]
+                
+                # Check defaults: marital_status='single', others empty
+                if (traveler.get("marital_status") == "single" and
+                    traveler.get("profession") == "" and
+                    traveler.get("mother_name") == "" and
+                    traveler.get("father_name") == ""):
+                    self.log("Backward compatibility OK: defaults applied (marital_status='single', others empty)", "PASS")
+                    self.tests_passed += 1
+                    return True
+                else:
+                    self.log(f"Defaults not applied correctly: {traveler}", "FAIL")
+                    return False
+            else:
+                self.log(f"Backward compatibility test failed with status {response.status_code}: {response.text}", "FAIL")
+                return False
+                
+        except Exception as e:
+            self.log(f"Backward compatibility test error: {str(e)}", "FAIL")
+            return False
+    
+    def test_admin_login(self):
+        """Test admin login and get token"""
+        self.tests_run += 1
+        self.log("Testing admin login...", "INFO")
+        
+        try:
+            response = requests.post(
+                f"{BASE_URL}/admin/login",
+                json={"email": "admin@vizeatlas.com", "password": "Dubai2026!"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                token = result.get("token")
+                if token:
+                    self.log(f"Admin login successful, token obtained", "PASS")
+                    self.tests_passed += 1
+                    return True, token
+                else:
+                    self.log("Admin login response missing token", "FAIL")
+                    return False, None
+            else:
+                self.log(f"Admin login failed with status {response.status_code}: {response.text}", "FAIL")
+                return False, None
+                
+        except Exception as e:
+            self.log(f"Admin login error: {str(e)}", "FAIL")
+            return False, None
+    
+    def test_admin_application_detail(self, app_id, admin_token):
+        """Test admin application detail endpoint shows new fields"""
+        self.tests_run += 1
+        self.log(f"Testing admin application detail for app {app_id}...", "INFO")
+        
+        if not admin_token:
+            self.log("No admin token available", "FAIL")
+            return False
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/admin/applications/{app_id}",
+                headers={"Authorization": f"Bearer {admin_token}"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                app = result.get("application", {})
+                traveler = app.get("travelers", [{}])[0]
+                
+                # Check if new fields are present
+                if (traveler.get("marital_status") and
+                    traveler.get("profession") and
+                    traveler.get("mother_name") and
+                    traveler.get("father_name")):
+                    self.log(f"Admin detail shows new fields: marital={traveler['marital_status']}, profession={traveler['profession']}", "PASS")
+                    self.tests_passed += 1
+                    return True
+                else:
+                    self.log(f"Admin detail missing new fields: {traveler}", "FAIL")
+                    return False
+            else:
+                self.log(f"Admin detail failed with status {response.status_code}: {response.text}", "FAIL")
+                return False
+                
+        except Exception as e:
+            self.log(f"Admin detail error: {str(e)}", "FAIL")
+            return False
+    
+    def test_zami_mapping(self, admin_token):
+        """Test Zami mapping includes new traveler fields"""
+        self.tests_run += 1
+        self.log("Testing Zami mapping for new traveler fields...", "INFO")
+        
+        if not admin_token:
+            self.log("No admin token available", "FAIL")
+            return False
+        
+        try:
+            response = requests.get(
+                f"{BASE_URL}/admin/zami/config",
+                headers={"Authorization": f"Bearer {admin_token}"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                traveler_fields_list = result.get("traveler_fields", [])
+                
+                # Check if new fields are in the list
+                field_keys = [f["key"] for f in traveler_fields_list]
+                
+                required_fields = ["marital_status", "marital_status_label", "profession", "mother_name", "father_name"]
+                missing = [f for f in required_fields if f not in field_keys]
+                
+                if not missing:
+                    self.log(f"Zami mapping includes all new traveler fields", "PASS")
+                    self.tests_passed += 1
+                    return True
+                else:
+                    self.log(f"Zami mapping missing fields: {missing}", "FAIL")
+                    return False
+            else:
+                self.log(f"Zami config failed with status {response.status_code}: {response.text}", "FAIL")
+                return False
+                
+        except Exception as e:
+            self.log(f"Zami mapping test error: {str(e)}", "FAIL")
+            return False
+    
     def run_all_tests(self):
         """Run all backend tests"""
         self.log("=" * 70, "INFO")
-        self.log("VizeAtlas Dubai - Backend API Tests (Photo Validation Feature)", "INFO")
+        self.log("VizeAtlas Dubai - Backend API Tests (New Mandatory Fields)", "INFO")
         self.log("=" * 70, "INFO")
         
-        # Test basic endpoints first
+        # Test basic endpoints first (regression)
+        self.log("\n--- Regression: Basic Endpoints ---", "INFO")
         self.test_basic_endpoints()
         
         # Test passport upload and OCR (regression)
@@ -397,27 +720,33 @@ class PhotoValidationTester:
             time.sleep(1)
             self.test_passport_ocr()
         
-        # Test photo validation feature
-        self.log("\n--- New Feature: Photo Validation ---", "INFO")
-        
-        # Upload test images
+        # Upload photo for application tests
+        self.log("\n--- Setup: Upload Photo ---", "INFO")
         self.test_upload_photo()
-        self.test_upload_solid_image()
-        self.test_upload_pdf()
         
-        time.sleep(1)  # Brief pause before validation tests
+        time.sleep(1)
         
-        # Test photo validation with different scenarios
-        if self.photo_file_id:
-            self.test_photo_check_valid()
+        # Test new mandatory fields
+        self.log("\n--- New Feature: Mandatory Fields (marital_status, profession, mother_name, father_name) ---", "INFO")
         
-        if self.solid_file_id:
-            self.test_photo_check_non_portrait()
+        # Test application creation with new fields
+        success, app_id = self.test_application_with_new_fields()
         
-        self.test_photo_check_invalid_file_id()
+        # Test validation
+        self.test_invalid_marital_status()
         
-        if self.pdf_file_id:
-            self.test_photo_check_pdf()
+        # Test backward compatibility
+        self.test_backward_compatibility()
+        
+        # Test admin endpoints
+        self.log("\n--- Admin Endpoints ---", "INFO")
+        admin_success, admin_token = self.test_admin_login()
+        
+        if admin_success and app_id:
+            self.test_admin_application_detail(app_id, admin_token)
+        
+        if admin_success:
+            self.test_zami_mapping(admin_token)
         
         # Print summary
         self.log("=" * 70, "INFO")
@@ -429,7 +758,7 @@ class PhotoValidationTester:
         return 0 if self.tests_passed == self.tests_run else 1
 
 def main():
-    tester = PhotoValidationTester()
+    tester = MandatoryFieldsTester()
     return tester.run_all_tests()
 
 if __name__ == "__main__":

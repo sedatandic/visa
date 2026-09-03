@@ -10,6 +10,7 @@ import {
     CheckCircle2,
     CreditCard,
     FileText,
+    Info,
     Loader2,
     Pencil,
     Landmark,
@@ -54,6 +55,38 @@ const STEPS = [
     { key: "summary", label: "Ödeme", icon: CreditCard },
 ];
 
+// Zami / BAE konsolosluk formunda zorunlu olan medeni hal secenekleri
+const MARITAL_OPTIONS = [
+    { v: "single", label: "Bekar" },
+    { v: "married", label: "Evli" },
+    { v: "divorced", label: "Boşanmış" },
+    { v: "widowed", label: "Eşi vefat etmiş" },
+];
+
+// Meslek, BAE tarafina Ingilizce gonderilir. Deger = portala yazilan Ingilizce
+// karsilik, label = kullaniciya gosterilen Turkce aciklama.
+const PROFESSION_OPTIONS = [
+    { v: "Student", label: "Öğrenci" },
+    { v: "Housewife", label: "Ev hanımı" },
+    { v: "Employee", label: "Çalışan / Memur" },
+    { v: "Manager", label: "Yönetici" },
+    { v: "Engineer", label: "Mühendis" },
+    { v: "Teacher", label: "Öğretmen" },
+    { v: "Doctor", label: "Doktor" },
+    { v: "Nurse", label: "Hemşire" },
+    { v: "Lawyer", label: "Avukat" },
+    { v: "Accountant", label: "Muhasebeci" },
+    { v: "Businessman", label: "İş insanı / Şirket sahibi" },
+    { v: "Merchant", label: "Esnaf / Tüccar" },
+    { v: "Self Employed", label: "Serbest meslek" },
+    { v: "Driver", label: "Şoför" },
+    { v: "Technician", label: "Teknisyen" },
+    { v: "Worker", label: "İşçi" },
+    { v: "Farmer", label: "Çiftçi" },
+    { v: "Retired", label: "Emekli" },
+    { v: "Unemployed", label: "Çalışmıyor" },
+];
+
 let travelerSeq = 0;
 const newTraveler = (type = "adult") => ({
     key: `t${++travelerSeq}`,
@@ -66,6 +99,11 @@ const newTraveler = (type = "adult") => ({
     national_id: "",
     passport_no: "",
     passport_expiry: "",
+    // BAE basvurusunda zorunlu ek bilgiler (pasaportta yer almaz, kullanici girer)
+    marital_status: type === "child" ? "single" : "",
+    profession: type === "child" ? "Student" : "",
+    mother_name: "",
+    father_name: "",
     // Pasaport OCR'dan sessizce doldurulan alanlar (kullanıcıya sorulmaz)
     passport_issue_date: "",
     birth_place: "",
@@ -98,6 +136,10 @@ const ERROR_LABELS = {
     last_name: "Soyad",
     birth_date: "Doğum tarihi",
     gender: "Cinsiyet",
+    marital_status: "Medeni hal",
+    profession: "Meslek",
+    mother_name: "Anne adı",
+    father_name: "Baba adı",
     passport_no: "Pasaport numarası",
     passport_expiry: "Pasaport geçerlilik tarihi",
     visa_type_id: "Vize türü",
@@ -201,6 +243,10 @@ export default function Apply() {
                 national_id: saved.national_id || "",
                 passport_no: saved.passport_no || "",
                 passport_expiry: saved.passport_expiry || "",
+                marital_status: saved.marital_status || (type === "child" ? "single" : ""),
+                profession: saved.profession || (type === "child" ? "Student" : ""),
+                mother_name: saved.mother_name || "",
+                father_name: saved.father_name || "",
                 applicant_type: type,
             },
         ]);
@@ -304,6 +350,10 @@ export default function Apply() {
                                 national_id: t.national_id || "",
                                 passport_no: t.passport_no || "",
                                 passport_expiry: t.passport_expiry || "",
+                                marital_status: t.marital_status || "",
+                                profession: t.profession || "",
+                                mother_name: t.mother_name || "",
+                                father_name: t.father_name || "",
                                 visa_type_id: t.visa_type_id || "",
                                 applicant_type: t.applicant_type || "adult",
                             }))
@@ -684,6 +734,10 @@ export default function Apply() {
                 if (t.last_name.trim().length < 2) te.last_name = "Soyad zorunlu (en az 2 karakter).";
                 if (!t.birth_date) te.birth_date = "Doğum tarihi zorunlu.";
                 if (!t.gender) te.gender = "Cinsiyet seçimi zorunlu.";
+                if (!t.marital_status) te.marital_status = "Medeni hal seçimi zorunlu.";
+                if (!t.profession) te.profession = "Meslek seçimi zorunlu.";
+                if (t.mother_name.trim().length < 2) te.mother_name = "Anne adı zorunlu (BAE formu için).";
+                if (t.father_name.trim().length < 2) te.father_name = "Baba adı zorunlu (BAE formu için).";
                 if (t.passport_no.trim().length < 4) te.passport_no = "Pasaport numarası zorunlu.";
                 if (!t.passport_expiry) te.passport_expiry = "Pasaport geçerlilik tarihi zorunlu.";
                 else if (new Date(t.passport_expiry) < new Date())
@@ -772,6 +826,10 @@ export default function Apply() {
                     passport_issue_date: t.passport_issue_date || "",
                     birth_place: t.birth_place || "",
                     passport_issue_place: t.passport_issue_place || "",
+                    marital_status: t.marital_status || "single",
+                    profession: t.profession || "",
+                    mother_name: (t.mother_name || "").trim(),
+                    father_name: (t.father_name || "").trim(),
                     visa_type_id: t.visa_type_id,
                     passport_file_id: t.passportFile.file_id,
                     photo_file_id: t.photoFile.file_id,
@@ -1058,7 +1116,15 @@ export default function Apply() {
                                                                     <button
                                                                         key={opt.v}
                                                                         type="button"
-                                                                        onClick={() => updateTraveler(t.key, { applicant_type: opt.v, visa_type_id: "" })}
+                                                                        onClick={() =>
+                                                                            updateTraveler(t.key, {
+                                                                                applicant_type: opt.v,
+                                                                                visa_type_id: "",
+                                                                                ...(opt.v === "child"
+                                                                                    ? { marital_status: "single", profession: "Student" }
+                                                                                    : {}),
+                                                                            })
+                                                                        }
                                                                         data-testid={`traveler-${idx}-type-${opt.v}`}
                                                                         className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                                                                             t.applicant_type === opt.v ? "bg-primary text-primary-foreground" : "text-muted-foreground"
@@ -1214,6 +1280,74 @@ export default function Apply() {
                                                         )}
                                                     </div>
                                                     )}
+
+                                                    {/* BAE basvuru formunda zorunlu olan, pasaportta yer almayan bilgiler */}
+                                                    <div className="mt-6 rounded-xl border border-border bg-muted/40 p-4 sm:p-5">
+                                                        <div className="flex items-start gap-2.5">
+                                                            <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                                            <div>
+                                                                <p className="text-sm font-bold text-foreground">
+                                                                    BAE başvuru formu için zorunlu bilgiler
+                                                                </p>
+                                                                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                                                    Bu bilgiler pasaportta yazmadığı için sizden istiyoruz. Birleşik Arap
+                                                                    Emirlikleri vize sistemi bu alanları zorunlu tutuyor.
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                                                            <Field label="Medeni hal" required error={te.marital_status}>
+                                                                <Select
+                                                                    value={t.marital_status}
+                                                                    onValueChange={(v) => updateTraveler(t.key, { marital_status: v })}
+                                                                >
+                                                                    <SelectTrigger data-testid={`traveler-${idx}-marital-status`}>
+                                                                        <SelectValue placeholder="Seçiniz" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {MARITAL_OPTIONS.map((o) => (
+                                                                            <SelectItem key={o.v} value={o.v}>
+                                                                                {o.label}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </Field>
+                                                            <Field label="Meslek" required error={te.profession}>
+                                                                <Select
+                                                                    value={t.profession}
+                                                                    onValueChange={(v) => updateTraveler(t.key, { profession: v })}
+                                                                >
+                                                                    <SelectTrigger data-testid={`traveler-${idx}-profession`}>
+                                                                        <SelectValue placeholder="Seçiniz" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent className="max-h-72">
+                                                                        {PROFESSION_OPTIONS.map((o) => (
+                                                                            <SelectItem key={o.v} value={o.v}>
+                                                                                {o.label}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </Field>
+                                                            <Field label="Anne adı" required error={te.mother_name}>
+                                                                <Input
+                                                                    value={t.mother_name}
+                                                                    onChange={(e) => updateTraveler(t.key, { mother_name: e.target.value })}
+                                                                    placeholder="AYŞE"
+                                                                    data-testid={`traveler-${idx}-mother-name`}
+                                                                />
+                                                            </Field>
+                                                            <Field label="Baba adı" required error={te.father_name}>
+                                                                <Input
+                                                                    value={t.father_name}
+                                                                    onChange={(e) => updateTraveler(t.key, { father_name: e.target.value })}
+                                                                    placeholder="MEHMET"
+                                                                    data-testid={`traveler-${idx}-father-name`}
+                                                                />
+                                                            </Field>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             );
                                         })}

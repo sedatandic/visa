@@ -37,6 +37,13 @@ HANDOFF_TTL_MINUTES = 45
 
 GENDER_LABELS = {"male": "Male", "female": "Female"}
 APPLICANT_LABELS = {"adult": "Adult", "child": "Child"}
+# Zami portalindaki "Marital Status" secenekleri
+MARITAL_LABELS = {
+    "single": "Single",
+    "married": "Married",
+    "divorced": "Divorced",
+    "widowed": "Widowed",
+}
 
 # Bizim semadaki aktarilabilir alanlar. Admin bunlari Zami form alanlariyla esler.
 GLOBAL_FIELDS = [
@@ -77,6 +84,11 @@ TRAVELER_FIELDS = [
     ("passport_expiry_mdy", "Pasaport geçerlilik (AA/GG/YYYY)"),
     ("applicant_type", "Başvuran tipi (adult/child)"),
     ("applicant_type_label", "Başvuran tipi (Adult/Child)"),
+    ("marital_status", "Medeni hal (single/married/...)"),
+    ("marital_status_label", "Medeni hal (Single/Married/...)"),
+    ("profession", "Meslek (İngilizce)"),
+    ("mother_name", "Anne adı"),
+    ("father_name", "Baba adı"),
     ("visa_type_name", "Vize tipi (ad)"),
 ]
 
@@ -256,6 +268,13 @@ def build_payload(app_doc: dict, file_base_url: str = "") -> dict:
                 "passport_issue_place": (t.get("passport_issue_place") or "").strip(),
                 "applicant_type": t.get("applicant_type", "adult"),
                 "applicant_type_label": APPLICANT_LABELS.get(t.get("applicant_type", "adult"), ""),
+                "marital_status": t.get("marital_status", "") or "",
+                "marital_status_label": MARITAL_LABELS.get(
+                    (t.get("marital_status") or "").strip().lower(), ""
+                ),
+                "profession": (t.get("profession") or "").strip(),
+                "mother_name": (t.get("mother_name") or "").strip(),
+                "father_name": (t.get("father_name") or "").strip(),
                 "visa_type_name": t.get("visa_type_name", ""),
                 "zami_visa_type": zami_visa_label(t.get("visa_type_id"), t.get("visa_type_name", "")),
                 "phone": contact.get("phone", ""),
@@ -295,9 +314,6 @@ def build_payload(app_doc: dict, file_base_url: str = "") -> dict:
 # Zami formunda zorunlu olup bizim basvuru formumuzda toplanmayan alanlar.
 # Aktarim sonrasi operatore hatirlatilir (robot bu alanlari bos birakir).
 MANUAL_FIELDS = [
-    {"selector": '[name="fa"]', "label": "Baba Adı"},
-    {"selector": '[name="mo"]', "label": "Anne Adı"},
-    {"selector": '[name="pf_tt"]', "label": "Meslek"},
     {"selector": '[name="eu"]', "label": "Eğitim"},
     {"selector": '[name="tr_a_d"]', "label": "Geliş uçuş tarihi"},
     {"selector": '[name="tr_a_fn"]', "label": "Geliş uçuş no"},
@@ -462,6 +478,10 @@ TRAVELER_HINTS = [
     ("nationality", ["nationality", "country"]),
     ("national_id", ["national id", "id number", "tc", "identity"]),
     ("applicant_type_label", ["applicant type", "pax type", "adult", "child", "type"]),
+    ("marital_status_label", ["marital", "medeni"]),
+    ("profession", ["profession", "occupation", "job", "meslek"]),
+    ("mother_name", ["mother", "mothers name", "anne"]),
+    ("father_name", ["father", "fathers name", "baba"]),
 ]
 
 TRAVELER_MARKERS = ["pax", "passenger", "traveller", "traveler", "applicant", "person", "guest"]

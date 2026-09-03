@@ -50,6 +50,14 @@ import {
     DialogTrigger,
 } from "../components/ui/dialog";
 
+const MARITAL_TR = {
+    single: "Bekar",
+    married: "Evli",
+    divorced: "Boşanmış",
+    widowed: "Eşi vefat etmiş",
+};
+
+
 const Row = ({ label, value }) => (
     <div className="flex items-start justify-between gap-4 border-b border-border py-2.5 last:border-0">
         <span className="text-sm text-muted-foreground">{label}</span>
@@ -455,6 +463,10 @@ export default function AdminApplicationDetail() {
                                             <p>Pasaport: <strong className="text-foreground">{t.passport_no}</strong></p>
                                             <p>Geçerlilik: <strong className="text-foreground">{formatDate(t.passport_expiry)}</strong></p>
                                             {t.national_id ? <p>T.C. No: <strong className="text-foreground">{t.national_id}</strong></p> : null}
+                                            {t.marital_status ? <p>Medeni hal: <strong className="text-foreground">{MARITAL_TR[t.marital_status] || t.marital_status}</strong></p> : null}
+                                            {t.profession ? <p>Meslek: <strong className="text-foreground">{t.profession}</strong></p> : null}
+                                            {t.mother_name ? <p>Anne adı: <strong className="text-foreground">{t.mother_name}</strong></p> : null}
+                                            {t.father_name ? <p>Baba adı: <strong className="text-foreground">{t.father_name}</strong></p> : null}
                                         </div>
                                         <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                             <DocumentViewer fileId={t.documents?.passport_file_id || t.passport_file_id} title={`Pasaport ${i + 1}`} />
