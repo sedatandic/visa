@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 FIRST_REMINDER_AFTER_HOURS = 24
 REMINDER_INTERVAL_HOURS = 48
 MAX_REMINDERS = 3
-SWEEP_INTERVAL_SECONDS = 6 * 60 * 60  # 6 saat
+SWEEP_INTERVAL_SECONDS = 60 * 60  # 1 saat (taslak kurtarma hizli olsun)
 
 REMINDABLE_STATUSES = {"submitted", "documents_pending", "payment_pending", "reviewing"}
 
@@ -251,7 +251,7 @@ def default_origin() -> str:
 
 
 # ------------------------------------------------------- taslak (sepeti kurtarma)
-DRAFT_FIRST_REMINDER_AFTER_HOURS = 24
+DRAFT_FIRST_REMINDER_AFTER_HOURS = 1  # yarim kalan basvuruya 1 saat sonra hatirlat
 DRAFT_REMINDER_INTERVAL_HOURS = 72
 MAX_DRAFT_REMINDERS = 2
 

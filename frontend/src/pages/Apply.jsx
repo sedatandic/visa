@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
     AlertCircle,
@@ -208,14 +208,15 @@ export default function Apply() {
     };
 
     // --- Taslak kaydet / devam et -----------------------------------------
-    const saveDraft = async () => {
+    const saveDraft = async ({ silent = false } = {}) => {
         if (!contact.email.trim()) {
+            if (silent) return;
             setStep(0);
             setErrors((p) => ({ ...p, contact: { ...(p.contact || {}), email: "Kaydetmek için e-posta gerekli." } }));
             toast.error("Başvurunuzu kaydetmek için e-posta adresinizi girin.");
             return;
         }
-        setSavingDraft(true);
+        if (!silent) setSavingDraft(true);
         try {
             const { data } = await api.post("/drafts", {
                 email: contact.email.trim(),
@@ -227,16 +228,36 @@ export default function Apply() {
                 data: { contact, travelers, travel, addons, extraDocs, step, insurancePick, esimQty },
             });
             setDraft({ id: data.draft_id, code: data.resume_code });
-            toast.success(
-                `Başvurunuz kaydedildi. Devam kodunuz: ${data.resume_code}` +
-                    (data.email_status === "sent" ? " (e-postanıza da gönderildi)" : "")
-            );
+            if (!silent) {
+                toast.success(
+                    `Başvurunuz kaydedildi. Devam kodunuz: ${data.resume_code}` +
+                        (data.email_status === "sent" ? " (e-postanıza da gönderildi)" : "")
+                );
+            }
         } catch (err) {
-            toast.error(apiError(err, "Taslak kaydedilemedi."));
+            if (!silent) toast.error(apiError(err, "Taslak kaydedilemedi."));
         } finally {
-            setSavingDraft(false);
+            if (!silent) setSavingDraft(false);
         }
     };
+
+    // Otomatik taslak kaydi: e-posta girildikten sonra kullanici formu yarida
+    // birakirsa, "kaldigin yerden devam" linkini e-postayla gonderebilmek icin
+    // arka planda sessizce kaydediyoruz (5 sn'de bir, degisiklik oldukca).
+    const autoSaveRef = useRef({ signature: "", submitted: false });
+    useEffect(() => {
+        if (submitting) return;
+        const email = (contact.email || "").trim();
+        if (!email.includes("@") || step < 1) return;
+        const signature = JSON.stringify({ email, step, travelers, travel, addons, contact });
+        if (signature === autoSaveRef.current.signature) return;
+        const timer = setTimeout(() => {
+            autoSaveRef.current.signature = signature;
+            saveDraft({ silent: true });
+        }, 5000);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [contact, travelers, travel, addons, step, submitting]);
 
     // taslaktan devam / onceki basvurudan kopyala
     useEffect(() => {

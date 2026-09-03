@@ -415,3 +415,51 @@ gidiş/dönüş uçuş tarihi ve numarası.
 canlı portala gönderilmesi ücretli gerçek talep yaratacağı için kullanıcı onayı bekleniyor.
 
 **Test**: iteration_26.json → backend 11/11 %100, frontend %100, hata yok.
+
+---
+
+### Phase 39 — GERÇEK Zami Gönderimi + Otomasyon Tamamlandı — **COMPLETED (2026-09-03)**
+
+**🎯 Canlı portalda gerçek kayıt oluşturuldu: `VS-66059`**
+Portal mesajı: *"Visa Application VS-66059 inserted."* Durum **Waiting** (bekleme listesi)
+seçildiği için göç idaresine gönderilmedi / ücretlendirilmedi.
+
+Robotun uçtan uca akışı:
+1. Kayıtlı oturumla portala girer (OTP gerekmiyor)
+2. **31 alanı** doldurur (ülke autocomplete'leri jQuery widget'ı üzerinden seçilir)
+3. **Pasaport + vesikalık fotoğrafı yükler** (`_upload_documents`, file chooser)
+4. "TRANSLATE TO ARABIC" ile Arapça karşılıkları doldurur (`helper_selectors`)
+5. "CHECK" ile portal doğrulamasını çalıştırır; portal kilitli zorunlu alanları açar,
+   robot **ikinci geçişte** onları da doldurur (Medeni Hal, Group Membership)
+6. "SUBMIT" ile kaydeder ve portalın verdiği **VS-xxxxx numarasını yakalayıp**
+   başvuruya `zami_reference` olarak yazar (`routes_zami` transfer endpoint'i)
+
+Ek düzeltmeler: telefon uluslararası formata çevriliyor (`phone_intl` → 905xx),
+görünmez/kilitli alanlar `skipped_disabled` olarak raporlanıyor (30 sn takılma yok),
+`values_by_selector` ile ikinci geçiş mümkün.
+
+**Operatörün elle dolduracağı alanlar**: Baba Adı, Anne Adı, Meslek, Eğitim, uçuş bilgileri
+(admin başvuru detayında uyarı kutusunda listelenir).
+
+### Phase 40 — 6 Saatlik Otomatik Durum Takibi — **COMPLETED**
+- `status_url`, `status_search_selector` ([name="pn"]), `status_submit_selector` (SEARCH),
+  `status_search_field=passport` gerçek portala göre ayarlandı.
+- Sonuç satırının tamamı JS ile okunuyor → "1) VS-66059 ... Waiting ..." → `reviewing` eşleşti.
+- `auto_check_enabled=True`, `auto_check_hours=6`; canlı sweep testi: 2 başvuru kontrol,
+  1 durum değişikliği işlendi ve müşteri bildirimi tetiklendi.
+- Status sözlüğü genişletildi (waiting, posted, under review, completed...).
+
+### Phase 41 — Kaldığın Yerden Devam (Otomatik) — **COMPLETED**
+- `Apply.jsx`: e-posta girildikten ve 2. adıma geçildikten sonra taslak **5 sn debounce ile
+  sessizce otomatik kaydediliyor** (`saveDraft({silent:true})`, toast yok).
+- İlk hatırlatma süresi 24 saat → **1 saat**, sweep aralığı 6 saat → **1 saat**.
+- `/basvuru?taslak=<id>&kod=<code>` linki formu geri yüklüyor (mevcut altyapı korundu).
+
+### Phase 42 — Palet: Sadece Kırmızı + Beyaz — **COMPLETED**
+- Tüm yeşil tonlar kaldırıldı: primary `352 78% 42%`, koyu bloklar bordo `352 52% 20%`.
+- Bayrak şeridi kırmızı/beyaz/bordo, gölgeler kırmızı tonlu.
+- E-posta şablonlarındaki `#0B6B3A` → `#B3123A` (5 yer).
+- WhatsApp butonu marka kırmızısına çevrildi (yeşil kalmadı).
+
+**Test**: iteration_27.json → backend %92 (kalan 2 bulgu yanlış-pozitif: `/config` yol adı ve
+FastAPI'nin 422 doğrulama kodu), frontend %95 → WhatsApp yeşili düzeltildikten sonra %100.

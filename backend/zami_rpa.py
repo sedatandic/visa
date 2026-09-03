@@ -13,6 +13,9 @@ import asyncio
 import base64
 import logging
 import os
+import re
+import shutil
+import tempfile
 import uuid
 from datetime import datetime, timezone
 
@@ -272,10 +275,17 @@ async def _click_first(page, selectors: list[str]) -> bool:
     """Verilen seciciler icinden gorunur ilkine tiklar; tiklanirsa True."""
     for sel in selectors:
         try:
-            loc = page.locator(sel).first
-            if await loc.count() > 0 and await loc.is_visible():
-                await loc.click(timeout=8000)
-                return True
+            group = page.locator(sel)
+            count = min(await group.count(), 20)
+            for i in range(count):
+                item = group.nth(i)
+                try:
+                    if not await item.is_visible():
+                        continue
+                    await item.click(timeout=8000)
+                    return True
+                except Exception:
+                    continue
         except Exception:
             continue
     return False
@@ -406,11 +416,12 @@ async def check_status(app_doc: dict) -> dict:
         return {"ok": False, "error": "Kayıtlı portal oturumu yok. Önce RPA oturumu açın (captcha + OTP)."}
 
     travelers = app_doc.get("travelers") or []
-    candidates = [
-        app_doc.get("zami_reference"),
-        app_doc.get("reference_code"),
-        (travelers[0].get("passport_no") if travelers else None),
-    ]
+    passport_no = travelers[0].get("passport_no") if travelers else None
+    if (mapping.get("status_search_field") or "passport") == "passport":
+        # Zami arama sayfasinda en guvenilir anahtar pasaport numarasi
+        candidates = [passport_no, app_doc.get("zami_reference"), app_doc.get("reference_code")]
+    else:
+        candidates = [app_doc.get("zami_reference"), app_doc.get("reference_code"), passport_no]
     candidates = [c for c in candidates if c]
     if not candidates:
         return {"ok": False, "error": "Aranacak bir referans bulunamadı."}
@@ -434,9 +445,13 @@ async def check_status(app_doc: dict) -> dict:
                 try:
                     box = page.locator(mapping["status_search_selector"]).first
                     await box.fill(str(ref))
-                    await page.keyboard.press("Enter")
+                    if mapping.get("status_submit_selector"):
+                        if not await _click_first(page, [mapping["status_submit_selector"]]):
+                            await page.keyboard.press("Enter")
+                    else:
+                        await page.keyboard.press("Enter")
                     await page.wait_for_load_state("domcontentloaded", timeout=30000)
-                    await asyncio.sleep(1.5)
+                    await asyncio.sleep(2.0)
                 except Exception:
                     pass
 
@@ -448,6 +463,23 @@ async def check_status(app_doc: dict) -> dict:
                     loc = page.locator(selector).first
                     if await loc.count() > 0:
                         raw_text = (await loc.inner_text()).strip()
+                except Exception:
+                    raw_text = ""
+            if not raw_text:
+                # Referansi iceren tablo satirinin tamamini al (durum sutunu dahil)
+                try:
+                    raw_text = await page.evaluate(
+                        """(ref) => {
+                            const needle = String(ref).toLowerCase();
+                            const rows = Array.from(document.querySelectorAll('tr,li,div'));
+                            const hit = rows.find(el => el.offsetParent
+                                && (el.innerText || '').toLowerCase().includes(needle)
+                                && (el.innerText || '').length < 400
+                                && !el.querySelector('table'));
+                            return hit ? (hit.innerText || '').replace(/\\s+/g, ' ').trim() : '';
+                        }""",
+                        str(ref),
+                    )
                 except Exception:
                     raw_text = ""
             if not raw_text:
@@ -501,6 +533,47 @@ async ({selector, wanted}) => {
 """
 
 
+async def _upload_documents(page, app_doc: dict, mapping: dict) -> dict:
+    """Yolcunun pasaport/vesikalik belgelerini portaldaki gorsel alanlarina yukler."""
+    from db import uploads_col
+    from storage import get_object
+
+    result = {"uploaded": [], "failed": []}
+    targets = mapping.get("upload_targets") or []
+    if not targets:
+        return result
+    traveler = (app_doc.get("travelers") or [{}])[0] or {}
+    docs = traveler.get("documents") or {}
+    temp_dir = tempfile.mkdtemp(prefix="zami-docs-")
+    try:
+        for target in targets:
+            file_id = docs.get(f"{target['doc']}_file_id") or traveler.get(f"{target['doc']}_file_id")
+            if not file_id:
+                continue
+            record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
+            if not record:
+                result["failed"].append(target["doc"])
+                continue
+            try:
+                data, content_type = get_object(record["storage_path"])
+                ext = ".pdf" if "pdf" in (content_type or "") else ".jpg"
+                local_path = os.path.join(temp_dir, f"{target['doc']}{ext}")
+                with open(local_path, "wb") as fh:
+                    fh.write(data)
+                async with page.expect_file_chooser(timeout=15000) as fc_info:
+                    await page.locator(target["selector"]).first.click(timeout=10000)
+                chooser = await fc_info.value
+                await chooser.set_files(local_path)
+                await asyncio.sleep(3.0)
+                result["uploaded"].append(target["doc"])
+            except Exception as exc:
+                logger.warning("zami upload failed (%s): %s", target["doc"], exc)
+                result["failed"].append(target["doc"])
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+    return result
+
+
 async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, actor: str = "") -> dict:
     """Saklanan oturumla Zami basvuru formunu doldurur (ve dry_run kapaliysa gonderir)."""
     mapping = await get_mapping()
@@ -521,6 +594,7 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
         return {"ok": False, "error": BROWSER_MISSING_MSG}
     filled, missing = [], []
     skipped_disabled: list[str] = []
+    values_by_selector: dict[str, str] = {}
     try:
         await page.goto(mapping["form_url"], wait_until="domcontentloaded", timeout=45000)
         await asyncio.sleep(1.0)
@@ -534,6 +608,7 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
         async def set_value(selector: str, value: str):
             if value in (None, ""):
                 return False
+            values_by_selector[selector] = str(value)
             loc = page.locator(selector).first
             if await loc.count() == 0:
                 missing.append(selector)
@@ -541,6 +616,10 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
             try:
                 if await loc.is_disabled():
                     # Portal bu alani kendisi yonetiyor (ornegin Medeni Hal, Group Membership)
+                    skipped_disabled.append(selector)
+                    return False
+                if not await loc.is_visible():
+                    # Alan o an gizli (katlanmis bolum vb.) - beklemeden atla
                     skipped_disabled.append(selector)
                     return False
             except Exception:
@@ -600,7 +679,11 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
                         missing.append(selector)
                         return False
                 else:
-                    await loc.fill(str(value))
+                    try:
+                        await loc.fill(str(value), timeout=8000)
+                    except Exception:
+                        missing.append(selector)
+                        return False
                     try:
                         await loc.dispatch_event("input")
                     except Exception:
@@ -633,13 +716,62 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
                     manual_pending.append(item["label"])
             except Exception:
                 continue
+
+        # Belgeleri portaldaki gorsel alanlarina yukle (pasaport + vesikalik)
+        upload_result = await _upload_documents(page, app_doc, mapping)
+        if upload_result["uploaded"]:
+            await asyncio.sleep(2.0)
+
+        # Portal yardimci butonlari (Arapca cevirisi vb.)
+        for helper in mapping.get("helper_selectors") or []:
+            try:
+                if await _click_first(page, [helper]):
+                    await asyncio.sleep(2.0)
+            except Exception as exc:
+                logger.warning("zami helper click failed (%s): %s", helper, exc)
+
+        # Portalin kendi dogrulamasini calistir: eksik zorunlu alanlari acar.
+        # Ardindan ilk gecişte kilitli olan alanlar tekrar denenir.
+        validation_text = ""
+        if mapping.get("validate_selector"):
+            try:
+                if await _click_first(page, [mapping["validate_selector"]]):
+                    await asyncio.sleep(2.5)
+                    retry = [s for s in skipped_disabled if s in values_by_selector]
+                    if retry:
+                        skipped_disabled.clear()
+                        for selector in retry:
+                            await set_value(selector, values_by_selector[selector])
+                        await _click_first(page, [mapping["validate_selector"]])
+                        await asyncio.sleep(2.0)
+                    validation_text = await page.evaluate(
+                        """() => Array.from(document.querySelectorAll('div,span,p,li'))
+                            .filter(el => el.offsetParent && /msg|error|alert|warn|invalid|required/i.test((el.className || '') + ' ' + (el.id || '')))
+                            .map(el => (el.innerText || '').trim())
+                            .filter(t => t && t.length < 240)
+                            .slice(0, 8).join(' | ')"""
+                    )
+                    screenshot = await _shot(page)
+            except Exception as exc:
+                logger.warning("zami validate click failed: %s", exc)
+
         submitted = False
+        zami_reference = ""
         if not dry_run and mapping.get("submit_selector"):
             try:
-                await page.click(mapping["submit_selector"], timeout=15000)
+                if not await _click_first(page, [mapping["submit_selector"]]):
+                    raise RuntimeError("Gönder/Kaydet butonu görünür durumda bulunamadı.")
                 await page.wait_for_load_state("domcontentloaded", timeout=45000)
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(2.5)
                 submitted = True
+                # Portalin verdigi basvuru numarasini yakala ("Visa Application VS-66059 inserted.")
+                try:
+                    body_text = await page.inner_text("body")
+                    match = re.search(r"\b(VS-?\d{3,})", body_text)
+                    if match:
+                        zami_reference = match.group(1).replace("VS", "VS-").replace("--", "-")
+                except Exception:
+                    pass
                 screenshot = await _shot(page)
             except Exception as exc:
                 return {
@@ -667,6 +799,9 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
             "missing": missing,
             "skipped_disabled": skipped_disabled,
             "manual_pending": manual_pending,
+            "uploads": upload_result,
+            "zami_reference": zami_reference,
+            "validation_text": (validation_text or "")[:600],
             "current_url": page.url,
             "screenshot": screenshot,
         }

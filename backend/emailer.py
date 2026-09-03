@@ -298,7 +298,7 @@ def document_reminder_html(app_doc: dict, missing: list, upload_url: str = "") -
     if upload_url:
         button_html = f"""
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
-      <tr><td style="background-color:#0B6B3A;border-radius:8px;">
+      <tr><td style="background-color:#B3123A;border-radius:8px;">
         <a href="{upload_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Eksik belgeleri yükle</a>
       </td></tr>
     </table>
@@ -355,7 +355,7 @@ def login_code_html(code: str, ttl_minutes: int, account_url: str = "") -> str:
     """Musteri girisi icin tek kullanimlik kod."""
     link = (
         f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#52606D;">'
-        f'Giris sayfasi: <a href="{account_url}" style="color:#0B6B3A;">{account_url}</a></p>'
+        f'Giris sayfasi: <a href="{account_url}" style="color:#B3123A;">{account_url}</a></p>'
         if account_url
         else ""
     )
@@ -381,7 +381,7 @@ def draft_saved_html(draft: dict, resume_url: str = "") -> str:
     if resume_url:
         button = f"""
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
-      <tr><td style="background-color:#0B6B3A;border-radius:8px;">
+      <tr><td style="background-color:#B3123A;border-radius:8px;">
         <a href="{resume_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Basvuruya devam et</a>
       </td></tr>
     </table>
@@ -409,7 +409,7 @@ def draft_reminder_html(draft: dict, resume_url: str = "") -> str:
     if resume_url:
         button = f"""
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
-      <tr><td style="background-color:#0B6B3A;border-radius:8px;">
+      <tr><td style="background-color:#B3123A;border-radius:8px;">
         <a href="{resume_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Basvuruma devam et</a>
       </td></tr>
     </table>
@@ -531,7 +531,7 @@ def order_admin_html(order: dict) -> str:
 def order_delivered_html(order: dict, links: list, message: str = "") -> str:
     """eSIM QR / police teslimati."""
     link_html = "".join(
-        f'<tr><td style="padding:8px 0;"><a href="{l["url"]}" style="color:#0B6B3A;font-size:14px;font-weight:bold;">{l["label"]}</a></td></tr>'
+        f'<tr><td style="padding:8px 0;"><a href="{l["url"]}" style="color:#B3123A;font-size:14px;font-weight:bold;">{l["label"]}</a></td></tr>'
         for l in links
     )
     note = (

@@ -44,6 +44,7 @@ GLOBAL_FIELDS = [
     ("contact.full_name", "İletişim - ad soyad"),
     ("contact.email", "İletişim - e-posta"),
     ("contact.phone", "İletişim - telefon"),
+    ("contact.phone_intl", "İletişim - telefon (uluslararası, 905xx...)"),
     ("contact.address_city", "İletişim - şehir"),
     ("travel.arrival_date", "Seyahat - giriş tarihi (YYYY-AA-GG)"),
     ("travel.arrival_date_dmy", "Seyahat - giriş tarihi (GG/AA/YYYY)"),
@@ -86,16 +87,38 @@ DEFAULT_MAPPING = {
     "fields": {},
     "constants": {},
     "traveler_fields": {},
+    # Portalin kendi dogrulama butonu (CHECK). Dry-run sonrasi tiklanip
+    # portalin uyari mesajlari toplanir; gonderim yapilmaz.
+    "validate_selector": 'button:has-text("CHECK")',
+    # Dogrulamadan once tiklanacak yardimci butonlar (orn. Arapca cevirisi)
+    "helper_selectors": ['button:has-text("TRANSLATE TO ARABIC")'],
+    # Portaldaki gorsel yukleme alanlari: hangi belgemiz nereye yuklenecek
+    "upload_targets": [
+        {"doc": "passport", "selector": 'div.img-editor:has-text("Main Passport Page")'},
+        {"doc": "photo", "selector": 'div.img-editor:has-text("Personal Photo")'},
+    ],
     # --- durum takibi ---
     "status_url": "",
     "status_search_selector": "",
     "status_result_selector": "",
     "status_keywords": {
-        "approved": ["approved", "issued", "granted", "onay"],
+        "approved": ["approved", "issued", "granted", "onay", "visa issued", "completed"],
         "rejected": ["rejected", "declined", "refused", "red"],
-        "reviewing": ["processing", "in progress", "under process", "pending", "submitted"],
+        "reviewing": [
+            "processing",
+            "in progress",
+            "under process",
+            "pending",
+            "submitted",
+            "waiting",
+            "posted",
+            "under review",
+        ],
         "cancelled": ["cancelled", "canceled"],
     },
+    # Durum sayfasinda aramanin nasil yapilacagi
+    "status_search_field": "passport",
+    "status_submit_selector": 'button:has-text("SEARCH")',
     "auto_check_enabled": False,
     "auto_check_hours": 6,
     "auto_notify": True,
@@ -142,6 +165,20 @@ COUNTRY_LABELS = {
 }
 
 
+def phone_intl(value: str | None, default_cc: str = "90") -> str:
+    """Telefonu portalin bekledigi uluslararasi formata cevirir (orn. 905551234567)."""
+    digits = re.sub(r"\D", "", value or "")
+    if not digits:
+        return ""
+    if digits.startswith("00"):
+        digits = digits[2:]
+    if digits.startswith("0"):
+        digits = default_cc + digits[1:]
+    elif len(digits) == 10:
+        digits = default_cc + digits
+    return digits[:15]
+
+
 def country_label(code: str | None) -> str:
     raw = (code or "").strip()
     return COUNTRY_LABELS.get(raw.upper(), raw.upper())
@@ -163,6 +200,7 @@ def build_payload(app_doc: dict, file_base_url: str = "") -> dict:
         "contact.full_name": contact.get("full_name", ""),
         "contact.email": contact.get("email", ""),
         "contact.phone": contact.get("phone", ""),
+        "contact.phone_intl": phone_intl(contact.get("phone")),
         "contact.address_city": contact.get("address_city", ""),
         "travel.arrival_date": _fmt(travel.get("arrival_date"), "iso"),
         "travel.arrival_date_dmy": _fmt(travel.get("arrival_date"), "dmy"),
@@ -288,6 +326,31 @@ async def save_mapping(value: dict) -> dict:
             "dry_run": bool(value.get("dry_run", True)),
             "fields": {k: v for k, v in (value.get("fields") or {}).items() if v},
             "constants": {k: v for k, v in (value.get("constants") or {}).items() if v},
+            "validate_selector": (
+                value.get("validate_selector")
+                if value.get("validate_selector") is not None
+                else DEFAULT_MAPPING["validate_selector"]
+            ),
+            "helper_selectors": (
+                [str(s) for s in (value.get("helper_selectors") or []) if str(s).strip()]
+                or DEFAULT_MAPPING["helper_selectors"]
+            ),
+            "upload_targets": (
+                [
+                    t
+                    for t in (value.get("upload_targets") or [])
+                    if isinstance(t, dict) and t.get("doc") and t.get("selector")
+                ]
+                or DEFAULT_MAPPING["upload_targets"]
+            ),
+            "status_search_field": (
+                value.get("status_search_field") or DEFAULT_MAPPING["status_search_field"]
+            ),
+            "status_submit_selector": (
+                value.get("status_submit_selector")
+                if value.get("status_submit_selector") is not None
+                else DEFAULT_MAPPING["status_submit_selector"]
+            ),
             "traveler_fields": {k: v for k, v in (value.get("traveler_fields") or {}).items() if v},
             "status_url": (value.get("status_url") or "").strip(),
             "status_search_selector": (value.get("status_search_selector") or "").strip(),

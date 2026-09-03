@@ -653,9 +653,31 @@ async def zami_transfer(application_id: str, payload: TransferIn, request: Reque
     if not app_doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
     data = zami.build_payload(app_doc, _base_url(request))
-    return await zami_rpa.fill_application(
+    result = await zami_rpa.fill_application(
         app_doc, data, dry_run=bool(payload.dry_run), actor=admin.get("sub", "")
     )
+    # Portal basvuru numarasi dondurduyse basvuruya isle
+    reference = (result or {}).get("zami_reference") or ""
+    if reference:
+        await applications_col.update_one(
+            {"id": application_id},
+            {
+                "$set": {
+                    "zami_reference": reference,
+                    "zami_status": "submitted",
+                    "zami_submitted_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc),
+                }
+            },
+        )
+        await zami.log_event(
+            application_id,
+            app_doc.get("reference_code"),
+            "rpa_submitted",
+            f"Zami basvurusu olusturuldu: {reference}",
+            actor=admin.get("sub", ""),
+        )
+    return result
 
 
 # ------------------------------------- public (token korumali) bookmarklet API

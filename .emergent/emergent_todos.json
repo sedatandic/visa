@@ -1,30 +1,22 @@
 [
   {
-    "content": "Pasaport OCR'a veriliş tarihi, doğum yeri, veriliş yeri alanlarını ekle",
+    "content": "Palet: sadece kırmızı + beyaz (WhatsApp butonu ve e-postalar dahil)",
     "status": "completed"
   },
   {
-    "content": "Backend model + kayıt: yeni OCR alanlarını yolcuda sakla",
+    "content": "Zami GERÇEK gönderim — VS-66059 oluştu (31 alan + belge yükleme)",
     "status": "completed"
   },
   {
-    "content": "Apply.jsx: OCR'dan gelen yeni alanları sessizce taşı",
+    "content": "Zami 6 saatlik otomatik durum takibi — canlıda doğrulandı",
     "status": "completed"
   },
   {
-    "content": "Zami mapping: pd/bp/pp + Language/Medeni hal/Din sabitleri (25 alan otomatik)",
+    "content": "Kaldığın Yerden Devam: otomatik taslak + 1 saatte e-posta linki",
     "status": "completed"
   },
   {
-    "content": "Admin: aktarım sonrası 'operatör doldurmalı' alan listesi",
+    "content": "Testing agent doğrulaması ve bulguların giderilmesi",
     "status": "completed"
-  },
-  {
-    "content": "Canlı dry-run doğrulandı (25 alan, 0 hata) + readiness ready_robot=True",
-    "status": "completed"
-  },
-  {
-    "content": "Testing agent: OCR yeni alanları + başvuru oluşturma regresyonu",
-    "status": "in_progress"
   }
 ]
