@@ -105,3 +105,14 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
   (`backend_test.py`, `regression_critical_tests.py`, `tests/test_zami_otp_fix.py` artık
   `ADMIN_LOGIN_EMAIL/PASSWORD` + `REACT_APP_BACKEND_URL` env'den okuyor).
   `exec()` ve `is` vs `==` bulguları doğrulandı: kodda yok (yalnız `create_subprocess_exec`).
+
+## 2026-06-04 · Demo/test verisi temizliği
+Silinen koleksiyonlar (tümü 0'a indi): visa_applications(95), application_drafts(25),
+saved_travelers(99), store_orders(22), payment_transactions(28), contact_messages(19),
+pre_evaluations(8), email_outbox(720), zami_logs(253), notifications(16), whatsapp_logs(5),
+ocr_metrics(4), uploads(373), zami_handoffs(9), login_codes(4), testimonials(6).
+Korunanlar: site_settings (acente bilgileri, Zami eşleme + oturum), visa_types(10),
+store_products(6), articles(5).
+Not: `testimonials` boş olduğunda `/api/content/site` statik demo yorumlara düşüyor
+(routes_public.py:315) — gerçek yorumlar Admin → Yorumlar'dan eklendiğinde otomatik değişir.
+Object storage'daki eski dosyalar fiziksel olarak silinmedi, yalnız DB kayıtları temizlendi.
