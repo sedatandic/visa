@@ -290,12 +290,6 @@ REQUIRED_DOCUMENTS = [
         "detail": "Seyahat sürenizi kapsayacak şekilde otel, Airbnb veya konaklama rezervasyon belgesi. Yakınınızda kalacaksanız adres ve davet bilgisi yeterlidir.",
         "required": True,
     },
-    {
-        "key": "other",
-        "title": "Diğer Evraklar",
-        "detail": "Danışmanınızın talep ettiği ek belgeler (veli izin belgesi, davetiye, banka hesap dökümü vb.).",
-        "required": False,
-    },
 ]
 
 PHOTO_RULES = [
