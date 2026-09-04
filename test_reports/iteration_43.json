@@ -1,0 +1,20 @@
+{
+  "summary": "Frontend-only regression after global CSS palette simplification (plain white background, neutral tokens, rebuilt VisaShowcase cards). Verified home at 1920x1080 and 390x844, visa showcase cards, card→/basvuru navigation with preselected visa, all 10 public routes for console errors and low-contrast text, and admin login + Başvurular + Zami tabs.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested", "frontend": "100%"},
+  "test_credentials": "admin@vizeatlas.com / Dubai2026! (works)",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Palette change verified across /, /vize-tipleri, /gerekli-belgeler, /hizmetler, /sss, /iletisim, /basvuru, /takip, /esim, /seyahat-sigortasi and admin. Body bg confirmed rgb(255,255,255) on desktop+mobile. All 6 showcase cards render (white card, dark title, price #1f1f1f, gold Seç button). Clicking a card navigates to /basvuru?vize=<id> correctly. Automated luminance-diff scan (threshold 40) found 0 low-contrast text elements across all 10 routes. 0 console errors. Admin login succeeds; Başvurular tab shows dashboard/table legibly; Zami tab loads (portal login NOT triggered — did not press any login/OTP button on Zami tab as instructed). Dark-gold admin login screen has legible white text. No retest needed.",
+  "rca of the issue": "N/A — no bugs found; palette regression verified clean."
+}

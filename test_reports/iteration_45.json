@@ -1,0 +1,28 @@
+{
+  "summary": "Verified full removal of the 2-yıllık Freelancer visa (visa_freelancer_2y) across backend and frontend. All 7 requested checks pass. Fixed one leftover reference in /app/frontend/public/sitemap.xml (static file still linked to the freelancer slug at /sitemap.xml). No console errors, no broken images on regression pages.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/sitemap.xml", "issue": "Returns 404. The site serves /sitemap.xml as a static file from frontend public/. Not a regression from this change, but a naming inconsistency worth noting."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "backend/visa_guides.py still mentions 'freelancer/oturum vizesi' twice in prose text (lines 103 and 279) as alternative-plan hints. Since the freelancer product is discontinued, consider rewording these customer-facing paragraphs to avoid confusing users.",
+    "Static /app/frontend/public/sitemap.xml is manually maintained and duplicates data owned by the backend visa_guides/visa_types. Consider having the sitemap generated from the backend catalogue to avoid future drift."
+  ],
+  "updated_files": ["/app/frontend/public/sitemap.xml"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@vizeatlas.com / Dubai2026! (admin panel login verified)",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Freelancer visa cleanup verified end-to-end. GET /api/visa-types returns 8 items (no freelancer). GET /api/visa-guides has 8 items (no freelancer). GET /api/visa-guides/2-yillik-freelancer-vizesi -> 404. Admin /api/admin/visa-types returns 10 entries with visa_14_single and visa_freelancer_2y both active=false. Admin UI /admin/vize-tipleri still renders the freelancer card with 'Sitede yayında' toggle OFF as intended. Frontend home marquee, /vize-tipleri (all 4 tabs), /basvuru type list, and /dubai-vizesi/2-yillik-freelancer-vizesi (shows not-found) all clean. No broken images anywhere (Unsplash office image replacement works). Note: /api/sitemap.xml is 404 (backend does not serve sitemap); /sitemap.xml is served as static from frontend/public — I removed the freelancer <url> block from it in this run.",
+  "rca of the issue": "Static sitemap.xml under frontend/public was manually maintained and had not been updated when visa_freelancer_2y was removed from backend content. Removed the freelancer <url> entry."
+}

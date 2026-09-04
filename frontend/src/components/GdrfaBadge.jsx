@@ -15,7 +15,9 @@ export const GdrfaBadge = ({ light = false, className = "" }) => (
         } ${className}`}
         data-testid="gdrfa-badge"
     >
-        <GdrfaMark className="h-9 w-9 shrink-0" />
+        <GdrfaMark
+            className={`h-9 w-10 shrink-0 ${light ? "rounded-md bg-white px-1 py-0.5" : ""}`}
+        />
         <span className="leading-tight">
             <span
                 className={`block text-[11px] font-bold uppercase tracking-wider ${
@@ -37,36 +39,13 @@ export const GdrfaBadge = ({ light = false, className = "" }) => (
     </div>
 );
 
-/** Temsili GDRFA amblemi: sahin basi + kalkan silueti, BAE renkleriyle. */
+/** GDRFA / Federal Authority resmi amblemi (şahin). */
 export const GdrfaMark = ({ className = "" }) => (
-    <svg
-        viewBox="0 0 48 48"
-        className={className}
-        role="img"
-        aria-label="General Directorate of Residency and Foreigners Affairs - Dubai"
-    >
-        <path
-            d="M24 2 43 8v16c0 10.5-7.7 18.9-19 22C12.7 42.9 5 34.5 5 24V8L24 2z"
-            fill="#00563F"
-        />
-        <path
-            d="M24 5.6 39.6 10.6v13.4c0 8.8-6.4 15.9-15.6 18.7C14.8 39.9 8.4 32.8 8.4 24V10.6L24 5.6z"
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth="1.1"
-            opacity="0.85"
-        />
-        {/* Sahin silueti */}
-        <path
-            d="M24 11.2c2.9 0 5.1 1.7 6 4.1l3.4-1.1-2.2 3 2.6 1.4-3.2.9c-.4 3.3-2.9 5.6-6.6 5.6s-6.2-2.3-6.6-5.6l-3.2-.9 2.6-1.4-2.2-3 3.4 1.1c.9-2.4 3.1-4.1 6-4.1z"
-            fill="#FFFFFF"
-        />
-        <circle cx="21.4" cy="17.4" r="1.1" fill="#00563F" />
-        <circle cx="26.6" cy="17.4" r="1.1" fill="#00563F" />
-        {/* BAE bayragi seridi */}
-        <rect x="14" y="29.4" width="20" height="2.2" fill="#00843D" />
-        <rect x="14" y="31.6" width="20" height="2.2" fill="#FFFFFF" />
-        <rect x="14" y="33.8" width="20" height="2.2" fill="#111111" />
-        <rect x="14" y="29.4" width="4.4" height="6.6" fill="#C8102E" />
-    </svg>
+    <img
+        src="/brand/gdrfa.png"
+        alt="Federal Authority for Identity, Citizenship, Customs & Port Security"
+        className={`${className} object-contain`}
+        loading="lazy"
+        decoding="async"
+    />
 );

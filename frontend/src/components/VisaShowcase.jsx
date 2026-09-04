@@ -74,7 +74,7 @@ export const VisaShowcase = () => {
                     {visas === null ? (
                         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {[0, 1, 2, 3, 4, 5].map((i) => (
-                                <Skeleton key={i} className="h-[260px] rounded-[var(--radius-lg)]" />
+                                <Skeleton key={i} className="h-[320px] rounded-[var(--radius-lg)]" />
                             ))}
                         </div>
                     ) : cards.length === 0 ? (
@@ -97,56 +97,44 @@ export const VisaShowcase = () => {
                                     <Link
                                         key={visa.id}
                                         to={`/basvuru?vize=${visa.id}`}
-                                        className="group relative block overflow-hidden rounded-[var(--radius-lg)] border border-border/70 focus-visible:outline-none"
-                                        style={{ boxShadow: "var(--shadow-card)" }}
+                                        className="group block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card transition-colors duration-200 hover:border-primary/40 focus-visible:outline-none"
                                         data-testid={`showcase-card-${visa.id}`}
                                         aria-label={`${visa.name} ile başvuruya başla`}
                                     >
-                                        <img
-                                            src={visa.image}
-                                            alt={visa.name}
-                                            className="h-[260px] w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
-                                            loading="lazy"
-                                        />
-                                        <span
-                                            className="absolute inset-0"
-                                            style={{
-                                                background:
-                                                    "linear-gradient(to top, hsl(0 0% 6% / 0.9) 0%, hsl(0 0% 6% / 0.45) 38%, hsl(0 0% 6% / 0.08) 68%, transparent 100%)",
-                                            }}
-                                            aria-hidden="true"
-                                        />
-                                        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[hsl(var(--charcoal))] shadow-[var(--shadow-soft)]">
-                                            <Icon className="h-3 w-3" aria-hidden="true" />
-                                            {visa.tag}
+                                        <span className="relative block overflow-hidden">
+                                            <img
+                                                src={visa.image}
+                                                alt={visa.name}
+                                                className="h-[170px] w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                                                loading="lazy"
+                                            />
+                                            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[hsl(var(--charcoal))]">
+                                                <Icon className="h-3 w-3" aria-hidden="true" />
+                                                {visa.tag}
+                                            </span>
                                         </span>
-                                        <span className="absolute inset-x-3 bottom-3 block rounded-[var(--radius)] border border-white/12 px-4 py-3 backdrop-blur-md" style={{ backgroundColor: "hsl(0 0% 8% / 0.72)" }}>
-                                            <span className="flex items-start justify-between gap-3">
-                                                <span className="min-w-0">
-                                                    <span className="block font-heading text-lg font-extrabold leading-tight text-white">
-                                                        {shortTitle(visa)}
-                                                    </span>
-                                                    <span className="mt-0.5 block truncate text-xs text-white/80">
-                                                        {visa.name}
-                                                    </span>
-                                                </span>
-                                                <span className="shrink-0 text-right">
+
+                                        <span className="block p-4">
+                                            <span className="block font-heading text-lg font-extrabold leading-tight text-foreground">
+                                                {shortTitle(visa)}
+                                            </span>
+                                            <span className="mt-1 block truncate text-xs text-muted-foreground">
+                                                {visa.name}
+                                            </span>
+
+                                            <span className="mt-3 flex items-end justify-between gap-3 border-t border-border pt-3">
+                                                <span>
                                                     <span
-                                                        className="tabular block font-heading text-base font-extrabold leading-tight text-white"
+                                                        className="tabular block font-heading text-xl font-extrabold leading-none text-foreground"
                                                         data-testid={`showcase-price-${visa.id}`}
                                                     >
                                                         {formatMoney(visa.price, visa.currency)}
                                                     </span>
-                                                    <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-wider text-white/65">
-                                                        kişi başı
+                                                    <span className="mt-1 block text-[11px] text-muted-foreground">
+                                                        kişi başı · {formatUsd(visa.price_usd)}
                                                     </span>
                                                 </span>
-                                            </span>
-                                            <span className="mt-3 flex items-center justify-between gap-3 border-t border-white/12 pt-2.5">
-                                                <span className="text-[11px] text-white/70">
-                                                    {formatUsd(visa.price_usd)} · güncel kurla
-                                                </span>
-                                                <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-[11px] font-bold text-[hsl(var(--charcoal))] transition-transform duration-200 group-hover:translate-x-0.5">
+                                                <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground transition-transform duration-200 group-hover:translate-x-0.5">
                                                     Seç
                                                     <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                                                 </span>

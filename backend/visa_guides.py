@@ -100,7 +100,7 @@ GUIDES = {
         ],
         "tips": [
             "60 günlük vizede de kalış süresi aşımı günlük para cezasına tabidir; dönüş tarihinizi vize bitiminden önce planlayın.",
-            "İki ayı aşan planlar için freelancer/oturum vizesi seçenekleri daha uygun olabilir.",
+            "İki ayı aşan planlar için uzun süreli oturum izni seçeneklerini değerlendirmeniz gerekir.",
             "Uzun kalışlarda seyahat sağlık sigortası eklemenizi öneririz; BAE'de sağlık masrafları yüksektir.",
         ],
         "faqs": [
@@ -276,7 +276,7 @@ GUIDES = {
         "intro": [
             "Dubai vize uzatma hizmeti, Birleşik Arap Emirlikleri'nde bulunduğunuz sırada ülkeden çıkış yapmanıza gerek kalmadan kalış sürenizi 30 gün daha uzatmanızı sağlar. İşiniz uzadığında ya da tatilinizi uzatmaya karar verdiğinizde en pratik çözümdür.",
             "Uzatma başvurusunun mevcut vizenizin süresi dolmadan yapılması gerekir. Süre aşımı durumunda günlük para cezası uygulanır ve ilerideki başvurularınız olumsuz etkilenebilir; bu nedenle son güne bırakmayın.",
-            "Uzatma en fazla iki kez yapılabilir. Daha uzun süre kalmayı planlıyorsanız oturum/freelancer vizesi gibi alternatifleri değerlendirmenizi öneririz.",
+            "Uzatma en fazla iki kez yapılabilir. Daha uzun süre kalmayı planlıyorsanız oturum izni gibi alternatifleri değerlendirmenizi öneririz.",
         ],
         "who_for": [
             "Dubai'de bulunan ve kalış süresini uzatmak isteyen yolcular",
@@ -344,53 +344,6 @@ GUIDES = {
             {
                 "q": "Aktarmam 48 saatten uzun, ne yapmalıyım?",
                 "a": "Bu durumda transit vize uygun olmaz; 30 günlük turistik vizeye başvurmanız gerekir.",
-            },
-        ],
-    },
-    "2-yillik-freelancer-vizesi": {
-        "h1": "2 Yıllık Dubai Freelancer (Serbest Çalışma) Vizesi",
-        "seo_title": "Dubai Freelancer Vizesi 2 Yıl | Emirates ID ve Oturum İzni Süreci",
-        "seo_description": "2 yıllık Dubai freelancer (serbest çalışma) vizesi: Emirates ID, sınırsız giriş-çıkış, banka hesabı açma, gerekli belgeler, süreç ve maliyet.",
-        "keywords": ["dubai freelancer vizesi", "dubai oturum izni", "emirates id", "dubai serbest çalışma vizesi"],
-        "intro": [
-            "2 yıllık Dubai freelancer vizesi, Birleşik Arap Emirlikleri'nde serbest çalışmak, oturum kartı (Emirates ID) almak ve iki yıl boyunca sınırsız giriş-çıkış yapmak isteyenler için tasarlanmış bir oturum çözümüdür. Uzaktan çalışan yazılımcılar, danışmanlar, tasarımcılar ve içerik üreticileri arasında hızla yaygınlaşmaktadır.",
-            "Süreç, turistik vizeden farklı olarak birden çok aşamadan oluşur: freelancer izninin (permit) alınması, giriş izni, medikal kontrol, Emirates ID biyometrisi ve son olarak oturum izninin pasaporta işlenmesi. Bu nedenle işlem süresi 15-25 iş günü arasındadır ve bazı adımlar için BAE'de fiziksel olarak bulunmanız gerekir.",
-            "Oturum izni sahibi olmak, BAE'de banka hesabı açma, uzun dönem kira sözleşmesi yapma ve yerel hizmetlere erişim gibi önemli avantajlar sağlar. Süreç boyunca tüm adımlarda danışmanınız yanınızda olur.",
-        ],
-        "who_for": [
-            "Uzaktan çalışan yazılımcı, tasarımcı, danışman ve içerik üreticileri",
-            "BAE'de banka hesabı açmak ve uzun dönem yerleşmek isteyenler",
-            "İki yıl boyunca serbest giriş-çıkış esnekliği arayan profesyoneller",
-            "Kendi işini BAE üzerinden yürütmek isteyen girişimciler",
-        ],
-        "highlights": [
-            "2 yıl geçerli oturum izni",
-            "Emirates ID (oturum kartı)",
-            "Sınırsız giriş-çıkış hakkı",
-            "Banka hesabı açma ve uzun dönem kira imkânı",
-            "Tüm aşamalarda danışman desteği",
-        ],
-        "tips": [
-            "Medikal test ve Emirates ID biyometrisi için BAE'de bulunmanız gereken bir dönem olacaktır; seyahat planınızı buna göre yapın.",
-            "Diploma, portföy ve gelir belgeleri gibi ek evraklar talep edilebilir; süreci başlatmadan önce bunları hazırlayın.",
-            "Oturum izni vergi danışmanlığı gerektirebilir; Türkiye'deki mükellefiyet durumunuzu ayrıca değerlendirin.",
-        ],
-        "faqs": [
-            {
-                "q": "Freelancer vizesi ile BAE'de çalışabilir miyim?",
-                "a": "Evet. Freelancer izni, izin kapsamında belirtilen faaliyet alanında serbest çalışmanıza olanak tanır. Bir şirkete bağlı tam zamanlı çalışma için işveren sponsorluğunda çalışma vizesi gerekir.",
-            },
-            {
-                "q": "Süreç ne kadar sürer ve BAE'de bulunmam gerekir mi?",
-                "a": "Toplam süreç 15-25 iş günü arasındadır. Medikal kontrol ve Emirates ID biyometrisi aşamaları için BAE'de fiziksel olarak bulunmanız gerekir.",
-            },
-            {
-                "q": "Ailemi de yanımda getirebilir miyim?",
-                "a": "Oturum izni sahipleri belirli gelir ve konaklama koşullarını karşıladığında aile üyelerine sponsor olabilir. Bu süreç ayrı bir başvuru olarak yürütülür; danışmanınız detayları paylaşır.",
-            },
-            {
-                "q": "Emirates ID nedir?",
-                "a": "Emirates ID, BAE'de oturum izni sahiplerine verilen resmî kimlik kartıdır. Banka işlemleri, sağlık hizmetleri ve resmî başvurularda kullanılır.",
             },
         ],
     },
@@ -472,23 +425,6 @@ def _documents_for(visa: dict) -> list:
                 "detail": "Halen geçerli olan Dubai vizenizin PDF'i veya net görüntüsü.",
                 "required": True,
             }
-        )
-    if slug == "2-yillik-freelancer-vizesi":
-        docs.extend(
-            [
-                {
-                    "key": "cv",
-                    "title": "CV / Portföy",
-                    "detail": "Serbest çalışma faaliyet alanınızı gösteren özgeçmiş veya portföy.",
-                    "required": True,
-                },
-                {
-                    "key": "diploma",
-                    "title": "Diploma / Sertifika",
-                    "detail": "Faaliyet alanınıza ilişkin diploma veya mesleki sertifika (talep edilirse).",
-                    "required": False,
-                },
-            ]
         )
     return docs
 

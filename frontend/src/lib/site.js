@@ -10,7 +10,7 @@ export const IMAGES = {
     dubaiNight:
         "https://images.unsplash.com/photo-1526495124232-a04e1849168c?auto=format&fit=crop&w=900&q=75",
     office:
-        "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1100&q=75",
+        "https://images.unsplash.com/photo-1704655295066-681e61ecca6b?auto=format&fit=crop&w=1100&q=75",
     passportDocs:
         "https://images.unsplash.com/photo-1491317079341-38313806b657?auto=format&fit=crop&w=1000&q=75",
     travelFlatlay:

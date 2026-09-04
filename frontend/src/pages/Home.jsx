@@ -176,7 +176,7 @@ export default function Home() {
                 {/* MARQUEE RIBBON */}
                 <div className="mt-8" data-testid="hero-marquee">
                     <div className="container-page">
-                        <div className="panel-dark py-3.5">
+                        <div className="rounded-[var(--radius-xl)] border border-border bg-[hsl(var(--cloud))] py-3.5">
                             <div className="marquee">
                                 <div className="marquee-track">
                                     {[0, 1].map((dup) => (
@@ -191,16 +191,15 @@ export default function Home() {
                                                 "Ekspres Vize",
                                                 "Vize Uzatma",
                                                 "Transit Vize",
-                                                "Freelancer Vize",
                                                 "Evrak Kontrolü",
                                                 "Başvuru Takibi",
                                             ].map((t) => (
                                                 <span
                                                     key={t}
-                                                    className="flex items-center gap-8 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-white/85"
+                                                    className="flex items-center gap-8 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-foreground/70"
                                                 >
                                                     {t}
-                                                    <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--cream-tag))]" />
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                                                 </span>
                                             ))}
                                         </div>

@@ -200,31 +200,6 @@ VISA_TYPES = [
             "Hızlı sonuçlanma",
         ],
     },
-    {
-        "id": "visa_freelancer_2y",
-        "slug": "2-yillik-freelancer-vizesi",
-        "name": "2 Yıllık Freelancer (Serbest Çalışma) Vizesi",
-        "short_name": "Freelancer Vize",
-        "category": "other",
-        "duration_days": 730,
-        "entry_type": "multiple",
-        "entry_label": "2 Yıl Çok Giriş",
-        "applicant_type": "adult",
-        "price": 109000.0,
-        "price_usd": 6000.0,
-        "currency": "TRY",
-        "processing_days": "15-25 iş günü",
-        "popular": False,
-        "order": 9,
-        "description": "BAE'de serbest çalışmak, oturum kartı (Emirates ID) almak ve 2 yıl boyunca dilediğiniz zaman giriş çıkış yapmak için uygun vize.",
-        "features": [
-            "2 yıl geçerli oturum izni",
-            "Emirates ID (oturum kartı)",
-            "Sınırsız giriş-çıkış",
-            "Banka hesabı açma imkânı",
-            "Süreç boyunca danışman desteği",
-        ],
-    },
 ]
 
 VISA_CATEGORIES = [

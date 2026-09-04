@@ -12,22 +12,22 @@
      * Kırmızı SADECE destructive/hata semantiğinde kullanılır.
      */
     :root {
-        /* --- Yüzeyler & metin: açık gökyüzü zemin, antrasit metin --- */
-        --background: 205 100% 97%;
+        /* --- Yüzeyler & metin: sade beyaz zemin, antrasit metin --- */
+        --background: 0 0% 100%;
         --foreground: 0 0% 12%;
-        --card: 60 20% 98%;
+        --card: 0 0% 100%;
         --card-foreground: 0 0% 12%;
-        --popover: 60 20% 98%;
+        --popover: 0 0% 100%;
         --popover-foreground: 0 0% 12%;
 
         /* --- Primary: logodaki bakır/gold pill butonlar --- */
         --primary: 30 62% 42%;
         --primary-foreground: 0 0% 100%;
 
-        --secondary: 205 55% 92%;
+        --secondary: 0 0% 96%;
         --secondary-foreground: 0 0% 12%;
-        --muted: 210 25% 94%;
-        --muted-foreground: 0 0% 38%;
+        --muted: 0 0% 96%;
+        --muted-foreground: 0 0% 40%;
 
         /* --- Vurgu: sıcak krem --- */
         --accent: 38 78% 88%;
@@ -35,9 +35,9 @@
         --destructive: 0 72% 50%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 210 18% 88%;
-        --input: 210 18% 88%;
-        --ring: 205 85% 55%;
+        --border: 0 0% 90%;
+        --input: 0 0% 90%;
+        --ring: 30 62% 46%;
         /* Ölçekli köşe yarıçapı: referanstaki geniş yumuşak köşeler */
         --radius: 1.25rem;
         --radius-sm: 0.875rem;
@@ -45,17 +45,17 @@
         --radius-xl: 2rem;
 
         /* --- Sistem tokenları (bileşenlerde kullanılıyor) --- */
-        --sky: 205 95% 92%;
-        --sky-deep: 205 85% 55%;
-        --panel: 60 20% 98%;
-        --panel-2: 38 78% 96%;
+        --sky: 0 0% 97%;
+        --sky-deep: 205 85% 45%;
+        --panel: 0 0% 100%;
+        --panel-2: 38 60% 97%;
         --charcoal: 30 62% 42%;
         --charcoal-2: 30 58% 34%;
         --cream-tag: 42 95% 72%;
 
         --navy: 34 60% 27%; /* koyu bloklar: derin gold/bronz */
-        --sand-surface: 60 20% 98%; /* yüzen panel zemini */
-        --cloud: 205 100% 97%; /* en açık gökyüzü zemin */
+        --sand-surface: 0 0% 100%; /* panel zemini */
+        --cloud: 0 0% 98%; /* en açık nötr zemin */
         --gold: 38 82% 52%; /* sıcak vurgu */
         --teal-hover: 30 58% 34%;
         --success: 158 64% 34%;
@@ -86,11 +86,11 @@
         --font-body: "Figtree", "Segoe UI", Roboto, sans-serif;
         --font-mono: "Roboto Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
 
-        --shadow-soft: 0 10px 30px hsl(220 30% 10% / 0.1);
-        --shadow-card: 0 14px 40px hsl(220 30% 10% / 0.12);
-        --shadow-float: 0 26px 70px hsl(220 30% 10% / 0.16);
+        --shadow-soft: 0 1px 2px hsl(220 20% 10% / 0.06);
+        --shadow-card: 0 2px 8px hsl(220 20% 10% / 0.07);
+        --shadow-float: 0 4px 16px hsl(220 20% 10% / 0.07);
         --shadow-inset: inset 0 1px 0 hsl(0 0% 100% / 0.55);
-        --focus-ring: 0 0 0 4px hsl(205 85% 55% / 0.28);
+        --focus-ring: 0 0 0 4px hsl(30 62% 46% / 0.25);
 
         --gradient-wave: linear-gradient(
             90deg,
@@ -100,9 +100,7 @@
         );
         --sky-bg: linear-gradient(
             180deg,
-            hsl(200 100% 88%) 0%,
-            hsl(203 100% 93%) 34%,
-            hsl(205 100% 97%) 68%,
+            hsl(0 0% 98%) 0%,
             hsl(0 0% 100%) 100%
         );
     }
@@ -263,21 +261,9 @@
         outline: none;
         box-shadow: var(--focus-ring);
     }
-    /* Premium doku: geniş yüzeylerin "düz/dijital" görünmesini engelleyen
-       çok hafif grain katmanı (%3). Tıklamayı engellemez. */
+    /* Sade zemin: doku/grain katmanı kaldırıldı */
     body::after {
-        content: "";
-        position: fixed;
-        inset: 0;
-        z-index: 9999;
-        pointer-events: none;
-        opacity: 0.032;
-        mix-blend-mode: multiply;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-    }
-    .dark body::after {
-        mix-blend-mode: screen;
-        opacity: 0.045;
+        content: none;
     }
 }
 
@@ -296,36 +282,12 @@
         background-color: hsl(var(--background));
     }
     .sky-shell::before {
-        content: "";
-        position: absolute;
-        inset: 0 0 auto 0;
-        height: 1100px;
-        pointer-events: none;
-        opacity: 0.5;
-        background-image:
-            radial-gradient(
-                62% 42% at 12% 8%,
-                hsl(0 0% 100% / 0.9) 0%,
-                hsl(0 0% 100% / 0) 70%
-            ),
-            radial-gradient(
-                48% 34% at 82% 14%,
-                hsl(0 0% 100% / 0.75) 0%,
-                hsl(0 0% 100% / 0) 72%
-            ),
-            radial-gradient(
-                70% 40% at 50% 42%,
-                hsl(0 0% 100% / 0.65) 0%,
-                hsl(0 0% 100% / 0) 74%
-            );
+        content: none;
     }
-    .dark .sky-shell::before {
-        opacity: 0.14;
-    }
-    /* Yüzen panel: bölümleri taşıyan geniş yuvarlak yüzey */
+    /* Yüzen panel: sade beyaz yüzey, ince kenarlık */
     .panel-float {
-        @apply rounded-[var(--radius-xl)] border border-border/70 bg-card;
-        box-shadow: var(--shadow-float);
+        @apply rounded-[var(--radius-xl)] border border-border bg-card;
+        box-shadow: var(--shadow-card);
     }
     .panel-cream {
         @apply rounded-[var(--radius-lg)] border border-border/60;
@@ -389,18 +351,7 @@
         border-left: 6px solid hsl(var(--charcoal));
     }
     .hero-glow {
-        background:
-            radial-gradient(
-                1000px circle at 15% 0%,
-                hsl(0 0% 100% / 0.85),
-                transparent 60%
-            ),
-            radial-gradient(
-                800px circle at 85% 6%,
-                hsl(var(--sky-deep) / 0.16),
-                transparent 64%
-            ),
-            linear-gradient(180deg, hsl(var(--sky) / 0.85) 0%, transparent 76%);
+        background: none;
     }
     .marquee {
         overflow: hidden;
