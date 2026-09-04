@@ -528,7 +528,7 @@ export default function Home() {
                             </div>
                         </div>
                         <Button asChild variant="secondary" className="h-11 border border-border">
-                            <Link to="/gelismeler">Dubai'den Gelişmeler</Link>
+                            <Link to="/gelismeler">Dubai'den Haberler</Link>
                         </Button>
                     </div>
 
@@ -576,7 +576,7 @@ export default function Home() {
                 <div className="container-page">
                     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                         <div className="max-w-2xl">
-                            <span className="eyebrow">Dubai'den Gelişmeler</span>
+                            <span className="eyebrow">Dubai'den Haberler</span>
                             <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Vize ve seyahat rehberi</h2>
                         </div>
                         <Button asChild variant="secondary" className="h-11 border border-border">

@@ -11,7 +11,7 @@ export default function Articles() {
 
     useEffect(() => {
         setMeta(
-            "Dubai'den Gelişmeler | Vize ve Seyahat Rehberi | Dubai Vize Online",
+            "Dubai'den Haberler | Vize ve Seyahat Rehberi | Dubai Vize Online",
             "Dubai vize kuralları, pasaport süresi, vize uzatma, seyahat sigortası ve ret sebepleri hakkında güncel rehber yazıları."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
@@ -20,7 +20,7 @@ export default function Articles() {
     return (
         <div data-testid="articles-page">
             <PageHeader
-                eyebrow="Dubai'den Gelişmeler"
+                eyebrow="Dubai'den Haberler"
                 title="Vize ve seyahat rehberi"
                 description="Başvuru öncesi bilmeniz gerekenleri, güncel kuralları ve sık yapılan hataları danışman ekibimiz derledi."
             />

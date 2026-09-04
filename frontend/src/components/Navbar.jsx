@@ -57,7 +57,7 @@ const MENU_GROUPS = [
     {
         label: "Kurumsal",
         items: [
-            { to: "/gelismeler", label: "Gelişmeler", icon: Newspaper },
+            { to: "/gelismeler", label: "Dubai'den Haberler", icon: Newspaper },
             { to: "/hakkimizda", label: "Hakkımızda", icon: Info },
             { to: "/iletisim", label: "İletişim", icon: Mail },
         ],

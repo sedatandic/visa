@@ -97,7 +97,7 @@ export default function ArticleDetail() {
                             <BreadcrumbSeparator />
                             <BreadcrumbItem>
                                 <BreadcrumbLink asChild>
-                                    <Link to="/gelismeler" data-testid="breadcrumb-articles">Dubai'den Gelişmeler</Link>
+                                    <Link to="/gelismeler" data-testid="breadcrumb-articles">Dubai'den Haberler</Link>
                                 </BreadcrumbLink>
                             </BreadcrumbItem>
                             <BreadcrumbSeparator />
