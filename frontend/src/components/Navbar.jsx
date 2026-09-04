@@ -107,7 +107,7 @@ export const Navbar = () => {
             <div className="container-page flex h-[92px] items-center justify-between gap-4">
                 <Link
                     to="/"
-                    className="flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline-none"
+                    className="flex shrink-0 items-end gap-2.5 rounded-lg focus-visible:outline-none"
                     data-testid="navbar-logo-link"
                 >
                     <BrandMark />
