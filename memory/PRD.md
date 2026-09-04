@@ -149,3 +149,10 @@ GET /api/admin/insurance-report. Admin UI: `/admin/sigorta` (AdminInsurance.jsx)
 Test: iteration_58 backend 8/8 + frontend %100 (tests/test_insurance_automation.py).
 SINIR: seyahatpolicesi.com açık API sunmuyor; kesim adımı tek tık + PDF yükleme (yarı otomatik).
 Tam otomasyon için sağlayıcı API/portal hesabı gerekir.
+
+## 2026-06-04 · Aylık kâr grafiği
+GET /api/admin/profit-monthly?months=12 → ay bazlı sigorta/eSIM ciro, maliyet ve kâr
+(`insurance_tasks.monthly_profit`). Admin → Sigorta Poliçeleri sayfasının üstünde
+recharts yığılmış çubuk grafik (`components/MonthlyProfitChart.jsx`).
+Ürün kartlarında artık eSIM dahil tüm ürünler için ₺ maliyet girilebiliyor (cost_try),
+böylece eSIM kârı da gerçek marjla hesaplanır (maliyet girilmezse kâr = ciro).

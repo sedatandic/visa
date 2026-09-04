@@ -231,7 +231,7 @@ const ProductCard = ({ product, onUpdate }) => {
         try {
             const body = isTry
                 ? { price_try: Number(price), cost_try: Number(cost || 0) }
-                : { price_usd: Number(price) };
+                : { price_usd: Number(price), cost_try: Number(cost || 0) };
             const { data } = await api.patch(`/admin/products/${product.id}`, body);
             onUpdate(data);
             toast.success(`${data.name} fiyatı güncellendi.`);
@@ -247,9 +247,7 @@ const ProductCard = ({ product, onUpdate }) => {
             <p className="font-heading text-sm font-bold">{product.name}</p>
             <p className="mt-1 text-xs text-muted-foreground">
                 {formatMoney(product.price, product.currency)} · {product.kind_label}
-                {isTry && product.cost_try
-                    ? ` · maliyet ${formatMoney(product.cost_try, "TRY")}`
-                    : ""}
+                {product.cost_try ? ` · maliyet ${formatMoney(product.cost_try, "TRY")}` : ""}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
                 <input
@@ -260,18 +258,14 @@ const ProductCard = ({ product, onUpdate }) => {
                     data-testid={`product-price-input-${product.id}`}
                 />
                 <span className="text-sm text-muted-foreground">{isTry ? "₺ satış" : "$"}</span>
-                {isTry && (
-                    <>
-                        <input
-                            type="number"
-                            value={cost}
-                            onChange={(e) => setCost(e.target.value)}
-                            className="h-10 w-24 rounded-lg border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                            data-testid={`product-cost-input-${product.id}`}
-                        />
-                        <span className="text-sm text-muted-foreground">₺ maliyet</span>
-                    </>
-                )}
+                <input
+                    type="number"
+                    value={cost}
+                    onChange={(e) => setCost(e.target.value)}
+                    className="h-10 w-24 rounded-lg border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    data-testid={`product-cost-input-${product.id}`}
+                />
+                <span className="text-sm text-muted-foreground">₺ maliyet</span>
                 <Button
                     onClick={save}
                     disabled={busy}

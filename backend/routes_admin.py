@@ -1127,6 +1127,13 @@ async def admin_issue_policy(task_id: str, payload: dict, admin: dict = Depends(
     return result
 
 
+@router.get("/admin/profit-monthly")
+async def admin_profit_monthly(months: int = 12, admin: dict = Depends(require_admin)) -> dict:
+    from insurance_tasks import monthly_profit
+
+    return await monthly_profit(months)
+
+
 @router.get("/admin/insurance-report")
 async def admin_insurance_report(admin: dict = Depends(require_admin)) -> dict:
     from insurance_tasks import profit_report

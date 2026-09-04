@@ -5,6 +5,7 @@ import { api, apiError } from "../lib/api";
 import { formatDateTime, formatMoney } from "../lib/site";
 import { AdminLayout } from "../components/AdminLayout";
 import { FileDropzone } from "../components/FileDropzone";
+import { MonthlyProfitChart } from "../components/MonthlyProfitChart";
 import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
 
@@ -118,17 +119,20 @@ const TaskRow = ({ task, onIssued }) => {
 export default function AdminInsurance() {
     const [tasks, setTasks] = useState([]);
     const [report, setReport] = useState(null);
+    const [monthly, setMonthly] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const load = async () => {
         setLoading(true);
         try {
-            const [tasksRes, reportRes] = await Promise.all([
+            const [tasksRes, reportRes, monthlyRes] = await Promise.all([
                 api.get("/admin/insurance-tasks"),
                 api.get("/admin/insurance-report"),
+                api.get("/admin/profit-monthly?months=12"),
             ]);
             setTasks(tasksRes.data.items || []);
             setReport(reportRes.data);
+            setMonthly(monthlyRes.data);
         } catch (err) {
             toast.error(apiError(err, "Veriler yüklenemedi."));
         } finally {
@@ -162,6 +166,12 @@ export default function AdminInsurance() {
                     <RefreshCw className="mr-2 h-4 w-4" /> Yenile
                 </Button>
             </div>
+
+            {monthly && (
+                <div className="mt-6">
+                    <MonthlyProfitChart data={monthly} />
+                </div>
+            )}
 
             {report && (
                 <div className="card-surface mt-6 overflow-hidden" data-testid="insurance-profit-panel">
