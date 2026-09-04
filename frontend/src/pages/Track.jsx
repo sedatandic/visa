@@ -218,7 +218,7 @@ export default function Track() {    const [searchParams] = useSearchParams();
 
             <section className="section">
                 <div className="container-page">
-                  <div className={result ? "" : "grid items-start gap-6 lg:grid-cols-[1.15fr_0.85fr]"}>
+                  <div className={result ? "" : "grid items-start gap-6 lg:grid-cols-2"}>
                     <form onSubmit={search} className="card-surface p-6 sm:p-8" data-testid="tracking-lookup-form">
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div className="space-y-2">
