@@ -139,8 +139,8 @@ export const Navbar = () => {
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
-                            align="start"
-                            className="w-64 rounded-xl p-1.5"
+                            align="center"
+                            className="w-auto min-w-[12rem] rounded-xl p-1.5"
                             data-testid="navbar-more-menu"
                         >
                             {MENU_GROUPS.map((group, gi) => (
