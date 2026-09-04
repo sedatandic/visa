@@ -332,7 +332,12 @@ SERVICES = [
 TOURS = []
 
 PARTNERS = [
-    "Emirates", "flydubai", "Turkish Airlines", "Pegasus", "Atlasjet Global", "SunExpress",
+    {"name": "Emirates", "logo": "/brand/partners/emirates.png"},
+    {"name": "flydubai", "logo": "/brand/partners/flydubai.png"},
+    {"name": "Turkish Airlines", "logo": "/brand/partners/turkish-airlines.png"},
+    {"name": "Pegasus", "logo": "/brand/partners/pegasus.png"},
+    {"name": "AJet", "logo": "/brand/partners/ajet.png"},
+    {"name": "SunExpress", "logo": "/brand/partners/sunexpress.png"},
 ]
 
 TESTIMONIALS = [

@@ -542,14 +542,32 @@ export default function Home() {
                             Seyahatiniz için sektörün önde gelen havayolu ve hizmet sağlayıcılarıyla çalışıyoruz.
                         </p>
                         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                            {(content?.partners || []).map((p) => (
-                                <div
-                                    key={p}
-                                    className="flex h-16 items-center justify-center rounded-lg border border-border bg-card px-3 text-center font-heading text-sm font-semibold text-muted-foreground"
-                                >
-                                    {p}
-                                </div>
-                            ))}
+                            {(content?.partners || []).map((p) => {
+                                const partner = typeof p === "string" ? { name: p } : p;
+                                return (
+                                    <div
+                                        key={partner.name}
+                                        className="flex h-16 items-center justify-center rounded-lg border border-border bg-card px-4 text-center font-heading text-sm font-semibold text-muted-foreground"
+                                        data-testid={`partner-${partner.name}`}
+                                    >
+                                        {partner.logo ? (
+                                            <img
+                                                src={partner.logo}
+                                                alt={partner.name}
+                                                className="max-h-9 w-auto max-w-full object-contain"
+                                                loading="lazy"
+                                                onError={(e) => {
+                                                    e.currentTarget.replaceWith(
+                                                        document.createTextNode(partner.name),
+                                                    );
+                                                }}
+                                            />
+                                        ) : (
+                                            partner.name
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
