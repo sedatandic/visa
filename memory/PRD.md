@@ -225,3 +225,29 @@ importu fonksiyon içi lazy import (insurance_tasks.py:232,257 · routes_store.p
 - **P1 Gerçek havale bilgileri** (`site_settings.bank_transfer` hâlâ örnek: VizeAtlas Turizm /
   Örnek Bank / TR00...) → Admin → Havale
 - **P1 Gerçek WhatsApp/Instagram/Google yorum linkleri** (DB'de test numarası 905331234567)
+
+## 2026-06-05 · İçerik tekrarı temizliği + çelişki düzeltmeleri (kullanıcı denetimi)
+Kullanıcı siteyi gezip tekrar ve çelişki raporu verdi. Uygulananlar:
+- **Vize kartı metinleri tek şablona alındı** (kullanıcı: "diğer hizmetler de 30 günlük vize
+  gibi yaz"): 8 aktif vize tipinin tamamı artık aynı desende — açıklama "... bu vize uygundur."
+  kalıbı + tam 5 özellik, son ikisi her kartta "Uzman danışman desteği" ve
+  "Dijital vize teslimi". `content.py` VISA_TYPES güncellendi ve
+  `scripts/sync_visa_copy.py` ile `visa_types` koleksiyonuna senkronlandı
+  (DB, statik içeriği ezdiği için ikisi de gerekliydi).
+- **Rehber sayfaları tekilleştirildi** (~%70 ortak metin → yalnız vizeye özel içerik):
+  `visa_guides.py` COMMON_FAQ kaldırıldı (genel 4 soru artık sadece /sss'te),
+  `build_guide` artık `photo_rules` ve `process_steps` döndürmüyor.
+  `VisaGuide.jsx`: belge kartları kompakt satıra indi + /gerekli-belgeler linki,
+  fotoğraf kuralları bloğu ve 4 adımlı süreç ızgarası kaldırıldı,
+  "Danışman notları" kendi bölümü oldu (ana sayfa süreç linkiyle), SSS altına /sss linki.
+- **Çelişkiler giderildi**: çalışma saati tek kaynak (company.working_hours) —
+  `Faq.jsx` sabit "09:00-19:00" kaldırıldı; sosyal kanıt tek kaynak —
+  `About.jsx` sabit "4.500+" yerine review_summary (5.678+ / %96),
+  `content.py` REVIEW_SUMMARY.total_applications 4500→5678; ekspres süresi her yerde
+  "yaklaşık 8 mesai saati" (yorumdaki "20 saat" düzeltildi);
+  `Services.jsx` başlığı "Tek işimiz vize" → "Odağımız vize" (eSIM/sigorta satışıyla çelişiyordu).
+- **Yanlış alarm**: kullanıcının gördüğü test verileri (Test Turizm A.Ş., test@vizeatlas.com,
+  0850 123 45 67) ne kodda ne DB'de var (DB unvan: "Dubai Vize Online Ltd."); farklı fiyatlar
+  (9.870/10.860/2.710) da eski kurla hesaplanmış önbellek. Kullanıcı deploy edilmiş/eski
+  sürümü geziyordu — canlıya yeniden deploy gerekiyor.
+- Test: iteration_64 backend %100 + frontend %100 (8 düzeltmenin tamamı + ana sayfa regresyonu).

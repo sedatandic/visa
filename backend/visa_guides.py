@@ -5,29 +5,9 @@ Turkce, uzun-form rehber icerigi. Icerikler `visa_types` koleksiyonundaki
 `guide` alani ile admin panelinden ezilebilir (override).
 """
 
-from content import PHOTO_RULES, PROCESS_STEPS, REQUIRED_DOCUMENTS, VISA_TYPES
+from content import REQUIRED_DOCUMENTS, VISA_TYPES
 
 BASE_PATH = "/dubai-vizesi"
-
-# Tum rehberlerde tekrar eden ortak SSS'ler
-COMMON_FAQ = [
-    {
-        "q": "Dubai vizesi başvurusu için pasaportumun ne kadar geçerli olması gerekir?",
-        "a": "Pasaportunuzun Dubai'den dönüş tarihinizden itibaren en az 6 ay geçerli olması gerekir. Süresi kısa olan pasaportlarla yapılan başvurular reddedilebilir; bu nedenle başvurudan önce pasaport geçerlilik tarihinizi mutlaka kontrol edin.",
-    },
-    {
-        "q": "Vize başvurumu ne kadar önce yapmalıyım?",
-        "a": "Standart başvurularda sonuç ortalama 2 iş gününde çıktığı için seyahatinizden en az 7-10 gün önce başvurmanızı öneririz. Uçuşa 48 saatten az kaldıysa ekspres hizmet ile başvurunuzu önceliklendirebiliriz.",
-    },
-    {
-        "q": "Ödemeyi nasıl yapabilirim?",
-        "a": "Kredi/banka kartı ile güvenli ödeme altyapısı üzerinden ya da havale/EFT ile ödeyebilirsiniz. Havale seçeneğinde banka bilgileri ve açıklamaya yazacağınız referans numarası başvuru sonunda ekranda ve e-postanızda yer alır.",
-    },
-    {
-        "q": "Başvurum reddedilirse ücret iade edilir mi?",
-        "a": "Resmî başvuru harcı yetkili merciler tarafından tahsil edildiğinden red durumunda harç iadesi yapılmaz. Hizmet bedelimize ilişkin koşulları İade ve İptal Koşulları sayfamızda ayrıntılı olarak bulabilirsiniz.",
-    },
-]
 
 GUIDES = {
     "30-gun-tek-giris": {
@@ -442,7 +422,8 @@ def build_guide(slug: str, visa_override: dict | None = None, guide_override: di
     visa.pop("_id", None)
     content = {**guide, **(guide_override or {})}
 
-    faqs = list(content.get("faqs") or []) + COMMON_FAQ
+    # Rehberde yalnizca o vize tipine ozel sorular kalir; genel sorular /sss sayfasinda.
+    faqs = list(content.get("faqs") or [])
 
     return {
         "slug": slug,
@@ -458,7 +439,5 @@ def build_guide(slug: str, visa_override: dict | None = None, guide_override: di
         "tips": content.get("tips", []),
         "faqs": faqs,
         "documents": _documents_for(visa),
-        "photo_rules": PHOTO_RULES,
-        "process_steps": PROCESS_STEPS,
         "related": _related(slug),
     }

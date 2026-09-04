@@ -7,21 +7,23 @@ import { TursabBadge } from "../components/TursabBadge";
 import { PageHeader } from "../components/SiteLayout";
 import { Button } from "../components/ui/button";
 
-const STATS = [
-    { icon: Users, value: "4.500+", label: "Tamamlanan başvuru" },
-    { icon: Award, value: "%98", label: "Onay oranı" },
-    { icon: Globe2, value: "7 yıl", label: "Sektör deneyimi" },
+const STATS_META = [
+    { icon: Users, key: "applications", label: "Tamamlanan başvuru" },
+    { icon: Award, key: "recommend", label: "Tavsiye oranı" },
+    { icon: Globe2, key: "experience", label: "Sektör deneyimi" },
 ];
 
 export default function About() {
     const [agency, setAgency] = useState(null);
     const [company, setCompany] = useState(null);
+    const [summary, setSummary] = useState(null);
 
     useEffect(() => {
         api.get("/content/site")
             .then(({ data }) => {
                 setAgency(data.agency_info || null);
                 setCompany(data.company || null);
+                setSummary(data.review_summary || null);
             })
             .catch(() => {});
     }, []);
@@ -63,10 +65,16 @@ export default function About() {
                         </div>
 
                         <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                            {STATS.map(({ icon: Icon, value, label }) => (
-                                <div key={label} className="card-surface p-5">
+                            {STATS_META.map(({ icon: Icon, key, label }) => (
+                                <div key={key} className="card-surface p-5" data-testid={`about-stat-${key}`}>
                                     <Icon className="h-5 w-5 text-primary" />
-                                    <p className="mt-3 font-heading text-2xl font-bold">{value}</p>
+                                    <p className="mt-3 font-heading text-2xl font-bold">
+                                        {key === "applications"
+                                            ? `${Number(summary?.total_applications || 0).toLocaleString("tr-TR")}+`
+                                            : key === "recommend"
+                                              ? `%${summary?.recommend_rate ?? 0}`
+                                              : "7 yıl"}
+                                    </p>
                                     <p className="text-xs text-muted-foreground">{label}</p>
                                 </div>
                             ))}

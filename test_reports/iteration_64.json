@@ -1,0 +1,16 @@
+{
+  "summary": "Verified all 8 bug fixes for content de-duplication and cross-page consistency on the Dubai Vize Online site. Backend /api/visa-types returns 8 active types, each with exactly 5 features ending in 'Uzman danışman desteği' and 'Dijital vize teslimi'. Guide payload no longer contains photo_rules/process_steps and generic FAQs are stripped. Frontend: all 8 visa cards on /vize-tipleri (4 tabs) follow the identical 30-day pattern; prices are consistent across /vize-tipleri, /dubai-vizesi/60-gun-tek-giris and home showcase (60_single=9.880 ₺, 30_child=2.470 ₺). Guide page has no old 4-step grid, no photo rules block, has compact doc rows, guide-documents-link, tips section with guide-process-link, and guide-faq-all-link. /sss and footer use single-source hours ('Hafta içi 09:00 - 19:00 · Cumartesi 10:00 - 16:00'); no 09:00-18:00 found. /hakkimizda about-stat-applications=5.678+ and about-stat-recommend=%96; no '4.500+' anywhere. Express wording is '~8 mesai saati' everywhere; no '24 saat' or '20 saat' found on home, /vize-tipleri or guide pages. Home page regression: all restructured sections present and tracking form navigates to /takip?kod=ABC12345. Guide apply buttons and CTA correctly link to /basvuru?vize=<id>. No mocked test data (Test Turizm, test@vizeatlas, 0850 123) found in code or rendered pages.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "not needed for these flows",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 8 requested bug fixes verified via API + browser automation. Prices verified via /api/visa-types (USD*FX): visa_60_single=9880, visa_30_child=2470, visa_30_single=5190, visa_transit_48=3460. Guide payload confirmed clean via /api/visa-guides/30-gun-tek-giris. UI selectors used: pricing-tab-{single,multiple,child,other}, visa-card-<id>, visa-guide-price, visa-guide-apply-button, visa-guide-cta-bottom, guide-doc-*, guide-documents-link, visa-guide-tips, guide-process-link, guide-faq-all-link, about-stat-applications, about-stat-recommend, landing-* sections.",
+  "rca of the issue": "N/A - no regressions found"
+}

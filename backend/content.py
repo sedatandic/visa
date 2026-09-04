@@ -51,7 +51,7 @@ VISA_TYPES = [
             "Tek giriş",
             "Online başvuru",
             "Uzman danışman desteği",
-            "Öncelikli başvuru takibi",
+            "Dijital vize teslimi",
         ],
     },
     {
@@ -70,13 +70,13 @@ VISA_TYPES = [
         "processing_days": "3-5 iş günü",
         "popular": True,
         "order": 3,
-        "description": "30 gün içinde Umman, Katar gibi ülkelere geçip Dubai'ye tekrar döneceklerin tercihi.",
+        "description": "30 gün içinde Umman, Katar gibi ülkelere geçip Dubai'ye tekrar dönecekseniz bu vize uygundur.",
         "features": [
             "30 gün kalış hakkı",
             "Sınırsız giriş-çıkış",
             "Online başvuru",
             "Uzman danışman desteği",
-            "Öncelikli başvuru takibi",
+            "Dijital vize teslimi",
         ],
     },
     {
@@ -95,13 +95,13 @@ VISA_TYPES = [
         "processing_days": "3-5 iş günü",
         "popular": False,
         "order": 4,
-        "description": "Sık seyahat eden iş insanları için en kapsamlı seçenek.",
+        "description": "Dubai'ye 60 gün içinde birden fazla giriş yapacaksanız bu vize uygundur.",
         "features": [
             "60 gün kalış hakkı",
             "Sınırsız giriş-çıkış",
             "Online başvuru",
-            "Özel danışman ataması",
-            "Öncelikli başvuru takibi",
+            "Uzman danışman desteği",
+            "Dijital vize teslimi",
         ],
     },
     {
@@ -120,12 +120,13 @@ VISA_TYPES = [
         "processing_days": "ortalama 2 iş günü",
         "popular": True,
         "order": 5,
-        "description": "18 yaş altı çocukların aileleriyle birlikte 1-30 gün tek girişli seyahati için indirimli vize.",
+        "description": "Çocuğunuzun seyahati 1-30 gün arasıysa ve ailesiyle tek seferlik gidiş-dönüş yapacaksa bu indirimli vize uygundur.",
         "features": [
-            "18 yaş altı için indirimli",
             "30 gün kalış hakkı",
-            "Ebeveyn başvurusuyla birlikte",
+            "Tek giriş · 18 yaş altı indirimli",
             "Online başvuru",
+            "Uzman danışman desteği",
+            "Dijital vize teslimi",
         ],
     },
     {
@@ -144,12 +145,13 @@ VISA_TYPES = [
         "processing_days": "3-5 iş günü",
         "popular": False,
         "order": 6,
-        "description": "18 yaş altı çocukların aileleriyle birlikte 1-60 gün tek girişli seyahati için indirimli vize.",
+        "description": "Çocuğunuzun seyahati 1-60 gün arasıysa ve ailesiyle tek seferlik gidiş-dönüş yapacaksa bu indirimli vize uygundur.",
         "features": [
-            "18 yaş altı için indirimli",
             "60 gün kalış hakkı",
-            "Ebeveyn başvurusuyla birlikte",
+            "Tek giriş · 18 yaş altı indirimli",
             "Online başvuru",
+            "Uzman danışman desteği",
+            "Dijital vize teslimi",
         ],
     },
     {
@@ -168,12 +170,13 @@ VISA_TYPES = [
         "processing_days": "2-4 iş günü",
         "popular": False,
         "order": 7,
-        "description": "Dubai'deyken ülkeden çıkış yapmadan kalış sürenizi 30 gün uzatın. Uzatma en fazla 2 kez yapılabilir.",
+        "description": "Dubai'deyken ülkeden çıkış yapmadan 30 gün daha kalmak istiyorsanız bu hizmet uygundur.",
         "features": [
-            "Ülkeden çıkmadan 30 gün ek süre",
-            "En fazla 2 kez uygulanabilir",
+            "30 gün ek kalış hakkı",
+            "Ülkeden çıkmadan uzatma · en fazla 2 kez",
             "Online başvuru",
             "Uzman danışman desteği",
+            "Dijital vize teslimi",
         ],
     },
     {
@@ -192,12 +195,13 @@ VISA_TYPES = [
         "processing_days": "1-2 iş günü",
         "popular": False,
         "order": 8,
-        "description": "BAE üzerinden başka bir ülkeye aktarma yapacaklar için 48 saat şehir çıkışına izin veren kısa süreli vize.",
+        "description": "BAE üzerinden başka bir ülkeye aktarma yapacaksanız ve 48 saat şehre çıkmak istiyorsanız bu vize uygundur.",
         "features": [
             "48 saat kalış hakkı",
-            "Aktarmalı uçuşlar için",
-            "Şehre çıkış imkânı",
-            "Hızlı sonuçlanma",
+            "Tek giriş · aktarmada şehre çıkış",
+            "Online başvuru",
+            "Uzman danışman desteği",
+            "Dijital vize teslimi",
         ],
     },
 ]
@@ -372,7 +376,7 @@ TESTIMONIALS = [
         "visa": "Ekspres · 30 Gün",
         "date": "2026-06-09",
         "verified": True,
-        "text": "Uçuşuma 2 gün kalmıştı, ekspres hizmeti aldım. Vizem 20 saat içinde elimdeydi. Gece yarısı yazdığım mesaja bile dönüş yaptılar.",
+        "text": "Uçuşuma 2 gün kalmıştı, ekspres hizmeti aldım. Vizem yaklaşık 8 mesai saatinde elimdeydi. Gece yarısı yazdığım mesaja bile dönüş yaptılar.",
         "rating": 5,
     },
     {
@@ -400,7 +404,7 @@ TESTIMONIALS = [
 REVIEW_SUMMARY = {
     "average": 4.9,
     "total_reviews": 1284,
-    "total_applications": 4500,
+    "total_applications": 5678,
     "recommend_rate": 98,
     "highlights": [
         {"label": "Zamanında sonuç", "value": 99},

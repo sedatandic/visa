@@ -24,7 +24,7 @@ export default function Services() {
         <div data-testid="services-page">
             <PageHeader
                 eyebrow="Hizmetlerimiz"
-                title="Tek işimiz vize; baştan sona yanınızdayız"
+                title="Odağımız vize; baştan sona yanınızdayız"
                 description="Başvuru hazırlığından evrak kontrolüne, ekspres işlemden vize uzatmaya kadar tüm süreç uzman danışmanlarımız tarafından yürütülür."
             />
 

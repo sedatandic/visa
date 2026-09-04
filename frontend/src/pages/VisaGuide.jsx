@@ -290,66 +290,50 @@ export default function VisaGuide() {
                         <span className="eyebrow">Gerekli Belgeler</span>
                         <h2 className="mt-3 text-2xl font-bold">Bu başvuru için gereken belgeler</h2>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Belgelerinizi telefonunuzla fotoğraflayıp yükleyebilirsiniz. Yüklediğiniz her
-                            evrak başvuru gönderilmeden önce danışmanlarımız tarafından kontrol edilir.
+                            Belgelerinizi telefonunuzla fotoğraflayıp yükleyebilirsiniz. Ayrıntılı liste ve
+                            fotoğraf kuralları Gerekli Belgeler sayfasındadır.
                         </p>
                     </div>
-                    <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-7 grid gap-4 sm:grid-cols-2">
                         {(guide.documents || []).map((d) => (
-                            <div key={d.key} className="card-surface p-5" data-testid={`guide-doc-${d.key}`}>
-                                <div className="flex items-center justify-between gap-3">
-                                    <FileText className="h-5 w-5 text-primary" />
-                                    <span
-                                        className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                                            d.required
-                                                ? "border-[hsl(var(--brand-copper)/0.3)] bg-[hsl(var(--brand-copper)/0.08)] text-[hsl(var(--brand-copper))]"
-                                                : "border-border bg-muted text-muted-foreground"
-                                        }`}
-                                    >
-                                        {d.required ? "Zorunlu" : "Opsiyonel"}
-                                    </span>
+                            <div
+                                key={d.key}
+                                className="flex items-start gap-3 rounded-xl border border-border bg-card p-4"
+                                data-testid={`guide-doc-${d.key}`}
+                            >
+                                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold">
+                                        {d.title}
+                                        <span
+                                            className={`ml-2 align-middle text-[11px] font-bold ${
+                                                d.required
+                                                    ? "text-[hsl(var(--brand-copper))]"
+                                                    : "text-muted-foreground"
+                                            }`}
+                                        >
+                                            {d.required ? "Zorunlu" : "Opsiyonel"}
+                                        </span>
+                                    </p>
                                 </div>
-                                <h3 className="mt-3 font-heading text-base font-bold">{d.title}</h3>
-                                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{d.detail}</p>
                             </div>
                         ))}
                     </div>
 
-                    <div className="mt-8 rounded-xl border border-border bg-card p-6">
-                        <h3 className="font-heading text-base font-bold">Vesikalık fotoğraf kuralları</h3>
-                        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-                            {(guide.photo_rules || []).map((r) => (
-                                <li key={r} className="flex items-start gap-2 text-sm leading-6">
-                                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> {r}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    <Button asChild variant="secondary" className="mt-7 h-11 border border-border">
+                        <Link to="/gerekli-belgeler" data-testid="guide-documents-link">
+                            Belge detayları ve fotoğraf kuralları <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
                 </div>
             </section>
 
-            {/* PROCESS */}
-            <section className="section" data-testid="visa-guide-process">
-                <div className="container-page">
-                    <div className="max-w-2xl">
-                        <span className="eyebrow">Başvuru Süreci</span>
-                        <h2 className="mt-3 text-2xl font-bold">Adım adım nasıl ilerliyor?</h2>
-                    </div>
-                    <ol className="mt-7 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-                        {(guide.process_steps || []).map((s) => (
-                            <li key={s.step} className="card-surface p-5" data-testid={`guide-step-${s.step}`}>
-                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 font-heading text-base font-extrabold text-primary">
-                                    {s.step}
-                                </span>
-                                <h3 className="mt-3 font-heading text-base font-bold">{s.title}</h3>
-                                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{s.detail}</p>
-                            </li>
-                        ))}
-                    </ol>
-
-                    {(guide.tips || []).length > 0 && (
-                        <div className="mt-9 rounded-xl border border-primary/25 bg-primary/5 p-6" data-testid="visa-guide-tips">
-                            <h3 className="font-heading text-base font-bold">Danışman notları</h3>
+            {/* CONSULTANT NOTES */}
+            {(guide.tips || []).length > 0 && (
+                <section className="section" data-testid="visa-guide-tips">
+                    <div className="container-page">
+                        <div className="max-w-3xl rounded-xl border border-primary/25 bg-primary/5 p-6">
+                            <h2 className="font-heading text-lg font-bold">Danışman notları</h2>
                             <ul className="mt-3 space-y-2.5">
                                 {guide.tips.map((t) => (
                                     <li key={t} className="flex items-start gap-2.5 text-sm leading-6">
@@ -358,10 +342,17 @@ export default function VisaGuide() {
                                     </li>
                                 ))}
                             </ul>
+                            <p className="mt-5 text-sm text-muted-foreground">
+                                Başvuru 4 adımda tamamlanır: bilgiler → belgeler → ödeme → sonuç.{" "}
+                                <Link to="/" className="font-semibold text-primary underline-offset-4 hover:underline" data-testid="guide-process-link">
+                                    Süreci ana sayfada görün
+                                </Link>
+                                .
+                            </p>
                         </div>
-                    )}
-                </div>
-            </section>
+                    </div>
+                </section>
+            )}
 
             {/* FAQ */}
             <section
@@ -386,6 +377,13 @@ export default function VisaGuide() {
                             </AccordionItem>
                         ))}
                     </Accordion>
+                    <p className="mt-6 text-sm text-muted-foreground">
+                        Genel sorular (ödeme, pasaport geçerliliği, iade koşulları){" "}
+                        <Link to="/sss" className="font-semibold text-primary underline-offset-4 hover:underline" data-testid="guide-faq-all-link">
+                            Sıkça Sorulan Sorular
+                        </Link>{" "}
+                        sayfasında.
+                    </p>
                 </div>
             </section>
 

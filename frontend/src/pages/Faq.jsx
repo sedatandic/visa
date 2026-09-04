@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { api } from "../lib/api";
 import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
+import { useContact } from "../lib/contact";
 import { Button } from "../components/ui/button";
 import {
     Accordion,
@@ -13,6 +14,7 @@ import {
 } from "../components/ui/accordion";
 
 export default function Faq() {
+    const contact = useContact();
     const [content, setContent] = useState(null);
 
     useEffect(() => {
@@ -49,7 +51,7 @@ export default function Faq() {
                         <div>
                             <h2 className="font-heading text-lg font-bold">Sorunuzun cevabını bulamadınız mı?</h2>
                             <p className="mt-1.5 text-sm text-muted-foreground">
-                                Danışman ekibimiz hafta içi 09:00-19:00 arası yanınızda.
+                                Danışman ekibimiz {contact.workingHours} saatleri arasında yanınızda.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-3">
