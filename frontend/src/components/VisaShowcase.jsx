@@ -74,7 +74,7 @@ export const VisaShowcase = () => {
                     {visas === null ? (
                         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {[0, 1, 2, 3, 4, 5].map((i) => (
-                                <Skeleton key={i} className="h-[320px] rounded-[var(--radius-lg)]" />
+                                <Skeleton key={i} className="h-[190px] rounded-[var(--radius-lg)]" />
                             ))}
                         </div>
                     ) : cards.length === 0 ? (
@@ -101,16 +101,13 @@ export const VisaShowcase = () => {
                                         data-testid={`showcase-card-${visa.id}`}
                                         aria-label={`${visa.name} ile başvuruya başla`}
                                     >
-                                        <span className="relative block overflow-hidden">
-                                            <img
-                                                src={visa.image}
-                                                alt={visa.name}
-                                                className="h-[170px] w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                                                loading="lazy"
-                                            />
-                                            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[hsl(var(--charcoal))]">
+                                        <span className="flex items-center justify-between gap-3 border-b border-border bg-[hsl(var(--cloud))] px-4 py-3">
+                                            <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[hsl(var(--charcoal))]">
                                                 <Icon className="h-3 w-3" aria-hidden="true" />
                                                 {visa.tag}
+                                            </span>
+                                            <span className="tabular text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                {formatUsd(visa.price_usd)}
                                             </span>
                                         </span>
 
@@ -122,7 +119,7 @@ export const VisaShowcase = () => {
                                                 {visa.name}
                                             </span>
 
-                                            <span className="mt-3 flex items-end justify-between gap-3 border-t border-border pt-3">
+                                            <span className="mt-4 flex items-end justify-between gap-3 border-t border-border pt-3">
                                                 <span>
                                                     <span
                                                         className="tabular block font-heading text-xl font-extrabold leading-none text-foreground"
@@ -131,7 +128,7 @@ export const VisaShowcase = () => {
                                                         {formatMoney(visa.price, visa.currency)}
                                                     </span>
                                                     <span className="mt-1 block text-[11px] text-muted-foreground">
-                                                        kişi başı · {formatUsd(visa.price_usd)}
+                                                        kişi başı · tek seferlik
                                                     </span>
                                                 </span>
                                                 <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground transition-transform duration-200 group-hover:translate-x-0.5">
