@@ -40,7 +40,7 @@ export default function VisaTypes() {
                 description="Kalış süreniz, giriş sayınız ve yolcuların yaşına göre uygun vizeyi seçebilirsiniz. Tüm fiyatlar kişi başı ve tek seferliktir."
             />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
                     <div className="mb-6 flex flex-wrap items-center gap-3">
                         <FxNote />

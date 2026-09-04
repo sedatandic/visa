@@ -21,7 +21,7 @@ export const PageHeader = ({ eyebrow, title, description, children }) => (
                     {title}
                 </h1>
                 {description && (
-                    <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+                    <p className="mt-4 max-w-4xl text-base leading-7 text-muted-foreground">
                         {description}
                     </p>
                 )}
