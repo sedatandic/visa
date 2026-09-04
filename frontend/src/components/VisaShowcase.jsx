@@ -55,13 +55,12 @@ export const VisaShowcase = () => {
                 <div className="panel-float px-5 py-10 sm:px-8 sm:py-12">
                     <div className="flex flex-wrap items-end justify-between gap-4">
                         <div className="max-w-2xl">
-                            <span className="eyebrow">Vize tipleri</span>
+                            <span className="eyebrow">Vize türleri</span>
                             <h2 className="mt-3 font-heading text-2xl font-extrabold sm:text-3xl">
-                                En çok tercih edilen Dubai vizeleri
+                                Dubai vize türleri ve fiyatları
                             </h2>
                             <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-                                Kartlardan birine dokunun; başvuru formu seçtiğiniz vize türüyle açılır. Fiyatlar ve
-                                tüm seçenekler için hizmet bedelleri sayfasına göz atabilirsiniz.
+                                Kartlardan birine dokunun; başvuru formu seçtiğiniz vize türüyle açılır.
                             </p>
                         </div>
                         <Button asChild variant="outline" data-testid="showcase-all-types-button">

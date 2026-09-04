@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend-only regression test for restructured Home page (Dubai Vize Online). All 11 required sections render in the expected order with correct data-testids. All 8 removed sections are absent. Advantages (5 cards) + Kimler başvurabilir card with eligibility-ask-button navigating to /iletisim works. Process shows exactly 4 steps with correct Turkish titles (Bilgilerinizi girin, Evrakları yükleyin, Ödemenizi tamamlayın, Sonucunuzu alın). VisaShowcase renders 6 priced cards; clicking first card navigates to /basvuru?vize=visa_30_single. Home tracking with code DV-2026-0001 navigates to /takip?kod=DV-2026-0001 and input is prefilled; empty code navigates to /takip without query. home-my-applications-link -> /hesabim. cta-band-apply-button -> /basvuru. cta-band-whatsapp-button href is a valid wa.me link. FAQ accordion expands on click (aria-expanded=true). Regression: /vize-tipleri still renders pricing-tabs. No console errors detected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Home.jsx uses advantage titles as part of data-testid (advantage-card-<title>). Turkish strings with spaces work but are fragile; consider slug/index-based testids for stability.",
+    "TrackingBox uses navigate on submit; consider trimming input state as well for UX, but not blocking."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "test_credentials": "Not required for these flows",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Home page fully restructured and verified. VisaShowcase exposes showcase-card-<id> and showcase-price-<id> (6 items including visa_30_single, visa_60_single, visa_30_multi, visa_30_child, visa_transit_48 and one more). PricingTabs lives only on /vize-tipleri now.",
+  "rca of the issue": "No issues found."
+}

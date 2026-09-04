@@ -193,3 +193,35 @@ Doğrulanan yanlış pozitifler: `exec()` yok (asyncio.create_subprocess_exec);
 `is` vs `==` için üretim kodunda tek örnek yok (yalnız testlerde doğru olan `is True/False`);
 insurance_tasks ↔ routes_store döngüsel import zaten fonksiyon içi (lazy) import ile çözülü.
 pytest: 39/39 PASS.
+
+## 2026-06-05 · Ana sayfa yeniden kurgusu (sade + dönüşüm odaklı)
+Kullanıcı DubaiVizeOnline tarzı, tekrarsız ve sade bir yapı istedi. Ana sayfa 14 bölümden
+10 bölüme indirildi (`pages/Home.jsx` tamamen yeniden yazıldı):
+Hero (kısa metin + 2 CTA + slider + promo + 3'lü güven şeridi) → AuthorityStrip →
+**Neden Bizi Tercih Etmelisiniz** (5 avantaj + "Kimler Başvurabilir?" kartı) →
+**Başvuru Süreci** (4 adım, statik metin) → **Dubai Vize Türleri** (VisaShowcase, fiyatlı) →
+FX/fiyat notu → Seyahat Paketleri (HomeBundleStrip) → Gerekli Belgeler →
+**Başvuru Takibi** (ana sayfada takip kodu kutusu → /takip?kod=) → Müşteri Yorumları
+(ReviewSpotlight) → SSS → CTA bandı (Başvuru Yap + WhatsApp).
+Kaldırılanlar: hero istatistik şeridi, kayan yazı şeridi (marquee), Hizmetlerimiz,
+Neden Biz, SeparatePriceCards, uzun SEO metni, SampleVisa, havayolu logoları,
+haberler bloğu, yorum ızgarası, ayrı WhatsApp bölümü (CTA bandına taşındı),
+PricingTabs (yalnız /vize-tipleri sayfasında kaldı).
+Kullanıcı kararları: 14 günlük vize EKLENMEDİ (resmi fiyat listesinde yok);
+vize kartlarında fiyat gösterilir; yorumlar kalır, logolar ve haberler kalkar.
+VisaShowcase başlığı "Dubai vize türleri ve fiyatları" oldu. Meta başlık/açıklama güncellendi.
+Test: iteration_63 frontend %100 (11 bölüm + 8 kaldırılan bölüm + takip formu + regresyon).
+Not: `components/SeparatePriceCards.jsx`, `SampleVisa.jsx`, `Testimonials.jsx` (grid),
+`IconCards` ana sayfada kullanılmıyor ama dosyalar korundu (diğer sayfalar/ileride kullanım).
+
+## Kod incelemesi doğrulaması (2026-06-05)
+Devralınan "kritik" iki bulgu YANLIŞ POZİTİF: `zami_rpa.py`'de `exec()` yok
+(sadece `asyncio.create_subprocess_exec`, satır 90); `insurance_tasks` ↔ `routes_store`
+importu fonksiyon içi lazy import (insurance_tasks.py:232,257 · routes_store.py:544).
+
+## Sıradaki açık işler
+- **P0 Zami Bookmarklet "Gönder/Submit" butonu yakalama** (2 oturumdur bekliyor, kullanıcı
+  detay/ekran görüntüsü paylaşmadı)
+- **P1 Gerçek havale bilgileri** (`site_settings.bank_transfer` hâlâ örnek: VizeAtlas Turizm /
+  Örnek Bank / TR00...) → Admin → Havale
+- **P1 Gerçek WhatsApp/Instagram/Google yorum linkleri** (DB'de test numarası 905331234567)

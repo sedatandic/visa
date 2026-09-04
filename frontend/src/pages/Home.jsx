@@ -1,24 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
-    AlertTriangle,
     ArrowRight,
     BadgeCheck,
-    Banknote,
-    CalendarClock,
     Clock,
+    CreditCard,
     FileCheck2,
     FileText,
     HeadphonesIcon,
     IdCard,
     Image as ImageIcon,
-    Instagram,
     MessageCircle,
     Percent,
     PlaneTakeoff,
-    Quote,
+    CalendarClock,
+    Search,
     ShieldCheck,
-    Star,
+    Radar,
     Users,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -26,19 +24,13 @@ import { api } from "../lib/api";
 import { IMAGES, setMeta } from "../lib/site";
 import { useContact, waLink } from "../lib/contact";
 import { Button } from "../components/ui/button";
-import { PricingTabs } from "../components/PricingTabs";
-import { ServiceCard } from "../components/IconCards";
-import { FeaturedTestimonial, ReviewSummary, TestimonialCard } from "../components/Testimonials";
+import { Input } from "../components/ui/input";
 import { ReviewSpotlight } from "../components/ReviewSpotlight";
-import { SampleVisa } from "../components/SampleVisa";
-import { RouteFlags } from "../components/FlagIcons";
 import { AuthorityStrip } from "../components/AuthorityStrip";
 import { VisaShowcase } from "../components/VisaShowcase";
 import { HeroSlider } from "../components/HeroSlider";
 import { HeroHeadline } from "../components/HeroHeadline";
 import { HomeBundleStrip } from "../components/HomeBundleStrip";
-import { SeparatePriceCards } from "../components/SeparatePriceCards";
-import { VisaGuideLinks } from "../components/VisaGuideLinks";
 import { FxNote } from "../components/FxNote";
 import {
     Accordion,
@@ -47,7 +39,6 @@ import {
     AccordionTrigger,
 } from "../components/ui/accordion";
 
-const WHY_ICONS = [Banknote, FileCheck2, Clock, HeadphonesIcon];
 const DOC_ICONS = {
     passport: IdCard,
     photo: ImageIcon,
@@ -56,21 +47,63 @@ const DOC_ICONS = {
     other: FileText,
 };
 
+const ADVANTAGES = [
+    { icon: PlaneTakeoff, title: "Online ve hızlı başvuru", detail: "Tüm süreç web üzerinden, ortalama 5 dakikada tamamlanır." },
+    { icon: ShieldCheck, title: "Güvenli belge yükleme", detail: "Pasaportunuzu hiçbir yere teslim etmezsiniz; dijital kopya yeterli." },
+    { icon: CreditCard, title: "Kolay ödeme seçenekleri", detail: "Kredi kartı veya banka havalesi ile ödeyin." },
+    { icon: Radar, title: "Başvuru durumunu takip etme", detail: "Takip kodunuzla her adımı anlık görün." },
+    { icon: HeadphonesIcon, title: "Uzman destek ekibi", detail: "Danışmanınız başvurunuzu gönderilmeden önce kontrol eder." },
+];
+
+const PROCESS = [
+    { step: "1", title: "Bilgilerinizi girin", detail: "Başvuru formunu doldurun ve seyahat bilgilerinizi paylaşın." },
+    { step: "2", title: "Evrakları yükleyin", detail: "Pasaport ve gerekli diğer belgeleri sisteme ekleyin." },
+    { step: "3", title: "Ödemenizi tamamlayın", detail: "Güvenli ödeme altyapısı üzerinden işleminizi tamamlayın." },
+    { step: "4", title: "Sonucunuzu alın", detail: "Onaylanan vize belgeniz e-posta adresinize gönderilir." },
+];
+
+const TrackingBox = () => {
+    const navigate = useNavigate();
+    const [code, setCode] = useState("");
+
+    const submit = (e) => {
+        e.preventDefault();
+        const value = code.trim();
+        navigate(value ? `/takip?kod=${encodeURIComponent(value)}` : "/takip");
+    };
+
+    return (
+        <form onSubmit={submit} className="mt-6 flex flex-col gap-3 sm:flex-row" data-testid="home-tracking-form">
+            <Input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="Başvuru takip kodunuz (örn. DV-2026-1234)"
+                className="h-12 sm:max-w-sm"
+                aria-label="Başvuru takip kodu"
+                data-testid="home-tracking-input"
+            />
+            <Button type="submit" className="h-12 px-6" data-testid="home-tracking-submit">
+                <Search className="mr-2 h-4 w-4" /> Durumu sorgula
+            </Button>
+        </form>
+    );
+};
+
 export default function Home() {
     const contact = useContact();
     const [content, setContent] = useState(null);
 
     useEffect(() => {
         setMeta(
-            "Dubai Vizesi | Online Başvuru, Fiyatlar ve Aile Başvurusu | Dubai Vize Online",
-            "Dubai (BAE) vizesi için online başvuru: net fiyatlar, tek formda aile başvurusu, çocuk vizesi indirimi, ekspres hizmet ve ortalama 2 iş gününde sonuç."
+            "Dubai Vizesi Başvurusu | Online Başvuru ve Fiyatlar | Dubai Vize Online",
+            "Dubai (BAE) vize başvurunuzu tamamen online tamamlayın: evraklarınızı yükleyin, ödemenizi yapın, onaylanan vizenizi e-posta ile alın. Net fiyatlar ve başvuru takibi."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
     }, []);
 
     return (
         <div data-testid="home-page">
-            {/* HERO — gökyüzü zemin + yüzen açık panel */}
+            {/* HERO */}
             <section className="relative isolate" data-testid="landing-hero">
                 <div className="container-page relative pt-0">
                     <motion.div
@@ -92,9 +125,8 @@ export default function Home() {
                             </span>
                             <HeroHeadline />
                             <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                                Tek formda tüm aileniz için başvuru yapın. Pasaportunuzu yükleyin, bilgileriniz
-                                otomatik dolsun; belgeleri danışmanlarımız kontrol etsin. Onaylanan vizeniz PDF
-                                olarak e-postanıza gelsin.
+                                Dubai seyahatiniz için vize başvurunuzu tamamen online tamamlayın. Evraklarınızı
+                                yükleyin, başvurunuzu gönderin ve sonucunuzu e-posta ile alın.
                             </p>
 
                             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -135,7 +167,7 @@ export default function Home() {
                             {[
                                 { icon: Users, title: "Aile başvurusu", detail: "Tek formda çoklu yolcu" },
                                 { icon: BadgeCheck, title: "Evrak kontrolü", detail: "Başvuru öncesi ücretsiz" },
-                                { icon: Clock, title: "Ortalama 2 gün", detail: "Ekspreste 24 saat" },
+                                { icon: Clock, title: "Ortalama 2 gün", detail: "Ekspreste 8 mesai saati" },
                             ].map(({ icon: Icon, title, detail }) => (
                                 <div
                                     key={title}
@@ -151,192 +183,64 @@ export default function Home() {
                                 </div>
                             ))}
                         </div>
-
-                        {/* SAYISAL VITRIN SERIDI */}
-                        <div
-                            className="relative mt-8 grid grid-cols-2 gap-4 border-t border-border/70 pt-6 sm:divide-x sm:divide-border/70 lg:grid-cols-4"
-                            data-testid="hero-stats-bar"
-                        >
-                            {[
-                                { value: "4.500+", label: "Tamamlanan başvuru" },
-                                { value: "%98", label: "Onay oranı" },
-                                { value: "2 gün", label: "Ortalama sonuç süresi" },
-                                { value: "7+ yıl", label: "Acente deneyimi" },
-                            ].map(({ value, label }) => (
-                                <div key={label} className="px-2 sm:px-6">
-                                    <p className="tabular font-heading text-2xl font-extrabold sm:text-3xl">{value}</p>
-                                    <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">{label}</p>
-                                </div>
-                            ))}
-                        </div>
                     </motion.div>
                 </div>
-
-                {/* MARQUEE RIBBON */}
-                <div className="mt-8" data-testid="hero-marquee">
-                    <div className="container-page">
-                        <div className="rounded-[var(--radius-xl)] border border-border bg-[hsl(var(--cloud))] py-3.5">
-                            <div className="marquee">
-                                <div className="marquee-track">
-                                    {[0, 1].map((dup) => (
-                                        <div
-                                            key={dup}
-                                            className="flex shrink-0 items-center gap-8 pr-8"
-                                            aria-hidden={dup === 1}
-                                        >
-                                            {[
-                                                "Turistik Vize",
-                                                "Aile Başvurusu",
-                                                "Ekspres Vize",
-                                                "Vize Uzatma",
-                                                "Transit Vize",
-                                                "Evrak Kontrolü",
-                                                "Başvuru Takibi",
-                                            ].map((t) => (
-                                                <span
-                                                    key={t}
-                                                    className="flex items-center gap-8 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-foreground/70"
-                                                >
-                                                    {t}
-                                                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                                </span>
-                                            ))}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </section>
 
-            {/* AUTHORITIES / TRUST STRIP */}
+            {/* AUTHORITIES */}
             <AuthorityStrip />
 
-            {/* VIZE TIPI VITRINI — tek dokunuşla seçim */}
-            <VisaShowcase />
-
-            {/* MUSTERI YORUMU VITRINI (ust bolum) */}
-            <ReviewSpotlight summary={content?.review_summary} testimonials={content?.testimonials} />
-
-            {/* PRICING TABS */}
-            <section className="section" data-testid="landing-pricing">
+            {/* NEDEN BIZI TERCIH ETMELISINIZ */}
+            <section className="section" data-testid="landing-advantages">
                 <div className="container-page">
                     <div className="max-w-2xl">
-                        <span className="eyebrow">Hizmet Bedelleri</span>
-                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Dubai vize hizmet bedelleri</h2>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Fiyatlarımız başvuru harcı ve hizmet bedelimizin tamamını kapsar; dosya açma veya
-                            danışmanlık adı altında ek kalem çıkarmıyoruz. Yalnızca üçüncü taraf danışmanlık
-                            hizmeti veriyoruz; resmî bir devlet kurumu değiliz.
-                        </p>
+                        <span className="eyebrow">Avantajlar</span>
+                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Neden bizi tercih etmelisiniz?</h2>
                     </div>
-                    <div className="mt-5 flex flex-wrap items-center gap-3">
-                        <FxNote />
-                        <span className="text-xs text-muted-foreground">
-                            Fiyatlar dolar bazlıdır, tahsilat güncel kurla TL olarak yapılır.
-                        </span>
-                    </div>
-                    <div className="mt-8">
-                        <PricingTabs />
-                    </div>
-
-                    <div className="mt-12" data-testid="home-visa-guides">
-                        <h3 className="font-heading text-xl font-bold">Vize tipine göre detaylı rehberler</h3>
-                        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                            Şartlar, gerekli belgeler, süreç ve sıkça sorulan sorular; her vize tipi için
-                            ayrı ayrı anlatıldı.
-                        </p>
-                        <div className="mt-6">
-                            <VisaGuideLinks limit={6} />
+                    <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        {ADVANTAGES.map(({ icon: Icon, title, detail }, i) => (
+                            <div
+                                key={title}
+                                className="card-surface card-hoverable p-6"
+                                data-testid={`advantage-card-${i + 1}`}
+                            >
+                                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                                    <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                                </span>
+                                <h3 className="mt-4 font-heading text-base font-semibold">{title}</h3>
+                                <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
+                            </div>
+                        ))}
+                        <div className="flex flex-col justify-center rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--cloud))] p-6">
+                            <h3 className="font-heading text-base font-semibold">Kimler başvurabilir?</h3>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                Dubai'ye seyahat etmek için önceden vize alması gereken yabancı ülke vatandaşları
+                                online başvuru yapabilir. Uygunluk durumu pasaport türüne ve seyahat amacına göre
+                                değişebilir.
+                            </p>
+                            <Button asChild variant="secondary" className="mt-4 h-11 border border-border">
+                                <Link to="/iletisim" data-testid="eligibility-ask-button">
+                                    Durumunuzu sorun
+                                </Link>
+                            </Button>
                         </div>
-                    </div>
-
-                    {/* IMPORTANT NOTICE */}
-                    <div className="mt-12 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-6" data-testid="important-notice">
-                        <div className="flex items-center gap-2.5">
-                            <AlertTriangle className="h-5 w-5 text-[hsl(var(--status-warning))]" />
-                            <h3 className="font-heading text-base font-bold text-[hsl(var(--status-warning))]">Önemli Uyarı</h3>
-                        </div>
-                        <ul className="mt-3 space-y-2.5">
-                            {(content?.important_notice || []).map((n) => (
-                                <li key={n} className="text-sm leading-6 text-[hsl(var(--status-warning))]">• {n}</li>
-                            ))}
-                        </ul>
                     </div>
                 </div>
             </section>
 
-            {/* SEYAHAT PAKETLERI */}
-            <HomeBundleStrip />
-
-            {/* VIZE / SIGORTA / ESIM FIYATLARI — ayri ayri */}
-            <SeparatePriceCards />
-
-            {/* REQUIRED DOCUMENTS */}
-            <section className="section border-y border-border bg-[hsl(var(--cloud))]" data-testid="landing-documents">
+            {/* BASVURU SURECI */}
+            <section
+                className="section border-y border-border bg-[hsl(var(--cloud))]"
+                data-testid="landing-how-it-works"
+            >
                 <div className="container-page">
                     <div className="max-w-2xl">
-                        <span className="eyebrow">Gerekli Evraklar</span>
-                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Başvuru için gereken belgeler</h2>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Pasaportunuzu hiçbir yere teslim etmiyorsunuz. Aşağıdaki belgelerin dijital
-                            kopyalarını yüklemeniz yeterli.
-                        </p>
-                    </div>
-                    <div className="mt-9 grid items-start gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-                        <div className="overflow-hidden rounded-2xl border border-border lg:sticky lg:top-28" style={{ boxShadow: "var(--shadow-card)" }}>
-                            <img
-                                src={IMAGES.passportDocs}
-                                alt="Pasaport ve seyahat belgeleri"
-                                className="h-[280px] w-full object-cover"
-                                loading="lazy"
-                            />
-                        </div>
-                        <div className="grid gap-5 sm:grid-cols-2">
-                        {(content?.required_documents || []).map((d) => {
-                            const Icon = DOC_ICONS[d.key] || FileText;
-                            return (
-                                <div key={d.key} className="card-surface card-hoverable p-6" data-testid={`doc-card-${d.key}`}>
-                                    <div className="flex items-start justify-between gap-3">
-                                        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                                            <Icon className="h-5 w-5 text-primary" />
-                                        </span>
-                                        <span
-                                            className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                                                d.required
-                                                    ? "border-[hsl(var(--brand-copper)/0.30)] bg-[hsl(var(--brand-copper)/0.08)] text-[hsl(var(--brand-copper))]"
-                                                    : "border-border bg-muted text-muted-foreground"
-                                            }`}
-                                        >
-                                            {d.required ? "Zorunlu" : "Opsiyonel"}
-                                        </span>
-                                    </div>
-                                    <h3 className="mt-4 font-heading text-base font-semibold">{d.title}</h3>
-                                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{d.detail}</p>
-                                </div>
-                            );
-                        })}
-                        </div>
-                    </div>
-                    <Button asChild variant="secondary" className="mt-8 h-11 border border-border">
-                        <Link to="/gerekli-belgeler">
-                            Belge detayları ve fotoğraf kuralları <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
-                </div>
-            </section>
-
-            {/* HOW IT WORKS */}
-            <section className="section" data-testid="landing-how-it-works">
-                <div className="container-page">
-                    <div className="max-w-2xl">
-                        <span className="eyebrow">Nasıl Çalışır</span>
+                        <span className="eyebrow">Başvuru Süreci</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">4 adımda Dubai vizesi</h2>
                     </div>
                     <div className="mt-9 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                        {(content?.process_steps || []).map((s) => (
-                            <div key={s.step} className="card-surface card-hoverable p-6">
+                        {PROCESS.map((s) => (
+                            <div key={s.step} className="card-surface card-hoverable p-6" data-testid={`process-step-${s.step}`}>
                                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary font-heading text-base font-bold text-primary-foreground">
                                     {s.step}
                                 </span>
@@ -348,272 +252,121 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* SAMPLE VISA */}
-            <section className="section border-y border-border bg-[hsl(var(--cloud))]" data-testid="landing-sample-visa">
-                <div className="container-page grid items-center gap-10 lg:grid-cols-[1fr_1.05fr]">
-                    <div>
-                        <span className="eyebrow">Onaylanan Vize</span>
-                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Vizeniz böyle görünür</h2>
-                        <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                            BAE vizesi elektroniktir; pasaportunuza yapıştırılmaz. Başvurunuz onaylandığında
-                            giriş izni belgeniz PDF olarak e-postanıza gelir. Belgeyi telefonunuzdan veya
-                            çıktı alarak pasaport kontrolünde gösterirsiniz.
-                        </p>
-                        <ul className="mt-5 space-y-2.5 text-sm">
-                            {[
-                                "Tüm emirliklerde geçerli tek belge",
-                                "Kare kod ile sınırda hızlı doğrulama",
-                                "Kaybolursa takip sayfanızdan tekrar indirebilirsiniz",
-                            ].map((t) => (
-                                <li key={t} className="flex items-start gap-2">
-                                    <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                                    <span>{t}</span>
-                                </li>
-                            ))}
-                        </ul>
-                        <RouteFlags className="mt-6" />
-                    </div>
-                    <SampleVisa />
+            {/* DUBAI VIZE TURLERI (fiyatli kartlar) */}
+            <VisaShowcase />
+
+            <section className="pb-4" data-testid="landing-price-note">
+                <div className="container-page flex flex-wrap items-center gap-3">
+                    <FxNote />
+                    <span className="text-xs text-muted-foreground">
+                        Fiyatlar dolar bazlıdır, tahsilat güncel kurla TL olarak yapılır. Başvuru harcı ve hizmet
+                        bedelimizin tamamı fiyata dahildir.
+                    </span>
                 </div>
             </section>
 
-            {/* WHATSAPP ALTERNATIVE */}
-            <section className="section" data-testid="landing-whatsapp-apply">
-                <div className="container-page">
-                    <div className="grid items-center gap-8 rounded-2xl border border-border bg-card p-7 sm:p-10 lg:grid-cols-[1.2fr_0.8fr]">
-                        <div>
-                            <span className="eyebrow">Alternatif Başvuru</span>
-                            <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
-                                Form doldurmak istemiyorsanız WhatsApp'tan başvurun
-                            </h2>
-                            <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                                Pasaportunuzun kimlik sayfası ile bir vesikalık fotoğrafınızı WhatsApp
-                                hattımıza gönderin; başvurunuzu sizin adınıza biz oluşturalım, ödeme
-                                bağlantısını ve takip kodunuzu size iletelim.
-                            </p>
-                            <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
-                                {[
-                                    "Pasaport + 1 vesikalık yeterli",
-                                    "Danışman evrakları kontrol eder",
-                                    "Kart veya havale ile ödeme",
-                                    "Takip kodu WhatsApp'tan gelir",
-                                ].map((t) => (
-                                    <li key={t} className="flex items-start gap-2 text-sm">
-                                        <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                                        <span>{t}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            {contact.whatsapp && (
-                                <Button asChild className="h-12 text-base" data-testid="whatsapp-apply-button">
-                                    <a
-                                        href={waLink(contact, "Merhaba, Dubai vizesi için başvuru yapmak istiyorum. Pasaport ve fotoğrafımı gönderiyorum.")}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        <MessageCircle className="mr-2 h-5 w-5" /> WhatsApp'tan başvur
-                                    </a>
-                                </Button>
-                            )}
-                            <Button asChild variant="secondary" className="h-12 border border-border text-base">
-                                <a href={`mailto:${contact.email}?subject=${encodeURIComponent("Dubai vize başvurusu")}`} data-testid="email-apply-button">
-                                    E-posta ile gönder
-                                </a>
-                            </Button>
-                            <p className="text-xs leading-5 text-muted-foreground">
-                                Çalışma saatleri: {contact.workingHours}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            {/* SEYAHAT PAKETLERI */}
+            <HomeBundleStrip />
 
-            {/* SERVICES */}
-            <section className="section border-y border-border bg-[hsl(var(--sand-surface))]" data-testid="landing-services">
+            {/* GEREKLI BELGELER */}
+            <section className="section border-y border-border bg-[hsl(var(--cloud))]" data-testid="landing-documents">
                 <div className="container-page">
                     <div className="max-w-2xl">
-                        <span className="eyebrow">Hizmetlerimiz</span>
-                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Sadece vize, baştan sona uzman desteğiyle</h2>
+                        <span className="eyebrow">Gerekli Belgeler</span>
+                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Başvuru için gereken belgeler</h2>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Tek işimiz vize: başvuru hazırlığı, evrak kontrolü, ekspres işlem, aile başvurusu ve
-                            uzatma süreçlerinizi biz yürütüyoruz.
+                            Geçerli pasaport, biyometrik fotoğraf, gerekirse uçuş bilgileri ve ek destekleyici
+                            belgeler. Dijital kopyaları yüklemeniz yeterli.
                         </p>
                     </div>
-                    <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                        {(content?.services || []).map((s) => (
-                            <ServiceCard key={s.key} item={s} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* WHY US */}
-            <section className="section border-y border-border bg-[hsl(var(--cloud))]">
-                <div className="container-page grid items-center gap-12 lg:grid-cols-2">
-                    <div className="order-2 grid gap-5 sm:grid-cols-2 lg:order-1">
-                        {(content?.why_us || []).map((w, i) => {
-                            const Icon = WHY_ICONS[i % WHY_ICONS.length];
-                            return (
-                                <div key={w.title} className="card-surface p-5">
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[hsl(var(--sand-surface))]">
-                                        <Icon className="h-5 w-5 text-[hsl(var(--navy))]" />
-                                    </span>
-                                    <h3 className="mt-3.5 font-heading text-base font-semibold">{w.title}</h3>
-                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{w.detail}</p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <div className="order-1 lg:order-2">
-                        <span className="eyebrow">Neden Biz</span>
-                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Başvurunuzu bir danışman takip eder</h2>
-                        <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                            Otomatik bir form doldurma servisi değiliz. Her başvuruda pasaport geçerliliği,
-                            fotoğraf kriterleri ve seyahat tarihleri tek tek kontrol edilir. Eksik veya riskli
-                            bir durum varsa başvuruyu göndermeden önce sizi bilgilendiririz.
-                        </p>
-                        <div className="mt-6 overflow-hidden rounded-2xl border border-border" style={{ boxShadow: "var(--shadow-card)" }}>
-                            <img src={IMAGES.office} alt="Dubai Vize Online danışmanlık ofisi" className="h-[220px] w-full object-cover" loading="lazy" />
+                    <div className="mt-9 grid items-start gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+                        <div
+                            className="overflow-hidden rounded-2xl border border-border lg:sticky lg:top-28"
+                            style={{ boxShadow: "var(--shadow-card)" }}
+                        >
+                            <img
+                                src={IMAGES.passportDocs}
+                                alt="Pasaport ve seyahat belgeleri"
+                                className="h-[280px] w-full object-cover"
+                                loading="lazy"
+                            />
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* TESTIMONIALS */}
-            <section
-                id="landing-testimonials"
-                className="section scroll-mt-24 border-y border-border bg-[hsl(var(--cloud))]"
-                data-testid="landing-testimonials"
-            >
-                <div className="container-page">
-                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                        <div className="max-w-2xl">
-                            <span className="eyebrow">Müşteri Deneyimleri</span>
-                            <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
-                                Başvuru sahiplerimiz ne diyor?
-                            </h2>
-                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                Aşağıdaki yorumlar, vizesi teslim edilen başvuru sahiplerine gönderilen
-                                değerlendirme anketinden alınmıştır.
-                            </p>
-                        </div>
-                        <Button asChild variant="secondary" className="h-11 border border-border">
-                            <Link to="/basvuru">Siz de başvurun</Link>
-                        </Button>
-                    </div>
-
-                    <div className="mt-8">
-                        <ReviewSummary summary={content?.review_summary} />
-                    </div>
-
-                    {(content?.testimonials || []).length > 0 && (
-                        <div className="mt-8 grid gap-6 lg:grid-cols-3" data-testid="testimonial-grid">
-                            <div className="lg:col-span-1">
-                                <FeaturedTestimonial item={content.testimonials[0]} />
-                            </div>
-                            <div className="grid gap-6 sm:grid-cols-2 lg:col-span-2">
-                                {content.testimonials.slice(1).map((t) => (
-                                    <TestimonialCard key={t.name} item={t} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* SOCIAL BAND */}
-                    <div className="mt-12 flex flex-col items-start gap-5 rounded-2xl border border-border bg-[hsl(var(--navy))] p-7 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-start gap-4">
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                                <Instagram className="h-6 w-6 text-white" />
-                            </span>
-                            <div>
-                                <h3 className="font-heading text-lg font-bold text-white">Dubai'yi bizimle takip edin</h3>
-                                <p className="mt-1 text-sm text-white/70">
-                                    Güncel haberler, gezilecek yerler ve vize duyuruları için sosyal medya
-                                    hesabımıza göz atın.
-                                </p>
-                            </div>
-                        </div>
-                        <Button asChild variant="secondary" className="h-11 border border-border">
-                            <Link to="/gelismeler">Dubai'den Haberler</Link>
-                        </Button>
-                    </div>
-
-                    {/* PARTNERS */}
-                    <div className="mt-12">
-                        <h3 className="font-heading text-base font-bold">Çalıştığımız havayolları</h3>
-                        <p className="mt-1.5 text-sm text-muted-foreground">
-                            Müşterilerimizin Dubai uçuşlarında en sık tercih ettiği havayolları. Logolar ilgili
-                            markalara aittir; bilgilendirme amaçlı gösterilir.
-                        </p>
-                        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                            {(content?.partners || []).map((p) => {
-                                const partner = typeof p === "string" ? { name: p } : p;
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            {(content?.required_documents || []).map((d) => {
+                                const Icon = DOC_ICONS[d.key] || FileText;
                                 return (
-                                    <div
-                                        key={partner.name}
-                                        className="flex h-16 items-center justify-center rounded-lg border border-border bg-card px-4 text-center font-heading text-sm font-semibold text-muted-foreground"
-                                        data-testid={`partner-${partner.name}`}
-                                    >
-                                        {partner.logo ? (
-                                            <img
-                                                src={partner.logo}
-                                                alt={partner.name}
-                                                className="max-h-9 w-auto max-w-full object-contain"
-                                                loading="lazy"
-                                                onError={(e) => {
-                                                    e.currentTarget.replaceWith(
-                                                        document.createTextNode(partner.name),
-                                                    );
-                                                }}
-                                            />
-                                        ) : (
-                                            partner.name
-                                        )}
+                                    <div key={d.key} className="card-surface card-hoverable p-6" data-testid={`doc-card-${d.key}`}>
+                                        <div className="flex items-start justify-between gap-3">
+                                            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                                                <Icon className="h-5 w-5 text-primary" />
+                                            </span>
+                                            <span
+                                                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                                                    d.required
+                                                        ? "border-[hsl(var(--brand-copper)/0.30)] bg-[hsl(var(--brand-copper)/0.08)] text-[hsl(var(--brand-copper))]"
+                                                        : "border-border bg-muted text-muted-foreground"
+                                                }`}
+                                            >
+                                                {d.required ? "Zorunlu" : "Opsiyonel"}
+                                            </span>
+                                        </div>
+                                        <h3 className="mt-4 font-heading text-base font-semibold">{d.title}</h3>
+                                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{d.detail}</p>
                                     </div>
                                 );
                             })}
                         </div>
                     </div>
+                    <Button asChild variant="secondary" className="mt-8 h-11 border border-border">
+                        <Link to="/gerekli-belgeler">
+                            Belge detayları ve fotoğraf kuralları <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
                 </div>
             </section>
 
-            {/* ARTICLES */}
-            <section className="section border-y border-border bg-[hsl(var(--cloud))]" data-testid="landing-articles">
-                <div className="container-page">
-                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                        <div className="max-w-2xl">
-                            <span className="eyebrow">Dubai'den Haberler</span>
-                            <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Vize ve seyahat rehberi</h2>
-                        </div>
-                        <Button asChild variant="secondary" className="h-11 border border-border">
-                            <Link to="/gelismeler">Tüm yazılar</Link>
-                        </Button>
+            {/* BASVURU TAKIBI */}
+            <section className="section" data-testid="landing-tracking">
+                <div className="container-page grid items-center gap-10 lg:grid-cols-[1fr_0.9fr]">
+                    <div>
+                        <span className="eyebrow">Başvuru Takibi</span>
+                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Başvurunuz nerede?</h2>
+                        <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                            Başvuru numaranız ile işleminizin durumunu online olarak kontrol edebilirsiniz.
+                            Durum değiştiğinde e-posta ile de bilgilendirilirsiniz.
+                        </p>
+                        <TrackingBox />
+                        <Link
+                            to="/hesabim"
+                            className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                            data-testid="home-my-applications-link"
+                        >
+                            Başvurularım sayfasına giriş yap <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
                     </div>
-                    <div className="mt-9 grid gap-6 md:grid-cols-3">
-                        {(content?.articles || []).slice(0, 3).map((a) => (
-                            <Link
-                                key={a.slug}
-                                to={`/gelismeler/${a.slug}`}
-                                className="card-surface card-hoverable flex flex-col p-6"
-                                data-testid={`article-card-${a.slug}`}
-                            >
-                                <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-                                    {new Date(a.date).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" })}
-                                </span>
-                                <h3 className="mt-2 font-heading text-base font-semibold">{a.title}</h3>
-                                <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{a.excerpt}</p>
-                                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
-                                    Devamını oku <ArrowRight className="h-3.5 w-3.5" />
-                                </span>
-                            </Link>
-                        ))}
+                    <div className="rounded-2xl border border-border bg-card p-7" style={{ boxShadow: "var(--shadow-card)" }}>
+                        <h3 className="font-heading text-base font-bold">Takip sayfasında neler görürsünüz?</h3>
+                        <ul className="mt-4 space-y-3 text-sm">
+                            {[
+                                "Belge kontrolü, resmî başvuru ve sonuç adımları",
+                                "Eksik belge varsa bildirim ve yeniden yükleme",
+                                "Ödeme durumu ve fatura bilgisi",
+                                "Onaylanan vize belgenizi indirme bağlantısı",
+                            ].map((t) => (
+                                <li key={t} className="flex items-start gap-2.5">
+                                    <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                                    <span>{t}</span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
             </section>
 
-            {/* FAQ */}
+            {/* MUSTERI YORUMLARI */}
+            <ReviewSpotlight summary={content?.review_summary} testimonials={content?.testimonials} />
+
+            {/* SSS */}
             <section className="section">
                 <div className="container-page grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
                     <div>
@@ -637,76 +390,34 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* SEO LONG TEXT */}
-            <section className="section border-t border-border bg-card" data-testid="landing-seo-text">
-                <div className="container-page">
-                    <span className="eyebrow">Rehber</span>
-                    <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Dubai vizesi nasıl alınır?</h2>
-                    <p className="mt-2 text-sm text-muted-foreground">Başvurudan sonuca kadar bilmeniz gerekenler</p>
-                    <div className="mt-6 space-y-4 text-sm leading-7 text-muted-foreground">
-                        <p>
-                            Dubai vizesi aslında bir <strong className="text-foreground">Birleşik Arap Emirlikleri
-                            vizesidir</strong>. Aldığınız vize yalnızca Dubai'de değil, Abu Dabi ve Şarja dahil
-                            yedi emirliğin tamamında geçerlidir. Emirlikler arasında sınır kontrolü yoktur;
-                            Dubai'den girip Abu Dabi'den çıkabilirsiniz.
-                        </p>
-                        <p>
-                            Umuma mahsus <strong className="text-foreground">bordo pasaport</strong> sahibi Türk
-                            vatandaşları için vize gereklidir. Hususi (yeşil), hizmet (gri) ve diplomatik
-                            pasaport hamilleri ise yılda 90 güne kadar vizesiz giriş yapabilir.
-                        </p>
-                        <p>Vize türünüzü üç şey belirler:</p>
-                        <ul className="space-y-2 pl-1">
-                            <li>
-                                <strong className="text-foreground">Kalış süreniz</strong> — 30 gün veya 60 gün.
-                                Süre ülkeye giriş yaptığınız gün başlar ve takvim günü olarak işler.
-                            </li>
-                            <li>
-                                <strong className="text-foreground">Giriş sayınız</strong> — Gidip dönecekseniz tek
-                                girişli yeterlidir. Umman veya Katar gibi ülkelere geçip Dubai'ye dönecekseniz
-                                çok girişli gerekir.
-                            </li>
-                            <li>
-                                <strong className="text-foreground">Yaş</strong> — 18 yaş altı çocuklar,
-                                aileleriyle birlikte seyahat etmeleri koşuluyla indirimli çocuk vizesinden
-                                yararlanır.
-                            </li>
-                        </ul>
-                        <p>
-                            Başvuru tamamen online yapılır. Pasaportunuzu fiziksel olarak hiçbir yere teslim
-                            etmezsiniz; fotoğrafın bulunduğu sayfanın net bir taraması yeterlidir.
-                            Pasaportunuzun <strong className="text-foreground">dönüş tarihinizden itibaren en az
-                            6 ay geçerli</strong> olması tek teknik şarttır.
-                        </p>
-                        <p>
-                            Belgeleriniz tamamlandıktan sonra başvurunuz yetkili mercilere iletilir. Standart
-                            başvurular ortalama 2 iş günü içinde sonuçlanır. Uçuşuna az kalan yolcular için
-                            ekspres başvuru vardır; sonuç genellikle 24 saat içinde çıkar. Vizeniz
-                            onaylandığında PDF olarak e-postanıza ve takip sayfanıza iletilir.
-                        </p>
-                        <p>
-                            Aile başvurularında tek form doldurmanız yeterli: eşinizi ve çocuklarınızı aynı
-                            başvuruya ekleyin, çocuk vizesi indirimi ve aile indirimi otomatik hesaplanır.
-                        </p>
-                    </div>
-                </div>
-            </section>
-
             {/* CTA BAND */}
             <section className="border-t border-border bg-[hsl(var(--navy))]">
                 <div className="container-page flex flex-col items-start justify-between gap-6 py-12 sm:flex-row sm:items-center">
                     <div>
                         <h2 className="text-2xl font-bold text-white sm:text-3xl">Başvurunuzu şimdi başlatın</h2>
                         <p className="mt-2 max-w-xl text-sm leading-6 text-white/70">
-                            Ortalama tamamlanma süresi 5 dakika. Ödeme adımına geçmeden önce tüm bilgilerinizi
-                            özet ekranında kontrol edebilirsiniz.
+                            Ortalama tamamlanma süresi 5 dakika. Form doldurmak istemiyorsanız pasaport ve
+                            fotoğrafınızı WhatsApp'tan gönderin, başvurunuzu biz oluşturalım.
                         </p>
                     </div>
-                    <Button asChild className="h-12 shrink-0 px-7 text-base" data-testid="cta-band-apply-button">
-                        <Link to="/basvuru">
-                            Başvuru Yap <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
+                    <div className="flex shrink-0 flex-wrap gap-3">
+                        <Button asChild className="h-12 px-7 text-base" data-testid="cta-band-apply-button">
+                            <Link to="/basvuru">
+                                Başvuru Yap <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                        {contact.whatsapp && (
+                            <Button asChild variant="secondary" className="h-12 border border-border px-6 text-base" data-testid="cta-band-whatsapp-button">
+                                <a
+                                    href={waLink(contact, "Merhaba, Dubai vizesi için başvuru yapmak istiyorum.")}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <MessageCircle className="mr-2 h-5 w-5" /> WhatsApp
+                                </a>
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </section>
         </div>
