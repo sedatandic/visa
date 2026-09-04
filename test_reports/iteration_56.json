@@ -1,0 +1,20 @@
+{
+  "summary": "Verified BAE 4-field auto-fill behavior on both backend and frontend. Backend: 4/4 pytest tests pass — defaults fill when omitted or empty (marital_status='single', profession='Employee'|'Student', mother_name/father_name = last_name), explicit values are preserved. Frontend /basvuru: 'Medeni Hal', 'Meslek', 'Anne Adı', 'Baba Adı' input fields and 'BAE başvuru formu için gereken 4 ek bilgi' block are completely removed from Step 1; the passport OCR loading text is 'Pasaport bilgileri okunuyor...' with NO 'yapay zeka' phrase anywhere on the page. /takip still renders two columns (takip kodu + hesap girişi) and navbar 'Başvuru Takip' links directly to /takip; page headings are gold.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_uae_defaults.py", "/app/test_reports/pytest/uae_defaults.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx is ~2060 lines — consider splitting into step-based subcomponents for maintainability.",
+    "TravelerIn.marital_status uses pattern '^(single|married|divorced|widowed)$' (no empty), so if frontend sends an empty string it would 422. Currently frontend hardcodes 'single' in payload (line 795), which is fine. Consider allowing empty in the pattern for defense-in-depth so _fill_uae_defaults can canonically set it.",
+    "FIELD_LABELS mapping still contains marital_status/profession/mother_name/father_name (used by OCR missing-fields feedback). Since the customer no longer sees these fields, OCR 'missing fields' toast could confuse users if these come back as missing — consider filtering them from the OCR missing_fields UI too."
+  ],
+  "updated_files": ["/app/backend/tests/test_uae_defaults.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Admin: info@dubaivizeonline.com / Dubai2026! (not exercised this iteration).",
+  "seed_data_creation": "Created 4 test applications via public /api/applications for TEST_uae@example.com (last names YILMAZ, KAYA, DEMIR, OZTURK). Reference codes are visible in admin panel; per request no cleanup performed.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "backend/tests/test_uae_defaults.py covers UAE defaults auto-fill. If Apply.jsx changes payload shape, rerun. Test uses public /api/uploads + /api/applications + /api/applications/track.",
+  "rca of the issue": "N/A — no bugs found."
+}

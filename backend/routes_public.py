@@ -683,6 +683,20 @@ async def _validate_extra_documents(extra) -> None:
     await _ensure_uploads_exist(extra.ticket_file_id, extra.hotel_file_id)
 
 
+def _fill_uae_defaults(data: dict) -> None:
+    """BAE formunda zorunlu olan ama musteriye sorulmayan alanlari doldurur.
+    Admin, basvuru detayindan bu degerleri Zami aktarimindan once duzeltebilir."""
+    if not data.get("marital_status"):
+        data["marital_status"] = "single"
+    if not data.get("profession"):
+        data["profession"] = "Student" if data.get("applicant_type") == "child" else "Employee"
+    surname = (data.get("last_name") or "").strip()
+    if not (data.get("mother_name") or "").strip():
+        data["mother_name"] = surname
+    if not (data.get("father_name") or "").strip():
+        data["father_name"] = surname
+
+
 async def _build_travelers(traveler_inputs) -> tuple[list, list]:
     """Yolcu girdilerini vize bilgileri ile zenginlestirir; (travelers, prices) dondurur."""
     travelers: list = []
@@ -693,6 +707,7 @@ async def _build_travelers(traveler_inputs) -> tuple[list, list]:
             raise HTTPException(400, "Gecersiz vize tipi secildi.")
         await _ensure_uploads_exist(t.passport_file_id, t.photo_file_id)
         data = t.model_dump()
+        _fill_uae_defaults(data)
         data.update(
             {
                 "id": str(uuid.uuid4()),

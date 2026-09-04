@@ -58,38 +58,6 @@ const STEPS = [
     { key: "summary", label: "Ödeme", icon: CreditCard },
 ];
 
-// Zami / BAE konsolosluk formunda zorunlu olan medeni hal secenekleri
-const MARITAL_OPTIONS = [
-    { v: "single", label: "Bekar" },
-    { v: "married", label: "Evli" },
-    { v: "divorced", label: "Boşanmış" },
-    { v: "widowed", label: "Eşi vefat etmiş" },
-];
-
-// Meslek, BAE tarafina Ingilizce gonderilir. Deger = portala yazilan Ingilizce
-// karsilik, label = kullaniciya gosterilen Turkce aciklama.
-const PROFESSION_OPTIONS = [
-    { v: "Student", label: "Öğrenci" },
-    { v: "Housewife", label: "Ev hanımı" },
-    { v: "Employee", label: "Çalışan / Memur" },
-    { v: "Manager", label: "Yönetici" },
-    { v: "Engineer", label: "Mühendis" },
-    { v: "Teacher", label: "Öğretmen" },
-    { v: "Doctor", label: "Doktor" },
-    { v: "Nurse", label: "Hemşire" },
-    { v: "Lawyer", label: "Avukat" },
-    { v: "Accountant", label: "Muhasebeci" },
-    { v: "Businessman", label: "İş insanı / Şirket sahibi" },
-    { v: "Merchant", label: "Esnaf / Tüccar" },
-    { v: "Self Employed", label: "Serbest meslek" },
-    { v: "Driver", label: "Şoför" },
-    { v: "Technician", label: "Teknisyen" },
-    { v: "Worker", label: "İşçi" },
-    { v: "Farmer", label: "Çiftçi" },
-    { v: "Retired", label: "Emekli" },
-    { v: "Unemployed", label: "Çalışmıyor" },
-];
-
 let travelerSeq = 0;
 const newTraveler = (type = "adult") => ({
     key: `t${++travelerSeq}`,
@@ -736,10 +704,6 @@ export default function Apply() {
                 if (t.first_name.trim().length < 2) te.first_name = "Ad zorunlu (en az 2 karakter).";
                 if (t.last_name.trim().length < 2) te.last_name = "Soyad zorunlu (en az 2 karakter).";
                 if (!t.birth_date) te.birth_date = "Doğum tarihi zorunlu.";
-                if (!t.marital_status) te.marital_status = "Medeni hal seçimi zorunlu.";
-                if (!t.profession) te.profession = "Meslek seçimi zorunlu.";
-                if (t.mother_name.trim().length < 2) te.mother_name = "Anne adı zorunlu (BAE formu için).";
-                if (t.father_name.trim().length < 2) te.father_name = "Baba adı zorunlu (BAE formu için).";
                 if (t.passport_no.trim().length < 4) te.passport_no = "Pasaport numarası zorunlu.";
                 if (!t.passport_expiry) te.passport_expiry = "Pasaport geçerlilik tarihi zorunlu.";
                 else if (new Date(t.passport_expiry) < new Date())
@@ -1272,76 +1236,6 @@ export default function Apply() {
                                                     </div>
                                                     )}
 
-                                                    {/* BAE basvuru formunda zorunlu olan, pasaportta yer almayan bilgiler */}
-                                                    <div className="mt-6 rounded-xl border border-border bg-muted/40 p-4 sm:p-5">
-                                                        <div className="flex items-start gap-2.5">
-                                                            <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                                                            <div>
-                                                                <p className="text-sm font-bold text-foreground">
-                                                                    BAE başvuru formu için gereken 4 ek bilgi
-                                                                </p>
-                                                                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                                                    Neden soruyoruz? Medeni hal, meslek, anne ve baba adı pasaportta
-                                                                    yer almaz; ancak Birleşik Arap Emirlikleri göçmenlik sistemi bu
-                                                                    dört alanı zorunlu tutuyor ve boş gönderilen başvuruları
-                                                                    reddediyor. Ad, doğum tarihi ve pasaport bilgilerinizi ise
-                                                                    pasaportunuzdan otomatik okuyoruz, tekrar yazmanıza gerek yok.
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                                                            <Field label="Medeni Hal" required error={te.marital_status}>
-                                                                <Select
-                                                                    value={t.marital_status}
-                                                                    onValueChange={(v) => updateTraveler(t.key, { marital_status: v })}
-                                                                >
-                                                                    <SelectTrigger data-testid={`traveler-${idx}-marital-status`}>
-                                                                        <SelectValue placeholder="Seçiniz" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {MARITAL_OPTIONS.map((o) => (
-                                                                            <SelectItem key={o.v} value={o.v}>
-                                                                                {o.label}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </Field>
-                                                            <Field label="Meslek" required error={te.profession}>
-                                                                <Select
-                                                                    value={t.profession}
-                                                                    onValueChange={(v) => updateTraveler(t.key, { profession: v })}
-                                                                >
-                                                                    <SelectTrigger data-testid={`traveler-${idx}-profession`}>
-                                                                        <SelectValue placeholder="Seçiniz" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent className="max-h-72">
-                                                                        {PROFESSION_OPTIONS.map((o) => (
-                                                                            <SelectItem key={o.v} value={o.v}>
-                                                                                {o.label}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </Field>
-                                                            <Field label="Anne Adı" required error={te.mother_name}>
-                                                                <Input
-                                                                    value={t.mother_name}
-                                                                    onChange={(e) => updateTraveler(t.key, { mother_name: e.target.value })}
-                                                                    placeholder="AYŞE"
-                                                                    data-testid={`traveler-${idx}-mother-name`}
-                                                                />
-                                                            </Field>
-                                                            <Field label="Baba Adı" required error={te.father_name}>
-                                                                <Input
-                                                                    value={t.father_name}
-                                                                    onChange={(e) => updateTraveler(t.key, { father_name: e.target.value })}
-                                                                    placeholder="MEHMET"
-                                                                    data-testid={`traveler-${idx}-father-name`}
-                                                                />
-                                                            </Field>
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             );
                                         })}
