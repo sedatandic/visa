@@ -32,8 +32,11 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
   otomatik `playwright install chromium` yedeği eklendi (yeni sunucu/deploy güvenliği)
 - Zami robot oturumu doğrulandı: portal erişimi + AI captcha çözümü çalışıyor
   (OTP adımını kullanıcı Admin → Zami → "Robot Oturumu (B)" sekmesinden yapacak)
-- **Marka logosu güncellendi**: yüklenen logo `public/brand/emblem-512.png` +
-  `logo-lockup.png` olarak işlendi (arka plan şeffaflaştırıldı), `BrandMark` bu amblemi kullanıyor
+- **Marka logosu güncellendi**: yüklenen logo işlenip `public/brand/logo-horizontal.png`
+  (yatay kilit: amblem + DUBAI Vize Online), `emblem-512.png` ve `logo-lockup.png` olarak
+  hazırlandı; `BrandMark` artık tam yatay logoyu kullanıyor (header, footer, admin)
+- **Yetkili merciler şeridi**: ICP kartı kaldırıldı; sıra TÜRSAB (gerçek logo
+  `public/brand/tursab.png`) → GDRFA olarak güncellendi, 2 kolonlu ızgara
 - **Gold palet**: siyah/antrasit zeminler logodaki bakır-gold tonuna çevrildi
   (`--primary: 30 62% 42%`, `--navy: 34 60% 27%`, `--charcoal`, `--gradient-wave`)
 - **Ana sayfa görsel kaydırıcısı**: `components/HeroSlider.jsx` — 5 Dubai görseli,

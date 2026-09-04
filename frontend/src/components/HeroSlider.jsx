@@ -82,7 +82,7 @@ export const HeroSlider = () => {
                     onClick={() => go(-1)}
                     aria-label="Önceki görsel"
                     data-testid="hero-slider-prev"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2 text-foreground opacity-0 shadow-sm transition-opacity duration-300 hover:bg-white group-hover:opacity-100 focus-visible:opacity-100"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2 text-foreground opacity-70 shadow-sm transition-opacity duration-300 hover:bg-white sm:opacity-0 group-hover:sm:opacity-100 focus-visible:opacity-100"
                 >
                     <ChevronLeft className="h-4.5 w-4.5" />
                 </button>
@@ -91,7 +91,7 @@ export const HeroSlider = () => {
                     onClick={() => go(1)}
                     aria-label="Sonraki görsel"
                     data-testid="hero-slider-next"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2 text-foreground opacity-0 shadow-sm transition-opacity duration-300 hover:bg-white group-hover:opacity-100 focus-visible:opacity-100"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2 text-foreground opacity-70 shadow-sm transition-opacity duration-300 hover:bg-white sm:opacity-0 group-hover:sm:opacity-100 focus-visible:opacity-100"
                 >
                     <ChevronRight className="h-4.5 w-4.5" />
                 </button>
