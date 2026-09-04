@@ -25,7 +25,7 @@ export default function Documents() {
                 description="Dubai vizesi tamamen elektronik düzenlenir. Pasaportunuzu kargoya vermenize gerek yoktur; aşağıdaki belgelerin dijital kopyaları yeterlidir."
             />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
                     <div>
                         <ul className="space-y-4" data-testid="required-documents-checklist">

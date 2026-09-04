@@ -50,7 +50,7 @@ export default function LegalTerms({ variant = "refund" }) {
         <div data-testid={cfg.testId}>
             <PageHeader eyebrow={cfg.eyebrow} title={cfg.title} description={cfg.description} />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page max-w-3xl">
                     {doc?.updated_at && (
                         <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">

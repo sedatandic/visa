@@ -59,7 +59,7 @@ export default function Esim() {
                 description="Roaming faturası sürprizi yok. eSIM paketinizi buradan alın, QR kodu taratın; Dubai'ye indiğiniz an bağlanın."
             />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
                     <StoreCheckout kind="esim" ctaLabel="eSIM satın al" />
                 </div>
@@ -89,7 +89,7 @@ export default function Esim() {
             </section>
 
             <section className="section" data-testid="esim-faq">
-                <div className="container-page max-w-3xl">
+                <div className="container-page">
                     <span className="eyebrow">Sıkça sorulan sorular</span>
                     <h2 className="mt-3 text-2xl font-bold">eSIM hakkında merak edilenler</h2>
                     <div className="mt-6 space-y-4">

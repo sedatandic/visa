@@ -28,7 +28,7 @@ export default function Services() {
                 description="Başvuru hazırlığından evrak kontrolüne, ekspres işlemden vize uzatmaya kadar tüm süreç uzman danışmanlarımız tarafından yürütülür."
             />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
                     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                         {(content?.services || []).map((s) => (

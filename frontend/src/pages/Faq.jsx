@@ -30,8 +30,8 @@ export default function Faq() {
                 title="Sıkça sorulan sorular"
                 description="Başvuru öncesi aklınıza gelebilecek soruları tek sayfada topladik. Aradiginizi bulamazsanız bize yazın."
             />
-            <section className="section">
-                <div className="container-page max-w-3xl">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
+                <div className="container-page">
                     <Accordion type="single" collapsible className="w-full" data-testid="faq-accordion">
                         {(content?.faq || []).map((item, i) => (
                             <AccordionItem key={i} value={`faq-${i}`}>

@@ -98,7 +98,7 @@ export default function OrderStatus() {
                 description="eSIM ve seyahat sigortası siparişinizin durumunu buradan görebilirsiniz."
             />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page max-w-3xl">
                     {!order && (
                         <div className="card-surface p-6" data-testid="order-email-form">

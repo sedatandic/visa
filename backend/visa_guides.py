@@ -50,7 +50,7 @@ GUIDES = {
             "Ülkeye girişten itibaren 30 gün kesintisiz kalış hakkı",
             "Konsolosluk randevusu ve pasaport teslimi gerekmez",
             "Aile başvurusunda %10 indirim, çocuk vizelerinde ayrıca indirimli fiyat",
-            "Ekspres hizmet ile genellikle 24 saat içinde sonuç",
+            "Ekspres hizmet ile yaklaşık 8 mesai saatinde sonuç",
         ],
         "tips": [
             "Vize süresi ülkeye giriş tarihinizden itibaren işler; vizenin kullanım penceresini danışmanınıza teyit ettirin.",
@@ -64,7 +64,7 @@ GUIDES = {
             },
             {
                 "q": "30 günlük Dubai vizesi kaç günde çıkar?",
-                "a": "Standart başvurularda sonuç ortalama 2 iş günü içinde çıkar. Yoğun dönemlerde bu süre 5 iş gününe kadar uzayabilir; acil seyahatlerde ekspres hizmetle genellikle 24 saat içinde sonuç alınır.",
+                "a": "Standart başvurularda sonuç ortalama 2 iş günü içinde çıkar. Yoğun dönemlerde bu süre 5 iş gününe kadar uzayabilir; acil seyahatlerde ekspres hizmetle yaklaşık 8 mesai saatinde sonuç alınır.",
             },
             {
                 "q": "Vize süresini Dubai'de uzatabilir miyim?",

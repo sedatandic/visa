@@ -117,7 +117,7 @@ export default function ArticleDetail() {
                 </div>
             </section>
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page max-w-3xl">
                     <div className="space-y-5 text-[15px] leading-8" data-testid="article-body">
                         {(a.body || []).map((p, i) => (

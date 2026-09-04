@@ -54,7 +54,7 @@ export default function Contact() {
                 description="Başvuru öncesi veya sonrası tüm sorularınız için bize yazın. Genellikle aynı gün içinde dönüş yapıyoruz."
             />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
                     <form onSubmit={submit} className="card-surface p-6 sm:p-8" data-testid="contact-form">
                         <h2 className="font-heading text-xl font-bold">Mesaj gönderin</h2>

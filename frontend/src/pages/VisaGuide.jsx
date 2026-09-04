@@ -253,7 +253,7 @@ export default function VisaGuide() {
             </section>
 
             {/* WHO FOR + HIGHLIGHTS */}
-            <section className="section" data-testid="visa-guide-fit">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8" data-testid="visa-guide-fit">
                 <div className="container-page grid gap-6 md:grid-cols-2">
                     <div className="card-surface p-6">
                         <h2 className="font-heading text-lg font-bold">Bu vize kimler için uygun?</h2>

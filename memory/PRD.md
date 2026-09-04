@@ -35,6 +35,10 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
 - **Marka logosu güncellendi**: yüklenen logo işlenip `public/brand/logo-horizontal.png`
   (yatay kilit: amblem + DUBAI Vize Online), `emblem-512.png` ve `logo-lockup.png` olarak
   hazırlandı; `BrandMark` artık tam yatay logoyu kullanıyor (header, footer, admin)
+- **Sayfa boşlukları ve genişlikler (2026-06)**: tüm Bilgi & Hizmetler sayfalarında başlık
+  paneli ile içerik arası boşluk ~24-32px'e indirildi; SSS, blog listesi ve eSIM/sigorta SSS
+  blokları başlık paneliyle aynı genişliğe alındı. Ekspres metni her yerde
+  "yaklaşık 8 mesai saati" oldu. Vitrin kartlarındaki zemin fotoğrafları kaldırıldı.
 - **Menü ve hizalama düzeltmeleri (2026-06)**: "Başvurularım" üst menüden çıkarılıp
   "Başvuru Takip" açılır menüsüne alındı (Takip Kodu ile Sorgula + Başvurularım);
   /hesabim girişinde e-posta ve soyad aynı satıra alındı; /takip kartları eşit genişlik;

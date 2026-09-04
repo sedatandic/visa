@@ -25,8 +25,8 @@ export default function Articles() {
                 description="Başvuru öncesi bilmeniz gerekenleri, güncel kuralları ve sık yapılan hataları danışman ekibimiz derledi."
             />
 
-            <section className="section">
-                <div className="container-page max-w-3xl space-y-8">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
+                <div className="container-page space-y-8">
                     {(content?.articles || []).map((a) => (
                         <article key={a.slug} className="card-surface p-6 sm:p-8" data-testid={`article-${a.slug}`}>
                             <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[hsl(var(--brand-copper))]">

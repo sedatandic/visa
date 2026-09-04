@@ -17,7 +17,7 @@ export default function Kvkk() {
                 title="KVKK Aydınlatma Metni ve Gizlilik Politikası"
                 description="Başvuru sırasında paylaştığınız bilgilerin nasıl kullanıldığını şeffaf biçimde açıklıyoruz."
             />
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page max-w-3xl space-y-8 text-sm leading-7 text-muted-foreground">
                     <div>
                         <h2 className="font-heading text-lg font-bold text-foreground">1. Hangi verileri topluyoruz?</h2>

@@ -41,7 +41,7 @@ export default function About() {
                 description="Dubai Vize Online, Birleşik Arap Emirlikleri vize başvurularında uzmanlaşmış bağımsız bir danışmanlık hizmetidir. Resmî bir devlet kurumu değiliz; başvurunuzu sizin adınıza hazırlar, kontrol eder ve yetkili mercilere iletiriz."
             />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page grid items-start gap-12 lg:grid-cols-2">
                     <div>
                         <h2 className="text-2xl font-bold">Neden kurduk?</h2>

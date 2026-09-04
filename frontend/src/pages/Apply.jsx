@@ -916,7 +916,7 @@ export default function Apply() {
                 description="Tek formda tüm aileniz için başvurun; indirimler otomatik hesaplanır."
             />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
                     {/* STEPPER */}
                     <div
