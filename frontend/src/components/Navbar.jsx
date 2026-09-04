@@ -51,7 +51,7 @@ const MENU_GROUPS = [
         ],
     },
     {
-        label: "Yanınızdaki Ekstralar",
+        label: "Ekstra Hizmetler",
         items: [{ to: "/esim", label: "eSIM & Sigorta", icon: Smartphone }],
     },
     {
