@@ -697,7 +697,7 @@ def _fill_uae_defaults(data: dict) -> None:
         data["father_name"] = surname
 
 
-async def _build_travelers(traveler_inputs) -> tuple[list, list]:
+async def _build_travelers(traveler_inputs, travel=None) -> tuple[list, list]:
     """Yolcu girdilerini vize bilgileri ile zenginlestirir; (travelers, prices) dondurur."""
     travelers: list = []
     prices: list = []
@@ -705,7 +705,6 @@ async def _build_travelers(traveler_inputs) -> tuple[list, list]:
         visa = await get_visa_type(t.visa_type_id)
         if not visa:
             raise HTTPException(400, "Gecersiz vize tipi secildi.")
-        await _ensure_uploads_exist(t.passport_file_id, t.photo_file_id)
         data = t.model_dump()
         _fill_uae_defaults(data)
         data.update(
@@ -713,6 +712,7 @@ async def _build_travelers(traveler_inputs) -> tuple[list, list]:
                 "id": str(uuid.uuid4()),
                 "visa_type_name": visa["name"],
                 "visa_short_name": visa.get("short_name", visa["name"]),
+                "visa_duration_days": int(visa.get("duration_days") or 0),
                 "processing_days": visa.get("processing_days", ""),
                 "price": float(visa["price"]),
                 "currency": visa.get("currency", "TRY"),
@@ -724,7 +724,78 @@ async def _build_travelers(traveler_inputs) -> tuple[list, list]:
         )
         travelers.append(data)
         prices.append(float(visa["price"]))
+
+    # Once kabul kurallari (yas, kalis suresi, pasaport gecerliligi), sonra dosya kontrolu
+    if travel is not None:
+        _validate_travel_rules(travel, travelers)
+    for t in traveler_inputs:
+        await _ensure_uploads_exist(t.passport_file_id, t.photo_file_id)
     return travelers, prices
+
+
+# Basvuru kabul kurallari (BAE gocmenlik idaresi sartlari)
+PASSPORT_MIN_VALID_DAYS = 180
+
+
+def _parse_iso_date(value: str):
+    try:
+        return date.fromisoformat((value or "")[:10])
+    except ValueError:
+        return None
+
+
+def _age_on(birth_date, reference) -> float | None:
+    if not birth_date or not reference:
+        return None
+    return (reference - birth_date).days / 365.25
+
+
+def _validate_travel_rules(travel, travelers: list) -> None:
+    """Vize suresi, yas ve pasaport gecerliligi kurallarini sunucu tarafinda dogrular."""
+    arrival = _parse_iso_date(travel.arrival_date)
+    departure = _parse_iso_date(travel.departure_date)
+    if not arrival or not departure:
+        raise HTTPException(400, "Gidis ve donus tarihlerini gecerli bir formatta gonderin.")
+    if departure < arrival:
+        raise HTTPException(400, "Donus tarihi gidis tarihinden once olamaz.")
+    if arrival < date.today():
+        raise HTTPException(400, "Gidis tarihi bugunden once olamaz.")
+
+    stay_days = (departure - arrival).days + 1
+    has_adult = any(t.get("applicant_type") != "child" for t in travelers)
+
+    for traveler in travelers:
+        name = f"{traveler.get('first_name', '')} {traveler.get('last_name', '')}".strip()
+        birth = _parse_iso_date(traveler.get("birth_date"))
+        age = _age_on(birth, arrival)
+
+        if traveler.get("applicant_type") == "child":
+            if age is not None and age >= 18:
+                raise HTTPException(
+                    400, f"{name}: cocuk vizesi yalnizca 18 yasindan kucuk yolcular icindir."
+                )
+            if not has_adult:
+                raise HTTPException(
+                    400,
+                    "18 yas alti yolcular, ayni basvuruda en az bir yetiskin yolcu ile birlikte basvurmalidir.",
+                )
+
+        duration = int(traveler.get("visa_duration_days") or 0)
+        if duration and stay_days > duration:
+            raise HTTPException(
+                400,
+                f"{name}: secilen vize {duration} gun kalis hakki veriyor; planlanan kalis {stay_days} gun. "
+                "Daha uzun sureli bir vize secin veya tarihlerinizi guncelleyin.",
+            )
+
+        expiry = _parse_iso_date(traveler.get("passport_expiry"))
+        if expiry and (expiry - departure).days < PASSPORT_MIN_VALID_DAYS:
+            raise HTTPException(
+                400,
+                f"{name}: pasaportunuz donus tarihinden itibaren en az 6 ay gecerli olmalidir.",
+            )
+
+
 
 
 async def _unique_reference_code() -> str:
@@ -850,7 +921,7 @@ async def _send_application_emails(doc: dict, traveler_count: int) -> dict:
 @router.post("/applications")
 async def create_application(payload: ApplicationCreate):
     await _validate_extra_documents(payload.extra_documents)
-    travelers, prices = await _build_travelers(payload.travelers)
+    travelers, prices = await _build_travelers(payload.travelers, payload.travel)
 
     store_lines = await resolve_store_lines(
         payload.store_items,

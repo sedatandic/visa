@@ -251,3 +251,25 @@ Kullanıcı siteyi gezip tekrar ve çelişki raporu verdi. Uygulananlar:
   (9.870/10.860/2.710) da eski kurla hesaplanmış önbellek. Kullanıcı deploy edilmiş/eski
   sürümü geziyordu — canlıya yeniden deploy gerekiyor.
 - Test: iteration_64 backend %100 + frontend %100 (8 düzeltmenin tamamı + ana sayfa regresyonu).
+
+## 2026-06-05 · Mantık hatası denetimi (kullanıcı: "siteyi incele mantıksal hata bul")
+Bulunan ve düzeltilen 6 mantık hatası:
+1. **Pasaport 6 ay kuralı hiç doğrulanmıyordu** — site "tek teknik şart" diye duyuruyor, form
+   yalnızca "tarih geçmiş mi" kontrol ediyordu. Artık dönüş tarihinden itibaren 180 günden az
+   geçerliliği olan pasaportlar hem formda hem API'de engelleniyor.
+2. **18 yaş altı yolcu tek başına başvurabiliyordu** (SSS aksini söylüyor) — artık aynı
+   başvuruda en az bir yetişkin zorunlu.
+3. **Yetişkin, indirimli çocuk vizesiyle API'den geçebiliyordu** (frontend kontrol ediyordu,
+   backend etmiyordu) — gelir kaybı/ret riski; artık sunucu tarafında yaş kontrolü var.
+4. **Kalış süresi vize süresini aşabiliyordu** (30 günlük vizeyle 46 gün, 48 saatlik transitle
+   5 gün) — artık yolcu bazında engelleniyor.
+5. **Geçmiş tarihli gidiş** API'den kabul ediliyordu — engellendi.
+6. Ana sayfa paket şeridinde **iki "En çok seçilen"** etiketi görünüyordu (pack_standard +
+   pack_long) → tek etiket; "Kimler başvurabilir?" metni formla çelişiyordu (form yalnız
+   Türkiye doğumlu kabul ediyor) → bordo/yeşil pasaport ayrımı ve Türkiye şartı yazıldı.
+Kod: `routes_public._validate_travel_rules` (+ PASSPORT_MIN_VALID_DAYS=180) tek kural noktası;
+`_build_travelers(inputs, travel)` kuralları dosya kontrolünden ÖNCE çalıştırır.
+`Apply.jsx validateStep` aynı kuralları adım 1-2'de gösterir (e.travelers_adult, e.stay_length,
+e.passport_validity blocking toast olarak sunulur).
+Test: iteration_65 backend 9/9 pytest (`backend/tests/test_travel_rules.py`) + frontend %100
+(üç sihirbaz engeli, tek popüler etiket, yeni uygunluk metni).

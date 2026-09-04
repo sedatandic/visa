@@ -19,6 +19,8 @@ export const HomeBundleStrip = () => {
     }, []);
 
     if (!bundles.length) return null;
+    // Ayni seritte iki "En cok secilen" etiketi cikmasin: yalnizca ilk populer paket isaretlenir.
+    const popularId = bundles.find((b) => b.popular)?.id;
 
     return (
         <section className="py-14 sm:py-20" data-testid="home-bundle-strip">
@@ -39,9 +41,9 @@ export const HomeBundleStrip = () => {
                         <div
                             key={b.id}
                             className={`flex h-full flex-col rounded-2xl border-2 bg-card p-6 transition-shadow duration-200 ${
-                                b.popular ? "border-primary" : "border-border"
+                                b.id === popularId ? "border-primary" : "border-border"
                             }`}
-                            style={{ boxShadow: b.popular ? "var(--shadow-soft)" : "var(--shadow-card)" }}
+                            style={{ boxShadow: b.id === popularId ? "var(--shadow-soft)" : "var(--shadow-card)" }}
                             data-testid={`home-bundle-${b.id}`}
                         >
                             <div className="flex items-start justify-between gap-2">
@@ -51,7 +53,7 @@ export const HomeBundleStrip = () => {
                                         {b.visa_days} günlük vize için
                                     </p>
                                 </div>
-                                {b.popular && (
+                                {b.id === popularId && (
                                     <span className="rounded-full bg-[hsl(var(--cream-tag))] px-2.5 py-1 text-[11px] font-bold">
                                         En çok seçilen
                                     </span>

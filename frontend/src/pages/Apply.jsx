@@ -789,6 +789,11 @@ export default function Apply() {
                 }
                 if (Object.keys(te).length) e[t.key] = te;
             });
+            const hasChild = travelers.some((t) => t.applicant_type === "child");
+            const hasAdult = travelers.some((t) => t.applicant_type !== "child");
+            if (hasChild && !hasAdult)
+                e.travelers_adult =
+                    "18 yaş altı yolcular en az bir yetişkinle birlikte başvurmalıdır. Lütfen yolcu ekleyin.";
         }
         if (step === 1) {
             travelers.forEach((t) => {
@@ -804,6 +809,28 @@ export default function Apply() {
                 new Date(travel.departure_date) < new Date(travel.arrival_date)
             )
                 e.departure_date = "Dönüş tarihi gidiş tarihinden önce olamaz.";
+            if (travel.arrival_date && travel.departure_date && !e.departure_date) {
+                const stayDays =
+                    Math.round(
+                        (new Date(travel.departure_date) - new Date(travel.arrival_date)) / 86400000
+                    ) + 1;
+                const tooShort = travelers.filter((t) => {
+                    const days = Number(visaTypes.find((v) => v.id === t.visa_type_id)?.duration_days || 0);
+                    return days > 0 && stayDays > days;
+                });
+                if (tooShort.length)
+                    e.stay_length = `Planlanan kalış ${stayDays} gün; seçilen vize bu süreyi kapsamıyor. Daha uzun süreli bir vize seçin veya tarihleri güncelleyin.`;
+
+                const expiryLimit = new Date(travel.departure_date);
+                expiryLimit.setMonth(expiryLimit.getMonth() + 6);
+                const shortPassports = travelers.filter(
+                    (t) => t.passport_expiry && new Date(t.passport_expiry) < expiryLimit
+                );
+                if (shortPassports.length)
+                    e.passport_validity = `Pasaport dönüş tarihinden itibaren en az 6 ay geçerli olmalı: ${shortPassports
+                        .map((t) => `${t.first_name} ${t.last_name}`.trim())
+                        .join(", ")}`;
+            }
         }
         if (step === 2) {
             travelers.forEach((t) => {
@@ -816,10 +843,12 @@ export default function Apply() {
         setErrors(e);
         if (Object.keys(e).length) {
             const labels = collectErrorLabels(e, travelers);
+            const blocking = e.travelers_adult || e.stay_length || e.passport_validity;
             toast.error(
-                labels.length
-                    ? `Eksik veya hatalı alanlar: ${labels.slice(0, 4).join(", ")}${labels.length > 4 ? "…" : ""}`
-                    : "Lütfen işaretli alanları kontrol edin."
+                blocking ||
+                    (labels.length
+                        ? `Eksik veya hatalı alanlar: ${labels.slice(0, 4).join(", ")}${labels.length > 4 ? "…" : ""}`
+                        : "Lütfen işaretli alanları kontrol edin.")
             );
             // ilk hatali alana kaydir ve odakla
             setTimeout(() => {
@@ -833,7 +862,7 @@ export default function Apply() {
             return false;
         }
         return true;
-    }, [step, contact, travelers, travel, extraDocs]);
+    }, [step, contact, travelers, travel, extraDocs, visaTypes]);
 
     const next = () => {
         if (!validateStep()) return;

@@ -1,0 +1,30 @@
+{
+  "summary": "Iteration 65 – Verified 6 logical-bug fixes for Dubai Vize Online. Backend: 9/9 pytest cases pass across all five travel-rule categories (passport 6-month, minor alone, child-visa age, stay-vs-visa-duration, past arrival). Frontend: /basvuru wizard blocks all three targeted step transitions with correct Turkish messages (toast + inline). Home page shows exactly ONE 'En çok seçilen' badge, and eligibility card now mentions bordo/umuma mahsus + vizesiz + yeşil/gri/diplomatik + Türkiye. /vize-tipleri renders normally.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/basvuru step 2 (Vize)", "issues": ["Dönüş tarihi girildikten sonra 'Planlanan kalış... kapsamıyor' hatasıyla birlikte DateField'in kendi 'Geçerli bir tarih girin (gg.aa.yyyy)' uyarısı da kırmızı olarak görünüyor. Tarih aslında geçerli (özet 5.190₺ olarak fiyatlandırıyor); toast'ta ise ilk etiket olarak 'Dönüş tarihi' gösteriliyor, blocking mesaj değil. Kullanıcıya kafa karıştırabilir – DateField iç doğrulaması ve app-level hata mesajı sadece bir tane gösterilmeli veya toast doğrudan planlanan-kalış mesajını sunmalı."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_travel_rules.py",
+    "/app/test_reports/pytest/iter65_rules.xml"
+  ],
+  "action_items": [
+    "Opsiyonel iyileştirme: /basvuru vize adımında 'stay-vs-duration' hatası aktifken DateField'in format uyarısı bastırılsın; toast blocking mesaj olarak 'Planlanan kalış ... kapsamıyor' cümlesini göstersin (şu an validateStep sadece travelers_adult ve passport_validity'yi blocking sayıyor; departure-date için de aynı davranış eklenebilir)."
+  ],
+  "critical_code_review_comments": [
+    "routes_public.py _validate_travel_rules: mantık ve mesajlar temiz. Ek uçlar (60-gün multi vb.) da aynı fonksiyondan geçtiği için tek noktadan yönetiliyor – iyi.",
+    "Apply.jsx validateStep: departure_date için passport_validity hatası tetiklendiğinde toast doğru mesaji gösteriyor, ancak stay-vs-duration hatası e.departure_date içine yazıldığından toast 'Eksik veya hatalı alanlar: Dönüş tarihi' olarak özetliyor. blocking mesajı için de e.departure_date içindeki 'kapsamıyor' cümlesini yakalamak faydalı."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "100% (all targeted wizard blocks fire)"},
+  "test_credentials": "Admin: info@dubaivizeonline.com / Dubai2026! (kullanılmadı – kural testleri public endpointten yapıldı)",
+  "seed_data_creation": "Hiçbir başarılı başvuru oluşturulmadı; tüm negatif testler 400 döndüğü için DB'ye yazım olmadı. Temizlik gerekmedi.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend rule endpoint /api/applications; upload existence check kural doğrulamasından SONRA çalıştığı için fake file_id ile kural testleri yapılabiliyor (test_travel_rules.py). Wizard'da DateField'in placeholder içi maskesi 'gg.aa.yyyy'; page.fill('[data-testid=\"...-birth-date\"]', '10.05.1990') doğrudan çalışıyor (inner input aramayın). Radix Select için page.click(testid) + get_by_role('option').nth(...).click(force=True) çalışıyor.",
+  "rca of the issue": "n/a – regresyon/doğrulama iterasyonu; tüm 6 mantıksal düzeltme etkin."
+}

@@ -214,9 +214,10 @@ export default function Home() {
                         <div className="flex flex-col justify-center rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--cloud))] p-6">
                             <h3 className="font-heading text-base font-semibold">Kimler başvurabilir?</h3>
                             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                Dubai'ye seyahat etmek için önceden vize alması gereken yabancı ülke vatandaşları
-                                online başvuru yapabilir. Uygunluk durumu pasaport türüne ve seyahat amacına göre
-                                değişebilir.
+                                Umuma mahsus (bordo) pasaport sahibi Türk vatandaşları için Dubai vizesi
+                                zorunludur ve başvuru online yapılabilir. Hususi (yeşil), hizmet ve
+                                diplomatik pasaport hamilleri yılda 90 güne kadar vizesiz giriş yapar.
+                                Başvurular şu an Türkiye doğumlu yolcular için alınmaktadır.
                             </p>
                             <Button asChild variant="secondary" className="mt-4 h-11 border border-border">
                                 <Link to="/iletisim" data-testid="eligibility-ask-button">
