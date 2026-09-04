@@ -69,12 +69,12 @@ export default function Home() {
         <div data-testid="home-page">
             {/* HERO — gökyüzü zemin + yüzen açık panel */}
             <section className="relative isolate" data-testid="landing-hero">
-                <div className="container-page relative pt-3 sm:pt-4">
+                <div className="container-page relative pt-0">
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.45 }}
-                        className="relative overflow-hidden rounded-[var(--radius-xl)] border border-white/60 bg-card/70 px-5 pb-10 pt-12 backdrop-blur-sm sm:px-10 sm:pb-14 sm:pt-16"
+                        className="relative overflow-hidden rounded-[var(--radius-xl)] border border-white/60 bg-card/70 px-5 pb-10 pt-6 backdrop-blur-sm sm:px-10 sm:pb-14 sm:pt-8"
                         style={{ boxShadow: "var(--shadow-float)" }}
                     >
                         <div className="hero-glow absolute inset-0" aria-hidden="true" />
