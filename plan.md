@@ -1,81 +1,66 @@
 # plan.md
 
 ## 1. Objectives
-- Türkçe, modern, **sade** ve güven veren bir Dubai/UAE vize başvuru sitesi (özgün marka/renk; kopya UX değil).
+- Türkçe, modern, **sade** ve güven veren bir Dubai/UAE vize başvuru sitesi.
 - Vize tipleri + fiyatlar + genel bilgilendirme + **rehber içerikler** + hızlı başvuru akışı.
 - Çekirdek iş akışı: **başvuru oluşturma → dosya yükleme → ödeme (kart / havale) → takip kodu**.
 - Başvuruları MongoDB’ye kaydetme, admin panelde listeleme/detay/güncelleme.
 
 - Bildirimler:
-  - **E-posta bildirimleri (Resend)**:
-    - Resend entegrasyonu canlı (API anahtarı bağlı) ve outbox kayıtları admin panelde görünür.
-    - **Kritik kısıt:** Gönderici `onboarding@resend.dev` (sandbox) ise Resend sadece hesap sahibine mail atar; müşteri mailleri “error” olur ama akış bozulmaz (graceful degradation).
-    - Hedef: Resend’de **domain doğrulaması** + `SENDER_EMAIL=noreply@dubaivizeonline.com` ile gerçek müşteri e-postalarını üretime almak.
-  - WhatsApp bildirimleri:
-    - **Manuel mod** (wa.me link üretimi) tamam.
-    - Admin’e “operasyonel uyarılar” için **serbest metin** WhatsApp mesajı desteği eklendi (Twilio varsa direkt, yoksa wa.me link).
-    - Otomatik sağlayıcı (Twilio/Meta) **beklemede** (API anahtarları yoksa manuel link üzerinden ilerler).
+  - **E-posta (Resend)**
+    - Resend entegrasyonu canlı, outbox kayıtları admin panelde görünür.
+    - **Kritik kısıt:** Gönderici `onboarding@resend.dev` (sandbox) ise sadece hesap sahibine mail gider; müşteri mailleri “error” olur ama akış bozulmaz.
+    - Hedef: Resend’de domain doğrulaması + `SENDER_EMAIL=noreply@dubaivizeonline.com` ile üretime çıkmak.
+  - **WhatsApp**
+    - Manuel mod (wa.me link üretimi) tamam.
+    - Admin’e operasyonel uyarılar için serbest metin WhatsApp desteği var (Twilio varsa direkt, yoksa wa.me link).
+    - Otomatik sağlayıcı (Twilio/Meta) beklemede.
 
 - Güven ve “insan eliyle tasarlanmış” kurumsal görünüm:
-  - **Yeni ana tema (kullanıcı referansı): “Sky Panels”**
+  - **Ana tema (kullanıcı referansı): “Sky Panels”**
     - Açık gökyüzü mavisi zemin + kırık beyaz “yüzen panel” katmanları
     - Antrasit “pill” butonlar + yuvarlak ikon butonlar
     - Sıcak krem vurgu (etiket/indirim/öne çıkan)
-    - **Tipografi:** Google Sans hissine yakın geometrik sans → **Figtree** (ital axis dahil)
+    - Tipografi: Google Sans hissine yakın geometrik sans → **Figtree** (ital axis dahil)
     - Büyük radius (20–32px) + yumuşak, difüz gölgeler
-  - Kırmızı yalnızca **destructive/hata** semantiğinde (silme, reddedildi) kullanılır.
-  - “AI hissi” azaltma:
-    - Public UI’da anlamsız AI ikonları yok.
-    - Premium dizgi + mikro etkileşimler + doku/grain düşük opaklık.
-  - Gerçek görseller / kurumsal bloklar / sosyal kanıt / örnek vize görselleri.
-  - **TÜRSAB + acente şeffaflığı** ve **GDRFA rozeti**.
-  - Not: Kullanıcının paylaştığı `onyuz-rehberi.pdf` bir **iş akışı/tasarım rehberi**; spesifik “şunu uygula” listesi olmadığından sadece açık yönlendirme ile uygulanacak.
+  - Kırmızı yalnızca destructive/hata semantiğinde kullanılır.
+  - Not: `onyuz-rehberi.pdf` bir iş akışı/tasarım rehberi; spesifik “şunu uygula” listesi olmadan geniş değişiklik yapılmaz.
 
-- **Başvuru evrak standardı (güncel)**:
+- Başvuru evrak standardı (güncel):
   - **Her yolcu:** Pasaport + vesikalık fotoğraf.
-  - **Tüm başvuru:** Uçak bileti/rezervasyon + otel/konaklama rezervasyonu (**opsiyonel yükleme**; formda soru olarak sorulmaz).
+  - **Tüm başvuru:** Uçak bileti/rezervasyon + otel/konaklama rezervasyonu (opsiyonel yükleme; formda soru olarak sorulmaz).
 
-- SEO büyüme hedefi (tamamlandı): vize rehber sayfaları, sitemap/robots, JSON-LD.
-- Operasyonel verim + dönüşüm (tamamlandı): eksik belge hatırlatma, taslak hatırlatma, hesap/draft, aile profili.
-- Fiyatlandırma (tamamlandı): USD baz fiyat + canlı kurla TL tahsilat + kur şeffaflığı.
+- SEO (tamamlandı): vize rehber sayfaları + sitemap/robots + JSON-LD.
+- Operasyonel verim (tamamlandı): eksik belge hatırlatma, taslak hatırlatma, hesap/draft, aile profili.
+- Fiyatlandırma (tamamlandı): USD baz + canlı kurla TL tahsilat + kur şeffaflığı.
 
 - Ek ürün satışları (tamamlandı):
-  - Mağaza sayfaları üzerinden **eSIM** ve **seyahat sigortası** satışı.
-  - Vize başvurusu içinde eSIM + sigorta upsell (tek formda).
-  - Ek ürünler seyahat tarihine bağlandı (başlangıç/bitiş).
-  - **Akıllı paket önerisi** + **%10 seyahat paketi indirimi** (sigorta+eSIM birlikte) hem başvuruda hem mağazada.
+  - eSIM + seyahat sigortası mağazası + vize formu içinde upsell
+  - seyahat tarihine bağlı geçerlilik
+  - akıllı paket önerisi + %10 bundle indirimi
 
-- AI destekli otomasyon (tamamlandı):
-  - **Pasaport OCR** (Adım 1’de “Pasaportla Tek Adım”).
-  - **Fotoğraf Kontrolü** (AI vesikalık doğrulama) uyarı bazlı, başvuruyu engellemez.
+- AI destekli otomasyon (tamamlandı): pasaport OCR + fotoğraf kontrol.
 
-- Zami Tours otomasyonu (tamamlandı, üretim hazır):
-  - Playwright RPA + yakalama (capture) + alan eşleme + toplu aktarım + durum polling + kullanıcı takip zaman çizelgesi.
-  - **Zami zorunlu alanlar tamamlandı:** Medeni hal, meslek, anne adı, baba adı başvuruda toplanıyor ve RPA ile dolduruluyor.
-  - **Kritik sağlamlık:** Zami mapping’in admin panelden kaydedilince veri kaybetmesi bug’ı düzeltildi; mapping artık kayıpsız korunur.
-  - **“OTP ayda bir” yaklaşımı (tamamlandı):**
-    - İlk OTP’li girişte portalın **trusted device (device_state)** çerezi kalıcı saklanır.
-    - Oturum düştüğünde sistem **şifre + AI captcha** ile OTP’siz otomatik yeniden giriş dener; OTP gerçekten gerekirse admin uyarılır.
-  - **OTP Hatırlatıcı (tamamlandı):**
-    - OTP yaklaştığında veya portal OTP istediğinde admin’e **e-posta + WhatsApp** hatırlatması.
-    - 24 saat tekrar koruması (aynı uyarıyı spam’lemez).
-    - Hazırlık ekranında “OTP hatırlatma kanalları” kontrolü (placeholder numarayı yakalar).
+- Zami Tours otomasyonu (üretim hazır, OTP onboarding devam ediyor):
+  - Playwright RPA + capture + mapping + toplu aktarım + status polling + müşteri timeline.
+  - Zami zorunlu alanlar UI+RPA: medeni hal, meslek, anne adı, baba adı.
+  - Mapping veri kaybı bug fix tamam.
+  - **OTP ayda bir yaklaşımı:** trusted-device cookie’leri saklanır; oturum düştüğünde OTP’siz auto-relogin denenir; OTP gerekirse admin uyarılır.
+  - **OTP hatırlatıcı:** yaklaşan OTP veya OTP required durumunda admin’e e-posta + WhatsApp (24h dedupe).
 
-- Hosting/Deploy hedefi:
-  - **Paylaşımlı cPanel/PHP hosting alınmayacak.** (Uygulama Python/FastAPI + Playwright + MongoDB gerektirir.)
-  - Kullanıcı yalnızca **Domain (Alan Adı)** satın alır; uygulama Emergent altyapısında barınır; domain sonrası DNS yönlendirme yapılır.
+- Hosting/Deploy:
+  - Paylaşımlı cPanel/PHP hosting yok; FastAPI + Playwright + MongoDB gerektirir.
+  - Kullanıcı domain alır; uygulama Emergent üzerinde; DNS ile bağlanır.
 
 ---
 
 ## 2. Implementation Steps
 
 ### Phase 1 — Core POC (Tamamlandı)
-**Amaç:** En riskli entegrasyonları tek dosyada uçtan uca doğrulamak.
 
 ---
 
 ### Phase 2 — V1 App Development (Tamamlandı)
-**Frontend:** React + router + Tailwind + shadcn/ui. **Backend:** FastAPI `/api` + Motor + servisler.
 
 ---
 
@@ -108,15 +93,10 @@
 ---
 
 ### Phase 10 — Vize Rehberi SEO Sayfaları (Tamamlandı)
-- Backend: `/api/visa-guides`, `/api/visa-guides/{slug}`
-- Frontend: `VisaGuide.jsx`, route `/dubai-vizesi/:slug`
-- SEO: JSON-LD + sitemap + robots
 
 ---
 
 ### Phase 11 — Zorunlu Seyahat Belgeleri + Kart Tıklama Davranışı (Tamamlandı)
-- Kart gövde tıklaması başvuruya yönlendirmez (sadece buton/link)
-- Not: Seyahat belgeleri artık form sorusu değil, opsiyonel belge yükleme.
 
 ---
 
@@ -137,437 +117,213 @@
 ---
 
 ### Phase 16 — eSIM + Seyahat Sigortası Mağazası (Tamamlandı)
-**Durum:** Standalone mağaza akışı üretimde.
-- `/esim`, `/seyahat-sigortasi`, `/siparis/:reference`
-- Admin sipariş yönetimi + teslim (eSIM QR / poliçe PDF)
 
 ---
 
-### Phase 17 — Vize Başvurusu İçinde eSIM + Sigorta Upsell — **COMPLETED (2026-08-31)**
-- Backend: `StoreItemIn` + `store_items` (quote & application), `compute_pricing(store_lines=...)`, `resolve_store_lines()`, `create_application_order()` (source=visa_application), `sync_application_order_payment()` (kart/havale/admin mark-paid).
-- Frontend: `Apply.jsx` adım 2'de sigorta planı + eSIM paketleri; özet + canlı FX toplam.
-- Admin: AdminOrders’da “Vize başvurusu ile alındı” etiketi; AdminApplicationDetail’de store satırları + bağlı sipariş kodu.
+### Phase 17 — Vize Başvurusu İçinde eSIM + Sigorta Upsell (Tamamlandı)
 
 ---
 
-### Phase 18 — Ek Ürün Geçerlilik Tarihlerinin Seyahat Tarihine Bağlanması — **COMPLETED (2026-08-31)**
-- Backend: `resolve_store_lines(items, arrival_date, departure_date)` → satırlarda `validity_days`, `starts_on`, `ends_on`, `trip_days`, `covers_trip`.
-- Frontend: giriş tarihi yoksa seçim kapalı; kartlarda geçerlilik penceresi ve uyarılar; özet satırlarında tarih aralığı.
+### Phase 18 — Ek Ürün Geçerlilik Tarihlerinin Seyahat Tarihine Bağlanması (Tamamlandı)
 
 ---
 
-### Phase 19 — Akıllı Paket Önerisi + %10 Seyahat Paketi İndirimi — **COMPLETED (2026-08-31)**
-- Backend: `bundle_discount_amount()`, `compute_pricing` indirim satırları, store order & bağlı order indirimli fiyat, e-posta satırları.
-- Frontend: `Apply.jsx` promosyon kutusu + önerilen etiketler; `StoreCheckout.jsx` çapraz satış; OrderStatus/Admin ekranlarında indirim/tarih gösterimi.
+### Phase 19 — Akıllı Paket Önerisi + %10 Seyahat Paketi İndirimi (Tamamlandı)
 
 ---
 
-### Phase 20 — Zami Tours Portalına Başvuru Aktarımı (visa.zamitours.ae) — **COMPLETED (2026-09-01) / LIVE VERIFIED (2026-09-03)**
-Engel: girişte resimli CAPTCHA + OTP var → tam otomatik login sınırlı.
-- **A) Tarayıcı yardımcısı (bookmarklet)**
-  - `GET /api/zami/bookmarklet.js` (BASE’i `currentScript.src`’den alır).
-  - Admin başvuru detayında “Aktarım kodu oluştur” → 45 dk tek kullanımlık token.
-  - Zami formunda bookmarklet çalıştır → token gir → alanlar mapping’e göre dolar; dosyalar için indirme linkleri listelenir.
-- **B) Robot oturumu (Playwright RPA)**
-  - Oturum `storage_state` ile saklanır; transfer “dry-run” ile screenshot döndürebilir.
-  - Kritik: Playwright chromium yolu `/usr/local/bin/browser-use-chromium` korunur.
-- **Admin alan eşleme ekranı (`/admin/zami`)**
-  - HTML yapıştırma + yakalama (capture) ile field listesi.
-  - Genel + yolcu alanlarında `{i}` şablonu (multi-passenger).
-  - Mapping hem bookmarklet hem RPA tarafından ortak kullanılır.
+### Phase 20 — Zami Tours Portalına Başvuru Aktarımı (Tamamlandı / canlı doğrulandı)
 
 ---
 
-### Phase 21 — Toplu Aktarım + Otomatik Durum Takibi — **COMPLETED (2026-09-01)**
-- Toplu aktarım API + admin UI.
-- Otomatik status polling (`zami_status.py`) → bizim status’e çevirme + status_history + e-posta tetikleme.
+### Phase 21 — Toplu Aktarım + Otomatik Durum Takibi (Tamamlandı)
 
 ---
 
-### Phase 22 — Alan Eşlemesi Otomasyonu (yakalama + otomatik öneri) — **COMPLETED (2026-09-01)**
-- `GET /api/zami/capture.js` capture endpoint’e gönderir.
-- `zami.suggest_mapping()` öneri çıkarır; `{i}` şablonlaştırır.
+### Phase 22 — Alan Eşlemesi Otomasyonu (yakalama + otomatik öneri) (Tamamlandı)
 
 ---
 
-### Phase 23 — Müşteri Durum Ekranı + Aktarım Hazırlık Kontrolü — **COMPLETED (2026-09-01)**
-- `build_customer_timeline()` 5 adımlı görsel takip akışı.
-- `GET /api/admin/zami/readiness` ile mapping/oturum/tarayıcı/durum sayfası kontrolleri.
+### Phase 23 — Müşteri Durum Ekranı + Aktarım Hazırlık Kontrolü (Tamamlandı)
 
 ---
 
-### Phase 24 — WhatsApp Bildirimleri (Manuel Mod) + Admin Ayarları — **COMPLETED (2026-09-01)**
-- Admin WhatsApp ayarları paneli.
-- Durum değişimlerinde wa.me linki üreten manuel bildirim akışı.
+### Phase 24 — WhatsApp Bildirimleri (Manuel Mod) + Admin Ayarları (Tamamlandı)
 
 ---
 
-### Phase 25 — Ücretsiz Ön Değerlendirme Sihirbazı — **KALDIRILDI (2026-09-02)**
+### Phase 25 — Ücretsiz Ön Değerlendirme Sihirbazı (Kaldırıldı)
 
 ---
 
-### Phase 26 — Kod Kalitesi Refactoring (Rapor Maddeleri + Saf Fonksiyon İyileştirmeleri) — **COMPLETED (2026-09-03)**
-**Amaç:** Karmaşıklığı düşürmek, test edilebilirliği artırmak, davranışı bozmadan refactor.
-
-**Kapsam (tamamı kapatıldı)**
-- `whatsapp.get_settings` (17 → 5)
-- `whatsapp.notify_result` (17 → 8)
-- `visa_delivery.fetch_visa_document` (15 → 5)
-- `passport_ai.normalize_photo_result` (14 → 4) ve `normalize_result`
-- `routes_zami`: `_base_url`, `zami_config`, `zami_candidates`
-- `routes_public`: `get_site_content`, `_tracking_last_names`, `_apply_traveler_documents`
-- `routes_admin.admin_send_visa`
-- `content.compute_pricing` (11 → 6)
-- `db.serialize_doc` tip-dispatch
-- Testler: `backend_test.py` pythonic True/False
-- Ek (raporda yoktu ama risksiz): `zami.save_mapping` ve `zami.build_payload` saf yardımcı fonksiyonlara bölündü; JSON çıktısı birebir aynı doğrulandı.
-
-**Kalite/Tarama**
-- Ruff: F632/E712/E711/F821/F401/F811: **All checks passed**
-- Ortalama karmaşıklık: **A (≈4.2)**
-
-**Bilinçli ertelenen borç (riskli / canlı OTP gerektirir)**
-- `zami_rpa.fill_application` (44)
-- `zami_rpa.check_status` (30)
-- `zami_rpa._upload_documents` (13)
+### Phase 26 — Kod Kalitesi Refactoring (Tamamlandı)
 
 ---
 
-### Phase 39 — Kod Kalitesi Refactoring (3. Tur: Zami saf fonksiyonlar + login + reminders + status) — **COMPLETED (2026-09-03)**
-Bu faz, yeni gelen “Code Quality Report” maddelerini doğrulayıp yalnızca **gerçek** sorunları kapattı.
-
-**Raporun 2 “kritik” maddesi yanlış pozitif çıktı (DEĞİŞTİRİLMEDİ)**
-1) `passport_ai.py:147` “number atanmadan kullanılabilir” → yanlış (except erken return). Ruff F821/F823 temiz.
-2) “24 adet `is` literal karşılaştırma” → yanlış; hepsi `is None`/`is not None` (doğru idiom). Ruff F632 temiz.
-
-**Gerçek karmaşıklık maddeleri kapatıldı**
-- `zami.suggest_mapping` **28 → 9**
-- `zami.parse_form_fields` **22 → 9**
-- `zami_rpa.submit_login` **64 satır → 47 satır** (cc 6)
-- `zami_rpa._click_first` iç içe **5 → 3** (cc 4)
-- `doc_reminders.send_document_reminder` **51 → 25** (cc 5)
-- `routes_public.check_photo_document` **51 → 33** (cc 7)
-- Ek güvenli refactor: `zami_status.apply_status` **22 → 8**, `zami_status.sweep_statuses` **12 → 9**
-
-**Davranış korunumu kanıtları**
-- `/app/scripts/zami_pure_snapshot.py`: `parse_form_fields` + `suggest_mapping` refactor öncesi/sonrası JSON çıktısı **birebir aynı**.
-- `POST /api/admin/zami/check-status-all`: `sweep_statuses` + `apply_status` zinciri canlı doğrulandı (oturum düşmüş olsa bile biçim ve erken çıkış mantığı korunuyor).
-
-**Yakalanan ciddi hata ve önlem**
-- Refactor sırasında `@router.post('/photo/check')` dekoratörünün private fonksiyona bağlanması hatası oluştu → tespit edilip düzeltildi.
-- Tüm route dosyalarında dekoratör-fonksiyon eşleşmesi otomatik tarandı → başka sorun yok.
-
-**Test**
-- iteration_34: kritik hata 0; bayat test güncellendi.
+### Phase 34 — Zami Zorunlu Alanlar (Tamamlandı)
 
 ---
 
-### Phase 34 — Zami Zorunlu Alanlar (Medeni Hal / Meslek / Anne / Baba) — **COMPLETED (2026-09-03)**
+### Phase 35 — Resend Aktivasyonu (Tamamlandı; prod domain doğrulaması beklemede)
 
 ---
 
-### Phase 35 — Canlı E-posta (Resend) Aktivasyonu — **COMPLETED (2026-09-03)**
-- `RESEND_API_KEY` bağlı.
-- Sandbox uyarıları admin panelde.
-- **USER ACTION:** Resend domain doğrulaması sonrası `SENDER_EMAIL=noreply@dubaivizeonline.com`.
+### Phase 36 — Zami Mapping Veri Kaybı Bug Fix (Tamamlandı)
 
 ---
 
-### Phase 36 — Kritik Bug Fix: Zami Mapping Veri Kaybı — **COMPLETED (2026-09-03)**
-**Keşif:** `routes_zami.MappingIn` içinde bazı alanlar yoktu; admin panelden mapping kaydedilince `constants`, `validate_selector`, `helper_selectors`, `upload_targets`, `status_search_field`, `status_submit_selector` siliniyordu.
-
-**Düzeltme**
-- `MappingIn` modeline eksik alanlar `Optional=None` olarak eklendi.
-- `zami.normalize_mapping(value, current)` artık istek payload’ında **gönderilmeyen** alanları mevcut değerden **korur**.
-- AdminZami UI bu alanları round-trip eder.
-- Mapping’in tek kaynağı: `/app/scripts/zami_save_mapping.py` (validate_selector/helper_selectors/upload_targets dahil tam set).
+### Phase 40 — Zami RPA “OTP Ayda Bir” (Tamamlandı)
 
 ---
 
-### Phase 40 — Zami RPA “OTP Ayda Bir” (Trusted Device + Otomatik Yenileme) — **COMPLETED (2026-09-03)**
-**Amaç:** Zami portalı OTP bağımlılığını operasyonda minimize etmek; genelde OTP’yi ~ayda bir kez gerektirecek şekilde oturumu kendiliğinden toparlamak.
-
-**Backend**
-- `device_state` ve `last_otp_at` DB’de kalıcı saklanır (ilk OTP’li girişte).
-- `auto_relogin()`:
-  - Trusted device (varsa) ile tarayıcı açar.
-  - Kullanıcı adı/şifre girer + AI captcha çözer.
-  - OTP istenmezse oturumu yeniler ve sayacı artırır; OTP istenirse `otp_required=true` işaretler.
-  - 3 deneme (`AUTO_RELOGIN_TRIES=3`).
-- `keepalive_loop()` artık sırayla:
-  1) keepalive dene
-  2) expired ise **OTP’siz auto relogin** dene
-  3) ancak OTP gerekiyorsa admin’e e-posta gönder
-- `_active_state()` ile `fill_application` ve `check_status` öncesi oturum otomatik toparlanır.
-- Yeni endpoint: `POST /api/admin/zami/session/auto-renew`.
-
-**Frontend (Admin)**
-- Admin → Zami ekranında yeni buton: **“OTP’siz yenile”**.
-- Bilgi kartı:
-  - Cihaz güveni (trusted device kayıt durumu)
-  - Sonraki OTP (tahmini, 30 gün)
-  - Otomatik yenileme sayacı + son otomatik giriş zamanı
-
-**Operasyon notu**
-- Bu mekanizmanın çalışması için **ilk kurulumda bir kez** OTP’li giriş gerekir (trusted device state kaydı).
-
-**Test**
-- Zami regresyon: **39/39 PASS**
-- Yeni özellik testi: **iteration_35 (12/12 PASS)**
+### Phase 41 — Zami OTP Hatırlatıcı (E-posta + WhatsApp) (Tamamlandı)
 
 ---
 
-### Phase 41 — Zami OTP Hatırlatıcı (E-posta + WhatsApp) — **COMPLETED (2026-09-03)**
-**Amaç:** OTP gerekliliği yaklaştığında veya portal OTP istediğinde admin’i önceden uyararak operasyonu kesintisiz tutmak.
-
-**Backend**
-- Yeni modül: `/app/backend/otp_reminders.py`
-  - 6 saatte bir kontrol döngüsü.
-  - `next_otp_due` tarihine **3 gün** kalınca `upcoming` uyarısı.
-  - Portal OTP istiyorsa `due_now` uyarısı.
-  - **24 saat tekrar koruması** (aynı uyarıyı günde en fazla bir kez gönderir).
-- WhatsApp: `whatsapp.send_admin_text()`
-  - Twilio yapılandırıldıysa direkt WhatsApp mesajı.
-  - Aksi halde **wa.me** linki üretir (manuel gönderim).
-- Yeni endpoint: `POST /api/admin/zami/session/otp-reminder?force=true`
-  - `force=true` ile test amaçlı hatırlatma tetiklenebilir.
-- Readiness iyileştirmesi:
-  - “OTP hatırlatma kanalları” kontrolü eklendi (placeholder/örnek WhatsApp numarası uyarısı).
-
-**Frontend (Admin)**
-- Admin → Zami ekranında:
-  - **“Hatırlatmayı test et”** butonu.
-  - “Son hatırlatma” bilgisi (tarih + tür) ve varsa WhatsApp linki.
-
-**Canlı doğrulama**
-- E-posta: `sent`
-- WhatsApp: `manual` link üretildi
-- Dedupe: ikinci tetikleme `reminder_not_due`
-
-**Test**
-- iteration_36: kritik hata 0 (genel başarı ~%95; düşük öncelikli 422/400 farkları not edildi)
+### Phase 42 — Tasarım Sistemi Tam Yenileme (Sky Panels) (Tamamlandı)
 
 ---
 
-### Phase 42 — Tasarım Sistemi Tam Yenileme (Sky Panels / Flightin Referansı) — **COMPLETED (2026-09-03)**
-**Amaç:** Kullanıcının verdiği 4 referans görsele göre siteyi yeniden tasarlamak.
-
-**Design blueprint**
-- `/app/design_guidelines.md` tamamen yeniden yazıldı (Sky Panels sistemi).
-
-**Uygulananlar**
-- `index.css` token seti (light+dark) sky/charcoal/cream’e geçirildi.
-- Radius ölçeği 20–32px’e büyütüldü; gölge ölçeği yumuşak/difüz yapıldı.
-- Font: Tinos serif → **Figtree** (ital axis dahil); `display-italic` vurgusu eklendi.
-- `.sky-shell`, `.panel-float`, `.panel-cream`, `.panel-dark`, `.segment-*` yardımcı sınıfları eklendi.
-- Shadcn bileşen güncellemeleri:
-  - Button: antrasit pill (h-11/h-12), outline=açık pill, icon=yuvarlak
-  - Card, Input, Select, Textarea, Tabs (aktif segment antrasit), Badge (full radius), Dialog
-- Layout:
-  - `SiteLayout` gökyüzü zemin aldı.
-  - `PageHeader` yüzen panele dönüştü.
-  - `Home` hero merkezi açık panel + koyu marquee panel olarak yeniden yazıldı.
-- Renk remap:
-  - Bakır/teal vurgular `VisaTypeCard`, `Testimonials`, `ReviewSpotlight`, `StoreCheckout`, `IconCards` içinde antrasit/krem’e uyarlandı.
-- Admin:
-  - Admin ekranları okunabilirlik için sade zeminde kaldı (sky sadece public site).
-
-**Test**
-- iteration_37: frontend regresyon ~%95, `ui_bugs=0`, mobilde yatay kaydırma yok, admin akışı sağlam.
+### Phase 43 — Vize Kartları Vitrini (Tek dokunuşla seçim) (Tamamlandı)
+- Home’da 6 kart → `/basvuru?vize=<id>`
+- Apply query param ile seçimi preselect eder
+- iteration_38 frontend %100
 
 ---
 
-### Phase 43 — Vize Kartları Vitrini (Ana Sayfa, Tek Dokunuşla Seçim) — **COMPLETED (2026-09-03)**
-**Amaç:** Ana sayfadan vize tipini görselli bir ızgaradan seçtirerek başvuruya tek dokunuşta yönlendirmek (referanstaki “destination grid” mantığı).
+### Phase 44 — Kart Üstü Fiyat (Tamamlandı)
+- VisaShowcase kartlarında:
+  - Güncel **TL fiyat** (₺)
+  - “kişi başı” etiketi
+  - USD karşılığı + “güncel kurla” notu
+- Fiyatlar `/vize-tipleri` ve başvuru özetiyle birebir doğrulandı
+- iteration_39 frontend %100
 
-**Frontend**
-- Yeni bileşen: `/app/frontend/src/components/VisaShowcase.jsx`
-  - AuthorityStrip’ten hemen sonra, **yüzen panel** içinde 6 görselli vize kartı (3×2 ızgara).
-  - Kartlar: koyu cam overlay + sol üstte rozet + sağ altta yuvarlak ok butonu.
-  - Skeleton yükleme ve boş durum ele alındı.
-  - Görseller: `lib/site.js` içindeki `IMAGES` URL’leri.
-- Navigasyon:
-  - Kartlar `/basvuru?vize=<id>` adresine gider.
-  - `Apply.jsx`’in mevcut `vize` query param desteği ile sihirbaz **seçili vize türüyle** açılır (tek dokunuşla seçim).
+---
 
-**Test**
-- iteration_38: frontend **%100**, `ui_bugs=0`.
-- 3 farklı vize türünde ön-seçim + fiyat doğrulandı.
-- Mobil 390×844: taşma yok, dokunma hedefleri uygun.
+### Phase 45 — Zami OTP Canlı Giriş Sağlamlaştırma (Tamamlandı; onboarding beklemede)
+**Amaç:** İlk OTP’li girişin başarı oranını artırıp “OTP ayda bir” mekanizmasını gerçekten devreye almak.
+
+**Bulgular ve düzeltmeler**
+1) **Trusted Device seçimi (KÖK NEDEN 1):**
+   - Portal login sayfasında cihaz tipi radyoları (`si`) var; varsayılan “No Change” cihazı paylaşım sayıp OTP’yi sıklaştırıyor.
+   - Çözüm: `_login_credentials_step` içinde de “Trusted Device” işaretleniyor.
+   - `_mark_trusted_device` sağlamlaştırıldı: normal check → force check → JS fallback.
+   - Canlı doğrulama: `si=2` checked.
+
+2) **Eşzamanlı giriş yarışı (KÖK NEDEN 2):**
+   - Keepalive/auto_relogin interaktif login sırasında portala bağlanıp oturumu düşürüyordu (“IP Address changed”).
+   - Çözüm: `_login_lock` + `interactive_login_active()`.
+   - `auto_relogin` ve `keepalive_session` interaktif login varken atlıyor.
+   - `auto_relogin` gövdesi kilit altına alındı (`_auto_relogin_locked`).
+
+3) **OTP süresi çok kısa (KÖK NEDEN 3):**
+   - Portal OTP kodu birkaç dakika geçerli (“Time’s up!”) ve yeni kod için 15 dk bekletiyor.
+   - Çözüm: Admin’in captcha adımıyla zaman kaybetmemesi için yeni akış:
+     - Backend: `start_session_to_otp()` + endpoint `POST /api/admin/zami/session/start-otp`
+     - Admin UI: “Oturum başlat” artık `start-otp` çağırıyor; OTP input autoFocus, sadece rakam, Enter ile gönderim, “süre kısa” uyarıları.
+   - Ek: Login hata mesajları portal metnine göre Türkçeleştirildi (OTP cooldown/captcha), SESSION_IDLE_LIMIT 900→1800.
+
+**Durum**
+- Onboarding hâlâ beklemede: `trusted_device=false`, `otp_required=true`, `expired=true`.
+- Bu noktadan sonra OTP’nin panelden hızlı girilmesi gerekir.
 
 ---
 
 ## 3. Next Actions
 
-### P0 — “AI Hissi”ni Kıran En Kritik İş: Gerçek Firma Bilgileri — **USER ACTION REQUIRED**
-**Neden P0?** Sahte/placeholder veriler (telefon, adres, unvan, TÜRSAB, vergi) ve uydurma istatistikler güveni en hızlı düşürür.
-
-**Gerekli veriler**
-1) Gerçek telefon / WhatsApp
-2) Gerçek destek e-postası
-3) Açık adres (en az il/ilçe + mahalle)
-4) Ticaret unvanı, TÜRSAB belge no, vergi dairesi/no, MERSİS, ticaret sicil no
-5) Gerçek sosyal kanıt: tamamlanan başvuru sayısı, ortalama sonuç süresi, yıllık deneyim (varsa)
-6) Varsa ekip/ofis fotoğrafları
-
-**Uygulama**
-- `company_info` ve `review_summary` admin ayarlarından bu gerçek veriler girilecek.
-- Ana sayfadaki vitrin istatistikleri gerçek sayılarla güncellenecek veya kaldırılacak.
+### P0 — Gerçek Firma Bilgileri (USER ACTION REQUIRED)
+Telefon/WhatsApp/adres/TÜRSAB/vergisel bilgiler ve gerçek sosyal kanıt.
 
 ---
 
-### P0.1 — Zami “OTP Ayda Bir”in Aktifleşmesi: İlk OTP’li Giriş — **USER ACTION REQUIRED (TEK SEFER)**
-**Neden gerekli?** Trusted-device çerezi ancak OTP ile doğrulanmış ilk girişte oluşur.
+### P0.1 — Zami “OTP Ayda Bir” Aktifleştirme: İlk OTP’li Giriş (USER ACTION REQUIRED)
+**Yeni önerilen akış (süre kritik):**
+1) Admin → Zami Aktarım → Robot Oturumu
+2) **Oturum Başlat** (artık captcha otomatik geçilip OTP ekranına getirir)
+3) E-postaya gelen OTP kodunu **hemen** girin (Enter ile gönder)
 
-**Adımlar**
-1) Admin → Zami Aktarım → **Robot Oturumu** → **Oturum Başlat**
-2) Captcha otomatik okunur; portal OTP isterse kodu girin
-3) Oturum “ready” olunca `device_state` saklanır
-
-**Beklenen sonuç**
-- Sonraki oturum düşmelerinde robot çoğu zaman **OTP’siz** toparlar; OTP tipik olarak ~ayda bir gerekir.
-- OTP tarihi yaklaşınca veya portal OTP istediğinde Phase 41 hatırlatıcı otomatik uyarır.
+Beklenen: `device_state` + `last_otp_at` kaydolur → 1 ay OTP’siz yenileme.
 
 ---
 
-### P0.2 — OTP Hatırlatıcı Kanalları (Gerçek numara/e-posta) — **USER ACTION REQUIRED**
-**Durum:** Sistem placeholder WhatsApp numarasını tespit edip readiness’te uyarıyor.
-
-**Yapılacaklar**
-- Admin hatırlatmalarının gideceği gerçek WhatsApp numarasını `company_info.whatsapp` alanına girin **veya** env `ADMIN_WHATSAPP` sağlayın.
-- Admin e-posta uyarısı için env `ADMIN_EMAIL` doğru olmalı.
+### P0.2 — OTP Hatırlatıcı Kanalları (USER ACTION REQUIRED)
+- `company_info.whatsapp` veya env `ADMIN_WHATSAPP` gerçek numara.
+- env `ADMIN_EMAIL` doğru.
 
 ---
 
-### P0.3 — `onyuz-rehberi.pdf` Uygulama Kapsamı — **USER DECISION REQUIRED (hızlı seçim)**
-Bu PDF bir iş akışı/tasarım rehberi; spesifik “şunu yap” listesi olmadığı için değişiklikler yönlendirme olmadan riskli.
-
-Seçenekler:
-- A) Ana sayfa (ön yüz) satış metni + hiyerarşi revizyonu
-- B) Tracking sayfası adım adım akışını rehbere göre görsel olarak zenginleştirme
-- C) Belirli bir bölüm uygulanacak (sayfa/bölüm adı verilecek)
-- D) Şimdilik atla
+### P0.3 — `onyuz-rehberi.pdf` Kapsam Kararı (USER DECISION REQUIRED)
+A) Ana sayfa satış metni/hiyerarşi
+B) Tracking görsel akış
+C) Belirli bölüm
+D) Atla
 
 ---
 
-### P0.4 — Resend Production Gönderici (Domain Doğrulaması + SENDER_EMAIL) — **USER ACTION REQUIRED**
-1) Resend panelinde `resend.com/domains` → `dubaivizeonline.com` doğrula.
-2) Deploy ortamında/`.env`:
-   - `SENDER_EMAIL=noreply@dubaivizeonline.com` (veya `info@dubaivizeonline.com`)
-3) Doğrulama testi:
-   - Gerçek müşteri adresine e-posta `sent`
+### P0.4 — Resend Production Gönderici (USER ACTION REQUIRED)
+Domain doğrulaması + `SENDER_EMAIL`.
 
 ---
 
-### P1 — Custom Domain Deploy — **IN PROGRESS / USER ACTION REQUIRED**
-**Durum / bulgular**
-- `dubaivizeonline.com`: DNS yönlendirme kullanıcı aksiyonu bekliyor.
-- Deployment readiness: PASS.
-
-**Deploy runbook**
-1) Emergent’te Deploy → Deploy Now.
-2) Deploy sonrası Link domain → `dubaivizeonline.com`.
-3) DNS kayıtları: kök domain (`@`) ve `www` (Emergent yönlendirmesine göre A/CNAME).
-4) SSL otomatik.
-5) Env:
-   - `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `EMERGENT_LLM_KEY`, `RESEND_API_KEY`, `SENDER_EMAIL`, `STRIPE_API_KEY`, `PUBLIC_SITE_URL`, `PUBLIC_BASE_URL`.
-6) Deploy sonrası:
-   - `PUBLIC_SITE_URL` ve `PUBLIC_BASE_URL` yeni domain’e çekilecek (e-posta linkleri, dosya linkleri).
+### P1 — Custom Domain Deploy (USER ACTION REQUIRED)
+DNS yönlendirme + Emergent domain link + env URL’leri güncelleme.
 
 ---
 
-### P2 — Stripe Prod Geçişi (opsiyonel) — **BEKLEMEDE**
-- Canlı anahtarlar + webhook secret + success/cancel URL’leri.
+### P2 — Stripe Prod (opsiyonel)
 
 ---
 
-### P3 — WhatsApp Otomatik Sağlayıcı (Twilio/Meta) — **BEKLEMEDE**
-- Sağlayıcı seçimi + API anahtarları.
-- Not: Phase 41 ile admin uyarıları Twilio yoksa dahi **wa.me link** üzerinden çalışır.
+### P3 — WhatsApp Otomatik Sağlayıcı (Twilio/Meta) (opsiyonel)
 
 ---
 
-### Ops — Zami’de Kalan Manuel Alanlar (İyileştirme) — **BACKLOG**
-- Eğitim (`eu`)
-- Uçuş bilgileri (`tr_a_d`, `tr_a_fn`, `tr_d_d`, `tr_d_fn`)
-
-Not: Phase 31 kararı gereği formda soru olarak yok. İstenirse opsiyonel alan yapılabilir.
+### Ops — Zami’de Kalan Manuel Alanlar (Backlog)
+Eğitim + uçuş bilgileri.
 
 ---
 
-### Tech Debt — Canlı RPA Kodunda Karmaşıklık Azaltma — **BACKLOG (RISKLI)**
-OTP/CAPTCHA bağımlı olduğu için deploy öncesi risk alınmadı:
-- `zami_rpa.fill_application` (44)
-- `zami_rpa.check_status` (30)
-- `zami_rpa._upload_documents` (13)
+### Tech Debt — Canlı RPA karmaşıklık azaltma (Backlog, riskli)
+`fill_application`, `check_status`, `_upload_documents`.
 
 ---
 
 ## 4. Success Criteria
-- POC/V1/SEO/Account/Drafts/FX/Reminders/Storefront akışları: mevcut kriterler korunur.
+- Tema/marka: Sky Panels tutarlılığı, AA kontrast, mobil overflow yok, 44px hedefler.
 
-- Tema/marka başarı kriterleri (güncel):
-  1) **Sky Panels** tema tüm public sayfalarda tutarlı (sky zemin + floating panel + charcoal pill).
-  2) Favicon/ikon/wordmark doğru servis edilir (`/brand/*` 200).
-  3) “VizeAtlas” metinleri public alanlarda kalmaz.
-  4) Tipografi: başlıklarda **Figtree**; gerektiğinde kısa italik display vurgusu; okunabilirlik AA.
-  5) Mobilde yatay kaydırma yok; 44px dokunma hedefleri korunur.
-  6) **Vize Kartları Vitrini**:
-     - Ana sayfada 6 kart render olur ve görseller bozuk değildir.
-     - Kart tıklaması `/basvuru?vize=<id>` ile sihirbazı açar.
-     - Seçili vize türüne göre özet/Toplam fiyat doğru güncellenir.
+- Vize Kartları Vitrini + fiyat:
+  1) Home’da 6 kart render olur ve görseller bozuk değildir.
+  2) Kart tıklaması `/basvuru?vize=<id>` ile sihirbazı açar.
+  3) Kart üzerinde **TL kişi başı fiyat** görünür; `/vize-tipleri` ve başvuru özetiyle birebir aynıdır.
 
-- Zami entegrasyonu başarı kriterleri:
-  1) Mapping kaydı admin panelden kaydedilince **constants/upload_targets/validate_selector** kaybolmaz.
-  2) Bookmarklet + RPA aktarım akışı bozulmaz.
-  3) Status sweep (cron) çalışır ve admin panelde loglanır.
-  4) **OTP ayda bir yaklaşımı:**
-     - İlk OTP’li giriş sonrası `device_state` kayıtlıdır.
-     - Oturum düştüğünde sistem çoğu durumda **OTP’siz** otomatik yenileme yapar.
-     - OTP gerçekten gerektiğinde admin **tek e-posta** + WhatsApp ile bilgilendirilir.
-     - Admin panelde “OTP’siz yenile” butonu çalışır ve sayaç artar.
-  5) **OTP hatırlatıcı:**
-     - `next_otp_due` yaklaşırken (≤3 gün) admin’e hatırlatma düşer.
-     - `otp_required=true` olduğunda hatırlatma düşer.
-     - Aynı uyarı **24 saat** içinde tekrar gönderilmez.
-     - Readiness’te uyarı kanalları (ADMIN_EMAIL + gerçek WhatsApp) “ok” olur.
+- Zami OTP ayda bir:
+  1) İlk OTP’li giriş sonrası `device_state` kayıtlıdır (`trusted_device=true`, `last_otp_at` set).
+  2) Oturum düşüşlerinde çoğu durumda OTP’siz auto-relogin başarılı.
+  3) OTP gerçekten gerektiğinde admin e-posta + WhatsApp uyarısı; 24h dedupe.
+  4) Admin UI “Oturum Başlat” ile OTP ekranına hızlı ilerler (start-otp).
 
-- E-posta (Resend) başarı kriterleri:
-  1) `RESEND_API_KEY` bağlıyken outbox “sent/error” olur.
-  2) Domain doğrulaması sonrası müşteri e-postaları **sent** olur.
-
-- Deploy/Domain başarı kriterleri:
-  1) `https://dubaivizeonline.com` açılır, SSL aktif.
-  2) Admin panel ve ödeme akışları çalışır.
-  3) Cron job’lar (taslak hatırlatma, Zami status sweep + keepalive + OTP reminder) deploy ortamında çalışır.
+- Deploy:
+  - `https://dubaivizeonline.com` SSL aktif; cron job’lar (doc reminders, Zami status/keepalive, OTP reminders) çalışır.
 
 ---
 
-## DURUM (2026-09-03 → güncellendi)
-- Phase 1–19: **TAMAMLANDI**.
-- Phase 20–23 (Zami RPA + capture + mapping + status + tracking): **TAMAMLANDI** ve canlı doğrulandı.
-- Phase 24 (WhatsApp manuel): **TAMAMLANDI** (otomatik sağlayıcı beklemede).
-- Phase 25: **KALDIRILDI**.
-- Phase 26 (Kod kalitesi refactor): **TAMAMLANDI**.
-- Phase 34 (Zami zorunlu alanlar): **TAMAMLANDI**.
-- Phase 35 (Resend aktivasyonu): **TAMAMLANDI** (sandbox kısıtı var; domain doğrulaması bekliyor).
-- Phase 36 (Zami mapping veri kaybı bug fix): **TAMAMLANDI**.
-- Phase 40 (Zami OTP ayda bir — trusted device + auto relogin + admin UI): **TAMAMLANDI**.
-- Phase 41 (Zami OTP hatırlatıcı — e-posta + WhatsApp + admin UI + readiness kanalı kontrolü): **TAMAMLANDI**.
-- Phase 42 (Sky Panels tasarım sistemi — tokenlar + bileşenler + Home hero + layout): **TAMAMLANDI**.
-- Phase 43 (Vize Kartları Vitrini — tek dokunuşla seçim): **TAMAMLANDI**.
+## DURUM (2026-09-04 → güncellendi)
+- Phase 1–43: **TAMAMLANDI**.
+- Phase 44 (Kart üstü fiyat): **TAMAMLANDI** — iteration_39 frontend %100.
+- Phase 45 (Zami OTP giriş sağlamlaştırma): **TAMAMLANDI** (kod + UI), ancak **ilk OTP’li giriş hâlâ kullanıcı aksiyonu**.
 
 Test raporları (seçme):
-- iteration_35.json — **OTP ayda bir**: backend 12/12 + regresyonlar PASS.
-- iteration_36.json — **OTP hatırlatıcı**: kritik hata 0; canlı test + dedupe doğrulandı.
-- iteration_37.json — **Sky Panels UI**: frontend regresyon ~%95; ui_bugs=0; mobil overflow yok; admin akışı sağlam.
-- iteration_38.json — **Vize Kartları Vitrini**: frontend %100; tek dokunuşla seçim + fiyat ön-seçimi doğrulandı.
+- iteration_35 — OTP ayda bir altyapısı backend PASS
+- iteration_36 — OTP hatırlatıcı PASS
+- iteration_37 — Sky Panels UI regresyon PASS
+- iteration_38 — Vize vitrin seçimi frontend %100
+- iteration_39 — Vitrin kart üstü fiyat frontend %100
 
 Blokajlar / Bekleyen:
-- **Gerçek firma bilgileri** (telefon/adres/TÜRSAB/vergisel bilgiler) → güven için **USER ACTION REQUIRED**.
-- **Gerçek WhatsApp numarası (ADMIN_WHATSAPP veya company_info.whatsapp)** → OTP hatırlatıcı WhatsApp hedefi için **USER ACTION REQUIRED**.
-- **`onyuz-rehberi.pdf` kapsam kararı** → uygulanacak UI revizyon hedefi için **USER DECISION REQUIRED**.
-- **Resend production (domain doğrulaması + SENDER_EMAIL)** → müşteri e-postaları için **USER ACTION REQUIRED**.
-- **Custom domain deploy/DNS yönlendirme** → **USER ACTION REQUIRED** (`dubaivizeonline.com`).
-- **Zami OTP ilk giriş**: OTP ayda bir yaklaşımının aktifleşmesi için **tek sefer** OTP ile giriş gerekir.
-- Stripe prod anahtarları yok (opsiyonel).
+- Gerçek firma bilgileri
+- Gerçek WhatsApp numarası hedefi
+- `onyuz-rehberi.pdf` kapsam kararı
+- Resend production domain doğrulama
+- Custom domain DNS
+- **Zami ilk OTP (start-otp ile panelden hızlı giriş)**

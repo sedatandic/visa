@@ -711,6 +711,12 @@ async def zami_session_start(admin: dict = Depends(require_admin)):
     return await zami_rpa.start_session(actor=admin.get("sub", ""))
 
 
+@router.post("/admin/zami/session/start-otp")
+async def zami_session_start_otp(admin: dict = Depends(require_admin)):
+    """Captcha'yi AI ile gecip dogrudan OTP asamasina ilerler."""
+    return await zami_rpa.start_session_to_otp(actor=admin.get("sub", ""))
+
+
 @router.post("/admin/zami/session/captcha")
 async def zami_session_captcha(payload: LoginIn, admin: dict = Depends(require_admin)):
     return await zami_rpa.refresh_captcha(payload.session_id)

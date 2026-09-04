@@ -1,0 +1,31 @@
+{
+  "summary": "Completed frontend testing for Home page visa showcase cards with TL pricing feature. All 6 cards display correct TL prices with Turkish formatting (₺ symbol), prices match across Home and /vize-tipleri pages, wizard integration works correctly, and no layout/overflow issues on desktop or mobile.",
+  "backend_issues": {
+    "critical_bugs": [],
+    "flaky_endpoints": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "All 6 showcase cards render with TL prices and correct data-testids (showcase-price-visa_30_single, visa_60_single, visa_30_multi, visa_30_child, visa_transit_48, visa_extension_30)",
+    "All prices formatted in Turkish style with ₺ symbol (e.g., 5.420 ₺, 2.710 ₺)",
+    "All cards display 'KİŞİ BAŞI' caption, USD base price with 'güncel kurla' note, and 'Seç' pill button",
+    "Price consistency verified: visa_30_single (5.420 ₺), visa_60_single (10.850 ₺), visa_30_child (2.710 ₺) match exactly between Home showcase and /vize-tipleri pricing tabs",
+    "Clicking visa_30_child card correctly opens /basvuru?vize=visa_30_child with wizard total matching card price (2.710 ₺ for 1 passenger)",
+    "Text readable and not clipped/overflowing on desktop (1600x900) - no overflow detected in label bars",
+    "Text readable and not clipped/overflowing on mobile (390x844) - no overflow detected",
+    "No horizontal page overflow on desktop or mobile viewports",
+    "Regression tests passed: 'Tüm vize tipleri' button navigates to /vize-tipleri, hero section renders, no console errors"
+  ],
+  "test_report_links": [],
+  "success_percentage": {
+    "frontend": "100%"
+  },
+  "updated_files": [],
+  "action_item_for_main_agent": "",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": false
+}

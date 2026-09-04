@@ -332,18 +332,21 @@ export default function AdminZami() {
     const startSession = async () => {
         setBusy(true);
         try {
-            const { data } = await api.post("/admin/zami/session/start");
-            if (!data.ok) {
-                toast.error(data.error || "Oturum başlatılamadı.");
+            // Captcha'yi AI ile gecip dogrudan OTP adimina ilerler: portalin OTP
+            // kodu yalnizca birkac dakika gecerli oldugu icin sure kritik.
+            const { data } = await api.post("/admin/zami/session/start-otp");
+            setRpa(data);
+            setOtp("");
+            if (data.stage === "otp") {
+                setCaptcha("");
+                toast.success("Kod e-postanıza gönderildi. Hemen girin — kodun süresi kısa (birkaç dakika).");
+            } else if (data.stage === "ready" || data.ok === true) {
+                setCaptcha("");
+                toast.success("Giriş tamamlandı, oturum hazır.");
+                load();
             } else {
-                setRpa(data);
                 setCaptcha(data.captcha_guess || "");
-                setOtp("");
-                toast.success(
-                    data.captcha_guess
-                        ? `Login sayfası açıldı. Captcha yapay zeka ile okundu (${data.captcha_guess}) — kontrol edip giriş yapın.`
-                        : "Portal login sayfası açıldı. Captcha'yı girin."
-                );
+                toast.error(data.error || "Oturum başlatılamadı.");
             }
         } catch (e) {
             toast.error(apiError(e, "Oturum başlatılamadı."));
@@ -987,12 +990,28 @@ export default function AdminZami() {
                                                 <Label htmlFor="zami-otp">OTP kodu</Label>
                                                 <Input
                                                     id="zami-otp"
-                                                    className="mt-2"
+                                                    className="mt-2 font-mono-code text-lg tracking-[0.3em]"
                                                     value={otp}
-                                                    onChange={(e) => setOtp(e.target.value)}
-                                                    placeholder="E-posta/SMS ile gelen kod"
+                                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter" && otp.length >= 4) doLogin();
+                                                    }}
+                                                    inputMode="numeric"
+                                                    autoFocus
+                                                    placeholder="E-posta ile gelen kod"
                                                     data-testid="zami-otp-input"
                                                 />
+                                                <p
+                                                    className="mt-2 text-xs font-medium text-[hsl(var(--status-warning))]"
+                                                    data-testid="zami-otp-hurry-note"
+                                                >
+                                                    Kodun süresi kısa (birkaç dakika). Kodu girip Enter'a basın; süre
+                                                    dolarsa portal 15 dakika yeni kod göndermez.
+                                                </p>
+                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                    Giriş "Trusted Device" olarak yapılır: portal bu cihazda 1 ay
+                                                    boyunca yeniden OTP istemez.
+                                                </p>
                                             </div>
                                         )}
                                         <Button type="button" onClick={doLogin} disabled={busy} data-testid="zami-login-button">

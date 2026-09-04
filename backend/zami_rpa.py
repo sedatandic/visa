@@ -87,9 +87,19 @@ async def _launch_browser(pw):
         return await pw.chromium.launch(headless=True, args=args, executable_path=executable)
 
 _sessions: dict = {}
-SESSION_IDLE_LIMIT = 900  # 15 dk
+SESSION_IDLE_LIMIT = 1800  # 30 dk (OTP girisi icin makul sure)
 AUTO_RELOGIN_TRIES = 3  # captcha yanlis okunursa tekrar dene
 OTP_TRUST_DAYS = 30  # portal trusted-device guveni ~1 ay
+
+# Portal ayni hesap icin es zamanli girisleri tolere etmiyor: ikinci giris
+# ilkini dusurup "IP Address changed" hatasi veriyor. Bu yuzden tum giris
+# akislari tek kilit uzerinden seri hale getirilir.
+_login_lock = asyncio.Lock()
+
+
+def interactive_login_active() -> bool:
+    """Admin panelden baslatilmis ve henuz tamamlanmamis giris var mi?"""
+    return any(entry.get("stage") in ("captcha", "otp") for entry in _sessions.values())
 
 LOGIN_PATH = "/login"
 CAPTCHA_IMG = 'img[alt="Captcha"]'
@@ -300,15 +310,47 @@ async def _click_first(page, selectors: list[str]) -> bool:
 
 
 async def _mark_trusted_device(page) -> None:
-    """Varsa 'Trusted Device' secenegini isaretler; sonraki girislerde OTP azalir."""
+    """Varsa 'Trusted Device' secenegini isaretler; sonraki girislerde OTP azalir.
+
+    Radyo girisi ozel tasarim nedeniyle gizli olabilir; sirayla normal check,
+    zorlamali check ve son olarak JS ile isaretleme denenir.
+    """
     for sel in TRUSTED_DEVICE_SELECTORS:
         try:
             loc = page.locator(sel).first
-            if await loc.count() > 0:
-                await loc.check(timeout=5000)
+            if await loc.count() == 0:
+                continue
+            if await _check_locator(loc):
+                return
+            if await _check_via_js(page, sel):
                 return
         except Exception:
             continue
+
+
+async def _check_locator(loc) -> bool:
+    """Radyoyu normal, sonra zorlamali sekilde isaretlemeyi dener."""
+    for force in (False, True):
+        try:
+            await loc.check(timeout=4000, force=force)
+            if await loc.is_checked():
+                return True
+        except Exception:
+            continue
+    return False
+
+
+async def _check_via_js(page, selector: str) -> bool:
+    """Gizli radyoyu DOM uzerinden isaretler ve change olayini tetikler."""
+    try:
+        return bool(
+            await page.eval_on_selector(
+                selector,
+                "el => { el.checked = true; el.dispatchEvent(new Event('change', {bubbles:true})); return el.checked; }",
+            )
+        )
+    except Exception:
+        return False
 
 
 async def _submit_otp(page, otp: str) -> dict | None:
@@ -324,12 +366,41 @@ async def _submit_otp(page, otp: str) -> dict | None:
 
 
 async def _login_credentials_step(page, creds: dict, captcha: str) -> None:
-    """Kullanici adi/sifre/captcha alanlarini doldurup formu gonderir."""
+    """Kullanici adi/sifre/captcha alanlarini doldurup formu gonderir.
+
+    Zami login sayfasinda cihaz tipi radyolari (`si`) bulunur ve varsayilan
+    "No Change" secenegi cihazi "public/shared" kabul ederek her giriste OTP
+    ister. Bu yuzden gonderim oncesi "Trusted Device" isaretlenir; boylece
+    portal cihazi hatirlar ve OTP ihtiyaci aylik seviyeye iner.
+    """
     await page.fill('input[name="un"]', creds["username"])
     await page.fill('input[name="pw"]', creds["password"])
     if captcha:
         await page.fill('input[name="captcha"]', (captcha or "").strip())
+    await _mark_trusted_device(page)
     await page.click('button[type="submit"]')
+
+
+OTP_COOLDOWN_HINT = "OTP request emailed"
+
+
+async def _login_error_text(page) -> str:
+    """Portalin login sayfasindaki uyariyi Turkce mesaja cevirir."""
+    try:
+        body = (await page.inner_text("body"))[:4000]
+    except Exception:
+        body = ""
+    if OTP_COOLDOWN_HINT in body:
+        minutes = re.search(r"try again after `?(\d+)`? *minutes", body)
+        wait = minutes.group(1) if minutes else "15"
+        return (
+            f"Portal kısa süre önce OTP kodu gönderdi ve yeni kod için {wait} dakika "
+            "beklemeyi şart koşuyor. E-postanıza gelen son kodu girin veya süre "
+            "dolduktan sonra tekrar deneyin."
+        )
+    if "Invalid Captcha" in body or "captcha" in body.lower() and "invalid" in body.lower():
+        return "Captcha hatalı okundu. Captchayı yenileyip tekrar deneyin."
+    return "Giriş yapılamadı (captcha, şifre veya OTP hatası olabilir). Captcha yenilenip tekrar denenebilir."
 
 
 async def _run_login_attempt(page, entry: dict, creds: dict, captcha: str, otp: str) -> dict | None:
@@ -416,7 +487,7 @@ async def submit_login(session_id: str, captcha: str, otp: str = "", actor: str 
         return {
             "ok": False,
             "stage": "captcha",
-            "error": "Giriş yapılamadı (captcha, şifre veya OTP hatası olabilir). Captcha yenilenip tekrar denenebilir.",
+            "error": await _login_error_text(page),
             "captcha_image": captcha_image,
             "captcha_guess": captcha_guess,
             "screenshot": await _shot(page),
@@ -518,6 +589,18 @@ async def auto_relogin(actor: str = "auto") -> dict:
     tarayicida kullanici adi + sifre girilir, captcha AI ile okunur. Portal
     yine de OTP istiyorsa admin bilgilendirilir ve `otp_required` isaretlenir.
     """
+    if interactive_login_active():
+        # Admin panelden manuel giris suruyor: es zamanli giris onu dusurur.
+        return {"ok": False, "reason": "interactive_login_in_progress"}
+    if _login_lock.locked():
+        return {"ok": False, "reason": "login_in_progress"}
+
+    async with _login_lock:
+        return await _auto_relogin_locked(actor)
+
+
+async def _auto_relogin_locked(actor: str) -> dict:
+    """auto_relogin'in kilit altinda calisan govdesi."""
     creds = await raw_credentials()
     if not creds.get("username") or not creds.get("password"):
         return {"ok": False, "reason": "no_credentials"}
@@ -570,6 +653,43 @@ async def auto_relogin(actor: str = "auto") -> dict:
         await _close(entry)
 
 
+async def start_session_to_otp(actor: str = "") -> dict:
+    """Girisi OTP ekranina kadar otomatik ilerletir.
+
+    Portalin OTP kodu yalnizca birkac dakika gecerli oldugu icin adminin
+    captcha adimiyla ugrasmasi zaman kaybi yaratiyor. Bu fonksiyon oturumu
+    baslatir, captcha'yi AI ile okuyup sifreyi gonderir ve dogrudan OTP
+    asamasini dondurur; admin yalnizca kodu girer.
+    """
+    async with _login_lock:
+        started = await start_session(actor=actor)
+        if not started.get("ok"):
+            return started
+        session_id = started["session_id"]
+        last = started
+        for _ in range(AUTO_RELOGIN_TRIES):
+            entry = _sessions.get(session_id)
+            if not entry:
+                return {"ok": False, "error": "Oturum düştü, tekrar deneyin."}
+            guess = (last.get("captcha_guess") or "").strip()
+            if not guess:
+                last = await refresh_captcha(session_id)
+                continue
+            out = await submit_login(session_id, guess, "", actor=actor)
+            if out.get("stage") in ("otp", "ready") or out.get("ok"):
+                out["session_id"] = session_id
+                return out
+            last = out
+        return {
+            "ok": False,
+            "session_id": session_id,
+            "stage": "captcha",
+            "error": "Captcha otomatik okunamadı. Aşağıdaki görselden kodu elle girin.",
+            "captcha_image": last.get("captcha_image"),
+            "captcha_guess": last.get("captcha_guess"),
+        }
+
+
 async def keepalive_session() -> dict:
     """Portal oturumunu canli tutar.
 
@@ -577,6 +697,9 @@ async def keepalive_session() -> dict:
     oturumla portal ana sayfasini acar; oturum ayaktaysa cerezleri tazeleyip
     yeniden kaydeder, dusmusse `expired` isaretler (admin uyarilir).
     """
+    if interactive_login_active():
+        return {"ok": True, "reason": "interactive_login_in_progress"}
+
     doc = await settings_col.find_one({"key": SESSION_KEY})
     value = (doc or {}).get("value") or {}
     state = value.get("storage_state")

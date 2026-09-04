@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Clock, Repeat, Baby } from "lucide-react";
 import { api } from "../lib/api";
-import { IMAGES } from "../lib/site";
+import { IMAGES, formatMoney, formatUsd } from "../lib/site";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
@@ -74,7 +74,7 @@ export const VisaShowcase = () => {
                     {visas === null ? (
                         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {[0, 1, 2, 3, 4, 5].map((i) => (
-                                <Skeleton key={i} className="h-[230px] rounded-[var(--radius-lg)]" />
+                                <Skeleton key={i} className="h-[260px] rounded-[var(--radius-lg)]" />
                             ))}
                         </div>
                     ) : cards.length === 0 ? (
@@ -105,7 +105,7 @@ export const VisaShowcase = () => {
                                         <img
                                             src={visa.image}
                                             alt={visa.name}
-                                            className="h-[230px] w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+                                            className="h-[260px] w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
                                             loading="lazy"
                                         />
                                         <span
@@ -121,13 +121,34 @@ export const VisaShowcase = () => {
                                             {visa.tag}
                                         </span>
                                         <span className="absolute inset-x-3 bottom-3 block rounded-[var(--radius)] border border-white/12 px-4 py-3 backdrop-blur-md" style={{ backgroundColor: "hsl(0 0% 8% / 0.72)" }}>
-                                            <span className="block font-heading text-lg font-extrabold text-white">
-                                                {shortTitle(visa)}
+                                            <span className="flex items-start justify-between gap-3">
+                                                <span className="min-w-0">
+                                                    <span className="block font-heading text-lg font-extrabold leading-tight text-white">
+                                                        {shortTitle(visa)}
+                                                    </span>
+                                                    <span className="mt-0.5 block truncate text-xs text-white/80">
+                                                        {visa.name}
+                                                    </span>
+                                                </span>
+                                                <span className="shrink-0 text-right">
+                                                    <span
+                                                        className="tabular block font-heading text-base font-extrabold leading-tight text-white"
+                                                        data-testid={`showcase-price-${visa.id}`}
+                                                    >
+                                                        {formatMoney(visa.price, visa.currency)}
+                                                    </span>
+                                                    <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-wider text-white/65">
+                                                        kişi başı
+                                                    </span>
+                                                </span>
                                             </span>
-                                            <span className="mt-1 flex items-center justify-between gap-3">
-                                                <span className="truncate text-xs text-white/85">{visa.name}</span>
-                                                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[hsl(var(--charcoal))] transition-transform duration-200 group-hover:translate-x-0.5">
-                                                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                                            <span className="mt-3 flex items-center justify-between gap-3 border-t border-white/12 pt-2.5">
+                                                <span className="text-[11px] text-white/70">
+                                                    {formatUsd(visa.price_usd)} · güncel kurla
+                                                </span>
+                                                <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-[11px] font-bold text-[hsl(var(--charcoal))] transition-transform duration-200 group-hover:translate-x-0.5">
+                                                    Seç
+                                                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                                                 </span>
                                             </span>
                                         </span>
