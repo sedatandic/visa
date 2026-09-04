@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const SLOGANS = [
-    { top: "Dubai vizeniz", bottom: "2 günde hazır" },
+    { top: "Dubai vizeniz", bottom: "2 iş gününde hazır" },
     { top: "Tüm aileniz", bottom: "tek formda, tek başvuruda" },
     { top: "Pasaportunuzu yükleyin", bottom: "gerisini biz hallederiz" },
 ];
