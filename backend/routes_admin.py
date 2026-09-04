@@ -717,6 +717,13 @@ async def admin_update_testimonial(
     return serialize_doc(doc)
 
 
+@router.delete("/admin/testimonials/demo")
+async def admin_delete_demo_testimonials(admin: dict = Depends(require_admin)) -> dict:
+    """Kurulumla gelen ornek yorumlari tek seferde temizler."""
+    res = await testimonials_col.delete_many({"demo": True})
+    return {"ok": True, "deleted": res.deleted_count}
+
+
 @router.delete("/admin/testimonials/{testimonial_id}")
 async def admin_delete_testimonial(testimonial_id: str, admin: dict = Depends(require_admin)) -> dict:
     res = await testimonials_col.delete_one({"id": testimonial_id})

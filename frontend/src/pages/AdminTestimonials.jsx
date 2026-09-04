@@ -107,6 +107,17 @@ export default function AdminTestimonials() {
         }
     };
 
+    const removeDemo = async () => {
+        if (!window.confirm("Kurulumla gelen tüm örnek yorumlar silinsin mi?")) return;
+        try {
+            const { data } = await api.delete("/admin/testimonials/demo");
+            toast.success(`${data.deleted} örnek yorum silindi.`);
+            load();
+        } catch (e) {
+            toast.error(apiError(e, "Silinemedi."));
+        }
+    };
+
     const saveSummary = async () => {
         setSaving(true);
         try {
@@ -133,6 +144,8 @@ export default function AdminTestimonials() {
             ...s,
             highlights: (s.highlights || []).map((h, i) => (i === idx ? { ...h, [key]: value } : h)),
         }));
+
+    const demoCount = items.filter((t) => t.demo).length;
 
     return (
         <AdminLayout
@@ -223,11 +236,31 @@ export default function AdminTestimonials() {
                 </div>
             )}
 
-            <div className="mt-8 flex items-center justify-between gap-4">
-                <h2 className="font-heading text-lg font-bold">Yorumlar ({items.length})</h2>
-                <Button onClick={openNew} className="h-11" data-testid="add-testimonial-button">
-                    <Plus className="mr-2 h-4 w-4" /> Yorum ekle
-                </Button>
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 className="font-heading text-lg font-bold">Yorumlar ({items.length})</h2>
+                    {demoCount > 0 && (
+                        <p className="mt-1 text-sm text-muted-foreground" data-testid="demo-testimonial-note">
+                            {demoCount} tanesi kurulumla gelen <strong>örnek</strong> yorum. Gerçek
+                            yorumlarınızı ekledikten sonra örnekleri temizleyin.
+                        </p>
+                    )}
+                </div>
+                <div className="flex gap-2">
+                    {demoCount > 0 && (
+                        <Button
+                            variant="destructive"
+                            className="h-11"
+                            onClick={removeDemo}
+                            data-testid="delete-demo-testimonials-button"
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" /> Örnek yorumları sil
+                        </Button>
+                    )}
+                    <Button onClick={openNew} className="h-11" data-testid="add-testimonial-button">
+                        <Plus className="mr-2 h-4 w-4" /> Yorum ekle
+                    </Button>
+                </div>
             </div>
 
             {loading ? (
@@ -245,6 +278,14 @@ export default function AdminTestimonials() {
                                 {!t.published && (
                                     <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                                         Gizli
+                                    </span>
+                                )}
+                                {t.demo && (
+                                    <span
+                                        className="ml-2 rounded-full bg-[hsl(var(--cream-tag))] px-2 py-0.5 text-[11px] font-bold text-[hsl(var(--charcoal))]"
+                                        data-testid={`demo-badge-${t.id}`}
+                                    >
+                                        Örnek
                                     </span>
                                 )}
                             </div>

@@ -188,6 +188,7 @@ async def seed_content_collections() -> None:
                 {
                     "id": str(uuid.uuid4()),
                     "published": True,
+                    "demo": True,
                     "order": order,
                     "created_at": now,
                     "updated_at": now,
