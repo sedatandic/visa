@@ -31,7 +31,7 @@ export const Footer = () => {
     }, []);
 
     return (
-    <footer className="mt-auto bg-[hsl(var(--navy))] text-white" data-testid="site-footer">
+    <footer className="mt-auto bg-[hsl(33_52%_34%)] text-white" data-testid="site-footer">
         <div className="flag-strip" aria-hidden="true" />
         <div className="container-page grid gap-10 py-14 md:grid-cols-4">
             <div className="md:col-span-2">

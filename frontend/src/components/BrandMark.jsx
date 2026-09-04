@@ -7,7 +7,7 @@ const BRAND_NAME = `${COMPANY.brand} ${COMPANY.brandSuffix}`.trim();
 export const BrandMark = ({ light = false }) => (
     <span className="flex items-center" data-testid="brand-mark">
         <img
-            src="/brand/logo-horizontal.png"
+            src="/brand/logo-horizontal-gold.png"
             alt={BRAND_NAME}
             className={
                 light
