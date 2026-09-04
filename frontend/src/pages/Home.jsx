@@ -35,6 +35,7 @@ import { RouteFlags } from "../components/FlagIcons";
 import { AuthorityStrip } from "../components/AuthorityStrip";
 import { VisaShowcase } from "../components/VisaShowcase";
 import { HeroSlider } from "../components/HeroSlider";
+import { HeroHeadline } from "../components/HeroHeadline";
 import { VisaGuideLinks } from "../components/VisaGuideLinks";
 import { FxNote } from "../components/FxNote";
 import {
@@ -87,11 +88,7 @@ export default function Home() {
                                 <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                                 Birleşik Arap Emirlikleri Vize Danışmanlığı
                             </span>
-                            <h1 className="mt-6 font-heading text-4xl font-extrabold sm:text-5xl lg:text-[58px]">
-                                <span className="display-italic">Dubai vizeniz</span>
-                                <br />
-                                2 iş gününde hazır
-                            </h1>
+                            <HeroHeadline />
                             <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
                                 Tek formda tüm aileniz için başvuru yapın. Pasaportunuzu yükleyin, bilgileriniz
                                 otomatik dolsun; belgeleri danışmanlarımız kontrol etsin. Onaylanan vizeniz PDF

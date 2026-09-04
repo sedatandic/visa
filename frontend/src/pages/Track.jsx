@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock, CreditCard, Download, FileCheck2, Loader2, Search, UploadCloud, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { api, apiError, API } from "../lib/api";
+import { api, apiError, API, customerAuth } from "../lib/api";
 import { STATUS_META, formatDate, formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { PaymentBadge, StatusBadge } from "../components/StatusBadge";
@@ -10,6 +10,7 @@ import { FileDropzone } from "../components/FileDropzone";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { AccountLoginCard } from "../components/AccountLoginCard";
 
 const StepIcon = ({ state, isResult, resultStatus }) => {
     if (isResult && state === "done") {
@@ -123,6 +124,7 @@ const CustomerTimeline = ({ timeline }) => {
 };
 
 export default function Track() {    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const [code, setCode] = useState(searchParams.get("kod") || "");
     const [lastName, setLastName] = useState(searchParams.get("soyad") || "");
     const [loading, setLoading] = useState(false);
@@ -218,9 +220,11 @@ export default function Track() {    const [searchParams] = useSearchParams();
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
-                  <div>
+                  <div className="grid items-start gap-6 lg:grid-cols-2">
+                   <div>
                     <form onSubmit={search} className="card-surface p-6 sm:p-8" data-testid="tracking-lookup-form">
-                        <div className="grid gap-5 sm:grid-cols-2">
+                        <h2 className="font-heading text-xl font-bold">Takip kodu ile sorgula</h2>
+                        <div className="mt-6 grid gap-5 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="t-code">Takip kodu *</Label>
                                 <Input id="t-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="DV-AB123456" data-testid="tracking-code-input" />
@@ -261,6 +265,17 @@ export default function Track() {    const [searchParams] = useSearchParams();
                             </ul>
                         </div>
                     )}
+                  </div>
+
+                   {!result && (
+                       <AccountLoginCard
+                           stacked
+                           onLogin={(newToken, email) => {
+                               customerAuth.save(newToken, email);
+                               navigate("/hesabim");
+                           }}
+                       />
+                   )}
                   </div>
 
                     {result && (
