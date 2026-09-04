@@ -14,8 +14,8 @@ export const BrandMark = ({ light = false }) => (
                     ? "h-14 w-auto shrink-0 rounded-lg bg-white/95 object-contain px-2 py-1 shadow-sm sm:h-16"
                     : "h-14 w-auto shrink-0 object-contain sm:h-16"
             }
-            width="705"
-            height="200"
+            width="929"
+            height="260"
             loading="eager"
             decoding="async"
         />

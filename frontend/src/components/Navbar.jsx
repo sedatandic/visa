@@ -111,7 +111,7 @@ export const Navbar = () => {
                     data-testid="navbar-logo-link"
                 >
                     <BrandMark />
-                    <UaeFlag className="ml-1 hidden h-6 w-10 sm:block" />
+                    <UaeFlag className="ml-1.5 hidden h-8 w-12 sm:block" />
                 </Link>
 
                 <nav className="hidden items-center gap-1 xl:flex" aria-label="Ana menü">
