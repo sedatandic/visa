@@ -75,7 +75,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                     )}
                 </div>
 
-                <h3 className="mt-3.5 font-heading text-lg font-extrabold leading-snug">{visa.name}</h3>
+                <h3 className="mt-3.5 font-heading text-lg font-extrabold leading-snug text-[hsl(30_62%_38%)]">{visa.name}</h3>
                 <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground sm:min-h-[3rem]">
                     {compact ? visa.entry_label : visa.description}
                 </p>
@@ -83,7 +83,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                 <div className="mt-5 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
                     <div className="flex items-end gap-2">
                         <span
-                            className="tabular font-heading text-[32px] font-extrabold leading-none tracking-tight text-foreground"
+                            className="tabular font-heading text-[32px] font-extrabold leading-none tracking-tight text-[hsl(30_62%_38%)]"
                             data-testid={`visa-price-${visa.id}`}
                         >
                             {formatMoney(visa.price, visa.currency)}

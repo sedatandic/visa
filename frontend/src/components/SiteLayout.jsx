@@ -17,7 +17,7 @@ export const PageHeader = ({ eyebrow, title, description, children }) => (
         <div className="container-page relative pt-10 sm:pt-14">
             <div className="panel-float px-5 py-10 sm:px-8 sm:py-12">
                 {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-                <h1 className="mt-4 max-w-3xl text-3xl font-extrabold leading-tight sm:text-4xl lg:text-[44px]">
+                <h1 className="mt-4 max-w-3xl text-3xl font-extrabold leading-tight text-[hsl(30_62%_38%)] sm:text-4xl lg:text-[44px]">
                     {title}
                 </h1>
                 {description && (
