@@ -633,7 +633,7 @@ export default function Home() {
 
             {/* SEO LONG TEXT */}
             <section className="section border-t border-border bg-card" data-testid="landing-seo-text">
-                <div className="container-page max-w-3xl">
+                <div className="container-page">
                     <span className="eyebrow">Rehber</span>
                     <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Dubai vizesi nasıl alınır?</h2>
                     <p className="mt-2 text-sm text-muted-foreground">Başvurudan sonuca kadar bilmeniz gerekenler</p>
