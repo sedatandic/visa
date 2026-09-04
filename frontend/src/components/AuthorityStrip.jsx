@@ -75,10 +75,10 @@ export const AuthorityStrip = () => {
                             data-testid={`authority-item-${key}`}
                         >
                             <Mark className="h-24 w-36 shrink-0" />
-                            <div className="min-w-0 leading-tight">
-                                <p className="text-sm font-extrabold text-foreground">{title}</p>
-                                <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">{subtitle}</p>
-                                <p className="mt-0.5 text-[11px] text-muted-foreground/80">{caption}</p>
+                            <div className="min-w-0 leading-snug">
+                                <p className="text-lg font-extrabold text-foreground">{title}</p>
+                                <p className="mt-1 text-sm font-semibold text-muted-foreground">{subtitle}</p>
+                                <p className="mt-1 text-sm text-muted-foreground/80">{caption}</p>
                             </div>
                         </li>
                     ))}

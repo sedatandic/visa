@@ -70,7 +70,7 @@ const MENU_LINKS = MENU_GROUPS.flatMap((g) => g.items);
 const testId = (to) => `nav-link-${to.replace("/", "")}`;
 
 const navLinkClass = ({ isActive }) =>
-    `whitespace-nowrap rounded-lg px-3.5 py-2 text-lg font-semibold transition-colors duration-150 focus-visible:outline-none ${
+    `whitespace-nowrap rounded-lg px-2 py-2 text-lg font-semibold transition-colors duration-150 focus-visible:outline-none ${
         isActive
             ? "bg-primary/10 text-primary"
             : "text-foreground/75 hover:bg-muted hover:text-foreground"
@@ -112,14 +112,14 @@ export const Navbar = () => {
                     data-testid="navbar-logo-link"
                 >
                     <BrandMark />
-                    <span className="ml-2 hidden items-end gap-1.5 sm:flex" data-testid="brand-flag-pair">
-                        <TrFlag className="h-9 w-[54px]" />
-                        <ArrowRight className="mb-2 h-3.5 w-3.5 text-primary" aria-hidden="true" />
-                        <UaeFlag className="h-9 w-[72px]" />
+                    <span className="ml-1.5 hidden items-end gap-1 sm:flex" data-testid="brand-flag-pair">
+                        <TrFlag className="h-8 w-11" />
+                        <ArrowRight className="mb-1.5 h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                        <UaeFlag className="h-8 w-14" />
                     </span>
                 </Link>
 
-                <nav className="hidden items-center gap-1 -mb-1.5 xl:flex" aria-label="Ana menü">
+                <nav className="hidden items-center gap-0.5 -mb-1.5 xl:flex" aria-label="Ana menü">
                     {PRIMARY_LINKS.map((l) => (
                         <NavLink key={l.to} to={l.to} data-testid={testId(l.to)} className={navLinkClass}>
                             {l.label}
@@ -131,7 +131,7 @@ export const Navbar = () => {
                             <button
                                 type="button"
                                 data-testid="navbar-track-menu-trigger"
-                                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-lg font-semibold transition-colors duration-150 focus-visible:outline-none ${
+                                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-2 text-lg font-semibold transition-colors duration-150 focus-visible:outline-none ${
                                     trackActive
                                         ? "bg-primary/10 text-primary"
                                         : "text-foreground/75 hover:bg-muted hover:text-foreground"
@@ -166,7 +166,7 @@ export const Navbar = () => {
                             <button
                                 type="button"
                                 data-testid="navbar-more-menu-trigger"
-                                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-lg font-semibold transition-colors duration-150 focus-visible:outline-none ${
+                                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-2 text-lg font-semibold transition-colors duration-150 focus-visible:outline-none ${
                                     menuActive
                                         ? "bg-primary/10 text-primary"
                                         : "text-foreground/75 hover:bg-muted hover:text-foreground"
@@ -216,7 +216,7 @@ export const Navbar = () => {
                         {contact.phone}
                     </a>
                     )}
-                    <Button asChild className="h-14 px-7 text-lg" data-testid="navbar-apply-button">
+                    <Button asChild className="h-14 px-6 text-lg" data-testid="navbar-apply-button">
                         <Link to="/basvuru">Başvuru Yap</Link>
                     </Button>
                 </div>
