@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 const SLOGANS = [
     { top: "Dubai vizeniz", bottom: "2 iş gününde hazır" },
     { top: "Tüm aileniz", bottom: "tek formda, tek başvuruda" },
-    { top: "Pasaportunuzu yükleyin", bottom: "gerisini biz hallederiz" },
+    { top: "Pasaportunuzu yükleyin", bottom: "gerisini biz halledelim" },
 ];
 
 export const HeroHeadline = () => {

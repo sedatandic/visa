@@ -456,7 +456,7 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
                                 onClick={() => setMethod("card")}
                                 data-testid="store-method-card"
                             >
-                                <CreditCard className="mr-2 h-4 w-4" /> Kart
+                                <CreditCard className="mr-2 h-4 w-4" /> Kredi Kartı
                             </Button>
                             <Button
                                 type="button"
@@ -465,7 +465,7 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
                                 onClick={() => setMethod("transfer")}
                                 data-testid="store-method-transfer"
                             >
-                                <Landmark className="mr-2 h-4 w-4" /> Havale
+                                <Landmark className="mr-2 h-4 w-4" /> Havale / EFT
                             </Button>
                         </div>
                     </div>
