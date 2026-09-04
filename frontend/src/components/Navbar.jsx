@@ -104,7 +104,7 @@ export const Navbar = () => {
             data-testid="site-navbar"
         >
             <div className="flag-strip" aria-hidden="true" />
-            <div className="container-page flex h-[92px] items-center justify-between gap-4">
+            <div className="container-page flex h-[92px] items-end justify-between gap-4 pb-3">
                 <Link
                     to="/"
                     className="flex shrink-0 items-end gap-2.5 rounded-lg focus-visible:outline-none"
@@ -114,7 +114,7 @@ export const Navbar = () => {
                     <UaeFlag className="ml-1.5 hidden h-8 w-12 sm:block" />
                 </Link>
 
-                <nav className="hidden items-center gap-1 xl:flex" aria-label="Ana menü">
+                <nav className="hidden items-center gap-1 -mb-1.5 xl:flex" aria-label="Ana menü">
                     {PRIMARY_LINKS.map((l) => (
                         <NavLink key={l.to} to={l.to} data-testid={testId(l.to)} className={navLinkClass}>
                             {l.label}
