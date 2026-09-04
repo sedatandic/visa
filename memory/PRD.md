@@ -91,3 +91,17 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
 - **P1** Stripe canlı anahtarları (domain açıldığında)
 - **P2** Gerçek müşteri yorumları admin panelden eklenmeli
 - **P2** `onyuz-rehberi.pdf` kapsamı netleşmedi (kullanıcı yanıtı bekleniyor)
+
+## 2026-06-04 · UI + kod kalitesi turu
+- Hero üst boşluğu kaldırıldı (`Home.jsx` pt-0 + panel pt-6/8)
+- `components/HeroHeadline.jsx`: 3 slogan, 4.2 sn'de flip animasyonu, altın/bronz renk
+- Logo altın varyanta geçti: `public/brand/logo-horizontal-gold.png`
+  (yazı altın, amblem orijinal turkuaz/mavi korunuyor — kahverengi yığılmasını önlemek için)
+- Footer + koyu bloklar açıldı: `--navy: 33 52% 34%`, footer `bg-[hsl(33_52%_34%)]`
+- Navbar: "Başvuru Takip" alt menü kaldırıldı, doğrudan `/takip`
+- `/takip` iki sütun: Takip kodu sorgulama + Başvurularıma giriş
+  (`components/AccountLoginCard.jsx` MyAccount ile paylaşılıyor)
+- Kod incelemesi: test dosyalarındaki sabit admin şifreleri kaldırıldı
+  (`backend_test.py`, `regression_critical_tests.py`, `tests/test_zami_otp_fix.py` artık
+  `ADMIN_LOGIN_EMAIL/PASSWORD` + `REACT_APP_BACKEND_URL` env'den okuyor).
+  `exec()` ve `is` vs `==` bulguları doğrulandı: kodda yok (yalnız `create_subprocess_exec`).

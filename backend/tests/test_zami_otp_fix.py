@@ -2,11 +2,14 @@
 import os
 import time
 import requests
+from dotenv import load_dotenv
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL") or open("/app/frontend/.env").read().split("REACT_APP_BACKEND_URL=")[1].split("\n")[0].strip()
-BASE_URL = BASE_URL.rstrip("/")
-ADMIN_EMAIL = "info@dubaivizeonline.com"
-ADMIN_PASSWORD = "Dubai2026!"
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".env"))
+
+BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
+ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
+ADMIN_PASSWORD = os.environ["ADMIN_LOGIN_PASSWORD"]
 
 
 def _admin_session():

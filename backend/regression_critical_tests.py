@@ -2,7 +2,15 @@
 import requests
 import sys
 
-BASE_URL = "https://vize-atlas-hub.preview.emergentagent.com/api"
+import os
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", ".env"))
+
+ADMIN_LOGIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
+ADMIN_LOGIN_PASSWORD = os.environ["ADMIN_LOGIN_PASSWORD"]
+BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 
 class CriticalRegressionTester:
     def __init__(self):
@@ -22,7 +30,7 @@ class CriticalRegressionTester:
         try:
             response = requests.post(
                 f"{BASE_URL}/admin/login",
-                json={"email": "admin@vizeatlas.com", "password": "Dubai2026!"},
+                json={"email": ADMIN_LOGIN_EMAIL, "password": ADMIN_LOGIN_PASSWORD},
                 timeout=10
             )
             
