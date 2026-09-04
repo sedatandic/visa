@@ -593,7 +593,7 @@ export default function Home() {
             <section className="section">
                 <div className="container-page grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
                     <div>
-                        <span className="eyebrow">S.S.S.</span>
+                        <span className="eyebrow">Sıkça sorulan sorular</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Sıkça sorulan sorular</h2>
                         <p className="mt-3 text-sm leading-6 text-muted-foreground">
                             Başvuru öncesi en çok sorulan soruları derledik.

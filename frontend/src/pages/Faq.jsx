@@ -26,7 +26,7 @@ export default function Faq() {
     return (
         <div data-testid="faq-page">
             <PageHeader
-                eyebrow="S.S.S."
+                eyebrow="Sıkça sorulan sorular"
                 title="Sıkça sorulan sorular"
                 description="Başvuru öncesi aklınıza gelebilecek soruları tek sayfada topladik. Aradiginizi bulamazsanız bize yazın."
             />

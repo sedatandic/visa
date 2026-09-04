@@ -48,7 +48,7 @@ const MENU_GROUPS = [
         items: [
             { to: "/gerekli-belgeler", label: "Gerekli Belgeler", icon: BookOpen },
             { to: "/hizmetler", label: "Hizmetler", icon: Wrench },
-            { to: "/sss", label: "S.S.S.", icon: HelpCircle },
+            { to: "/sss", label: "Sıkça Sorulan Sorular", icon: HelpCircle },
         ],
     },
     {

@@ -3,29 +3,29 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const SLIDES = [
     {
-        src: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?crop=entropy&cs=srgb&fm=jpg&w=1600&q=80",
-        alt: "Burj Khalifa ve Dubai silueti gün doğumunda",
-        caption: "Burj Khalifa · Downtown Dubai",
+        src: "https://images.unsplash.com/photo-1546412414-e1885259563a?auto=format&fit=crop&w=1600&q=80",
+        alt: "Burj Al Arab gündüz, turkuaz deniz kenarında",
+        caption: "Burj Al Arab · Jumeirah",
     },
     {
-        src: "https://images.unsplash.com/flagged/photo-1559717201-fbb671ff56b7?crop=entropy&cs=srgb&fm=jpg&w=1600&q=80",
-        alt: "Işıklandırılmış Dubai silueti gece",
-        caption: "Şeyh Zayed Yolu · Gece",
+        src: "https://images.unsplash.com/photo-1489516408517-0c0a15662682?auto=format&fit=crop&w=1600&q=80",
+        alt: "Palm Jumeirah'ın kuş bakışı turkuaz görüntüsü",
+        caption: "Palm Jumeirah · Kuş bakışı",
     },
     {
-        src: "https://images.pexels.com/photos/36260020/pexels-photo-36260020.jpeg?auto=compress&cs=tinysrgb&w=1600",
-        alt: "Gün batımında Dubai silueti ve sahil",
-        caption: "Jumeirah kıyısı · Gün batımı",
+        src: "https://images.unsplash.com/photo-1524234599372-a5bd0194758d?auto=format&fit=crop&w=1600&q=80",
+        alt: "Dubai Marina gökdelenleri ve havuz, açık mavi gökyüzü",
+        caption: "Dubai Marina · Gündüz",
     },
     {
-        src: "https://images.unsplash.com/photo-1763535539149-53eddcfa20dd?crop=entropy&cs=srgb&fm=jpg&w=1600&q=80",
-        alt: "Dubai çölünde kum tepeleri ve safari aracı",
-        caption: "Çöl safari · Al Marmoom",
+        src: "https://images.unsplash.com/photo-1582882198551-c0d7f863c5dd?auto=format&fit=crop&w=1600&q=80",
+        alt: "Jumeirah sahilinde tekne ve turkuaz deniz",
+        caption: "Jumeirah sahili · Turkuaz",
     },
     {
-        src: "https://images.unsplash.com/flagged/photo-1559717865-a99cac1c95d8?crop=entropy&cs=srgb&fm=jpg&w=1600&q=80",
-        alt: "Dubai şehir manzarası gündüz",
-        caption: "Business Bay · Gündüz",
+        src: "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1600&q=80",
+        alt: "Burj Khalifa ve Downtown Dubai, palmiyeler ve mavi gökyüzü",
+        caption: "Downtown Dubai · Burj Khalifa",
     },
 ];
 
@@ -66,7 +66,7 @@ export const HeroSlider = () => {
 
                 <div
                     className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2"
-                    style={{ background: "linear-gradient(180deg, transparent, hsl(30 45% 12% / 0.72))" }}
+                    style={{ background: "linear-gradient(180deg, transparent, hsl(215 30% 18% / 0.45))" }}
                     aria-hidden="true"
                 />
 
