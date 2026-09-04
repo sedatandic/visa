@@ -75,10 +75,12 @@ security = HTTPBearer(auto_error=False)
 JWT_SECRET = os.environ.get("JWT_SECRET", "dv-dev-secret")
 JWT_ALGO = "HS256"
 
-# Demo admin account (documented in /app/memory/test_credentials.md)
-ADMIN_USERS = {
-    "admin@vizeatlas.com": {"password": "Dubai2026!", "name": "Yonetici"},
-}
+# Admin girisi ortam degiskenlerinden okunur (kodda sabit sifre tutulmaz).
+# ADMIN_LOGIN_EMAIL / ADMIN_LOGIN_PASSWORD tanimli degilse gelistirme
+# kimlik bilgileri kullanilir (bkz. /app/memory/test_credentials.md).
+ADMIN_LOGIN_EMAIL = (os.environ.get("ADMIN_LOGIN_EMAIL") or "admin@vizeatlas.com").strip().lower()
+ADMIN_LOGIN_PASSWORD = os.environ.get("ADMIN_LOGIN_PASSWORD") or ""
+ADMIN_LOGIN_NAME = os.environ.get("ADMIN_LOGIN_NAME") or "Yonetici"
 
 
 def create_token(email: str) -> str:
@@ -108,10 +110,11 @@ async def require_admin(creds: Optional[HTTPAuthorizationCredentials] = Depends(
 @router.post("/admin/login")
 async def admin_login(payload: AdminLogin) -> dict:
     email = (payload.email or "").strip().lower()
-    user = ADMIN_USERS.get(email)
-    if not user or user["password"] != payload.password:
+    if not ADMIN_LOGIN_PASSWORD:
+        raise HTTPException(500, "Yonetici sifresi tanimli degil. ADMIN_LOGIN_PASSWORD ayarlanmali.")
+    if email != ADMIN_LOGIN_EMAIL or payload.password != ADMIN_LOGIN_PASSWORD:
         raise HTTPException(401, "E-posta veya sifre hatali.")
-    return {"token": create_token(email), "user": {"email": email, "name": user["name"]}}
+    return {"token": create_token(email), "user": {"email": email, "name": ADMIN_LOGIN_NAME}}
 
 
 @router.get("/admin/me")

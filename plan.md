@@ -8,13 +8,12 @@
 
 - Bildirimler:
   - **E-posta (Resend)**
-    - Resend entegrasyonu canlı, outbox kayıtları admin panelde görünür.
-    - **Kritik kısıt:** Gönderici `onboarding@resend.dev` (sandbox) ise sadece hesap sahibine mail gider; müşteri mailleri “error” olur ama akış bozulmaz.
+    - Resend entegrasyonu canlı; outbox kayıtları admin panelde görünür.
     - Hedef: Resend’de domain doğrulaması + `SENDER_EMAIL=noreply@dubaivizeonline.com` ile üretime çıkmak.
   - **WhatsApp**
     - Manuel mod (wa.me link üretimi) tamam.
     - Admin’e operasyonel uyarılar için serbest metin WhatsApp desteği var (Twilio varsa direkt, yoksa wa.me link).
-    - Otomatik sağlayıcı (Twilio/Meta) beklemede.
+    - Otomatik sağlayıcı (Twilio/Meta) opsiyonel.
 
 - Güven ve “insan eliyle tasarlanmış” kurumsal görünüm:
   - **Ana tema (kullanıcı referansı): “Sky Panels”**
@@ -43,6 +42,7 @@
 
 - **OCR Performans Ölçümü (Form Hız Testi) (tamamlandı):**
   - Her pasaport okuması **süre + alan kapsamı** ile ölçülür ve raporlanır.
+  - Admin dashboard’da KPI + “en çok okunamayan alanlar” görünür.
   - Hedef: “tek pasaport fotoğrafıyla form kaç saniyede doluyor, hangi alanlar okunamıyor?” sorusuna günlük/aylık KPI.
 
 - Zami Tours otomasyonu (üretim hazır, OTP onboarding devam ediyor):
@@ -56,6 +56,7 @@
   - Paylaşımlı cPanel/PHP hosting yok; FastAPI + Playwright + MongoDB gerektirir.
   - Kullanıcı domain alır; uygulama Emergent üzerinde; DNS ile bağlanır.
   - **Canlı yayın hazırlığı (tamamlandı):** deploy taraması PASS, domain bağımlılıkları düzeltildi.
+  - **Güvenlik (tamamlandı):** admin kimlik bilgileri koddan kaldırıldı (env üzerinden), JWT_SECRET sertleştirildi.
 
 ---
 
@@ -309,6 +310,30 @@
 
 ---
 
+### Phase 49 — Deployment Health Check + Güvenlik Sertleştirme (Tamamlandı)
+**Amaç:** Canlıya çıkmadan önce “hardcoded secret/şifre” ve zayıf JWT anahtarını engellemek; deploy check’i sıfır blocker ile geçirmek.
+
+**Yapılanlar**
+- **BLOCKER fix:** `routes_admin.py` içindeki sabit `ADMIN_USERS` (admin@vizeatlas.com / Dubai2026!) kaldırıldı.
+- Admin girişi artık tamamen env üzerinden:
+  - `ADMIN_LOGIN_EMAIL`
+  - `ADMIN_LOGIN_PASSWORD`
+  - `ADMIN_LOGIN_NAME`
+  - Şifre tanımlı değilse: net 500 mesajı.
+- **JWT sertleştirme:** `JWT_SECRET` 26 → 64 karakter (InsecureKeyLengthWarning giderildi).
+- Temizlik: testing agent’ın bıraktığı `backend/test_ocr_metrics.py` silindi (lint bare-except hataları kalktı).
+
+**Doğrulama**
+- Canlı doğrulama:
+  - Doğru şifre → 200
+  - Yanlış şifre → 401
+  - Yanlış e-posta → 401
+  - Token ile `/api/admin/me` → 200
+- deployment_agent taraması tekrar çalıştırıldı → **PASS, findings: []**
+- Sağlık: tüm servisler RUNNING; `/api/health` ok; public endpointler 200; frontend build temiz.
+
+---
+
 ## 3. Next Actions
 
 ### P0 — Gerçek Firma Bilgileri (USER ACTION REQUIRED)
@@ -340,8 +365,9 @@ Beklenen: `device_state` + `last_otp_at` kaydolur → 1 ay OTP’siz yenileme.
 ---
 
 ### P0.3 — Custom Domain Deploy (USER ACTION REQUIRED)
-- `dubaivizeonline.com` DNS yönlendirmesi
-- Emergent domain bağlama
+- `www.dubaivizeonline.com` DNS yönlendirmesi (CNAME)
+- Kök alan adı `dubaivizeonline.com` için A/ALIAS veya www’ye yönlendirme
+- Emergent Deploy → **Link domain** → Entri akışı
 - (Varsa) Resend domain doğrulaması / SPF-DKIM
 
 ---
@@ -405,10 +431,11 @@ Eğitim + uçuş bilgileri.
   3) OTP gerçekten gerektiğinde admin e-posta + WhatsApp uyarısı; 24h dedupe.
   4) Admin UI “Oturum Başlat” ile OTP ekranına hızlı ilerler (start-otp).
 
-- Deploy (Phase 48):
-  - `https://dubaivizeonline.com` SSL aktif; cron job’lar (doc reminders, Zami status/keepalive, OTP reminders) çalışır.
+- Deploy:
+  - `https://www.dubaivizeonline.com` SSL aktif; cron job’lar (doc reminders, Zami status/keepalive, OTP reminders) çalışır.
   - robots/sitemap domain’i doğru (`dubaivizeonline.com`).
   - Stripe live key ile kart ödemesi uçtan uca çalışır.
+  - Admin kimlik bilgileri ve JWT sırları kodda değil env’dedir.
 
 ---
 
@@ -419,6 +446,7 @@ Eğitim + uçuş bilgileri.
 - Phase 46 (Başvuru formu alan revizyonu): **TAMAMLANDI** — iteration_40 backend+frontend+admin+e2e %100.
 - Phase 47 (OCR Performans Ölçümü): **TAMAMLANDI** — iteration_41 %100.
 - Phase 48 (Canlı Yayın Hazırlığı): **TAMAMLANDI** — deployment taraması PASS, domain bağımlılıkları düzeltildi, iletişim bilgileri panelden yönetilebilir.
+- Phase 49 (Deploy health check + security hardening): **TAMAMLANDI** — hardcoded admin credential kaldırıldı, JWT_SECRET güçlendirildi; ikinci deploy taraması PASS.
 
 Test raporları (seçme):
 - iteration_35 — OTP ayda bir altyapısı backend PASS
@@ -431,7 +459,7 @@ Test raporları (seçme):
 
 Blokajlar / Bekleyen (tamamı kullanıcı aksiyonu):
 - Gerçek firma iletişim bilgileri (Admin → Acente Bilgileri)
-- Stripe canlı anahtar (`sk_live_...`)
-- dubaivizeonline.com DNS + Emergent domain bağlama
+- Stripe canlı anahtar (`STRIPE_API_KEY=sk_live_...`)
+- `www.dubaivizeonline.com` DNS + Emergent domain bağlama
 - **Zami ilk OTP (start-otp ile panelden hızlı giriş)**
-- Resend production domain doğrulama (opsiyonel ama canlı e-posta teslimi için önerilir)
+- Resend production domain doğrulama (SPF/DKIM) (opsiyonel ama canlı e-posta teslimi için önerilir)
