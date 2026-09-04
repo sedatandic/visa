@@ -37,8 +37,8 @@ export default function About() {
         <div data-testid="about-page">
             <PageHeader
                 eyebrow="Hakkımızda"
-                title="Vize sürecini insanlar için basitleştiriyoruz"
-                description="Dubai Vize Online, Birleşik Arap Emirlikleri vize başvurularında uzmanlaşmış bağımsız bir danışmanlık hizmetidir. Resmî bir devlet kurumu değiliz; başvurunuzu sizin adınıza hazırlar, kontrol eder ve yetkili mercilere iletiriz."
+                title="Dubai vizesi işini biz üstleniyoruz"
+                description="Dubai Vize Online, Birleşik Arap Emirlikleri vize başvurularına odaklanmış bağımsız bir danışmanlık hizmetidir. Resmî bir devlet kurumu değiliz; başvurunuzu sizin adınıza hazırlar, evraklarınızı tek tek kontrol eder ve yetkili mercilere iletiriz."
             />
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
