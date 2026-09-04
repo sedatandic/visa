@@ -71,10 +71,10 @@ export const AuthorityStrip = () => {
                     {items.map(({ key, Mark, title, subtitle, caption }) => (
                         <li
                             key={key}
-                            className="flex items-center gap-5 rounded-xl border border-border bg-card p-5 transition-transform duration-200 hover:-translate-y-0.5"
+                            className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-6 text-center transition-transform duration-200 hover:-translate-y-0.5 sm:flex-row sm:justify-center sm:gap-6 sm:text-left"
                             data-testid={`authority-item-${key}`}
                         >
-                            <Mark className="h-20 w-28 shrink-0" />
+                            <Mark className="h-24 w-36 shrink-0" />
                             <div className="min-w-0 leading-tight">
                                 <p className="text-sm font-extrabold text-foreground">{title}</p>
                                 <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">{subtitle}</p>
