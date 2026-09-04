@@ -37,6 +37,7 @@ import { VisaShowcase } from "../components/VisaShowcase";
 import { HeroSlider } from "../components/HeroSlider";
 import { HeroHeadline } from "../components/HeroHeadline";
 import { HomeBundleStrip } from "../components/HomeBundleStrip";
+import { SeparatePriceCards } from "../components/SeparatePriceCards";
 import { VisaGuideLinks } from "../components/VisaGuideLinks";
 import { FxNote } from "../components/FxNote";
 import {
@@ -268,6 +269,9 @@ export default function Home() {
 
             {/* SEYAHAT PAKETLERI */}
             <HomeBundleStrip />
+
+            {/* VIZE / SIGORTA / ESIM FIYATLARI — ayri ayri */}
+            <SeparatePriceCards />
 
             {/* REQUIRED DOCUMENTS */}
             <section className="section border-y border-border bg-[hsl(var(--cloud))]" data-testid="landing-documents">
