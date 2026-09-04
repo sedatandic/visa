@@ -100,41 +100,54 @@ ESIM_PRODUCTS = [
     },
 ]
 
+# Seyahat sagligi policeleri: BAE (Schengen disi "Diger Ulkeler") tarifesi
+# seyahatpolicesi.com'dan alinir; satis fiyati %100 marj ile TL olarak sabitlenir.
+INSURANCE_MARKUP = 2.0
+
+_BASIC_FEATURES = [
+    "30.000 € acil sağlık teminatı",
+    "BAE (Dubai, Abu Dabi, Şarja) dahil tüm dünya geçerli",
+    "QR kodlu, Türkçe + İngilizce poliçe",
+    "Tıbbi tedavi, nakil ve cenaze nakli teminatı",
+    "Poliçe PDF olarak e-postanıza gelir",
+]
+
+_PLUS_FEATURES = [
+    "30.000 € tıbbi tedavi + tıbbi nakil teminatı",
+    "Bagaj kaybı (350 €) ve bagaj gecikmesi (100 €)",
+    "Yaralanma/hastalıkta konaklama uzatma desteği",
+    "Aile üyesinin seyahati ve konaklaması",
+    "Seyahatin kesilmesi teminatı",
+]
+
+
+def _insurance(pid, days, base_try, plus=False, popular=False, order=1):
+    kind_name = "Geniş Kapsam" if plus else "Temel"
+    return {
+        "id": pid,
+        "kind": "insurance",
+        "name": f"Seyahat Sigortası · {days} Gün · {kind_name}",
+        "summary": (
+            f"{days} güne kadar BAE seyahatlerinde bagaj ve seyahat kesintisi dahil geniş teminat."
+            if plus
+            else f"{days} güne kadar BAE seyahatlerinde acil sağlık masraflarını karşılayan vize uyumlu poliçe."
+        ),
+        "price_try": round(base_try * INSURANCE_MARKUP),
+        "coverage": "30.000 € teminat + bagaj / seyahat kesintisi" if plus else "30.000 € teminat",
+        "validity_days": days,
+        "features": _PLUS_FEATURES if plus else _BASIC_FEATURES,
+        "order": order,
+        "popular": popular,
+    }
+
+
 INSURANCE_PRODUCTS = [
-    {
-        "id": "ins_basic",
-        "kind": "insurance",
-        "name": "Seyahat Sigortası · Temel",
-        "summary": "30 güne kadar seyahatlerde acil sağlık masraflarını karşılayan, vize başvurusu için uygun temel poliçe.",
-        "price_usd": 20.0,
-        "coverage": "30.000 € teminat",
-        "validity_days": 30,
-        "features": [
-            "30.000 € acil sağlık teminatı",
-            "30 güne kadar seyahat süresi",
-            "Vize başvurusuna uygun poliçe",
-            "Poliçe PDF olarak e-postanıza gelir",
-        ],
-        "order": 1,
-        "popular": True,
-    },
-    {
-        "id": "ins_plus",
-        "kind": "insurance",
-        "name": "Seyahat Sigortası · Geniş Kapsam",
-        "summary": "Uzun kalışlar için yüksek teminat; bagaj kaybı ve seyahat iptali gibi ek riskleri de kapsar.",
-        "price_usd": 39.0,
-        "coverage": "100.000 € teminat + bagaj / iptal",
-        "validity_days": 60,
-        "features": [
-            "100.000 € acil sağlık teminatı",
-            "60 güne kadar seyahat süresi",
-            "Bagaj kaybı ve gecikmesi teminatı",
-            "Seyahat iptal / değişiklik desteği",
-        ],
-        "order": 2,
-        "popular": False,
-    },
+    _insurance("ins_8d", 8, 245.29, order=1),
+    _insurance("ins_15d", 15, 280.11, order=2),
+    _insurance("ins_31d", 31, 322.22, popular=True, order=3),
+    _insurance("ins_63d", 63, 367.71, order=4),
+    _insurance("ins_30d_plus", 30, 1376.87, plus=True, order=5),
+    _insurance("ins_60d_plus", 60, 1994.61, plus=True, order=6),
 ]
 
 DEFAULT_PRODUCTS = ESIM_PRODUCTS + INSURANCE_PRODUCTS
@@ -163,7 +176,9 @@ async def product_list(kind: Optional[str] = None, include_inactive: bool = Fals
     for doc in serialize_doc(docs):
         item = dict(doc)
         item.pop("_id", None)
-        if item.get("price_usd"):
+        if item.get("price_try"):
+            item["price"] = round(float(item["price_try"]), 2)
+        elif item.get("price_usd"):
             item["price"] = try_price(item["price_usd"], rate)
         item["currency"] = "TRY"
         item["fx_rate"] = rate

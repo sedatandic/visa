@@ -381,7 +381,7 @@ export default function Apply() {
     }, []);
 
     const esimProducts = useMemo(() => storeProducts.filter((p) => p.kind === "esim"), [storeProducts]);
-    const insuranceProducts = useMemo(
+    const allInsuranceProducts = useMemo(
         () => storeProducts.filter((p) => p.kind === "insurance"),
         [storeProducts]
     );
@@ -395,6 +395,22 @@ export default function Apply() {
         if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
         return Math.round((end - start) / 86400000) + 1;
     }, [travel.arrival_date, travel.departure_date]);
+
+    // Poliçe, seçilen vizenin kalış süresini (veya seyahat süresini) karşılamalı
+    const requiredInsuranceDays = useMemo(() => {
+        const visaDays = travelers
+            .map((t) => Number(visaTypes.find((v) => v.id === t.visa_type_id)?.duration_days || 0))
+            .filter(Boolean);
+        return Math.max(tripDays || 0, ...(visaDays.length ? visaDays : [0])) || null;
+    }, [travelers, visaTypes, tripDays]);
+
+    const insuranceProducts = useMemo(() => {
+        if (!requiredInsuranceDays) return allInsuranceProducts;
+        const covering = allInsuranceProducts.filter(
+            (p) => Number(p.validity_days) >= requiredInsuranceDays
+        );
+        return covering.length ? covering : allInsuranceProducts;
+    }, [allInsuranceProducts, requiredInsuranceDays]);
 
     const productWindow = (product) => {
         if (!travel.arrival_date) return null;
@@ -436,7 +452,7 @@ export default function Apply() {
         if (!tripDays || !list.length) return null;
         const covering = list.filter((p) => Number(p.validity_days) >= tripDays);
         if (covering.length) {
-            return covering.reduce((best, p) => (Number(p.price_usd) < Number(best.price_usd) ? p : best)).id;
+            return covering.reduce((best, p) => (Number(p.price) < Number(best.price) ? p : best)).id;
         }
         return list.reduce((best, p) =>
             Number(p.validity_days) > Number(best.validity_days) ? p : best
@@ -455,6 +471,13 @@ export default function Apply() {
     );
 
     const bundleActive = Boolean(insurancePick) && Object.values(esimQty).some((q) => q > 0);
+
+    // Süre değişince kapsamı yetmeyen poliçe seçimini düşür
+    useEffect(() => {
+        if (insurancePick && !insuranceProducts.some((p) => p.id === insurancePick)) {
+            setInsurancePick(null);
+        }
+    }, [insuranceProducts, insurancePick]);
 
     const applyRecommended = () => {
         if (!travelDatesReady) {

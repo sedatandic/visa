@@ -1,0 +1,20 @@
+{
+  "summary": "Sigorta katalog+fiyat+filtreleme akışı tam kapsamlı test edildi. Backend: 8/8 pytest test PASS — GET /api/products?kind=insurance 6 poliçe döndürüyor (ins_8d=491, ins_15d=560, ins_31d=644, ins_63d=735, ins_30d_plus=2754, ins_60d_plus=3989 TRY), currency='TRY', price==price_try (FX'ten bağımsız, price_usd yok); eSIM ürünleri hâlâ USD→TRY dönüşümlü (try_price 10 TL yuvarlaması). POST /api/orders ile ins_31d x2 = 1288 TRY, referans SV- ile döndü, starts_on/ends_on doğru (31 gün pencere). /api/pricing/quote sadece sigorta → bundle_discount=0; sigorta+eSIM → bundle %10 uygulanıyor. PATCH /api/admin/products/ins_31d ile price_try=699 güncellendi, /api/products'a yansıdı, ardından 644'e geri döndürüldü. Frontend /basvuru: 30 günlük vize → yalnızca ins_31d/ins_63d/ins_30d_plus/ins_60d_plus görünüyor (ins_8d & ins_15d filtrelenmiş); 60 günlük vize → sadece ins_63d ve ins_60d_plus görünüyor; poliçe pre-selected ama süreyi karşılamıyorsa (ins_8d ile 30 günlük vize) seçim otomatik düşüyor, insurance-selected-note görünmüyor; recommended badge en ekonomik kapsayan poliçede (ins_31d). Frontend /seyahat-sigortasi: 6 kart TL fiyat+'kişi başı' etiketiyle görünüyor, USD satırı yok, hayalet '-' yok.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_insurance_catalog.py", "/app/test_reports/pytest/iteration_57.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx ~2083 satır — hâlâ step bazlı alt bileşenlere bölünmesi öneriliyor (iterasyon 56'dan devam eden not).",
+    "routes_store.INSURANCE_PRODUCTS list her uygulama başlatımında `_insurance()` ile hesaplanıyor; base_try * 2.0 değeri sabit. Base fiyatları content/config'e (veya settings_col) taşımak kaynak güncellemesini kolaylaştırır.",
+    "admin_update_product yalnızca DB'de var olan ürünlere PATCH edebiliyor (matched_count kontrolü). DEFAULT_PRODUCTS DB'ye seed edilmediyse admin 404 alır — burada seed edilmiş görünüyor, ancak defensive olarak upsert veya seed-on-first-write eklenebilir."
+  ],
+  "updated_files": ["/app/backend/tests/test_insurance_catalog.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Admin: info@dubaivizeonline.com / Dubai2026! — kullanıldı ve çalışıyor.",
+  "seed_data_creation": "TEST_ins@example.com adına 1 mağaza siparişi (ins_31d x2), TEST_ins_flow@example.com adına 4 taslak (drafts_col) oluşturuldu. PATCH testinde ins_31d price_try 699'a çekilip test sonrası 644'e geri döndürüldü (nihai durum: orijinal).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "backend/tests/test_insurance_catalog.py: 8 test — sigorta kataloğu, fiyat sabitliği (FX bağımsız), eSIM USD→TRY, /orders, /pricing/quote bundle indirimi, admin PATCH price_try. Frontend filtreleme /basvuru?taslak=&kod= ile drafts_col üzerinden step=1'e sıçrama tekniğiyle test edildi (data-testid: apply-insurance-section, insurance-option-{id}, insurance-recommended-{id}, insurance-selected-note). Yeni sigorta ürünü eklenirse test fixture EXPECTED_PRICES güncellenmeli.",
+  "rca of the issue": "N/A — bug yok."
+}

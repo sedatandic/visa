@@ -189,7 +189,8 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
                                             {formatMoney(p.price, p.currency)}
                                         </p>
                                         <p className="mt-0.5 text-xs text-muted-foreground">
-                                            {formatUsd(p.price_usd)} · {kind === "esim" ? "paket başı" : "kişi başı"}
+                                            {p.price_usd ? `${formatUsd(p.price_usd)} · ` : ""}
+                                            {kind === "esim" ? "paket başı" : "kişi başı"}
                                         </p>
 
                                         <div className="mt-4 flex items-center gap-3">
@@ -270,7 +271,8 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
                                                     {formatMoney(p.price, p.currency)}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {formatUsd(p.price_usd)} · {p.kind === "esim" ? "paket başı" : "kişi başı"}
+                                                    {p.price_usd ? `${formatUsd(p.price_usd)} · ` : ""}
+                                                    {p.kind === "esim" ? "paket başı" : "kişi başı"}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-2">

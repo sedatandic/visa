@@ -116,3 +116,18 @@ store_products(6), articles(5).
 Not: `testimonials` boş olduğunda `/api/content/site` statik demo yorumlara düşüyor
 (routes_public.py:315) — gerçek yorumlar Admin → Yorumlar'dan eklendiğinde otomatik değişir.
 Object storage'daki eski dosyalar fiziksel olarak silinmedi, yalnız DB kayıtları temizlendi.
+
+## 2026-06-04 · Seyahat sigortası gün bazlı katalog
+Kaynak: seyahatpolicesi.com (BAE = Schengen dışı "Diğer Ülkeler" tarifesi, 30.000 € teminat).
+Satış fiyatı = kaynak TL fiyatı × 2 (INSURANCE_MARKUP=2.0), `price_try` alanında TL olarak sabit
+(FX dönüşümü uygulanmaz; eSIM ürünleri USD→TRY dönüşümüyle devam ediyor).
+Poliçeler: ins_8d 491₺, ins_15d 560₺, ins_31d 644₺ (popüler), ins_63d 735₺,
+ins_30d_plus 2754₺, ins_60d_plus 3989₺ (geniş kapsam: bagaj + seyahat kesintisi).
+Başvuru formunda seçenekler `requiredInsuranceDays = max(seyahat günü, vize duration_days)`
+ile filtrelenir; kapsamı yetmeyen seçim otomatik düşer. Admin panelden `price_try` düzenlenebilir
+(PATCH /api/admin/products/{id}). Test: /app/backend/tests/test_insurance_catalog.py (8/8 PASS),
+iteration_57 backend+frontend %100.
+Ayrıca: BAE 4 ek alan (medeni hal, meslek, anne/baba adı) müşteri formundan kaldırıldı,
+backend `_fill_uae_defaults()` ile otomatik dolduruluyor (single / Employee|Student / soyad).
+"Yapay zeka" ifadeleri müşteri arayüzünden temizlendi. Menü: "Gelişmeler"→"Dubai'den Haberler",
+"Yanınızdaki Ekstralar"→"Ekstra Hizmetler".

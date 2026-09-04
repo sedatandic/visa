@@ -1042,12 +1042,14 @@ async def admin_products(admin: dict = Depends(require_admin)) -> dict:
 
 @router.patch("/admin/products/{product_id}")
 async def admin_update_product(product_id: str, payload: dict, admin: dict = Depends(require_admin)):
-    allowed = {"price_usd", "name", "summary", "active", "popular", "data_amount", "coverage", "validity_days"}
+    allowed = {"price_usd", "price_try", "name", "summary", "active", "popular", "data_amount", "coverage", "validity_days"}
     update = {k: v for k, v in payload.items() if k in allowed}
     if not update:
         raise HTTPException(400, "Guncellenecek gecerli alan yok.")
     if "price_usd" in update:
         update["price_usd"] = float(update["price_usd"])
+    if "price_try" in update:
+        update["price_try"] = float(update["price_try"])
     if "validity_days" in update:
         update["validity_days"] = int(update["validity_days"])
     res = await products_col.update_one({"id": product_id}, {"$set": update})
