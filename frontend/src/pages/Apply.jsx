@@ -1168,7 +1168,7 @@ export default function Apply() {
                                                         {ocr[t.key]?.status === "loading" && (
                                                             <p className="mt-2 flex items-center gap-2 text-xs font-medium text-primary" data-testid={`traveler-${idx}-ocr-loading`}>
                                                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                                Pasaport yapay zeka ile okunuyor...
+                                                                Pasaport bilgileri okunuyor...
                                                             </p>
                                                         )}
                                                         {ocr[t.key]?.status === "done" && (
@@ -1694,7 +1694,7 @@ export default function Apply() {
                                                         <div>
                                                             <FileDropzone
                                                                 label="Pasaport Fotoğrafı"
-                                                                hint="Zorunlu · Yapay zeka okur"
+                                                                hint="Zorunlu · Bilgiler otomatik dolar"
                                                                 docType="passport"
                                                                 value={t.passportFile}
                                                                 onChange={(f) => {
@@ -1706,7 +1706,7 @@ export default function Apply() {
                                                             {ocr[t.key]?.status === "loading" && (
                                                                 <p className="mt-2 flex items-center gap-2 text-xs font-medium text-primary" data-testid={`traveler-${idx}-docs-ocr-loading`}>
                                                                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                                    Pasaport yapay zeka ile okunuyor...
+                                                                    Pasaport bilgileri okunuyor...
                                                                 </p>
                                                             )}
                                                             {ocr[t.key]?.status === "done" && (
@@ -1734,7 +1734,7 @@ export default function Apply() {
                                                         <div>
                                                             <FileDropzone
                                                                 label="Vesikalık Fotoğraf"
-                                                                hint="Zorunlu · Yapay zeka kontrol eder"
+                                                                hint="Zorunlu · Otomatik kontrol edilir"
                                                                 docType="photo"
                                                                 value={t.photoFile}
                                                                 onChange={(f) => {
