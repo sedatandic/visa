@@ -69,7 +69,7 @@ export default function Home() {
         <div data-testid="home-page">
             {/* HERO — gökyüzü zemin + yüzen açık panel */}
             <section className="relative isolate" data-testid="landing-hero">
-                <div className="container-page relative pt-10 sm:pt-14">
+                <div className="container-page relative pt-3 sm:pt-4">
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}

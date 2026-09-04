@@ -35,6 +35,9 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
 - **Marka logosu güncellendi**: yüklenen logo işlenip `public/brand/logo-horizontal.png`
   (yatay kilit: amblem + DUBAI Vize Online), `emblem-512.png` ve `logo-lockup.png` olarak
   hazırlandı; `BrandMark` artık tam yatay logoyu kullanıyor (header, footer, admin)
+- **Üst menü büyütüldü (2026-06)**: navbar 92px, logo `h-14 sm:h-16`, menü yazıları `text-base`,
+  "Başvuru Yap" `h-12`; masaüstü menü `lg`→`xl` breakpoint'e taşındı (1024px yatay kayma düzeltildi),
+  ana sayfa hero üst boşluğu `pt-3 sm:pt-4` olarak azaltıldı
 - **Kur kaynağı doviz.com (2026-06)**: `fx.py` birincil kaynak olarak
   `kur.doviz.com/serbest-piyasa/amerikan-dolari` satış (ask) kurunu HTML'den okur
   (`parse_doviz_html`); open.er-api ve exchangerate.host yedek olarak kalır.

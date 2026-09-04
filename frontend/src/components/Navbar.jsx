@@ -64,7 +64,7 @@ const MENU_LINKS = MENU_GROUPS.flatMap((g) => g.items);
 const testId = (to) => `nav-link-${to.replace("/", "")}`;
 
 const navLinkClass = ({ isActive }) =>
-    `whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none ${
+    `whitespace-nowrap rounded-lg px-3 py-2 text-base font-semibold transition-colors duration-150 focus-visible:outline-none ${
         isActive
             ? "bg-primary/10 text-primary"
             : "text-foreground/75 hover:bg-muted hover:text-foreground"
@@ -97,17 +97,17 @@ export const Navbar = () => {
             data-testid="site-navbar"
         >
             <div className="flag-strip" aria-hidden="true" />
-            <div className="container-page flex h-[72px] items-center justify-between gap-4">
+            <div className="container-page flex h-[92px] items-center justify-between gap-4">
                 <Link
                     to="/"
                     className="flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline-none"
                     data-testid="navbar-logo-link"
                 >
                     <BrandMark />
-                    <UaeFlag className="ml-1 hidden h-5 w-8 sm:block" />
+                    <UaeFlag className="ml-1 hidden h-6 w-10 sm:block" />
                 </Link>
 
-                <nav className="hidden items-center gap-1 lg:flex" aria-label="Ana menü">
+                <nav className="hidden items-center gap-1 xl:flex" aria-label="Ana menü">
                     {PRIMARY_LINKS.map((l) => (
                         <NavLink key={l.to} to={l.to} data-testid={testId(l.to)} className={navLinkClass}>
                             {l.label}
@@ -119,7 +119,7 @@ export const Navbar = () => {
                             <button
                                 type="button"
                                 data-testid="navbar-more-menu-trigger"
-                                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none ${
+                                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-base font-semibold transition-colors duration-150 focus-visible:outline-none ${
                                     menuActive
                                         ? "bg-primary/10 text-primary"
                                         : "text-foreground/75 hover:bg-muted hover:text-foreground"
@@ -166,14 +166,14 @@ export const Navbar = () => {
                     {contact.phone && (
                     <a
                         href={contact.phoneHref}
-                        className="hidden items-center gap-2 whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold text-foreground/75 transition-colors duration-150 hover:text-primary xl:flex"
+                        className="hidden items-center gap-2 whitespace-nowrap rounded-lg px-2 py-2 text-base font-semibold text-foreground/75 transition-colors duration-150 hover:text-primary 2xl:flex"
                         data-testid="navbar-phone-link"
                     >
                         <Phone className="h-4 w-4 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
                         {contact.phone}
                     </a>
                     )}
-                    <Button asChild className="h-11 px-5" data-testid="navbar-apply-button">
+                    <Button asChild className="h-12 px-6 text-base" data-testid="navbar-apply-button">
                         <Link to="/basvuru">Başvuru Yap</Link>
                     </Button>
                 </div>
@@ -182,7 +182,7 @@ export const Navbar = () => {
                     <SheetTrigger asChild>
                         <button
                             type="button"
-                            className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card text-foreground transition-colors duration-150 hover:bg-muted focus-visible:outline-none lg:hidden"
+                            className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card text-foreground transition-colors duration-150 hover:bg-muted focus-visible:outline-none xl:hidden"
                             aria-label="Menüyü aç"
                             data-testid="mobile-menu-toggle"
                         >

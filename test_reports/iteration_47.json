@@ -1,0 +1,22 @@
+{
+  "summary": "Frontend regression testing for iteration_46 fixes: (1) 1024px navbar horizontal overflow now resolved by moving desktop nav to xl breakpoint, and (2) large white gap between header and hero on Home page now reduced. Both fixes verified on the live preview URL.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Pre-existing Radix DialogTitle a11y warning noted in iteration_46 was declared out of scope; not re-tested."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100%"},
+  "test_credentials": "Not used (Zami OTP flow avoided per request).",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Measurements at all viewports: body.scrollWidth == innerWidth (no horizontal overflow) on / and /basvuru at 1024/1152/1280/1440/1920/390. Hamburger (xl:hidden) visible at 1024 & 1152, desktop nav (xl:flex) visible from 1280+ with all 4 links + Başvuru Yap button on single line (y=29). Header height 96px; header.bottom == hero.top (gap=0px) at 1440x900 and 390x844 — no large white band; hero content is not obscured because hero has its own internal top padding (pt-3 sm:pt-4). All 6 routes (/, /vize-tipleri, /gerekli-belgeler, /basvuru, /iletisim, /takip) load cleanly with 0 console errors; brand logo (logo-horizontal.png, natural 714px) loads on every page. Visa showcase prices render (₺ and $ shown). Note: hero slider auto-advance was measured via main.innerText snapshot at 0s vs 6s and no text change was detected — this may be because the visible slider is the visa showcase carousel below the hero, or the auto-advance interval is longer; visually the site looks correct in screenshot. Not flagged as a bug.",
+  "rca of the issue": "iteration_46 reported body.scrollWidth=1040 vs innerWidth=1024 at 1024px because the desktop nav (previously lg:flex) plus phone link + CTA overflowed. Fix in Navbar.jsx changed the breakpoint from lg to xl (nav xl:flex, hamburger xl:hidden, phone link 2xl:flex), pushing the collapsed hamburger to also render at 1024/1152. Verified: overflow eliminated at all tested widths. Home hero pt reduced from pt-10 sm:pt-14 to pt-3 sm:pt-4 removes the previously reported large empty band; measured gap between sticky header bottom and hero panel top is 0px at both desktop and mobile, hero content is visible directly below header."
+}

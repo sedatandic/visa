@@ -1,0 +1,29 @@
+{
+  "summary": "Frontend-only regression test for enlarged header (Navbar + BrandMark). Verified 1920, 1440, 1024, 390 viewports plus dropdown, mobile menu, sticky behavior and page regressions on /, /vize-tipleri, /basvuru, /iletisim. Header measurements match spec: navBarHeight=92px on desktop/tablet, logo rendered height=64px (sm:h-16), 56px on mobile (h-14), naturalWidth=714 (image loads OK, not clipped since bar height 92 > img 64). Apply button height=48px (h-12), more-menu dropdown opens and navigates correctly, mobile hamburger opens sheet. Sticky header stays at top:0 after scroll. All 4 regression pages load. However a HORIZONTAL OVERFLOW is observed at 1024x768: body.scrollWidth=1040 vs innerWidth=1024 (16px overflow) — the desktop nav appears at lg breakpoint (1024) but the combined width of enlarged logo (228px) + UAE flag + 4 nav links (text-base) + phone hidden (xl) + apply button (h-12 px-6 text-base) exceeds available width causing horizontal scroll. At 1440 and 1920 there is NO overflow. Two pre-existing console warnings about DialogContent missing DialogTitle (not related to this change).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Navbar", "issue": "Horizontal overflow at 1024x768 viewport: body.scrollWidth=1040 vs innerWidth=1024 (16px overflow). The enlarged desktop nav (logo h-16 + text-base links + apply button h-12 px-6 text-base) becomes visible at lg (1024) but does not fit. Content is not wrapping/overlapping visually, but a horizontal scrollbar appears. Consider: raise the desktop nav breakpoint to xl:flex (>=1280) so 1024–1279 uses the hamburger, or slightly reduce paddings/logo size (e.g. keep sm:h-14 instead of sm:h-16, or shrink apply button to h-11 px-5) at the lg range.", "selector": "[data-testid=\"site-navbar\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Accessibility", "issues": ["Pre-existing: DialogContent (Radix Sheet) missing DialogTitle warning in console on every page — not caused by this change, but worth adding VisuallyHidden DialogTitle in SheetContent."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix 1024px navbar horizontal overflow: either bump desktop nav breakpoint from lg:flex to xl:flex on <nav> and phone/apply container, or trim sizes (logo sm:h-14, apply h-11 px-5) so total width fits <=1024px. Verify body.scrollWidth == innerWidth at 1024x768."
+  ],
+  "critical_code_review_comments": [
+    "Navbar.jsx line 110 uses lg:flex (>=1024). Combined with enlarged elements (logo 228px, text-base links, h-12 apply btn), width exceeds 1024. The mobile hamburger only shows below lg, leaving the 1024–1279 range with a cramped/overflowing desktop nav.",
+    "BrandMark img loads with naturalWidth 714 and correct aspect ratio; sm:h-16 rendered = 64px, fits inside h-[92px] bar (28px vertical breathing room). OK.",
+    "SheetContent (mobile menu) triggers Radix a11y warning — missing DialogTitle. Wrap a hidden DialogTitle inside SheetContent."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "80%"},
+  "seed_data_creation": "",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Only remaining issue is 1024px horizontal overflow (16px) in navbar due to enlarged elements. Everything else (logo size, apply button, dropdown, mobile menu, sticky, regression pages) works as specified. If main agent trims sizes or bumps breakpoint, re-measure body.scrollWidth vs innerWidth at 1024x768.",
+  "rca of the issue": "At 1024px viewport, Tailwind's lg breakpoint activates the desktop nav (<nav className='hidden ... lg:flex'>). The recently enlarged children (BrandMark sm:h-16 ~228px wide, 4 nav items using text-base with px-3 py-2, ChevronDown dropdown trigger, and apply Button h-12 px-6 text-base) collectively exceed the container-page inner width at 1024, causing document.body.scrollWidth = 1040. Fix by either (a) switch <nav> and right-side container from lg:flex to xl:flex (and mobile-menu-toggle from lg:hidden to xl:hidden), or (b) reduce sizes for the 1024–1279 range."
+}
