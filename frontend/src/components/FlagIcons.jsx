@@ -20,19 +20,19 @@ export const UaeFlag = ({ className = "h-5 w-8", title = "Birleşik Arap Emirlik
 /** Türkiye bayrağı */
 export const TrFlag = ({ className = "h-5 w-8", title = "Türkiye bayrağı" }) => (
     <svg
-        viewBox="0 0 60 40"
+        viewBox="0 0 60 30"
         role="img"
         aria-label={title}
         className={`shrink-0 rounded-[3px] ring-1 ring-black/10 ${className}`}
         data-testid="tr-flag-icon"
     >
         <title>{title}</title>
-        <rect width="60" height="40" fill="#E30A17" />
-        <circle cx="23" cy="20" r="9" fill="#fff" />
-        <circle cx="26" cy="20" r="7.2" fill="#E30A17" />
+        <rect width="60" height="30" fill="#E30A17" />
+        <circle cx="22" cy="15" r="7.2" fill="#fff" />
+        <circle cx="24.6" cy="15" r="5.8" fill="#E30A17" />
         <path
             fill="#fff"
-            d="M34.4 20l6.4-2.1-3.9 5.4v-6.6l3.9 5.4z"
+            d="M31.6 15l5.2-1.7-3.2 4.4v-5.4l3.2 4.4z"
         />
     </svg>
 );
