@@ -23,7 +23,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "../lib/api";
-import { COMPANY, IMAGES, setMeta } from "../lib/site";
+import { IMAGES, setMeta } from "../lib/site";
+import { useContact, waLink } from "../lib/contact";
 import { Button } from "../components/ui/button";
 import { PricingTabs } from "../components/PricingTabs";
 import { ServiceCard } from "../components/IconCards";
@@ -52,6 +53,7 @@ const DOC_ICONS = {
 };
 
 export default function Home() {
+    const contact = useContact();
     const [content, setContent] = useState(null);
 
     useEffect(() => {
@@ -404,22 +406,24 @@ export default function Home() {
                             </ul>
                         </div>
                         <div className="flex flex-col gap-3">
-                            <Button asChild className="h-12 text-base" data-testid="whatsapp-apply-button">
-                                <a
-                                    href={`https://wa.me/${(COMPANY.whatsapp || "").replace(/\D/g, "")}?text=${encodeURIComponent("Merhaba, Dubai vizesi için başvuru yapmak istiyorum. Pasaport ve fotoğrafımı gönderiyorum.")}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    <MessageCircle className="mr-2 h-5 w-5" /> WhatsApp'tan başvur
-                                </a>
-                            </Button>
+                            {contact.whatsapp && (
+                                <Button asChild className="h-12 text-base" data-testid="whatsapp-apply-button">
+                                    <a
+                                        href={waLink(contact, "Merhaba, Dubai vizesi için başvuru yapmak istiyorum. Pasaport ve fotoğrafımı gönderiyorum.")}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        <MessageCircle className="mr-2 h-5 w-5" /> WhatsApp'tan başvur
+                                    </a>
+                                </Button>
+                            )}
                             <Button asChild variant="secondary" className="h-12 border border-border text-base">
-                                <a href={`mailto:${COMPANY.email}?subject=${encodeURIComponent("Dubai vize başvurusu")}`} data-testid="email-apply-button">
+                                <a href={`mailto:${contact.email}?subject=${encodeURIComponent("Dubai vize başvurusu")}`} data-testid="email-apply-button">
                                     E-posta ile gönder
                                 </a>
                             </Button>
                             <p className="text-xs leading-5 text-muted-foreground">
-                                Çalışma saatleri: {COMPANY.workingHours}
+                                Çalışma saatleri: {contact.workingHours}
                             </p>
                         </div>
                     </div>

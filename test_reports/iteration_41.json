@@ -1,0 +1,45 @@
+{
+  "summary": "Completed testing of OCR metrics (Form Hız Testi) and contact info wiring (Canlı Yayın prep) features. Fixed critical bug in contact info handling where empty strings were not stored in DB, causing placeholder values to show.",
+  "backend_issues": {
+    "critical_bugs": [
+      {
+        "file": "/app/backend/routes_admin.py",
+        "issue": "admin_update_company was filtering out empty strings, preventing override of COMPANY placeholders",
+        "fix": "Changed filter from 'if v not in (None, \"\")' to 'if v is not None' to allow empty strings in DB",
+        "status": "FIXED",
+        "fix_priority": "CRITICAL"
+      }
+    ],
+    "flaky_endpoints": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "GET /api/admin/ocr-report requires admin auth (401 without token)",
+    "GET /api/admin/ocr-report returns correct structure with all required keys",
+    "POST /api/passport/read returns duration_ms, filled_count, missing_fields",
+    "OCR metrics are recorded in database after passport read",
+    "Admin dashboard OCR report card renders with correct data",
+    "Contact info empty state: phone/whatsapp/address hidden when empty in DB",
+    "Contact info dynamic update: values appear after admin update",
+    "TursabBadge hidden when tursab_no is empty",
+    "Contact info correctly restored to empty state (no fake data left)"
+  ],
+  "test_report_links": [
+    "/app/backend/test_ocr_metrics.py"
+  ],
+  "success_percentage": {
+    "backend": "100% (5/5 OCR metrics tests, 5/5 contact wiring tests)",
+    "frontend": "100% (Admin OCR card, contact info wiring UI)"
+  },
+  "updated_files": [
+    "/app/backend/routes_admin.py",
+    "/app/backend/test_ocr_metrics.py"
+  ],
+  "action_item_for_main_agent": "",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": false
+}

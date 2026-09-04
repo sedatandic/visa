@@ -6,8 +6,10 @@ import { COMPANY, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { ServiceCard } from "../components/IconCards";
 import { Button } from "../components/ui/button";
+import { useContact } from "../lib/contact";
 
 export default function Services() {
+    const contact = useContact();
     const [content, setContent] = useState(null);
 
     useEffect(() => {
@@ -43,11 +45,13 @@ export default function Services() {
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-3">
+                            {contact.whatsappHref && (
                             <Button asChild variant="secondary" className="h-11 border border-border">
-                                <a href={`https://wa.me/${COMPANY.whatsapp}`} target="_blank" rel="noreferrer" data-testid="services-whatsapp-button">
+                                <a href={contact.whatsappHref} target="_blank" rel="noreferrer" data-testid="services-whatsapp-button">
                                     <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
                                 </a>
                             </Button>
+                            )}
                             <Button asChild className="h-11">
                                 <Link to="/basvuru" data-testid="services-apply-button">
                                     Vize başvurusu <ArrowRight className="ml-2 h-4 w-4" />

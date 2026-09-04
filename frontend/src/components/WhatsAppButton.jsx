@@ -1,11 +1,12 @@
 import React from "react";
-import { COMPANY } from "../lib/site";
+import { useContact, waLink } from "../lib/contact";
 
-export const WhatsAppButton = () => (
+export const WhatsAppButton = () => {
+    const contact = useContact();
+    if (!contact.whatsapp) return null;
+    return (
     <a
-        href={`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(
-            "Merhaba, Dubai vizesi hakkında bilgi almak istiyorum."
-        )}`}
+        href={waLink(contact, "Merhaba, Dubai vizesi hakkında bilgi almak istiyorum.")}
         target="_blank"
         rel="noreferrer"
         aria-label="WhatsApp ile yazın"
@@ -18,4 +19,5 @@ export const WhatsAppButton = () => (
         </svg>
         <span className="hidden text-sm font-semibold sm:inline">WhatsApp</span>
     </a>
-);
+    );
+};

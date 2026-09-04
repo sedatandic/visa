@@ -4,7 +4,10 @@ import React from "react";
  * TURSAB uyelik rozeti (temsili). Resmi TURSAB logosu musteri tarafindan
  * saglandiginda /public klasorune eklenip bu bilesende kullanilabilir.
  */
-export const TursabBadge = ({ number = "0000", type = "A Grubu Seyahat Acentesi", light = false, className = "" }) => (
+export const TursabBadge = ({ number = "", type = "A Grubu Seyahat Acentesi", light = false, className = "" }) => {
+    // Belge numarasi girilmeden rozet gosterilmez: bos numara yaniltici olur.
+    if (!String(number || "").trim()) return null;
+    return (
     <div
         className={`inline-flex items-center gap-3 rounded-xl border px-3.5 py-2.5 ${
             light ? "border-white/20 bg-white/5" : "border-border bg-card"
@@ -43,4 +46,5 @@ export const TursabBadge = ({ number = "0000", type = "A Grubu Seyahat Acentesi"
             <span className={`block text-[11px] ${light ? "text-white/70" : "text-muted-foreground"}`}>{type}</span>
         </span>
     </div>
-);
+    );
+};

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
+import { OcrReportCard } from "../components/OcrReportCard";
 import { STATUS_OPTIONS, STATUS_META, formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { AdminLayout } from "../components/AdminLayout";
 import { PaymentBadge, StatusBadge } from "../components/StatusBadge";
@@ -106,6 +107,9 @@ export default function AdminDashboard() {
                         </p>
                     </div>
                 </div>
+
+                {/* OCR PERFORMANS RAPORU */}
+                <OcrReportCard />
 
                 {/* FILTERS */}
                 <div className="card-surface mt-7 flex flex-col gap-4 p-5 lg:flex-row lg:items-end">

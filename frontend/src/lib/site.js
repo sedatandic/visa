@@ -54,7 +54,7 @@ export const COMPANY = {
     phone: "+90 850 000 00 00",
     phoneHref: "tel:+908500000000",
     whatsapp: "908500000000",
-    email: "destek@dubaivizeonline.com",
+    email: "info@dubaivizeonline.com",
     address: "Levent, İstanbul / Türkiye",
     workingHours: "Hafta içi 09:00 - 19:00 · Cumartesi 10:00 - 16:00",
 };

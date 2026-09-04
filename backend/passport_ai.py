@@ -46,6 +46,12 @@ Kurallar:
 - Tarihleri mutlaka YYYY-MM-DD formatinda ver. MRZ'deki YYMMDD formatini dogru yuzyila cevir
   (dogum tarihi icin gelecek tarih olamaz, gecerlilik tarihi icin genelde 20xx).
 - Cinsiyet MRZ'de M ise "male", F ise "female".
+- national_id: Turk pasaportlarinda "T.C. Kimlik No / ID No" alaninda 11 haneli bir numara yazar.
+  Bu alan gorunmuyorsa MRZ'nin IKINCI satirindaki kisisel numara bolumunde (gecerlilik tarihinden
+  sonra gelen rakam grubu) 11 haneli numarayi ara ve oradan al. Sadece 11 rakamdan olusmali.
+- passport_issue_place: "Veren Makam / Veren Kurum / Authority / Issuing Authority" alanindaki
+  kurum veya sehir adini yaz (orn. "ISTANBUL VALILIGI" icin ISTANBUL). Yalnizca gercekten
+  okunamiyorsa bos birak.
 - Emin olmadigin alanlari bos string birak, uydurma.
 - Sadece JSON dondur."""
 

@@ -8,10 +8,12 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
+import { useContact } from "../lib/contact";
 
 const EMPTY = { name: "", email: "", phone: "", subject: "", message: "" };
 
 export default function Contact() {
+    const contact = useContact();
     const [form, setForm] = useState(EMPTY);
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
@@ -107,44 +109,48 @@ export default function Contact() {
                         <div className="card-surface p-6">
                             <h2 className="font-heading text-lg font-bold">Doğrudan ulaşın</h2>
                             <ul className="mt-5 space-y-4 text-sm">
+                                {contact.phone && (
                                 <li className="flex items-start gap-3">
                                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                                         <Phone className="h-4 w-4 text-primary" />
                                     </span>
                                     <div>
                                         <p className="font-semibold">Telefon</p>
-                                        <a href={COMPANY.phoneHref} className="text-muted-foreground transition-colors hover:text-primary">
-                                            {COMPANY.phone}
+                                        <a href={contact.phoneHref} className="text-muted-foreground transition-colors hover:text-primary">
+                                            {contact.phone}
                                         </a>
                                     </div>
                                 </li>
+                                )}
                                 <li className="flex items-start gap-3">
                                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                                         <Mail className="h-4 w-4 text-primary" />
                                     </span>
                                     <div>
                                         <p className="font-semibold">E-posta</p>
-                                        <a href={`mailto:${COMPANY.email}`} className="text-muted-foreground transition-colors hover:text-primary">
-                                            {COMPANY.email}
+                                        <a href={`mailto:${contact.email}`} className="text-muted-foreground transition-colors hover:text-primary">
+                                            {contact.email}
                                         </a>
                                     </div>
                                 </li>
+                                {contact.address && (
                                 <li className="flex items-start gap-3">
                                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                                         <MapPin className="h-4 w-4 text-primary" />
                                     </span>
                                     <div>
                                         <p className="font-semibold">Adres</p>
-                                        <p className="text-muted-foreground">{COMPANY.address}</p>
+                                        <p className="text-muted-foreground">{contact.address}</p>
                                     </div>
                                 </li>
+                                )}
                                 <li className="flex items-start gap-3">
                                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                                         <Clock className="h-4 w-4 text-primary" />
                                     </span>
                                     <div>
                                         <p className="font-semibold">Çalışma saatleri</p>
-                                        <p className="text-muted-foreground">{COMPANY.workingHours}</p>
+                                        <p className="text-muted-foreground">{contact.workingHours}</p>
                                     </div>
                                 </li>
                             </ul>

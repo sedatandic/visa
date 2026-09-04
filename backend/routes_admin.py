@@ -213,7 +213,7 @@ async def _notify_status_change(fresh: dict, previous_status: str, payload: Stat
             import whatsapp
 
             await whatsapp.notify_result(
-                fresh, payload.status, os.environ.get("PUBLIC_BASE_URL", "https://vizeatlas.com")
+                fresh, payload.status, os.environ.get("PUBLIC_BASE_URL") or "https://dubaivizeonline.com"
             )
         except Exception as exc:  # pragma: no cover
             logger.error("whatsapp notify failed: %s", exc)
@@ -272,6 +272,14 @@ async def admin_update_traveler_field(
     )
     fresh = await applications_col.find_one({"id": application_id})
     return {"application": serialize_doc(fresh)}
+
+
+@router.get("/admin/ocr-report")
+async def admin_ocr_report(days: int = 30, admin: dict = Depends(require_admin)) -> dict:
+    """Pasaport OCR performans raporu: hiz + alan doluluk oranlari."""
+    import ocr_metrics
+
+    return await ocr_metrics.report(days=days)
 
 
 # ------------------------------------------------- approved visa document
@@ -554,7 +562,8 @@ async def admin_get_company(admin: dict = Depends(require_admin)) -> dict:
 
 @router.put("/admin/company")
 async def admin_update_company(payload: CompanyInfoIn, admin: dict = Depends(require_admin)) -> dict:
-    value = {k: v for k, v in payload.model_dump().items() if v not in (None, "")}
+    # Store all values including empty strings to allow overriding COMPANY placeholders
+    value = {k: v for k, v in payload.model_dump().items() if v is not None}
     await settings_col.update_one(
         {"key": "company_info"},
         {"$set": {"value": value, "updated_at": datetime.now(timezone.utc)}},

@@ -28,6 +28,7 @@ import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { COMPANY } from "../lib/site";
 import { BrandMark } from "./BrandMark";
 import { UaeFlag } from "./FlagIcons";
+import { useContact } from "../lib/contact";
 
 /** Ust seviyede gorunen ana linkler (donusum odakli). */
 const PRIMARY_LINKS = [
@@ -70,6 +71,7 @@ const navLinkClass = ({ isActive }) =>
     }`;
 
 export const Navbar = () => {
+    const contact = useContact();
     const [open, setOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const location = useLocation();
@@ -161,14 +163,16 @@ export const Navbar = () => {
                 </nav>
 
                 <div className="hidden items-center gap-2.5 md:flex">
+                    {contact.phone && (
                     <a
-                        href={COMPANY.phoneHref}
+                        href={contact.phoneHref}
                         className="hidden items-center gap-2 whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold text-foreground/75 transition-colors duration-150 hover:text-primary xl:flex"
                         data-testid="navbar-phone-link"
                     >
                         <Phone className="h-4 w-4 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
-                        {COMPANY.phone}
+                        {contact.phone}
                     </a>
+                    )}
                     <Button asChild className="h-11 px-5" data-testid="navbar-apply-button">
                         <Link to="/basvuru">Başvuru Yap</Link>
                     </Button>
@@ -262,14 +266,16 @@ export const Navbar = () => {
                                 <Button asChild className="h-12 w-full" data-testid="mobile-apply-button">
                                     <Link to="/basvuru">Başvuru Yap</Link>
                                 </Button>
+                                {contact.phone && (
                                 <a
-                                    href={COMPANY.phoneHref}
+                                    href={contact.phoneHref}
                                     className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold text-foreground"
                                     data-testid="mobile-phone-link"
                                 >
                                     <Phone className="h-4 w-4 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
-                                    {COMPANY.phone}
+                                    {contact.phone}
                                 </a>
+                                )}
                             </div>
                         </div>
                     </SheetContent>

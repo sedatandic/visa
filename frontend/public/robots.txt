@@ -4,4 +4,4 @@ Disallow: /admin
 Disallow: /admin/
 Disallow: /odeme/
 
-Sitemap: https://visa-application-ae.preview.emergentagent.com/sitemap.xml
+Sitemap: https://dubaivizeonline.com/sitemap.xml

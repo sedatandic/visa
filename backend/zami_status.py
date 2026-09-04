@@ -46,7 +46,7 @@ async def _notify_status_whatsapp(app_id: str, matched: str) -> str:
 
         fresh = await applications_col.find_one({"id": app_id})
         out = await whatsapp.notify_result(
-            fresh, matched, os.environ.get("PUBLIC_BASE_URL", "https://vizeatlas.com")
+            fresh, matched, os.environ.get("PUBLIC_BASE_URL") or "https://dubaivizeonline.com"
         )
         return out.get("status", "skipped")
     except Exception as exc:  # pragma: no cover
@@ -60,7 +60,7 @@ async def _auto_deliver_visa(app_id: str) -> str:
         from visa_delivery import deliver_visa_document
 
         fresh = await applications_col.find_one({"id": app_id})
-        origin = os.environ.get("PUBLIC_BASE_URL", "https://vizeatlas.com")
+        origin = os.environ.get("PUBLIC_BASE_URL") or "https://dubaivizeonline.com"
         out = await deliver_visa_document(fresh, origin)
         return "sent" if out.get("ok") else (out.get("reason") or "failed")
     except Exception as exc:  # pragma: no cover

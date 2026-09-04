@@ -1,4 +1,5 @@
 import logging
+import time
 import os
 import re
 import secrets
@@ -56,6 +57,7 @@ from emailer import (
 from models import ApplicationCreate, ContactCreate, DocumentSubmission, QuoteRequest
 from doc_reminders import missing_documents
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
+import ocr_metrics
 from passport_ai import check_photo, read_passport
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
 from visa_guides import build_guide, guide_index
@@ -569,12 +571,22 @@ async def check_photo_document(file_id: str = Form(...)) -> dict:
 
 @router.post("/passport/read")
 async def read_passport_document(file_id: str = Form(...)) -> dict:
-    """Yuklenen pasaport goruntusunu yapay zeka ile okuyup form alanlarini doldurur."""
+    """Yuklenen pasaport goruntusunu yapay zeka ile okuyup form alanlarini doldurur.
+
+    Her deneme sure + alan kapsamiyla olculur (`ocr_metrics`), boylece "form ne
+    kadar hizli doluyor, hangi alanlar okunamiyor" raporlanabilir.
+    """
     record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
     if not record:
         raise HTTPException(404, "Dosya bulunamadi.")
     content_type = record.get("content_type") or ""
+    started = time.perf_counter()
+
+    def elapsed_ms() -> int:
+        return int((time.perf_counter() - started) * 1000)
+
     if content_type == "application/pdf":
+        await ocr_metrics.record_attempt(file_id=file_id, duration_ms=elapsed_ms(), ok=False, reason="pdf")
         return {
             "ok": False,
             "reason": "pdf",
@@ -593,6 +605,7 @@ async def read_passport_document(file_id: str = Form(...)) -> dict:
         result = await read_passport(data, content_type or ct)
     except Exception as exc:
         logger.error("passport ai failed: %s", exc)
+        await ocr_metrics.record_attempt(file_id=file_id, duration_ms=elapsed_ms(), ok=False, reason="ai_error")
         return {
             "ok": False,
             "reason": "ai_error",
@@ -600,6 +613,9 @@ async def read_passport_document(file_id: str = Form(...)) -> dict:
         }
 
     if not result.get("is_passport") or not (result.get("passport_no") or result.get("last_name")):
+        await ocr_metrics.record_attempt(
+            file_id=file_id, duration_ms=elapsed_ms(), ok=False, reason="not_readable", data=result
+        )
         return {
             "ok": False,
             "reason": "not_readable",
@@ -607,11 +623,21 @@ async def read_passport_document(file_id: str = Form(...)) -> dict:
             "data": result,
         }
 
+    duration_ms = elapsed_ms()
+    coverage = await ocr_metrics.record_attempt(
+        file_id=file_id, duration_ms=duration_ms, ok=True, data=result
+    )
     await uploads_col.update_one(
         {"id": file_id},
         {"$set": {"ocr": {"at": datetime.now(timezone.utc), "confidence": result.get("confidence")}}},
     )
-    return {"ok": True, "data": result}
+    return {
+        "ok": True,
+        "data": result,
+        "duration_ms": duration_ms,
+        "filled_count": len(coverage["filled"]),
+        "missing_fields": [ocr_metrics.FIELD_LABELS.get(m, m) for m in coverage["missing"]],
+    }
 
 
 @router.get("/files/{file_id}")

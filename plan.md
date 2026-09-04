@@ -41,6 +41,10 @@
 
 - AI destekli otomasyon (tamamlandı): pasaport OCR + fotoğraf kontrol.
 
+- **OCR Performans Ölçümü (Form Hız Testi) (tamamlandı):**
+  - Her pasaport okuması **süre + alan kapsamı** ile ölçülür ve raporlanır.
+  - Hedef: “tek pasaport fotoğrafıyla form kaç saniyede doluyor, hangi alanlar okunamıyor?” sorusuna günlük/aylık KPI.
+
 - Zami Tours otomasyonu (üretim hazır, OTP onboarding devam ediyor):
   - Playwright RPA + capture + mapping + toplu aktarım + status polling + müşteri timeline.
   - Zami zorunlu alanlar UI+RPA: medeni hal, meslek, anne adı, baba adı.
@@ -51,6 +55,7 @@
 - Hosting/Deploy:
   - Paylaşımlı cPanel/PHP hosting yok; FastAPI + Playwright + MongoDB gerektirir.
   - Kullanıcı domain alır; uygulama Emergent üzerinde; DNS ile bağlanır.
+  - **Canlı yayın hazırlığı (tamamlandı):** deploy taraması PASS, domain bağımlılıkları düzeltildi.
 
 ---
 
@@ -241,7 +246,6 @@
 2) **Cinsiyet alanı kaldırıldı (frontend):**
    - “Cinsiyet” alanı ve doğrulaması formdan tamamen çıkarıldı.
    - Cinsiyet artık yalnızca **pasaport AI OCR (MRZ)** üzerinden gelir.
-   - Frontend’de “female” varsayılanları kaldırıldı; passportComplete kontrolünden çıkarıldı.
 
 3) **Model doğrulama güncellendi (backend):**
    - `models.TravelerIn.gender` artık opsiyonel: `^(male|female|)$`.
@@ -256,18 +260,66 @@
 
 6) **Bilgi kutusu metni netleştirildi:**
    - “BAE başvuru formu için gereken 4 ek bilgi” + “Neden soruyoruz?” açıklaması.
-   - Sadece (Medeni Hal / Meslek / Anne Adı / Baba Adı) pasaportta olmadığı, diğer bilgilerin pasaporttan otomatik okunduğu anlatıldı.
 
 **Test**
 - iteration_40: backend 36/36, frontend %100, admin %100, e2e %100
-- “Cinsiyetsiz” başvuru uçtan uca (havale) oluşturuldu.
+
+---
+
+### Phase 47 — OCR Performans Ölçümü (Form Hız Testi) (Tamamlandı)
+- Yeni modül: `/app/backend/ocr_metrics.py`
+  - `ocr_metrics` koleksiyonuna: süre (ms), okuma başarısı, doldurulan/eksik alanlar, core_complete, confidence
+  - TRACKED_FIELDS: 11 alan
+  - CORE_FIELDS: 5 zorunlu alan
+  - `summarize()` saf fonksiyon: success/core rates, avg/p50/p90, alan dolulukları, top missing
+- `/api/passport/read` artık şunları döndürür:
+  - `duration_ms`, `filled_count`, `missing_fields` (+ mevcut `data`)
+- Yeni endpoint: `GET /api/admin/ocr-report?days=30`
+- Admin dashboard: `OcrReportCard`
+  - Ortalama süre, medyan, başarı oranı, zorunlu alan tamlığı
+  - Alan doluluk barları + en sık okunamayan alanlar + son ölçümler
+- Pasaport AI prompt iyileştirmesi:
+  - T.C. Kimlik No MRZ personal-number alanından da çekilir (canlı doğrulandı)
+- **Canlı ölçüm örneği:** ortalama ~3.3 sn, medyan 3.4 sn, başarı %100, 11 alandan 10’u dolu; okunamayan: “Veriliş Yeri” (%0)
+- iteration_41: OCR testleri %100
+
+---
+
+### Phase 48 — Canlı Yayın Hazırlığı (Tamamlandı)
+- Deploy taraması PASS:
+  - `.gitignore` artık `.env` dosyalarını dışlamıyor → deploy blocker giderildi
+- Domain bağımlılıkları düzeltildi:
+  - `frontend/public/robots.txt` ve `sitemap.xml` artık `https://dubaivizeonline.com`
+  - `PUBLIC_BASE_URL` fallback’leri `vizeatlas.com` → `dubaivizeonline.com`
+- Stripe incelemesi:
+  - success/cancel URL’leri istemci `origin_url` üzerinden üretildiği için domain değişiminde kırılmıyor
+  - webhook URL `request.base_url` üzerinden üretildiği için canlı domain’de otomatik doğru
+  - **Canlıya geçiş için tek kritik değişiklik:** `backend/.env STRIPE_API_KEY = sk_live_...`
+- Sahte veri temizliği:
+  - DB’deki test firma verileri temizlendi
+  - TÜRSAB rozeti artık belge numarası yoksa render olmuyor
+- İletişim bilgileri artık tek kaynaktan:
+  - Yeni `useContact` hook (`/content/site` cache)
+  - Navbar/Footer/Contact/Services/Home/Apply/WhatsAppButton dinamik
+  - Telefon/WhatsApp/adres girilmemişse **placeholder gösterilmez** (alan gizlenir)
+  - Admin panelden girilince otomatik görünür
+- Kritik bug fix:
+  - `admin_update_company` boş string’leri filtreliyordu → artık boş string’ler DB’ye yazılabiliyor (placeholder temizliği mümkün)
+- iteration_41: contact wiring + OCR %100
 
 ---
 
 ## 3. Next Actions
 
 ### P0 — Gerçek Firma Bilgileri (USER ACTION REQUIRED)
-Telefon/WhatsApp/adres/TÜRSAB/vergisel bilgiler ve gerçek sosyal kanıt.
+Admin → **Acente Bilgileri** ekranından doldurulacak:
+- Telefon
+- WhatsApp numarası
+- Adres
+- TÜRSAB belge no / şirket yasal bilgileri (varsa)
+- Çalışma saatleri (opsiyonel)
+
+Not: Bu alanlar girilene kadar sitede telefon/WhatsApp/adres görünmez (yanlış/placeholder gösterilmez).
 
 ---
 
@@ -281,13 +333,26 @@ Beklenen: `device_state` + `last_otp_at` kaydolur → 1 ay OTP’siz yenileme.
 
 ---
 
-### P0.2 — OTP Hatırlatıcı Kanalları (USER ACTION REQUIRED)
-- `company_info.whatsapp` veya env `ADMIN_WHATSAPP` gerçek numara.
-- env `ADMIN_EMAIL` doğru.
+### P0.2 — Stripe Canlı Anahtar (USER ACTION REQUIRED)
+- `backend/.env` içinde `STRIPE_API_KEY = sk_live_...`
+- (Opsiyonel) Stripe webhook endpoint’ini canlı ortamda doğrulayın: `/api/webhook/stripe`
 
 ---
 
-### P0.3 — `onyuz-rehberi.pdf` Kapsam Kararı (USER DECISION REQUIRED)
+### P0.3 — Custom Domain Deploy (USER ACTION REQUIRED)
+- `dubaivizeonline.com` DNS yönlendirmesi
+- Emergent domain bağlama
+- (Varsa) Resend domain doğrulaması / SPF-DKIM
+
+---
+
+### P0.4 — OTP Hatırlatıcı Kanalları (USER ACTION REQUIRED)
+- `company_info.whatsapp` gerçek numara (veya env `ADMIN_WHATSAPP`)
+- env `ADMIN_EMAIL` doğru (şu an `info@dubaivizeonline.com`)
+
+---
+
+### P0.5 — `onyuz-rehberi.pdf` Kapsam Kararı (USER DECISION REQUIRED)
 A) Ana sayfa satış metni/hiyerarşi
 B) Tracking görsel akış
 C) Belirli bölüm
@@ -295,21 +360,12 @@ D) Atla
 
 ---
 
-### P0.4 — Resend Production Gönderici (USER ACTION REQUIRED)
-Domain doğrulaması + `SENDER_EMAIL`.
+### P1 — Resend Production Gönderici (USER ACTION REQUIRED)
+- Domain doğrulaması + `SENDER_EMAIL=noreply@dubaivizeonline.com`
 
 ---
 
-### P1 — Custom Domain Deploy (USER ACTION REQUIRED)
-DNS yönlendirme + Emergent domain link + env URL’leri güncelleme.
-
----
-
-### P2 — Stripe Prod (opsiyonel)
-
----
-
-### P3 — WhatsApp Otomatik Sağlayıcı (Twilio/Meta) (opsiyonel)
+### P2 — WhatsApp Otomatik Sağlayıcı (Twilio/Meta) (opsiyonel)
 
 ---
 
@@ -338,14 +394,21 @@ Eğitim + uçuş bilgileri.
   4) Cinsiyet boş olsa bile başvuru uçtan uca oluşturulabilir (havale dahil).
   5) Zami aktarımı için cinsiyet gerekiyorsa admin panelden tamamlanabilir.
 
+- OCR Performans (Phase 47):
+  1) `/api/passport/read` her denemede `duration_ms` ve `missing_fields` döndürür.
+  2) Admin `/admin/ocr-report` raporu: başarı oranı, core_complete_rate, avg/p50/p90 ve alan doluluklarını gösterir.
+  3) Admin dashboard’da OCR performans kartı görünür ve yenilenebilir.
+
 - Zami OTP ayda bir:
   1) İlk OTP’li giriş sonrası `device_state` kayıtlıdır (`trusted_device=true`, `last_otp_at` set).
   2) Oturum düşüşlerinde çoğu durumda OTP’siz auto-relogin başarılı.
   3) OTP gerçekten gerektiğinde admin e-posta + WhatsApp uyarısı; 24h dedupe.
   4) Admin UI “Oturum Başlat” ile OTP ekranına hızlı ilerler (start-otp).
 
-- Deploy:
+- Deploy (Phase 48):
   - `https://dubaivizeonline.com` SSL aktif; cron job’lar (doc reminders, Zami status/keepalive, OTP reminders) çalışır.
+  - robots/sitemap domain’i doğru (`dubaivizeonline.com`).
+  - Stripe live key ile kart ödemesi uçtan uca çalışır.
 
 ---
 
@@ -354,6 +417,8 @@ Eğitim + uçuş bilgileri.
 - Phase 44 (Kart üstü fiyat): **TAMAMLANDI** — iteration_39 frontend %100.
 - Phase 45 (Zami OTP giriş sağlamlaştırma): **TAMAMLANDI** (kod + UI), ancak **ilk OTP’li giriş hâlâ kullanıcı aksiyonu**.
 - Phase 46 (Başvuru formu alan revizyonu): **TAMAMLANDI** — iteration_40 backend+frontend+admin+e2e %100.
+- Phase 47 (OCR Performans Ölçümü): **TAMAMLANDI** — iteration_41 %100.
+- Phase 48 (Canlı Yayın Hazırlığı): **TAMAMLANDI** — deployment taraması PASS, domain bağımlılıkları düzeltildi, iletişim bilgileri panelden yönetilebilir.
 
 Test raporları (seçme):
 - iteration_35 — OTP ayda bir altyapısı backend PASS
@@ -362,11 +427,11 @@ Test raporları (seçme):
 - iteration_38 — Vize vitrin seçimi frontend %100
 - iteration_39 — Vitrin kart üstü fiyat frontend %100
 - iteration_40 — Cinsiyet alanı kaldırma + etiket revizyonu PASS (e2e)
+- iteration_41 — OCR ölçümü + iletişim wiring + canlı yayın hazırlığı PASS
 
-Blokajlar / Bekleyen:
-- Gerçek firma bilgileri
-- Gerçek WhatsApp numarası hedefi
-- `onyuz-rehberi.pdf` kapsam kararı
-- Resend production domain doğrulama
-- Custom domain DNS
+Blokajlar / Bekleyen (tamamı kullanıcı aksiyonu):
+- Gerçek firma iletişim bilgileri (Admin → Acente Bilgileri)
+- Stripe canlı anahtar (`sk_live_...`)
+- dubaivizeonline.com DNS + Emergent domain bağlama
 - **Zami ilk OTP (start-otp ile panelden hızlı giriş)**
+- Resend production domain doğrulama (opsiyonel ama canlı e-posta teslimi için önerilir)

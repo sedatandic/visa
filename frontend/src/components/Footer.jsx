@@ -7,8 +7,10 @@ import { TrFlag, UaeFlag } from "./FlagIcons";
 import { TursabBadge } from "./TursabBadge";
 import { GdrfaBadge } from "./GdrfaBadge";
 import { BrandMark } from "./BrandMark";
+import { useContact } from "../lib/contact";
 
 export const Footer = () => {
+    const contact = useContact();
     const [agency, setAgency] = useState(null);
     const [agencyItems, setAgencyItems] = useState([]);
     const [guides, setGuides] = useState([]);
@@ -77,21 +79,25 @@ export const Footer = () => {
                     İletişim
                 </h3>
                 <ul className="mt-4 space-y-3 text-sm text-white/80">
-                    <li className="flex items-start gap-2.5">
-                        <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <a href={COMPANY.phoneHref} className="transition-colors hover:text-primary">{COMPANY.phone}</a>
-                    </li>
+                    {contact.phone && (
+                        <li className="flex items-start gap-2.5">
+                            <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                            <a href={contact.phoneHref} className="transition-colors hover:text-primary">{contact.phone}</a>
+                        </li>
+                    )}
                     <li className="flex items-start gap-2.5">
                         <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <a href={`mailto:${COMPANY.email}`} className="transition-colors hover:text-primary">{COMPANY.email}</a>
+                        <a href={`mailto:${contact.email}`} className="transition-colors hover:text-primary">{contact.email}</a>
                     </li>
-                    <li className="flex items-start gap-2.5">
-                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <span>{COMPANY.address}</span>
-                    </li>
+                    {contact.address && (
+                        <li className="flex items-start gap-2.5">
+                            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                            <span>{contact.address}</span>
+                        </li>
+                    )}
                     <li className="flex items-start gap-2.5">
                         <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <span>{COMPANY.workingHours}</span>
+                        <span>{contact.workingHours}</span>
                     </li>
                 </ul>
             </div>

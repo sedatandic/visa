@@ -31,7 +31,8 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { api, apiError, customerAuth } from "../lib/api";
-import { COMPANY, formatDate, formatMoney, setMeta } from "../lib/site";
+import { formatDate, formatMoney, setMeta } from "../lib/site";
+import { useContact, waLink } from "../lib/contact";
 import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { DateField, fromISODate } from "../components/DateField";
@@ -178,6 +179,7 @@ const SummaryRow = ({ label, value, strong }) => (
 );
 
 export default function Apply() {
+    const siteContact = useContact();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
@@ -2012,7 +2014,7 @@ export default function Apply() {
                                                 </dl>
                                                 <p className="mt-3 text-xs leading-5 text-muted-foreground">{transferInfo.bank?.note}</p>
                                                 <Button asChild variant="secondary" className="mt-4 h-10 border border-border">
-                                                    <a href={`https://wa.me/${(COMPANY.whatsapp || "").replace(/\D/g, "")}?text=${encodeURIComponent(`Merhaba, ${transferInfo.reference_code} numaralı başvurumun havale dekontunu göndermek istiyorum.`)}`} target="_blank" rel="noreferrer" data-testid="send-receipt-whatsapp">
+                                                    <a href={waLink(siteContact, `Merhaba, ${transferInfo.reference_code} numaralı başvurumun havale dekontunu göndermek istiyorum.`)} target="_blank" rel="noreferrer" data-testid="send-receipt-whatsapp">
                                                         Dekontu WhatsApp'tan gönder
                                                     </a>
                                                 </Button>
