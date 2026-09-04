@@ -7,7 +7,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
-export const AccountLoginCard = ({ onLogin, stacked = false }) => {
+export const AccountLoginCard = ({ onLogin, stacked = false, className = "" }) => {
     const [email, setEmail] = useState("");
     const [lastName, setLastName] = useState("");
     const [code, setCode] = useState("");
@@ -63,7 +63,7 @@ export const AccountLoginCard = ({ onLogin, stacked = false }) => {
     };
 
     return (
-        <div className="card-surface p-6 sm:p-8" data-testid="account-login-card">
+        <div className={`card-surface p-6 sm:p-8 ${className}`} data-testid="account-login-card">
             <h2 className="font-heading text-xl font-bold">Başvurularıma giriş</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Başvurularınızı görmek, yarım kalan başvurunuza devam etmek ve eski bilgilerinizle

@@ -220,8 +220,8 @@ export default function Track() {    const [searchParams] = useSearchParams();
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
-                  <div className="grid items-start gap-6 lg:grid-cols-2">
-                   <div>
+                  <div className="grid items-stretch gap-6 lg:grid-cols-2">
+                   <div className="flex flex-col gap-6">
                     <form onSubmit={search} className="card-surface p-6 sm:p-8" data-testid="tracking-lookup-form">
                         <h2 className="font-heading text-xl font-bold">Takip kodu ile sorgula</h2>
                         <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -249,7 +249,7 @@ export default function Track() {    const [searchParams] = useSearchParams();
                     </form>
 
                     {!result && (
-                        <div className="card-surface mt-6 p-6 sm:p-7" data-testid="tracking-help-card">
+                        <div className="card-surface p-6 sm:p-7" data-testid="tracking-help-card">
                             <h2 className="font-heading text-base font-bold">Takip kodunuz nerede?</h2>
                             <ul className="mt-4 space-y-3.5">
                                 {[
@@ -270,6 +270,7 @@ export default function Track() {    const [searchParams] = useSearchParams();
                    {!result && (
                        <AccountLoginCard
                            stacked
+                           className="h-full"
                            onLogin={(newToken, email) => {
                                customerAuth.save(newToken, email);
                                navigate("/hesabim");
