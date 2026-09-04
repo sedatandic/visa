@@ -537,9 +537,10 @@ export default function Home() {
 
                     {/* PARTNERS */}
                     <div className="mt-12">
-                        <h3 className="font-heading text-base font-bold">Güvenilir partnerlerimiz</h3>
+                        <h3 className="font-heading text-base font-bold">Çalıştığımız havayolları</h3>
                         <p className="mt-1.5 text-sm text-muted-foreground">
-                            Seyahatiniz için sektörün önde gelen havayolu ve hizmet sağlayıcılarıyla çalışıyoruz.
+                            Müşterilerimizin Dubai uçuşlarında en sık tercih ettiği havayolları. Logolar ilgili
+                            markalara aittir; bilgilendirme amaçlı gösterilir.
                         </p>
                         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                             {(content?.partners || []).map((p) => {
