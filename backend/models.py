@@ -186,6 +186,8 @@ class CompanyInfoIn(BaseModel):
     phone: Optional[str] = Field(default="", max_length=40)
     whatsapp: Optional[str] = Field(default="", max_length=30)
     email: Optional[str] = Field(default="", max_length=120)
+    instagram: Optional[str] = Field(default="", max_length=200)
+    google_review: Optional[str] = Field(default="", max_length=300)
     address: Optional[str] = Field(default="", max_length=240)
     working_hours: Optional[str] = Field(default="", max_length=160)
     tursab_no: Optional[str] = Field(default="", max_length=30)

@@ -35,6 +35,12 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
 - **Marka logosu güncellendi**: yüklenen logo işlenip `public/brand/logo-horizontal.png`
   (yatay kilit: amblem + DUBAI Vize Online), `emblem-512.png` ve `logo-lockup.png` olarak
   hazırlandı; `BrandMark` artık tam yatay logoyu kullanıyor (header, footer, admin)
+- **2026 fiyat listesi + sosyal butonlar (2026-06)**: müşterinin resmi fiyat tablosu uygulandı
+  (30g tek 105$, 30g çocuk 50$, 30g çok 200$, 60g tek 200$, 60g çok 300$, uzatma 300$;
+  60g çocuk 105$ ve transit 70$ değişmedi), ekspres hizmet kişi başı sabit 50$ ve
+  "yaklaşık 8 mesai saatinde sonuç". Sağ altta `SocialDock` (WhatsApp + Instagram +
+  Google yorum) ve footer sosyal satırı eklendi; linkler Admin → Acente Bilgileri'nden yönetilir.
+- **Yönetici e-postası** `info@dubaivizeonline.com` olarak değişti (şifre `Dubai2026!`)
 - **Üst menü büyütüldü (2026-06)**: navbar 92px, logo `h-14 sm:h-16`, menü yazıları `text-base`,
   "Başvuru Yap" `h-12`; masaüstü menü `lg`→`xl` breakpoint'e taşındı (1024px yatay kayma düzeltildi),
   ana sayfa hero üst boşluğu `pt-3 sm:pt-4` olarak azaltıldı
@@ -55,6 +61,9 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
   4.5 sn'de otomatik geçiş, ok + nokta kontrolleri, hover'da durur (dubaivizeal.com referansı)
 
 ## Bekleyen / bloke
+- **P1 WhatsApp numarası**: DB'de geçici test numarası (905331234567) duruyor —
+  gerçek numara Admin → Acente Bilgileri'nden girilmeli. Instagram/Google yorum
+  linkleri de aynı ekranda düzenlenebilir (varsayılanlar geçici).
 - **P0 Deployment**: Emergent tarafında manuel güven & güvenlik incelemesi nedeniyle bloke.
   Kodda blocker yok (health check PASS). Kullanıcı support@emergent.sh ile iletişimde.
 - **P0 Zami OTP ilk giriş**: Kullanıcı Admin → Zami → Robot Oturumu (B) → "Oturum başlat"

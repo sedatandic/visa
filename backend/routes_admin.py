@@ -78,7 +78,7 @@ JWT_ALGO = "HS256"
 # Admin girisi ortam degiskenlerinden okunur (kodda sabit sifre tutulmaz).
 # ADMIN_LOGIN_EMAIL / ADMIN_LOGIN_PASSWORD tanimli degilse gelistirme
 # kimlik bilgileri kullanilir (bkz. /app/memory/test_credentials.md).
-ADMIN_LOGIN_EMAIL = (os.environ.get("ADMIN_LOGIN_EMAIL") or "admin@vizeatlas.com").strip().lower()
+ADMIN_LOGIN_EMAIL = (os.environ.get("ADMIN_LOGIN_EMAIL") or "info@dubaivizeonline.com").strip().lower()
 ADMIN_LOGIN_PASSWORD = os.environ.get("ADMIN_LOGIN_PASSWORD") or ""
 ADMIN_LOGIN_NAME = os.environ.get("ADMIN_LOGIN_NAME") or "Yonetici"
 

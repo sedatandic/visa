@@ -1,14 +1,14 @@
 import React from "react";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
-import { WhatsAppButton } from "./WhatsAppButton";
+import { SocialDock } from "./SocialDock";
 
 export const SiteLayout = ({ children }) => (
     <div className="sky-shell relative flex min-h-screen flex-col">
         <Navbar />
         <main className="relative flex-1">{children}</main>
         <Footer />
-        <WhatsAppButton />
+        <SocialDock />
     </div>
 );
 

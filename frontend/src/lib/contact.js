@@ -37,6 +37,8 @@ const normalize = (company) => {
         whatsapp,
         whatsappHref: whatsapp ? `https://wa.me/${whatsapp}` : "",
         email: pick("email", FALLBACK.email),
+        instagram: String(company?.instagram ?? "").trim(),
+        googleReview: String(company?.google_review ?? "").trim(),
         address: pick("address", FALLBACK.address),
         workingHours: pick("working_hours", FALLBACK.workingHours),
     };

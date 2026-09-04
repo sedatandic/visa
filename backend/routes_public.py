@@ -751,7 +751,7 @@ def _build_application_doc(
         "pricing": pricing,
         "price": pricing["total"],
         "currency": pricing["currency"],
-        "processing_days": "24 saat" if payload.addons.express else travelers[0].get("processing_days", ""),
+        "processing_days": "yaklaşık 8 mesai saati" if payload.addons.express else travelers[0].get("processing_days", ""),
         "visa_type_name": _visa_summary_name(travelers),
         "payment": {
             "status": "pending",

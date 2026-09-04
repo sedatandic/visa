@@ -20,6 +20,8 @@ const FIELDS = [
     { key: "phone", label: "Telefon", placeholder: "+90 ..." },
     { key: "whatsapp", label: "WhatsApp numarası", placeholder: "905xxxxxxxxx" },
     { key: "email", label: "E-posta", placeholder: "destek@..." },
+    { key: "instagram", label: "Instagram bağlantısı", placeholder: "https://www.instagram.com/kullaniciadi/", wide: true },
+    { key: "google_review", label: "Google yorum bağlantısı", placeholder: "https://g.page/r/...", wide: true },
     { key: "working_hours", label: "Çalışma saatleri", placeholder: "Hafta içi 09:00 - 19:00" },
     { key: "founded_year", label: "Kuruluş yılı", placeholder: "2019" },
 ];

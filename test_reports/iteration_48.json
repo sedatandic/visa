@@ -1,0 +1,34 @@
+{
+  "summary": "Iteration 48 verified new 2026 USD price table, express 50$ per-person add-on, admin login credential change to info@dubaivizeonline.com, and the new floating SocialDock (Instagram/Google review/WhatsApp) plus footer social row. 9/9 pytest backend cases passed and all 6 public pages loaded without console errors on desktop and mobile (390x844).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_48.py",
+    "/app/test_reports/pytest/iteration_48.xml"
+  ],
+  "action_items": [
+    "Company WhatsApp number is left set to 905331234567 in the DB (per the review request permission). Owner should replace with the real number when available.",
+    "content.py hard-coded TRY prices for visa_60_child (1899) and visa_transit_48 (1299) still hold stale figures - DB now has correctly migrated USD*FX values (5190 TRY and 3460 TRY). Not user-visible because seed_visa_types uses $setOnInsert, but recommend syncing content.py to avoid future confusion for fresh envs."
+  ],
+  "critical_code_review_comments": [
+    "content.py VISA_TYPES contains inconsistent TRY prices for visa_60_child (1899) and visa_transit_48 (1299) that no longer match USD*FX. These are only used for a fresh DB seed, so they only matter for a new environment - consider recomputing them from price_usd*effective_fx at startup instead of hard-coding TRY.",
+    "COMPANY.email in content.py is still destek@vizeatlas.com while backend/.env ADMIN_EMAIL is info@dubaivizeonline.com. Minor branding inconsistency, admin-editable via /admin/company (already overridden in DB)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_48.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Admin: info@dubaivizeonline.com / Dubai2026! (works). Old admin@vizeatlas.com correctly rejected (401).",
+  "seed_data_creation": "PUT /api/admin/company set whatsapp=905331234567, instagram=https://www.instagram.com/dubaivizeonline/, google_review=https://www.google.com/search?q=Dubai+Vize+Online+yorumlar. Left in DB as requested.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests live at /app/backend/tests/test_iteration_48.py and cover price table, express addon, quote math, admin auth, and company social-link persistence. Auth uses JWT Bearer token from response body (NOT cookies) - use s.headers['Authorization'] = 'Bearer {token}' after POST /api/admin/login. FX rate ~49.4 from doviz.com is applied server-side; TRY prices in /api/visa-types are rounded to nearest 10. WhatsApp number is currently populated in DB so the floating whatsapp-floating-button IS visible; clearing it would hide the button.",
+  "rca of the issue": "N/A - all features working as intended."
+}

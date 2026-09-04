@@ -60,7 +60,7 @@ export default function AdminLogin() {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="admin@dubaivizeonline.com"
+                                placeholder="info@dubaivizeonline.com"
                                 data-testid="admin-email-input"
                             />
                         </div>
