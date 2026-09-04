@@ -33,7 +33,12 @@ import { useContact } from "../lib/contact";
 /** Ust seviyede gorunen ana linkler (donusum odakli). */
 const PRIMARY_LINKS = [
     { to: "/vize-tipleri", label: "Hizmet Bedelleri", icon: FileCheck2 },
-    { to: "/takip", label: "Başvuru Takip", icon: Search },
+];
+
+/** "Başvuru Takip" menusu altinda toplanan takip linkleri. */
+const TRACK_LINKS = [
+    { to: "/takip", label: "Takip Kodu ile Sorgula", icon: Search },
+    { to: "/hesabim", label: "Başvurularım", icon: UserRound },
 ];
 
 /** "Bilgi & Hizmetler" menusu altinda toplanan linkler. */
@@ -86,6 +91,8 @@ export const Navbar = () => {
     }, []);
 
     const menuActive = MENU_LINKS.some((l) => location.pathname.startsWith(l.to));
+    const trackActive = TRACK_LINKS.some((l) => location.pathname.startsWith(l.to));
+
 
     return (
         <header
@@ -113,6 +120,41 @@ export const Navbar = () => {
                             {l.label}
                         </NavLink>
                     ))}
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                type="button"
+                                data-testid="navbar-track-menu-trigger"
+                                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-base font-semibold transition-colors duration-150 focus-visible:outline-none ${
+                                    trackActive
+                                        ? "bg-primary/10 text-primary"
+                                        : "text-foreground/75 hover:bg-muted hover:text-foreground"
+                                }`}
+                            >
+                                Başvuru Takip
+                                <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="start"
+                            className="w-60 rounded-xl p-1.5"
+                            data-testid="navbar-track-menu"
+                        >
+                            {TRACK_LINKS.map(({ to, label, icon: Icon }) => (
+                                <DropdownMenuItem key={to} asChild className="rounded-lg">
+                                    <Link
+                                        to={to}
+                                        data-testid={testId(to)}
+                                        className="flex w-full cursor-pointer items-center gap-2.5 py-2 text-sm font-medium"
+                                    >
+                                        <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+                                        {label}
+                                    </Link>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -156,10 +198,6 @@ export const Navbar = () => {
                             ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
-
-                    <NavLink to="/hesabim" data-testid={testId("/hesabim")} className={navLinkClass}>
-                        Başvurularım
-                    </NavLink>
                 </nav>
 
                 <div className="hidden items-center gap-2.5 md:flex">
@@ -201,7 +239,7 @@ export const Navbar = () => {
                                     Başvuru
                                 </p>
                                 <div className="mt-1.5 flex flex-col gap-0.5">
-                                    {PRIMARY_LINKS.map(({ to, label, icon: Icon }) => (
+                                    {[...PRIMARY_LINKS, ...TRACK_LINKS].map(({ to, label, icon: Icon }) => (
                                         <NavLink
                                             key={to}
                                             to={to}
@@ -217,19 +255,6 @@ export const Navbar = () => {
                                             {label}
                                         </NavLink>
                                     ))}
-                                    <NavLink
-                                        to="/hesabim"
-                                        className={({ isActive }) =>
-                                            `flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-sm font-semibold ${
-                                                isActive
-                                                    ? "bg-primary/10 text-primary"
-                                                    : "text-foreground hover:bg-muted"
-                                            }`
-                                        }
-                                    >
-                                        <UserRound className="h-4 w-4 text-primary" aria-hidden="true" />
-                                        Başvurularım
-                                    </NavLink>
                                 </div>
 
                                 {MENU_GROUPS.map((group) => (

@@ -88,18 +88,6 @@ const LoginCard = ({ onLogin }) => {
                 yeni başvuru açmak için e-posta adresinizle giriş yapın.
             </p>
 
-            <div className="mt-6 space-y-2">
-                <Label htmlFor="account-email">E-posta adresiniz</Label>
-                <Input
-                    id="account-email"
-                    type="email"
-                    placeholder="ornek@eposta.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    data-testid="account-email-input"
-                />
-            </div>
-
             <Tabs defaultValue="lastname" className="mt-6">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="lastname" data-testid="account-tab-lastname">
@@ -111,19 +99,32 @@ const LoginCard = ({ onLogin }) => {
                 </TabsList>
 
                 <TabsContent value="lastname" className="mt-5 space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="account-lastname">Soyadınız</Label>
-                        <Input
-                            id="account-lastname"
-                            placeholder="Başvurudaki soyadınız"
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                            data-testid="account-lastname-input"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            Daha önce başvurusu olan müşteriler bu yöntemle giriş yapabilir.
-                        </p>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="account-email">E-posta adresiniz</Label>
+                            <Input
+                                id="account-email"
+                                type="email"
+                                placeholder="ornek@eposta.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                data-testid="account-email-input"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="account-lastname">Soyadınız</Label>
+                            <Input
+                                id="account-lastname"
+                                placeholder="Başvurudaki soyadınız"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                data-testid="account-lastname-input"
+                            />
+                        </div>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                        Daha önce başvurusu olan müşteriler bu yöntemle giriş yapabilir.
+                    </p>
                     <Button
                         onClick={loginLastName}
                         disabled={busy || !email.trim() || !lastName.trim()}
@@ -135,6 +136,17 @@ const LoginCard = ({ onLogin }) => {
                 </TabsContent>
 
                 <TabsContent value="code" className="mt-5 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="account-email-code">E-posta adresiniz</Label>
+                        <Input
+                            id="account-email-code"
+                            type="email"
+                            placeholder="ornek@eposta.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            data-testid="account-email-code-input"
+                        />
+                    </div>
                     <Button
                         variant="secondary"
                         onClick={requestCode}

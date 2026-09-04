@@ -76,7 +76,7 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                 </div>
 
                 <h3 className="mt-3.5 font-heading text-lg font-extrabold leading-snug">{visa.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground sm:min-h-[3rem]">
                     {compact ? visa.entry_label : visa.description}
                 </p>
 

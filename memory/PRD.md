@@ -35,6 +35,10 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
 - **Marka logosu güncellendi**: yüklenen logo işlenip `public/brand/logo-horizontal.png`
   (yatay kilit: amblem + DUBAI Vize Online), `emblem-512.png` ve `logo-lockup.png` olarak
   hazırlandı; `BrandMark` artık tam yatay logoyu kullanıyor (header, footer, admin)
+- **Menü ve hizalama düzeltmeleri (2026-06)**: "Başvurularım" üst menüden çıkarılıp
+  "Başvuru Takip" açılır menüsüne alındı (Takip Kodu ile Sorgula + Başvurularım);
+  /hesabim girişinde e-posta ve soyad aynı satıra alındı; /takip kartları eşit genişlik;
+  /vize-tipleri açıklaması tek satır + fiyat kutuları kartlar arasında hizalı
 - **2026 fiyat listesi + sosyal butonlar (2026-06)**: müşterinin resmi fiyat tablosu uygulandı
   (30g tek 105$, 30g çocuk 50$, 30g çok 200$, 60g tek 200$, 60g çok 300$, uzatma 300$;
   60g çocuk 105$ ve transit 70$ değişmedi), ekspres hizmet kişi başı sabit 50$ ve
