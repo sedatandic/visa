@@ -216,7 +216,7 @@ export default function Track() {    const [searchParams] = useSearchParams();
                 description="Takip kodunuz ve yolculardan birinin soyadı ile başvurunuzun güncel durumunu görüntüleyebilir, onaylanan vizenizi indirebilirsiniz."
             />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
                   <div className={result ? "" : "grid items-start gap-6 lg:grid-cols-2"}>
                     <form onSubmit={search} className="card-surface p-6 sm:p-8" data-testid="tracking-lookup-form">

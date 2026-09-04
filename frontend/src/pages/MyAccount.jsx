@@ -271,7 +271,7 @@ export default function MyAccount() {
                 description="Geçmiş başvurularınızı takip edin, yarım kalan başvurunuza devam edin veya aynı bilgilerle yeni başvuru açın."
             />
 
-            <section className="section">
+            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
                     {!token ? (
                         <LoginCard onLogin={handleLogin} />
