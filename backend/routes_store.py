@@ -238,7 +238,12 @@ BUNDLE_TEMPLATES = [
 
 async def bundle_list(visa_days: Optional[int] = None) -> dict:
     """Vize suresine uygun hazir paketleri fiyatlariyla dondurur."""
+    from db import visa_types_col
+    from routes_public import apply_fx_to_list
+
     products = {p["id"]: p for p in await product_list()}
+    visa_docs = await visa_types_col.find({"active": True}).to_list(100)
+    visas = await apply_fx_to_list(serialize_doc(visa_docs)) if visa_docs else []
     rate = float(BUNDLE_DISCOUNT["rate"])
     items = []
     for tpl in BUNDLE_TEMPLATES:
@@ -248,8 +253,17 @@ async def bundle_list(visa_days: Optional[int] = None) -> dict:
         esim = products.get(tpl["esim_id"])
         if not insurance or not esim:
             continue
+        candidates = [
+            v
+            for v in visas
+            if int(v.get("duration_days") or 0) == tpl["visa_days"]
+            and v.get("applicant_type") == "adult"
+            and v.get("category") == "single"
+        ]
+        visa = min(candidates, key=lambda v: float(v["price"])) if candidates else None
         list_total = round(float(insurance["price"]) + float(esim["price"]), 2)
         discount = round(list_total * rate, 2)
+        price = round(list_total - discount, 2)
         items.append(
             {
                 "id": tpl["id"],
@@ -257,6 +271,11 @@ async def bundle_list(visa_days: Optional[int] = None) -> dict:
                 "tagline": tpl["tagline"],
                 "visa_days": tpl["visa_days"],
                 "popular": tpl.get("popular", False),
+                "visa": (
+                    {"id": visa["id"], "name": visa["name"], "price": float(visa["price"])}
+                    if visa
+                    else None
+                ),
                 "insurance": {
                     "id": insurance["id"],
                     "name": insurance["name"],
@@ -273,7 +292,8 @@ async def bundle_list(visa_days: Optional[int] = None) -> dict:
                 },
                 "list_total": list_total,
                 "discount": discount,
-                "price": round(list_total - discount, 2),
+                "price": price,
+                "total_with_visa": round(price + float(visa["price"]), 2) if visa else None,
                 "currency": "TRY",
             }
         )

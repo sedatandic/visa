@@ -36,6 +36,7 @@ import { AuthorityStrip } from "../components/AuthorityStrip";
 import { VisaShowcase } from "../components/VisaShowcase";
 import { HeroSlider } from "../components/HeroSlider";
 import { HeroHeadline } from "../components/HeroHeadline";
+import { HomeBundleStrip } from "../components/HomeBundleStrip";
 import { VisaGuideLinks } from "../components/VisaGuideLinks";
 import { FxNote } from "../components/FxNote";
 import {
@@ -264,6 +265,9 @@ export default function Home() {
                     </div>
                 </div>
             </section>
+
+            {/* SEYAHAT PAKETLERI */}
+            <HomeBundleStrip />
 
             {/* REQUIRED DOCUMENTS */}
             <section className="section border-y border-border bg-[hsl(var(--cloud))]" data-testid="landing-documents">
