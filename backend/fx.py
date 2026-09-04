@@ -1,12 +1,13 @@
 """USD -> TRY canli kur yonetimi.
 
-- Kur kaynagi: open.er-api.com (anahtarsiz, ucretsiz). Basarisiz olursa
-  exchangerate.host denenir; ikisi de basarisiz olursa son bilinen kur kullanilir.
+- Birincil kaynak: doviz.com serbest piyasa satis kuru (HTML). Basarisiz olursa
+  open.er-api.com ve exchangerate.host denenir; hicbiri olmazsa son bilinen kur.
 - Admin panelinden manuel kur ve kur payi (marj %) girilebilir.
 - Kur 24 saatte bir tazelenir (lazy refresh: ilk istekte suresi gecmisse guncellenir).
 """
 
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -20,16 +21,37 @@ REFRESH_AFTER_HOURS = 24
 FALLBACK_RATE = 41.0  # son cikis noktasi; ilk canli cagri ile guncellenir
 DEFAULT_MARGIN_PCT = 2.0
 
+DOVIZ_URL = "https://kur.doviz.com/serbest-piyasa/amerikan-dolari"
+BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+)
+
 SOURCES = [
+    ("doviz.com", DOVIZ_URL),
     ("open.er-api.com", "https://open.er-api.com/v6/latest/USD"),
     ("exchangerate.host", "https://api.exchangerate.host/latest?base=USD&symbols=TRY"),
 ]
 
 
+def parse_doviz_html(html: str) -> float | None:
+    """doviz.com sayfasindan USD satis (ask), yoksa son islem (s) kurunu okur."""
+    for attr in ("ask", "s"):
+        pattern = (
+            r'data-socket-key="USD"[^>]*data-socket-attr="' + attr + r'"[^>]*>\s*([\d.,]+)'
+        )
+        for raw in re.findall(pattern, html):
+            try:
+                value = float(raw.replace(".", "").replace(",", "."))
+            except ValueError:
+                continue
+            if 5 < value < 500:
+                return value
+    return None
+
+
 def _extract_rate(source: str, payload: dict) -> float | None:
     try:
-        if source == "open.er-api.com":
-            return float(payload["rates"]["TRY"])
         return float(payload["rates"]["TRY"])
     except Exception:
         return None
@@ -37,12 +59,17 @@ def _extract_rate(source: str, payload: dict) -> float | None:
 
 async def fetch_live_rate() -> dict | None:
     """Canli kuru cekmeye calisir; basarisizsa None doner."""
-    async with httpx.AsyncClient(timeout=8.0) as client:
+    async with httpx.AsyncClient(
+        timeout=10.0, follow_redirects=True, headers={"User-Agent": BROWSER_UA}
+    ) as client:
         for source, url in SOURCES:
             try:
                 res = await client.get(url)
                 res.raise_for_status()
-                rate = _extract_rate(source, res.json())
+                if source == "doviz.com":
+                    rate = parse_doviz_html(res.text)
+                else:
+                    rate = _extract_rate(source, res.json())
                 if rate and rate > 0:
                     return {"rate": rate, "source": source}
             except Exception as exc:

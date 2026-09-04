@@ -35,6 +35,10 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
 - **Marka logosu güncellendi**: yüklenen logo işlenip `public/brand/logo-horizontal.png`
   (yatay kilit: amblem + DUBAI Vize Online), `emblem-512.png` ve `logo-lockup.png` olarak
   hazırlandı; `BrandMark` artık tam yatay logoyu kullanıyor (header, footer, admin)
+- **Kur kaynağı doviz.com (2026-06)**: `fx.py` birincil kaynak olarak
+  `kur.doviz.com/serbest-piyasa/amerikan-dolari` satış (ask) kurunu HTML'den okur
+  (`parse_doviz_html`); open.er-api ve exchangerate.host yedek olarak kalır.
+  Kur notu artık kaynağı da gösteriyor.
 - **Freelancer vizesi kaldırıldı (2026-06)**: `visa_freelancer_2y` VISA_TYPES ve GUIDES'tan
   silindi (DB'de `active:false`), ana sayfa şerit etiketi ve statik `sitemap.xml` temizlendi
 - **GDRFA amblemi**: temsili SVG yerine resmi şahin amblemi (`public/brand/gdrfa.png`,

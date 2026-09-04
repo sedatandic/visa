@@ -46,7 +46,10 @@ export const FxNote = ({ variant = "badge", className = "" }) => {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
-    const text = `1 $ = ${rate} ₺ · ${freshnessLabel(fx.fetched_at)}`;
+    const sourceLabel = fx.mode === "manual" ? "acente kuru" : (fx.source || "").replace("www.", "");
+    const text = `1 $ = ${rate} ₺ · ${freshnessLabel(fx.fetched_at)}${
+        sourceLabel ? ` · ${sourceLabel}` : ""
+    }`;
 
     if (variant === "inline") {
         return (
