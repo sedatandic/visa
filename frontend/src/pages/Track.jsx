@@ -218,7 +218,7 @@ export default function Track() {    const [searchParams] = useSearchParams();
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
-                  <div className={result ? "" : "grid items-start gap-6 lg:grid-cols-2"}>
+                  <div>
                     <form onSubmit={search} className="card-surface p-6 sm:p-8" data-testid="tracking-lookup-form">
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div className="space-y-2">
@@ -245,7 +245,7 @@ export default function Track() {    const [searchParams] = useSearchParams();
                     </form>
 
                     {!result && (
-                        <div className="card-surface p-6 sm:p-7" data-testid="tracking-help-card">
+                        <div className="card-surface mt-6 p-6 sm:p-7" data-testid="tracking-help-card">
                             <h2 className="font-heading text-base font-bold">Takip kodunuz nerede?</h2>
                             <ul className="mt-4 space-y-3.5">
                                 {[
@@ -259,20 +259,6 @@ export default function Track() {    const [searchParams] = useSearchParams();
                                     </li>
                                 ))}
                             </ul>
-                            <div className="mt-5 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
-                                <p className="text-sm font-semibold">Hesabınızla da giriş yapabilirsiniz</p>
-                                <p className="mt-1.5 text-xs leading-6 text-muted-foreground">
-                                    E-posta adresinize gelen kodla giriş yaparak tüm başvurularınızı tek ekranda
-                                    görebilirsiniz.
-                                </p>
-                                <Link
-                                    to="/hesabim"
-                                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
-                                    data-testid="tracking-account-link"
-                                >
-                                    Başvurularım <ArrowRight className="h-3.5 w-3.5" />
-                                </Link>
-                            </div>
                         </div>
                     )}
                   </div>

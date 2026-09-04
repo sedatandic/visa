@@ -608,12 +608,17 @@ async def _auto_login_attempt(page, creds: dict) -> str:
     return "ok"
 
 
-async def auto_relogin(actor: str = "auto") -> dict:
+async def auto_relogin(actor: str = "auto", force: bool = False) -> dict:
     """Oturum dustugunde OTP olmadan yeniden giris dener.
 
     Kayitli `device_state` (portalin "trusted device" cerezi) ile acilan
     tarayicida kullanici adi + sifre girilir, captcha AI ile okunur. Portal
     yine de OTP istiyorsa admin bilgilendirilir ve `otp_required` isaretlenir.
+
+    Onemli: `otp_required` isaretliyken veya hic cihaz guveni yokken
+    portala tekrar giris denenmez; sifre gonderimi portalin her seferinde
+    OTP e-postasi atmasina yol acar. Admin panelden OTP ile giris yapinca
+    isaret temizlenir. `force=True` sadece adminin elle tetiklemesi icindir.
     """
     if interactive_login_active():
         # Admin panelden manuel giris suruyor: es zamanli giris onu dusurur.
@@ -622,10 +627,10 @@ async def auto_relogin(actor: str = "auto") -> dict:
         return {"ok": False, "reason": "login_in_progress"}
 
     async with _login_lock:
-        return await _auto_relogin_locked(actor)
+        return await _auto_relogin_locked(actor, force=force)
 
 
-async def _auto_relogin_locked(actor: str) -> dict:
+async def _auto_relogin_locked(actor: str, force: bool = False) -> dict:
     """auto_relogin'in kilit altinda calisan govdesi."""
     creds = await raw_credentials()
     if not creds.get("username") or not creds.get("password"):
@@ -634,6 +639,15 @@ async def _auto_relogin_locked(actor: str) -> dict:
     doc = await settings_col.find_one({"key": SESSION_KEY})
     value = (doc or {}).get("value") or {}
     device_state = value.get("device_state")
+
+    if not force:
+        if not device_state:
+            # Cihaz guveni hic kaydedilmemis: her deneme OTP e-postasi tetikler.
+            await _mark_otp_required("no_trusted_device")
+            return {"ok": False, "reason": "no_trusted_device"}
+        if value.get("otp_required"):
+            # Admin OTP ile giris yapana kadar portala dokunmuyoruz.
+            return {"ok": False, "reason": "otp_required_pending"}
 
     try:
         if device_state:

@@ -81,7 +81,7 @@ const LoginCard = ({ onLogin }) => {
     };
 
     return (
-        <div className="card-surface mx-auto max-w-xl p-7" data-testid="account-login-card">
+        <div className="card-surface p-7 sm:p-8" data-testid="account-login-card">
             <h2 className="font-heading text-xl font-bold">Başvurularıma giriş</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Başvurularınızı görmek, yarım kalan başvurunuza devam etmek ve eski bilgilerinizle

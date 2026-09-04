@@ -76,6 +76,10 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
   4.5 sn'de otomatik geçiş, ok + nokta kontrolleri, hover'da durur (dubaivizeal.com referansı)
 
 ## Bekleyen / bloke
+- **Zami OTP döngüsü (2026-06 çözüldü)**: keepalive her 10 dk'da şifre gönderip portalın
+  OTP e-postası atmasına yol açıyordu. `auto_relogin` artık cihaz güveni yoksa veya
+  `otp_required` işaretliyse portala hiç dokunmuyor; sadece admin `?force=true` ile zorlayabilir.
+  Admin panelden bir kez OTP'li giriş yapılınca işaret temizlenir ve 30 gün otomatik çalışır.
 - **P1 WhatsApp numarası**: DB'de geçici test numarası (905331234567) duruyor —
   gerçek numara Admin → Acente Bilgileri'nden girilmeli. Instagram/Google yorum
   linkleri de aynı ekranda düzenlenebilir (varsayılanlar geçici).

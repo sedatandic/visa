@@ -730,9 +730,13 @@ async def zami_session_login(payload: LoginIn, admin: dict = Depends(require_adm
 
 
 @router.post("/admin/zami/session/auto-renew")
-async def zami_session_auto_renew(admin: dict = Depends(require_admin)):
-    """Oturumu OTP'siz (trusted device + AI captcha) yenilemeyi dener."""
-    return await zami_rpa.auto_relogin(actor=admin.get("sub", "") or "admin")
+async def zami_session_auto_renew(force: bool = False, admin: dict = Depends(require_admin)):
+    """Oturumu OTP'siz (trusted device + AI captcha) yenilemeyi dener.
+
+    `force=true` cihaz guveni yoksa/OTP bekliyorken bile dener (portal OTP
+    e-postasi gonderebilir), varsayilan olarak bu denemeler atlanir.
+    """
+    return await zami_rpa.auto_relogin(actor=admin.get("sub", "") or "admin", force=force)
 
 
 @router.post("/admin/zami/session/otp-reminder")
