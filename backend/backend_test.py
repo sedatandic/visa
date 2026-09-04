@@ -1287,9 +1287,6 @@ class MandatoryFieldsTester:
             constants = original_mapping.get("constants", {})
             upload_targets = original_mapping.get("upload_targets", [])
             validate_selector = original_mapping.get("validate_selector", "")
-            status_submit_selector = original_mapping.get("status_submit_selector", "")
-            status_search_field = original_mapping.get("status_search_field", "")
-            helper_selectors = original_mapping.get("helper_selectors", [])
             
             if len(constants) != expected_constants_count:
                 self.log(f"Original mapping constants count mismatch: expected {expected_constants_count}, got {len(constants)}", "FAIL")

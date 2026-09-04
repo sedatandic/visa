@@ -1,0 +1,23 @@
+{
+  "summary": "Regression pass after code-quality cleanup. Ran /app/backend/tests/test_iteration_48.py — 9/9 passed in 1.26s. Verified visa-types (8 IDs with USD 105/50/200/200/300/300/105/70 and TRY within ±10 of USD*FX rounded to nearest 10), /api/content/site addons.express = 50 USD, and company.instagram/google_review present. Pricing quote for 2 adults 30-day single with express: subtotal>0, family_discount_rate=0.1, express qty=2, total == subtotal - discount + addons_total. Admin login with info@dubaivizeonline.com/Dubai2026! returns 200 + token; old email admin@vizeatlas.com → 401; wrong password → 401. Admin GET/PUT /api/admin/company persists instagram, google_review, whatsapp (verified via both admin GET and public /api/content/site). Zami readiness endpoint returns 200 with browser check ok=true (Playwright chromium ready); no portal session started. Frontend smoke: / and /vize-tipleri render, correct <title>, zero console errors, '24 saat' not present. Code-quality findings confirmed: (a) 'exec()' finding is a FALSE POSITIVE — grep of /app/backend for 'exec(' shows only asyncio.create_subprocess_exec (zami_rpa.py:90) with a fixed argv list and no shell; no eval/exec/os.system anywhere. (b) 'is vs ==' finding is a FALSE POSITIVE — all occurrences are 'is None' / 'is not None' which is idiomatic. (c) test_iteration_48.py contains no 'Dubai2026' literal (grep = 0 hits), credentials now loaded via python-dotenv from backend/.env and REACT_APP_BACKEND_URL from frontend/.env.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": { "ui_bugs": [], "integration_issues": [], "design_issues": [] },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_48.py",
+    "/app/test_reports/pytest/iter52.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "exec() flag from static analyzer is a FALSE POSITIVE — only asyncio.create_subprocess_exec is used in zami_rpa.py with a hardcoded argv (['python','-m','playwright','install','chromium']), no shell=True, no user input.",
+    "'is vs ==' flag is a FALSE POSITIVE — every match is 'is None'/'is not None' which is correct Python (== None is what would be wrong).",
+    "'Possibly undefined variables' flag is not reproducible — pyflakes reports zero undefined names in the backend package.",
+    "Hardcoded admin credentials in tests: resolved. test_iteration_48.py now imports via load_dotenv; no 'Dubai2026' string remains in the file."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "100%", "frontend": "100%" },
+  "test_credentials": "info@dubaivizeonline.com / Dubai2026! (from /app/memory/test_credentials.md, loaded via env)",
+  "seed_data_creation": "None. TestAdminCompany PUT re-writes instagram/google_review/whatsapp to canonical values — safe/idempotent for prod content doc.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_iteration_48.py is the current pytest regression harness — 9 tests, ~1.3s. It reads ADMIN_LOGIN_EMAIL/ADMIN_LOGIN_PASSWORD from backend/.env and REACT_APP_BACKEND_URL from frontend/.env. Note: bash curl tests must escape/avoid history expansion for the '!' in the password — use python or single-quoted heredoc. Zami readiness browser check is currently ok=true; 'session' check will be false unless the operator has manually completed a portal OTP login — this is expected and not a bug."
+}

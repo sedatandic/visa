@@ -10,10 +10,14 @@ Covers:
 import os
 import pytest
 import requests
+from dotenv import load_dotenv
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://vize-atlas-hub.preview.emergentagent.com").rstrip("/")
-ADMIN_EMAIL = "info@dubaivizeonline.com"
-ADMIN_PASSWORD = "Dubai2026!"
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".env"))
+
+BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
+ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
+ADMIN_PASSWORD = os.environ["ADMIN_LOGIN_PASSWORD"]
 OLD_ADMIN_EMAIL = "admin@vizeatlas.com"
 
 EXPECTED_USD = {
