@@ -188,6 +188,98 @@ async def product_list(kind: Optional[str] = None, include_inactive: bool = Fals
     return items
 
 
+# --------------------------------------------------------------------- paketler
+# Vize suresine gore hazir seyahat paketleri (sigorta + eSIM birlikte, %10 indirimli)
+BUNDLE_TEMPLATES = [
+    {
+        "id": "pack_short",
+        "visa_days": 30,
+        "name": "Kısa Kaçamak Paketi",
+        "tagline": "3-5 günlük şehir molası için yeterli koruma ve internet.",
+        "insurance_id": "ins_8d",
+        "esim_id": "esim_1gb",
+    },
+    {
+        "id": "pack_standard",
+        "visa_days": 30,
+        "name": "Standart Tatil Paketi",
+        "tagline": "Bir haftalık Dubai tatilinin standardı; en çok tercih edilen paket.",
+        "insurance_id": "ins_15d",
+        "esim_id": "esim_3gb",
+        "popular": True,
+    },
+    {
+        "id": "pack_comfort",
+        "visa_days": 30,
+        "name": "Konforlu 30 Gün Paketi",
+        "tagline": "Bagaj ve seyahat kesintisi teminatı + bol veri, 30 güne kadar.",
+        "insurance_id": "ins_30d_plus",
+        "esim_id": "esim_10gb",
+    },
+    {
+        "id": "pack_long",
+        "visa_days": 60,
+        "name": "Uzun Konaklama Paketi",
+        "tagline": "60 güne kadar sağlık teminatı ve 30 günlük 10 GB internet.",
+        "insurance_id": "ins_60d",
+        "esim_id": "esim_10gb",
+        "popular": True,
+    },
+    {
+        "id": "pack_long_plus",
+        "visa_days": 60,
+        "name": "Uzun Konaklama Plus",
+        "tagline": "Geniş kapsam teminat + sınırsız internet; iş ve uzun tatil için.",
+        "insurance_id": "ins_60d_plus",
+        "esim_id": "esim_unlimited",
+    },
+]
+
+
+async def bundle_list(visa_days: Optional[int] = None) -> dict:
+    """Vize suresine uygun hazir paketleri fiyatlariyla dondurur."""
+    products = {p["id"]: p for p in await product_list()}
+    rate = float(BUNDLE_DISCOUNT["rate"])
+    items = []
+    for tpl in BUNDLE_TEMPLATES:
+        if visa_days and tpl["visa_days"] != int(visa_days):
+            continue
+        insurance = products.get(tpl["insurance_id"])
+        esim = products.get(tpl["esim_id"])
+        if not insurance or not esim:
+            continue
+        list_total = round(float(insurance["price"]) + float(esim["price"]), 2)
+        discount = round(list_total * rate, 2)
+        items.append(
+            {
+                "id": tpl["id"],
+                "name": tpl["name"],
+                "tagline": tpl["tagline"],
+                "visa_days": tpl["visa_days"],
+                "popular": tpl.get("popular", False),
+                "insurance": {
+                    "id": insurance["id"],
+                    "name": insurance["name"],
+                    "price": insurance["price"],
+                    "validity_days": insurance.get("validity_days"),
+                    "coverage": insurance.get("coverage"),
+                },
+                "esim": {
+                    "id": esim["id"],
+                    "name": esim["name"],
+                    "price": esim["price"],
+                    "data_amount": esim.get("data_amount"),
+                    "validity_days": esim.get("validity_days"),
+                },
+                "list_total": list_total,
+                "discount": discount,
+                "price": round(list_total - discount, 2),
+                "currency": "TRY",
+            }
+        )
+    return {"items": items, "bundle": BUNDLE_DISCOUNT}
+
+
 # ------------------------------------------------------------------- modeller
 class OrderItemIn(BaseModel):
     product_id: str
@@ -216,6 +308,11 @@ async def get_products(kind: Optional[str] = None) -> dict:
         raise HTTPException(400, "Gecersiz urun tipi.")
     items = await product_list(kind)
     return {"items": items, "fx": await get_fx(), "bundle": BUNDLE_DISCOUNT}
+
+
+@router.get("/bundles")
+async def get_bundles(visa_days: Optional[int] = None) -> dict:
+    return await bundle_list(visa_days)
 
 
 def _parse_trip_start(value: Optional[str]) -> Optional[date]:

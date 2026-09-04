@@ -37,10 +37,10 @@ import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { DateField, fromISODate } from "../components/DateField";
 import { FxNote } from "../components/FxNote";
+import { BundlePicker } from "../components/BundlePicker";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Progress } from "../components/ui/progress";
 import { Checkbox } from "../components/ui/checkbox";
 import { Switch } from "../components/ui/switch";
 import {
@@ -405,8 +405,7 @@ export default function Apply() {
         return visaDays.length ? Math.max(...visaDays) : null;
     }, [travelers, visaTypes]);
 
-    const insuranceProducts = useMemo(() => {
-        if (!visaCoverDays) return allInsuranceProducts;
+    const insuranceProducts = useMemo(() => {        if (!visaCoverDays) return allInsuranceProducts;
         const fitting = allInsuranceProducts.filter(
             (p) => Number(p.validity_days) <= visaCoverDays
         );
@@ -472,6 +471,31 @@ export default function Apply() {
     );
 
     const bundleActive = Boolean(insurancePick) && Object.values(esimQty).some((q) => q > 0);
+
+    // Vize suresine gore hazir paketler
+    const [bundles, setBundles] = useState([]);
+    useEffect(() => {
+        if (!visaCoverDays) {
+            setBundles([]);
+            return;
+        }
+        api.get(`/bundles?visa_days=${visaCoverDays}`)
+            .then(({ data }) => setBundles(data.items || []))
+            .catch(() => setBundles([]));
+    }, [visaCoverDays]);
+
+    const selectedBundleId = useMemo(() => {
+        const match = bundles.find(
+            (b) => b.insurance.id === insurancePick && Number(esimQty[b.esim.id] || 0) > 0
+        );
+        return match?.id || null;
+    }, [bundles, insurancePick, esimQty]);
+
+    const pickBundle = (bundle) => {
+        setInsurancePick(bundle.insurance.id);
+        setEsimQty({ [bundle.esim.id]: 1 });
+        toast.success(`${bundle.name} eklendi.`);
+    };
 
     // Süre değişince kapsamı yetmeyen poliçe seçimini düşür
     useEffect(() => {
@@ -887,7 +911,6 @@ export default function Apply() {
         }
     };
 
-    const progress = useMemo(() => ((step + 1) / STEPS.length) * 100, [step]);
     const visaById = (id) => visaTypes.find((v) => v.id === id);
 
     const urgentTrip = useMemo(() => {
@@ -918,7 +941,11 @@ export default function Apply() {
                                 const done = i < step;
                                 const active = i === step;
                                 return (
-                                    <div key={s.key} className="flex min-w-fit items-center gap-2">
+                                    <div
+                                        key={s.key}
+                                        className="relative flex min-w-fit items-center gap-2 pb-3"
+                                        data-testid={`wizard-step-item-${s.key}`}
+                                    >
                                         <span
                                             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-[13px] font-bold transition-colors duration-200 ${
                                                 done
@@ -950,6 +977,18 @@ export default function Apply() {
                                                 aria-hidden="true"
                                             />
                                         )}
+                                        {/* adim hizasindaki dolum cizgisi */}
+                                        <span
+                                            className={`absolute bottom-0 left-0 right-0 h-1.5 rounded-full transition-colors duration-300 ${
+                                                done
+                                                    ? "bg-primary"
+                                                    : active
+                                                      ? "bg-primary"
+                                                      : "bg-border/50"
+                                            }`}
+                                            aria-hidden="true"
+                                            data-testid={`wizard-step-bar-${s.key}`}
+                                        />
                                     </div>
                                 );
                             })}
@@ -967,7 +1006,6 @@ export default function Apply() {
                                 </span>
                             ) : null}
                         </div>
-                        <Progress value={progress} className="h-1.5 rounded-none" />
                     </div>
 
                     <div className="mt-8 grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
@@ -1394,199 +1432,6 @@ export default function Apply() {
                                         </div>
                                     </div>
 
-                                    {/* AKILLI PAKET ONERISI + PAKET INDIRIMI */}
-                                    {(insuranceProducts.length > 0 || esimProducts.length > 0) && (
-                                        <div
-                                            className="mt-10 rounded-xl border border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.06)] p-5"
-                                            data-testid="bundle-promo-box"
-                                        >
-                                            <div className="flex flex-wrap items-start justify-between gap-4">
-                                                <div className="max-w-xl">
-                                                    <p className="flex items-center gap-2 font-heading text-sm font-bold">
-                                                        <Tag className="h-4 w-4 text-[hsl(var(--brand-green))]" aria-hidden="true" />
-                                                        {bundleInfo?.title || "Seyahat paketi indirimi"}
-                                                    </p>
-                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                                                        {bundleInfo?.note ||
-                                                            "Sigorta ve eSIM'i birlikte alın, %10 indirim otomatik uygulanır."}
-                                                    </p>
-                                                    {tripDays && (
-                                                        <p className="mt-2 text-sm text-muted-foreground" data-testid="bundle-trip-days">
-                                                            Seyahatiniz <strong className="text-foreground">{tripDays} gün</strong> — size uygun paketleri işaretledik.
-                                                        </p>
-                                                    )}
-                                                    {quote?.bundle_discount > 0 && (
-                                                        <p
-                                                            className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--brand-green))]"
-                                                            data-testid="bundle-discount-applied"
-                                                        >
-                                                            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                                                            Paket indirimi uygulandı: - {formatMoney(quote.bundle_discount, quote.currency)}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    className="h-10 border border-border"
-                                                    onClick={applyRecommended}
-                                                    disabled={!travelDatesReady || bundleActive}
-                                                    data-testid="apply-recommended-bundle-button"
-                                                >
-                                                    <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-                                                    {bundleActive ? "Paket eklendi" : "Önerilenleri ekle"}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* SEYAHAT SIGORTASI (magaza katalogu) */}
-                                    {insuranceProducts.length > 0 && (
-                                        <div className="mt-10" data-testid="apply-insurance-section">
-                                            <div className="flex items-center gap-2">
-                                                <ShieldCheck className="h-5 w-5 text-primary" />
-                                                <h3 className="font-heading text-base font-bold">Seyahat sağlık sigortası</h3>
-                                            </div>
-                                            <p className="mt-1.5 text-sm text-muted-foreground">
-                                                Poliçe yolcu başına hesaplanır ve <strong className="text-foreground">gidiş tarihinizde</strong> başlar; PDF olarak e-postanıza gelir.</p>
-                                            {!travelDatesReady && <TravelDatesRequiredNote testId="insurance-dates-required" />}
-                                            <div className="mt-4 grid gap-4 md:grid-cols-2">
-                                                {insuranceProducts.map((p) => {
-                                                    const selected = insurancePick === p.id;
-                                                    return (
-                                                        <button
-                                                            type="button"
-                                                            key={p.id}
-                                                            aria-pressed={selected}
-                                                            disabled={!travelDatesReady}
-                                                            onClick={() => setInsurancePick(selected ? null : p.id)}
-                                                            className={`rounded-xl border p-5 text-left transition-colors duration-200 hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${
-                                                                selected ? "border-primary bg-primary/5" : "border-border bg-card"
-                                                            }`}
-                                                            data-testid={`insurance-option-${p.id}`}
-                                                        >
-                                                            <div className="flex items-start justify-between gap-3">
-                                                                <div>
-                                                                    <p className="font-heading text-sm font-bold">{p.name}</p>
-                                                                    {p.coverage && (
-                                                                        <p className="mt-1 text-xs font-semibold text-muted-foreground">{p.coverage}</p>
-                                                                    )}
-                                                                    {recommendedInsuranceId === p.id && (
-                                                                        <div className="mt-2">
-                                                                            <RecommendedBadge testId={`insurance-recommended-${p.id}`} />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                {selected ? (
-                                                                    <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
-                                                                ) : (
-                                                                    <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full border border-border" aria-hidden="true" />
-                                                                )}
-                                                            </div>
-                                                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{p.summary}</p>
-                                                            <DateWindowNote product={p} testId={`insurance-dates-${p.id}`} />
-                                                            <p className="mt-3 font-heading text-sm font-bold text-primary">
-                                                                + {formatMoney(p.price, p.currency)} / kişi
-                                                            </p>
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            {insurancePick && (
-                                                <p className="mt-3 text-sm text-muted-foreground" data-testid="insurance-selected-note">
-                                                    {travelerCount} yolcu için poliçe eklendi
-                                                    {travel.arrival_date ? ` · ${formatDate(travel.arrival_date)} tarihinde başlar` : ""}.
-                                                    Toplam sepetinizde otomatik hesaplanır.
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* DUBAI eSIM (magaza katalogu) */}
-                                    {esimProducts.length > 0 && (
-                                        <div className="mt-10" data-testid="apply-esim-section">
-                                            <div className="flex items-center gap-2">
-                                                <Wifi className="h-5 w-5 text-primary" />
-                                                <h3 className="font-heading text-base font-bold">Dubai eSIM (internet paketi)</h3>
-                                            </div>
-                                            <p className="mt-1.5 text-sm text-muted-foreground">
-                                                Paketiniz <strong className="text-foreground">gidiş tarihinizde</strong> başlar; QR kodunuz e-postanıza gelir.</p>
-                                            {!travelDatesReady && <TravelDatesRequiredNote testId="esim-dates-required" />}
-                                            <div className="mt-4 space-y-4">
-                                                {esimProducts.map((p) => {
-                                                    const qty = esimQty[p.id] || 0;
-                                                    const selected = qty > 0;
-                                                    return (
-                                                        <div
-                                                            key={p.id}
-                                                            className={`rounded-xl border p-5 transition-colors duration-200 ${
-                                                                selected ? "border-primary bg-primary/5" : "border-border bg-card"
-                                                            }`}
-                                                            data-testid={`esim-option-${p.id}`}
-                                                        >
-                                                            <div className="flex flex-wrap items-start gap-4">
-                                                                <Switch
-                                                                    checked={selected}
-                                                                    disabled={!travelDatesReady}
-                                                                    onCheckedChange={() => toggleEsim(p)}
-                                                                    className="mt-1"
-                                                                    data-testid={`esim-switch-${p.id}`}
-                                                                />
-                                                                <div className="min-w-[200px] flex-1">
-                                                                    <div className="flex flex-wrap items-center gap-2">
-                                                                        <p className="font-heading text-sm font-bold">{p.name}</p>
-                                                                        {p.popular && (
-                                                                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                                                                                En çok tercih edilen
-                                                                            </span>
-                                                                        )}
-                                                                        {recommendedEsimId === p.id && (
-                                                                            <RecommendedBadge testId={`esim-recommended-${p.id}`} />
-                                                                        )}
-                                                                    </div>
-                                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{p.summary}</p>
-                                                                    <DateWindowNote product={p} testId={`esim-dates-${p.id}`} />
-                                                                    <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-primary">
-                                                                        <Signal className="h-4 w-4" aria-hidden="true" />
-                                                                        + {formatMoney(p.price, p.currency)} / adet
-                                                                    </p>
-                                                                </div>
-                                                                {selected && (
-                                                                    <div className="flex items-center gap-2" data-testid={`esim-qty-${p.id}`}>
-                                                                        <Button
-                                                                            type="button"
-                                                                            variant="outline"
-                                                                            size="icon"
-                                                                            onClick={() => changeEsimQty(p.id, -1)}
-                                                                            disabled={qty <= 1}
-                                                                            aria-label="Adet azalt"
-                                                                            data-testid={`esim-qty-minus-${p.id}`}
-                                                                        >
-                                                                            <Minus className="h-4 w-4" />
-                                                                        </Button>
-                                                                        <span className="w-9 text-center font-heading text-sm font-bold" data-testid={`esim-qty-value-${p.id}`}>
-                                                                            {qty}
-                                                                        </span>
-                                                                        <Button
-                                                                            type="button"
-                                                                            variant="outline"
-                                                                            size="icon"
-                                                                            onClick={() => changeEsimQty(p.id, 1)}
-                                                                            disabled={qty >= 10}
-                                                                            aria-label="Adet arttır"
-                                                                            data-testid={`esim-qty-plus-${p.id}`}
-                                                                        >
-                                                                            <Plus className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             )}
 
@@ -1760,6 +1605,208 @@ export default function Apply() {
                                     <h2 className="font-heading text-xl font-bold">Özet ve ödeme</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Bilgilerinizi kontrol edip ödemeye geçin.</p>
+
+                                    {/* AKILLI PAKET ONERISI + PAKET INDIRIMI */}
+                                    {(insuranceProducts.length > 0 || esimProducts.length > 0) && (
+                                        <div
+                                            className="mt-10 rounded-xl border border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.06)] p-5"
+                                            data-testid="bundle-promo-box"
+                                        >
+                                            <div className="flex flex-wrap items-start justify-between gap-4">
+                                                <div className="max-w-xl">
+                                                    <p className="flex items-center gap-2 font-heading text-sm font-bold">
+                                                        <Tag className="h-4 w-4 text-[hsl(var(--brand-green))]" aria-hidden="true" />
+                                                        {bundleInfo?.title || "Seyahat paketi indirimi"}
+                                                    </p>
+                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                                                        {bundleInfo?.note ||
+                                                            "Sigorta ve eSIM'i birlikte alın, %10 indirim otomatik uygulanır."}
+                                                    </p>
+                                                    {tripDays && (
+                                                        <p className="mt-2 text-sm text-muted-foreground" data-testid="bundle-trip-days">
+                                                            Seyahatiniz <strong className="text-foreground">{tripDays} gün</strong> — size uygun paketleri işaretledik.
+                                                        </p>
+                                                    )}
+                                                    {quote?.bundle_discount > 0 && (
+                                                        <p
+                                                            className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--brand-green))]"
+                                                            data-testid="bundle-discount-applied"
+                                                        >
+                                                            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                                                            Paket indirimi uygulandı: - {formatMoney(quote.bundle_discount, quote.currency)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    className="h-10 border border-border"
+                                                    onClick={applyRecommended}
+                                                    disabled={!travelDatesReady || bundleActive}
+                                                    data-testid="apply-recommended-bundle-button"
+                                                >
+                                                    <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                                                    {bundleActive ? "Paket eklendi" : "Önerilenleri ekle"}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* VIZE SURESINE GORE HAZIR PAKETLER */}
+                                    <BundlePicker
+                                        bundles={bundles}
+                                        selectedId={selectedBundleId}
+                                        onSelect={pickBundle}
+                                        visaDays={visaCoverDays}
+                                    />
+
+                                    {/* SEYAHAT SIGORTASI (magaza katalogu) */}
+                                    {insuranceProducts.length > 0 && (
+                                        <div className="mt-10" data-testid="apply-insurance-section">
+                                            <div className="flex items-center gap-2">
+                                                <ShieldCheck className="h-5 w-5 text-primary" />
+                                                <h3 className="font-heading text-base font-bold">Seyahat sağlık sigortası</h3>
+                                            </div>
+                                            <p className="mt-1.5 text-sm text-muted-foreground">
+                                                Poliçe yolcu başına hesaplanır ve <strong className="text-foreground">gidiş tarihinizde</strong> başlar; PDF olarak e-postanıza gelir.</p>
+                                            {!travelDatesReady && <TravelDatesRequiredNote testId="insurance-dates-required" />}
+                                            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                                {insuranceProducts.map((p) => {
+                                                    const selected = insurancePick === p.id;
+                                                    return (
+                                                        <button
+                                                            type="button"
+                                                            key={p.id}
+                                                            aria-pressed={selected}
+                                                            disabled={!travelDatesReady}
+                                                            onClick={() => setInsurancePick(selected ? null : p.id)}
+                                                            className={`rounded-xl border p-5 text-left transition-colors duration-200 hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${
+                                                                selected ? "border-primary bg-primary/5" : "border-border bg-card"
+                                                            }`}
+                                                            data-testid={`insurance-option-${p.id}`}
+                                                        >
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div>
+                                                                    <p className="font-heading text-sm font-bold">{p.name}</p>
+                                                                    {p.coverage && (
+                                                                        <p className="mt-1 text-xs font-semibold text-muted-foreground">{p.coverage}</p>
+                                                                    )}
+                                                                    {recommendedInsuranceId === p.id && (
+                                                                        <div className="mt-2">
+                                                                            <RecommendedBadge testId={`insurance-recommended-${p.id}`} />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                {selected ? (
+                                                                    <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
+                                                                ) : (
+                                                                    <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full border border-border" aria-hidden="true" />
+                                                                )}
+                                                            </div>
+                                                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{p.summary}</p>
+                                                            <DateWindowNote product={p} testId={`insurance-dates-${p.id}`} />
+                                                            <p className="mt-3 font-heading text-sm font-bold text-primary">
+                                                                + {formatMoney(p.price, p.currency)} / kişi
+                                                            </p>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            {insurancePick && (
+                                                <p className="mt-3 text-sm text-muted-foreground" data-testid="insurance-selected-note">
+                                                    {travelerCount} yolcu için poliçe eklendi
+                                                    {travel.arrival_date ? ` · ${formatDate(travel.arrival_date)} tarihinde başlar` : ""}.
+                                                    Toplam sepetinizde otomatik hesaplanır.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* DUBAI eSIM (magaza katalogu) */}
+                                    {esimProducts.length > 0 && (
+                                        <div className="mt-10" data-testid="apply-esim-section">
+                                            <div className="flex items-center gap-2">
+                                                <Wifi className="h-5 w-5 text-primary" />
+                                                <h3 className="font-heading text-base font-bold">Dubai eSIM (internet paketi)</h3>
+                                            </div>
+                                            <p className="mt-1.5 text-sm text-muted-foreground">
+                                                Paketiniz <strong className="text-foreground">gidiş tarihinizde</strong> başlar; QR kodunuz e-postanıza gelir.</p>
+                                            {!travelDatesReady && <TravelDatesRequiredNote testId="esim-dates-required" />}
+                                            <div className="mt-4 space-y-4">
+                                                {esimProducts.map((p) => {
+                                                    const qty = esimQty[p.id] || 0;
+                                                    const selected = qty > 0;
+                                                    return (
+                                                        <div
+                                                            key={p.id}
+                                                            className={`rounded-xl border p-5 transition-colors duration-200 ${
+                                                                selected ? "border-primary bg-primary/5" : "border-border bg-card"
+                                                            }`}
+                                                            data-testid={`esim-option-${p.id}`}
+                                                        >
+                                                            <div className="flex flex-wrap items-start gap-4">
+                                                                <Switch
+                                                                    checked={selected}
+                                                                    disabled={!travelDatesReady}
+                                                                    onCheckedChange={() => toggleEsim(p)}
+                                                                    className="mt-1"
+                                                                    data-testid={`esim-switch-${p.id}`}
+                                                                />
+                                                                <div className="min-w-[200px] flex-1">
+                                                                    <div className="flex flex-wrap items-center gap-2">
+                                                                        <p className="font-heading text-sm font-bold">{p.name}</p>
+                                                                        {p.popular && (
+                                                                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                                                                                En çok tercih edilen
+                                                                            </span>
+                                                                        )}
+                                                                        {recommendedEsimId === p.id && (
+                                                                            <RecommendedBadge testId={`esim-recommended-${p.id}`} />
+                                                                        )}
+                                                                    </div>
+                                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{p.summary}</p>
+                                                                    <DateWindowNote product={p} testId={`esim-dates-${p.id}`} />
+                                                                    <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-primary">
+                                                                        <Signal className="h-4 w-4" aria-hidden="true" />
+                                                                        + {formatMoney(p.price, p.currency)} / adet
+                                                                    </p>
+                                                                </div>
+                                                                {selected && (
+                                                                    <div className="flex items-center gap-2" data-testid={`esim-qty-${p.id}`}>
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() => changeEsimQty(p.id, -1)}
+                                                                            disabled={qty <= 1}
+                                                                            aria-label="Adet azalt"
+                                                                            data-testid={`esim-qty-minus-${p.id}`}
+                                                                        >
+                                                                            <Minus className="h-4 w-4" />
+                                                                        </Button>
+                                                                        <span className="w-9 text-center font-heading text-sm font-bold" data-testid={`esim-qty-value-${p.id}`}>
+                                                                            {qty}
+                                                                        </span>
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() => changeEsimQty(p.id, 1)}
+                                                                            disabled={qty >= 10}
+                                                                            aria-label="Adet arttır"
+                                                                            data-testid={`esim-qty-plus-${p.id}`}
+                                                                        >
+                                                                            <Plus className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {created && (
                                         <div className="mt-5 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.08)] p-4" data-testid="application-created-banner">

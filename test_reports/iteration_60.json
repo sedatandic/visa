@@ -1,0 +1,32 @@
+{
+  "summary": "End-to-end frontend verification of /basvuru wizard after moving bundle/insurance/eSIM sections from Step 2 (Vize) to Step 4 (Özet). All acceptance criteria PASSED: (1) Step 2 no longer contains bundle-promo-box / apply-bundle-picker / apply-insurance-section / apply-esim-section; (2) Step 4 contains all four; (3) clicking bundle-option-pack_standard auto-selects ins_15d + esim_3gb and applies %10 discount (-130₺), total becomes 6.360₺ (5190+560+740-130); (4) manual insurance/eSIM controls also functional; (5) POST /api/applications succeeds with reference DV-HP491461, response.store_items = [ins_15d, esim_3gb], IBAN shown; (6) all 4 wizard step bars (people/visa/docs/summary) use bg-primary at Step 4.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/applications", "issue": "Response store_items entries have qty=null (product_id present but qty not echoed back). Application is created correctly and pricing computed, but frontend/API consumers reading qty from the response would see null. Verify serialization in routes_applications."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Bundle card click on Step 4", "issue": "bundle-discount-applied element takes ~2s to appear because quote is refetched from backend after selection. Not a bug but a minor UX delay. After 2.5s the discount, updated summary lines and total are all shown correctly.", "affected_selectors": ["bundle-discount-applied", "summary-price-breakdown"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Optional) Return qty in POST /api/applications response.store_items for API completeness (currently null)."
+  ],
+  "critical_code_review_comments": [
+    "Apply.jsx is still 2131 lines - split into wizard step components for maintainability.",
+    "Response payload uses `pricing` key while frontend `quote` state is used pre-submit; naming inconsistency between client and server is fine but worth documenting."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not re-tested this run (verified iteration 59)", "frontend": "100% - all 8 acceptance criteria verified end-to-end"},
+  "test_credentials": "Not required - /basvuru is public.",
+  "seed_data_creation": "Created 2 TEST applications via wizard end-to-end. Second one persisted: reference DV-HP491461, contact 'TEST Ahmet Yilmaz'/test.ahmet2@example.com, traveler 'TEST YILMAZ', bundle pack_standard (ins_15d + esim_3gb), total 6.360₺, payment method transfer.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Wizard step keys: 0=people, 1=visa, 2=docs, 3=summary. Extras block (bundle-promo-box, apply-bundle-picker, apply-insurance-section, apply-esim-section) is now inside step === 3 in Apply.jsx (lines 1609-1809). Passport & photo uploads are inside step === 2 (docs), not step === 0. To drive wizard e2e: fill contact + traveler basic fields on step 0, click next, pick visa via [role='option'] on step 1, fill dates, next, upload /tmp/test.jpg to traveler-{idx}-passport-upload-input and traveler-{idx}-photo-upload-input on step 2, next. Sixty-day visa change works too but Radix Select option text is the full name like '60 Günlük Tek Girişli Dubai Vizesi – 9.880 ₺'; use has-text with the full prefix.",
+  "rca of the issue": "No blocking issues. Minor: store_items qty null in POST response - likely Pydantic model omits qty on serialization or field name mismatch. Verify StoreItem schema in backend."
+}

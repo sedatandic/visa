@@ -1,0 +1,31 @@
+{
+  "summary": "Tested new /api/bundles endpoint (visa_days=30/60/all), verified bundle discount math (%10), verified POST /api/orders applies bundle discount and totals match /api/bundles price. Verified /basvuru wizard step bar (per-step underline) rendering at Step 1 and mobile scrollability. Bundle UI integration verified via component code + live API (frontend fetch returns 3 packs for 30-day visa).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_bundles.py",
+    "/app/test_reports/pytest/bundles_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx is 2130 lines - candidate for splitting into smaller modules (traveler form, bundle/product selection, wizard shell)",
+    "STEPS keys in Apply.jsx are (people, visa, docs, summary); review request referenced 'contact' but implementation uses 'people' - keys are still consistent and testid-friendly"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_bundles.py (new)"
+  ],
+  "success_rate": {"backend": "100% (4/4 pytest)", "frontend": "verified stepper bars + API integration; step-2 interactive bundle-card click not driven end-to-end due to file-upload heavy step-1 gating (component code inspected instead)"},
+  "test_credentials": "not used this run (public endpoints only)",
+  "seed_data_creation": "Created one TEST order via POST /api/orders (contact.full_name='TEST Bundle Buyer', ins_15d+esim_3gb). Reference visible in pytest stdout; persists in store_orders collection.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend /api/bundles fully covered by test_bundles.py. Bundle-card click flow inside /basvuru Step 2 was not driven end-to-end because Step 1 requires many form fields + file uploads; instead verified BundlePicker.jsx testids/logic and Apply.jsx pickBundle/selectedBundleId wiring by code review + live /api/bundles fetch from the page. If deeper e2e is required, prepare a small JPG (public/brand/...) and fill: contact + 1 adult traveler (name, birth_date, gender, marital, profession, national_id, passport_no, passport_expiry) + upload passport & photo, then navigate to Step 2 to click [data-testid=bundle-option-pack_standard].",
+  "rca of the issue": "No bugs found."
+}

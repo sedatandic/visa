@@ -156,3 +156,15 @@ GET /api/admin/profit-monthly?months=12 → ay bazlı sigorta/eSIM ciro, maliyet
 recharts yığılmış çubuk grafik (`components/MonthlyProfitChart.jsx`).
 Ürün kartlarında artık eSIM dahil tüm ürünler için ₺ maliyet girilebiliyor (cost_try),
 böylece eSIM kârı da gerçek marjla hesaplanır (maliyet girilmezse kâr = ciro).
+
+## 2026-06-04 · Paketler + adım göstergesi + ekstraların Adım 4'e taşınması
+- `GET /api/bundles?visa_days=30|60` → vize süresine uygun hazır paketler
+  (routes_store.BUNDLE_TEMPLATES + bundle_list): pack_short/pack_standard/pack_comfort (30 gün),
+  pack_long/pack_long_plus (60 gün). Fiyat = sigorta + eSIM, %10 paket indirimi düşülmüş.
+- `components/BundlePicker.jsx`: paket kartları; tıklayınca sigorta seçimi + eSIM adedi otomatik.
+- Sihirbaz adım göstergesi: tek parça progress bar kaldırıldı, her adımın altında kendi
+  hizasında dolum çizgisi (`wizard-step-bar-{key}`, adım anahtarları: people/visa/docs/summary).
+- Sigorta + eSIM + paket blokları Adım 2'den **Adım 4 (Özet ve ödeme)** başına taşındı.
+  Başvuru yalnız ödeme anında oluşturulduğu için Adım 4 seçimleri fiyata dahil.
+- Testler: iteration_59 (backend /bundles 4/4), iteration_60 (frontend uçtan uca 8/8 kriter).
+  Test verileri temizlendi.
