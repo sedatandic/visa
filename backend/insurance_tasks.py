@@ -11,6 +11,7 @@ Saglayici (seyahatpolicesi.com) acik bir API sunmadigi icin kesim adimi
 import logging
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 from urllib.parse import urlencode
 
 from db import insurance_tasks_col, notifications_col, orders_col, serialize_doc
@@ -172,6 +173,60 @@ async def issue_policy(task_id: str, policy_file_id: str, origin: str, message: 
     return {"ok": True, "task": serialize_doc(fresh), "email": email_result}
 
 
+def _empty_bucket(key: str) -> dict:
+    return {
+        "month": key,
+        "insurance_revenue": 0.0,
+        "insurance_cost": 0.0,
+        "esim_revenue": 0.0,
+        "esim_cost": 0.0,
+        "orders": set(),
+    }
+
+
+def _month_keys(months: int) -> list:
+    """Bugunden geriye dogru N aylik anahtar listesi (eski -> yeni)."""
+    now = datetime.now(timezone.utc)
+    keys = []
+    year, month = now.year, now.month
+    for _ in range(max(1, min(months, 24))):
+        keys.append(f"{year:04d}-{month:02d}")
+        month -= 1
+        if month == 0:
+            year, month = year - 1, 12
+    keys.reverse()
+    return keys
+
+
+def _add_order_to_bucket(bucket: dict, order: dict, products: dict) -> None:
+    bucket["orders"].add(order.get("id"))
+    for line in order.get("items") or []:
+        kind = line.get("kind")
+        if kind not in {"insurance", "esim"}:
+            continue
+        quantity = int(line.get("quantity") or 1)
+        product = products.get(line.get("product_id")) or {}
+        unit_cost = float(line.get("unit_cost") or product.get("cost_try") or 0)
+        bucket[f"{kind}_revenue"] += float(line.get("total") or 0)
+        bucket[f"{kind}_cost"] += unit_cost * quantity
+
+
+def _month_row(key: str, bucket: Optional[dict]) -> dict:
+    b = bucket or _empty_bucket(key)
+    ins_profit = round(b["insurance_revenue"] - b["insurance_cost"], 2)
+    esim_profit = round(b["esim_revenue"] - b["esim_cost"], 2)
+    return {
+        "month": key,
+        "label": f"{key[5:]}.{key[2:4]}",
+        "insurance_profit": ins_profit,
+        "esim_profit": esim_profit,
+        "insurance_revenue": round(b["insurance_revenue"], 2),
+        "esim_revenue": round(b["esim_revenue"], 2),
+        "total_profit": round(ins_profit + esim_profit, 2),
+        "orders": len(b["orders"]),
+    }
+
+
 async def monthly_profit(months: int = 12) -> dict:
     """Son N ay icin sigorta + eSIM ciro/maliyet/kar dagilimi."""
     from routes_store import product_list
@@ -183,58 +238,9 @@ async def monthly_profit(months: int = 12) -> dict:
         if not isinstance(paid_at, datetime):
             continue
         key = paid_at.strftime("%Y-%m")
-        bucket = buckets.setdefault(
-            key,
-            {
-                "month": key,
-                "insurance_revenue": 0.0,
-                "insurance_cost": 0.0,
-                "esim_revenue": 0.0,
-                "esim_cost": 0.0,
-                "orders": set(),
-            },
-        )
-        bucket["orders"].add(order.get("id"))
-        for line in order.get("items") or []:
-            kind = line.get("kind")
-            if kind not in {"insurance", "esim"}:
-                continue
-            quantity = int(line.get("quantity") or 1)
-            product = products.get(line.get("product_id")) or {}
-            unit_cost = float(line.get("unit_cost") or product.get("cost_try") or 0)
-            bucket[f"{kind}_revenue"] += float(line.get("total") or 0)
-            bucket[f"{kind}_cost"] += unit_cost * quantity
+        _add_order_to_bucket(buckets.setdefault(key, _empty_bucket(key)), order, products)
 
-    now = datetime.now(timezone.utc)
-    keys = []
-    year, month = now.year, now.month
-    for _ in range(max(1, min(months, 24))):
-        keys.append(f"{year:04d}-{month:02d}")
-        month -= 1
-        if month == 0:
-            year, month = year - 1, 12
-    keys.reverse()
-
-    rows = []
-    for key in keys:
-        bucket = buckets.get(key)
-        ins_rev = round(bucket["insurance_revenue"], 2) if bucket else 0.0
-        ins_cost = round(bucket["insurance_cost"], 2) if bucket else 0.0
-        esim_rev = round(bucket["esim_revenue"], 2) if bucket else 0.0
-        esim_cost = round(bucket["esim_cost"], 2) if bucket else 0.0
-        rows.append(
-            {
-                "month": key,
-                "label": f"{key[5:]}.{key[2:4]}",
-                "insurance_profit": round(ins_rev - ins_cost, 2),
-                "esim_profit": round(esim_rev - esim_cost, 2),
-                "insurance_revenue": ins_rev,
-                "esim_revenue": esim_rev,
-                "total_profit": round(ins_rev - ins_cost + esim_rev - esim_cost, 2),
-                "orders": len(bucket["orders"]) if bucket else 0,
-            }
-        )
-
+    rows = [_month_row(key, buckets.get(key)) for key in _month_keys(months)]
     return {
         "items": rows,
         "totals": {

@@ -182,3 +182,14 @@ böylece eSIM kârı da gerçek marjla hesaplanır (maliyet girilmezse kâr = ci
 - YAPILACAK: `site_settings.bank_transfer` hâlâ örnek veri
   ("VizeAtlas Turizm ve Danışmanlık A.Ş." / "Örnek Bank A.Ş." / TR00...) — Admin → Havale
   ekranından gerçek unvan, banka ve IBAN girilmeli.
+
+## 2026-06-04 · Kod incelemesi turu 2
+Uygulanan: tests/test_insurance_catalog.py ve test_insurance_automation.py artık admin
+kimlik bilgilerini ve BASE_URL'i .env'den okuyor (sabit şifre/fallback kaldırıldı);
+eski ins_31d/ins_63d id'leri ins_30d/ins_60d olarak güncellendi.
+`insurance_tasks.monthly_profit` 71 satırdan ~20 satıra indirildi
+(`_empty_bucket`, `_month_keys`, `_add_order_to_bucket`, `_month_row` yardımcıları).
+Doğrulanan yanlış pozitifler: `exec()` yok (asyncio.create_subprocess_exec);
+`is` vs `==` için üretim kodunda tek örnek yok (yalnız testlerde doğru olan `is True/False`);
+insurance_tasks ↔ routes_store döngüsel import zaten fonksiyon içi (lazy) import ile çözülü.
+pytest: 39/39 PASS.

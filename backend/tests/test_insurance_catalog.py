@@ -6,18 +6,22 @@ Iterasyon 57 - Dubai Vize Online sigorta akisi.
 import os
 import pytest
 import requests
+from dotenv import load_dotenv
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://vize-atlas-hub.preview.emergentagent.com").rstrip("/")
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".env"))
+
+BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "info@dubaivizeonline.com"
-ADMIN_PASSWORD = "Dubai2026!"
+ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
+ADMIN_PASSWORD = os.environ["ADMIN_LOGIN_PASSWORD"]
 
 EXPECTED_PRICES = {
     "ins_8d": (491, 8),
     "ins_15d": (560, 15),
-    "ins_31d": (644, 31),
-    "ins_63d": (735, 63),
+    "ins_30d": (644, 30),
+    "ins_60d": (735, 60),
     "ins_30d_plus": (2754, 30),
     "ins_60d_plus": (3989, 60),
 }
@@ -96,9 +100,9 @@ class TestInsuranceCatalog:
 
 # ---------------------------------------------------------------- siparisler
 class TestInsuranceOrder:
-    def test_create_order_ins_31d_qty2(self, session):
+    def test_create_order_ins_30d_qty2(self, session):
         payload = {
-            "items": [{"product_id": "ins_31d", "quantity": 2}],
+            "items": [{"product_id": "ins_30d", "quantity": 2}],
             "contact": {
                 "full_name": "TEST Sigorta Alici",
                 "email": "TEST_ins@example.com",
@@ -115,14 +119,14 @@ class TestInsuranceOrder:
         assert order["reference_code"].startswith("SV-")
         assert len(order["items"]) == 1
         line = order["items"][0]
-        assert line["product_id"] == "ins_31d"
+        assert line["product_id"] == "ins_30d"
         assert line["quantity"] == 2
         assert float(line["unit_price"]) == 644.0
         assert float(line["total"]) == 1288.0
         assert order["currency"] == "TRY"
-        # validity 31 gün
+        # validity 30 gün
         assert line["starts_on"] == "2026-03-01"
-        assert line["ends_on"] == "2026-03-31"
+        assert line["ends_on"] == "2026-03-30"
 
 
 # ------------------------------------------------ vize basvurusu store_items
@@ -164,7 +168,7 @@ class TestApplicationStoreItems:
             "addons": {"express": False, "insurance": False},
             "arrival_date": "2026-03-01",
             "departure_date": "2026-03-15",
-            "store_items": [{"product_id": "ins_31d", "quantity": 1}],
+            "store_items": [{"product_id": "ins_30d", "quantity": 1}],
         })
         assert r.status_code == 200, r.text
         q = r.json()
@@ -180,7 +184,7 @@ class TestApplicationStoreItems:
             "arrival_date": "2026-03-01",
             "departure_date": "2026-03-15",
             "store_items": [
-                {"product_id": "ins_31d", "quantity": 1},
+                {"product_id": "ins_30d", "quantity": 1},
                 {"product_id": "esim_3gb", "quantity": 1},
             ],
         })
@@ -199,7 +203,7 @@ class TestAdminProductPatch:
         # Yeni fiyat
         new_price = 699.0
         r = session.patch(
-            f"{API}/admin/products/ins_31d",
+            f"{API}/admin/products/ins_30d",
             json={"price_try": new_price},
             headers=headers,
         )
@@ -210,17 +214,17 @@ class TestAdminProductPatch:
 
         # Public endpointte yansıyor
         pub = session.get(f"{API}/products", params={"kind": "insurance"}).json()
-        item = next(p for p in pub["items"] if p["id"] == "ins_31d")
+        item = next(p for p in pub["items"] if p["id"] == "ins_30d")
         assert float(item["price_try"]) == new_price
         assert float(item["price"]) == new_price
 
         # Eski fiyata geri döndür
         restore = session.patch(
-            f"{API}/admin/products/ins_31d",
+            f"{API}/admin/products/ins_30d",
             json={"price_try": 644.0},
             headers=headers,
         )
         assert restore.status_code == 200
         pub2 = session.get(f"{API}/products", params={"kind": "insurance"}).json()
-        item2 = next(p for p in pub2["items"] if p["id"] == "ins_31d")
+        item2 = next(p for p in pub2["items"] if p["id"] == "ins_30d")
         assert float(item2["price_try"]) == 644.0

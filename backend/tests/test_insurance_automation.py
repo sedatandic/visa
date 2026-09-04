@@ -18,18 +18,15 @@ import uuid
 
 import pytest
 import requests
+from dotenv import load_dotenv
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
-if not BASE_URL:
-    # Frontend .env'den oku (test env icin gerekli)
-    with open("/app/frontend/.env") as f:
-        for line in f:
-            if line.startswith("REACT_APP_BACKEND_URL="):
-                BASE_URL = line.strip().split("=", 1)[1].rstrip("/")
-                break
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".env"))
 
-ADMIN_EMAIL = os.environ.get("ADMIN_LOGIN_EMAIL") or "info@dubaivizeonline.com"
-ADMIN_PASS = os.environ.get("ADMIN_LOGIN_PASSWORD") or "Dubai2026!"
+BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
+
+ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
+ADMIN_PASS = os.environ["ADMIN_LOGIN_PASSWORD"]
 
 EXPECTED_INSURANCE = {
     "ins_8d": {"days": 8, "price": 491},
