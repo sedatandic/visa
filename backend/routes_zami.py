@@ -748,11 +748,38 @@ async def zami_session_clear(admin: dict = Depends(require_admin)):
     return await zami_rpa.clear_session()
 
 
+def _missing_gender_names(app_doc: dict) -> list:
+    """Cinsiyeti bos kalan yolcularin adlarini dondurur.
+
+    Cinsiyet basvuru formunda sorulmuyor, pasaport OCR'indan geliyor. OCR
+    okuyamadiysa Zami formunda zorunlu oldugu icin aktarim oncesi uyarilir.
+    """
+    names = []
+    for traveler in app_doc.get("travelers") or []:
+        if (traveler.get("gender") or "").strip() in ("male", "female"):
+            continue
+        full = f"{traveler.get('first_name', '')} {traveler.get('last_name', '')}".strip()
+        names.append(full or "yolcu")
+    return names
+
+
 @router.post("/admin/zami/transfer/{application_id}")
 async def zami_transfer(application_id: str, payload: TransferIn, request: Request, admin: dict = Depends(require_admin)):
     app_doc = await applications_col.find_one({"id": application_id})
     if not app_doc:
         raise HTTPException(404, "Basvuru bulunamadi.")
+    missing_gender = _missing_gender_names(app_doc)
+    if missing_gender and not payload.dry_run:
+        return {
+            "ok": False,
+            "error": (
+                "Cinsiyet bilgisi eksik: "
+                + ", ".join(missing_gender)
+                + ". Pasaport okunamamış olabilir; başvuru detayından cinsiyeti "
+                "seçip tekrar deneyin."
+            ),
+            "missing": ["gender"],
+        }
     data = zami.build_payload(app_doc, _base_url(request))
     result = await zami_rpa.fill_application(
         app_doc, data, dry_run=bool(payload.dry_run), actor=admin.get("sub", "")

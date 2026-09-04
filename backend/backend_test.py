@@ -1515,6 +1515,266 @@ class MandatoryFieldsTester:
             self.log(f"Brand name test error: {str(e)}", "FAIL")
             return False
     
+    def test_application_without_gender(self):
+        """Test creating application WITHOUT gender field (new behavior)"""
+        self.tests_run += 1
+        self.log("Testing application creation WITHOUT gender (gender optional)...", "INFO")
+        
+        if not self.file_id or not self.photo_file_id:
+            self.log("Missing file IDs for application test", "FAIL")
+            return False, None
+        
+        try:
+            payload = {
+                "contact": {
+                    "full_name": "NO GENDER TEST",
+                    "email": f"nogender_{int(time.time())}@test.com",
+                    "phone": "05551234567",
+                    "address_city": "Istanbul",
+                    "whatsapp_optin": False
+                },
+                "travelers": [{
+                    "first_name": "NOGENDER",
+                    "last_name": "TEST",
+                    "birth_date": "1990-08-15",
+                    # NOT sending gender field at all
+                    "applicant_type": "adult",
+                    "nationality": "TR",
+                    "national_id": "12345678901",
+                    "passport_no": "U99999999",
+                    "passport_expiry": "2032-01-20",
+                    "marital_status": "married",
+                    "profession": "Engineer",
+                    "mother_name": "AYSE TEST",
+                    "father_name": "MEHMET TEST",
+                    "visa_type_id": "visa_30_single",
+                    "passport_file_id": self.file_id,
+                    "photo_file_id": self.photo_file_id
+                }],
+                "travel": {
+                    "arrival_date": "2026-03-15",
+                    "departure_date": "2026-03-25",
+                    "purpose": "tourism",
+                    "birth_country": "TR"
+                },
+                "addons": {
+                    "express": False,
+                    "insurance": False
+                },
+                "store_items": [],
+                "extra_documents": {},
+                "kvkk_accepted": True
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/applications",
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                app_id = result.get("id")
+                ref_code = result.get("reference_code")
+                self.log(f"Application WITHOUT gender created successfully. ID: {app_id}, Ref: {ref_code}", "PASS")
+                
+                # Verify gender is empty or not present
+                traveler = result.get("travelers", [{}])[0]
+                gender = traveler.get("gender", "")
+                if gender == "" or gender is None:
+                    self.log("Gender field correctly empty/omitted in response", "PASS")
+                    self.tests_passed += 1
+                    return True, app_id
+                else:
+                    self.log(f"Gender field should be empty, got: {gender}", "FAIL")
+                    return False, app_id
+            else:
+                self.log(f"Application creation WITHOUT gender failed with status {response.status_code}: {response.text}", "FAIL")
+                return False, None
+                
+        except Exception as e:
+            self.log(f"Application creation error: {str(e)}", "FAIL")
+            return False, None
+    
+    def test_application_with_empty_gender(self):
+        """Test creating application with gender='' (empty string)"""
+        self.tests_run += 1
+        self.log("Testing application creation with gender='' (empty string)...", "INFO")
+        
+        if not self.file_id or not self.photo_file_id:
+            self.log("Missing file IDs for application test", "FAIL")
+            return False, None
+        
+        try:
+            payload = {
+                "contact": {
+                    "full_name": "EMPTY GENDER TEST",
+                    "email": f"emptygender_{int(time.time())}@test.com",
+                    "phone": "05551234567"
+                },
+                "travelers": [{
+                    "first_name": "EMPTY",
+                    "last_name": "GENDER",
+                    "birth_date": "1990-08-15",
+                    "gender": "",  # Explicitly empty string
+                    "applicant_type": "adult",
+                    "passport_no": "U88888888",
+                    "passport_expiry": "2032-01-20",
+                    "marital_status": "single",
+                    "profession": "Engineer",
+                    "mother_name": "MOTHER",
+                    "father_name": "FATHER",
+                    "visa_type_id": "visa_30_single",
+                    "passport_file_id": self.file_id,
+                    "photo_file_id": self.photo_file_id
+                }],
+                "travel": {
+                    "arrival_date": "2026-03-15",
+                    "departure_date": "2026-03-25",
+                    "birth_country": "TR"
+                },
+                "addons": {},
+                "extra_documents": {},
+                "kvkk_accepted": True
+            }
+            
+            response = requests.post(
+                f"{BASE_URL}/applications",
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                app_id = result.get("id")
+                self.log(f"Application with gender='' created successfully. ID: {app_id}", "PASS")
+                self.tests_passed += 1
+                return True, app_id
+            else:
+                self.log(f"Application with gender='' failed with status {response.status_code}: {response.text}", "FAIL")
+                return False, None
+                
+        except Exception as e:
+            self.log(f"Application creation error: {str(e)}", "FAIL")
+            return False, None
+    
+    def test_admin_update_traveler_gender(self, app_id, admin_token):
+        """Test admin endpoint to update traveler gender"""
+        self.tests_run += 1
+        self.log(f"Testing admin update traveler gender for app {app_id}...", "INFO")
+        
+        if not admin_token or not app_id:
+            self.log("No admin token or app_id available", "FAIL")
+            return False
+        
+        try:
+            # Update gender to 'male'
+            response = requests.patch(
+                f"{BASE_URL}/admin/applications/{app_id}/traveler",
+                headers={"Authorization": f"Bearer {admin_token}"},
+                json={"index": 0, "gender": "male"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                app = result.get("application", {})
+                traveler = app.get("travelers", [{}])[0]
+                
+                if traveler.get("gender") == "male":
+                    self.log(f"Admin successfully updated traveler gender to 'male'", "PASS")
+                    self.tests_passed += 1
+                    return True
+                else:
+                    self.log(f"Gender not updated correctly: {traveler.get('gender')}", "FAIL")
+                    return False
+            else:
+                self.log(f"Admin update traveler gender failed with status {response.status_code}: {response.text}", "FAIL")
+                return False
+                
+        except Exception as e:
+            self.log(f"Admin update traveler gender error: {str(e)}", "FAIL")
+            return False
+    
+    def test_zami_transfer_blocks_missing_gender(self, app_id, admin_token):
+        """Test that Zami transfer blocks when gender is missing (dry_run=false)"""
+        self.tests_run += 1
+        self.log(f"Testing Zami transfer blocks missing gender for app {app_id}...", "INFO")
+        
+        if not admin_token or not app_id:
+            self.log("No admin token or app_id available", "FAIL")
+            return False
+        
+        try:
+            # Try transfer with dry_run=false (should block)
+            response = requests.post(
+                f"{BASE_URL}/admin/zami/transfer/{app_id}",
+                headers={"Authorization": f"Bearer {admin_token}"},
+                json={"dry_run": False},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Should return ok=false with error about missing gender
+                if not result.get("ok"):
+                    error = result.get("error", "").lower()
+                    if "cinsiyet" in error or "gender" in error:
+                        self.log(f"Zami transfer correctly blocked with error: {result.get('error')}", "PASS")
+                        self.tests_passed += 1
+                        return True
+                    else:
+                        self.log(f"Zami transfer blocked but wrong error: {result.get('error')}", "FAIL")
+                        return False
+                else:
+                    self.log(f"Zami transfer should have been blocked but succeeded", "FAIL")
+                    return False
+            else:
+                self.log(f"Zami transfer request failed with status {response.status_code}: {response.text}", "FAIL")
+                return False
+                
+        except Exception as e:
+            self.log(f"Zami transfer test error: {str(e)}", "FAIL")
+            return False
+    
+    def test_zami_transfer_allows_dry_run_missing_gender(self, app_id, admin_token):
+        """Test that Zami transfer allows dry_run even with missing gender"""
+        self.tests_run += 1
+        self.log(f"Testing Zami transfer allows dry_run with missing gender for app {app_id}...", "INFO")
+        
+        if not admin_token or not app_id:
+            self.log("No admin token or app_id available", "FAIL")
+            return False
+        
+        try:
+            # Try transfer with dry_run=true (should allow)
+            response = requests.post(
+                f"{BASE_URL}/admin/zami/transfer/{app_id}",
+                headers={"Authorization": f"Bearer {admin_token}"},
+                json={"dry_run": True},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                # Dry run might fail for other reasons (no session, etc.) but should not block on gender
+                error = result.get("error", "").lower()
+                if "cinsiyet" in error or "gender" in error:
+                    self.log(f"Dry run should not block on gender, but got: {result.get('error')}", "FAIL")
+                    return False
+                else:
+                    self.log(f"Dry run allowed with missing gender (ok={result.get('ok')})", "PASS")
+                    self.tests_passed += 1
+                    return True
+            else:
+                self.log(f"Zami dry run request failed with status {response.status_code}: {response.text}", "FAIL")
+                return False
+                
+        except Exception as e:
+            self.log(f"Zami dry run test error: {str(e)}", "FAIL")
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         self.log("=" * 70, "INFO")
@@ -1611,6 +1871,27 @@ class MandatoryFieldsTester:
         # Test brand name changes
         self.log("\n--- BRAND NAME CHANGES: Backend Texts ---", "INFO")
         self.test_brand_name_in_backend()
+        
+        # Test NEW FEATURE: Gender field optional (current iteration)
+        self.log("\n--- NEW FEATURE: Gender Field Optional (Current Iteration) ---", "INFO")
+        
+        # Test application without gender
+        success_no_gender, app_id_no_gender = self.test_application_without_gender()
+        
+        # Test application with empty gender
+        success_empty_gender, app_id_empty_gender = self.test_application_with_empty_gender()
+        
+        # Test admin update traveler gender
+        if admin_success and app_id_no_gender:
+            self.test_admin_update_traveler_gender(app_id_no_gender, admin_token)
+        
+        # Test Zami transfer blocks missing gender (non-dry-run)
+        if admin_success and app_id_empty_gender:
+            self.test_zami_transfer_blocks_missing_gender(app_id_empty_gender, admin_token)
+            
+        # Test Zami transfer allows dry-run with missing gender
+        if admin_success and app_id_empty_gender:
+            self.test_zami_transfer_allows_dry_run_missing_gender(app_id_empty_gender, admin_token)
         
         # Print summary
         self.log("=" * 70, "INFO")

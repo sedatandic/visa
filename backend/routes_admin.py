@@ -17,6 +17,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel, Field
 
 from content import STATUS_LABELS
 from db import (
@@ -240,6 +241,37 @@ async def admin_update_application(application_id: str, payload: StatusUpdate, a
     fresh = await applications_col.find_one({"id": application_id})
     email_status = await _notify_status_change(fresh, doc.get("status", ""), payload)
     return {"application": serialize_doc(fresh), "email_notification": email_status}
+
+
+class TravelerFieldUpdate(BaseModel):
+    """Aktarim oncesi eksik kalan yolcu alanini admin tamamlar."""
+
+    index: int = Field(..., ge=0, le=20)
+    gender: str = Field(..., pattern="^(male|female)$")
+
+
+@router.patch("/admin/applications/{application_id}/traveler")
+async def admin_update_traveler_field(
+    application_id: str, payload: TravelerFieldUpdate, admin: dict = Depends(require_admin)
+) -> dict:
+    """Yolcunun cinsiyetini gunceller (pasaport OCR okuyamadiysa kullanilir)."""
+    doc = await applications_col.find_one({"id": application_id})
+    if not doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    travelers = doc.get("travelers") or []
+    if payload.index >= len(travelers):
+        raise HTTPException(400, "Yolcu bulunamadi.")
+    await applications_col.update_one(
+        {"id": application_id},
+        {
+            "$set": {
+                f"travelers.{payload.index}.gender": payload.gender,
+                "updated_at": datetime.now(timezone.utc),
+            }
+        },
+    )
+    fresh = await applications_col.find_one({"id": application_id})
+    return {"application": serialize_doc(fresh)}
 
 
 # ------------------------------------------------- approved visa document

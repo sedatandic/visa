@@ -230,6 +230,40 @@
 
 ---
 
+### Phase 46 — Başvuru Formu Alan Revizyonu (Kullanıcı İsteği) (Tamamlandı)
+**Amaç:** Kullanıcı sorusu “neden soruyorsun?” netliğinde; pasaportta olmayan bilgiler açıklansın, form gereksiz alan sormasın.
+
+**Yapılanlar**
+1) **Etiket standardı (Title Case):**
+   - “Doğum Tarihi”, “Pasaport No”, “Geçerlilik Tarihi”
+   - Tutarlılık için ayrıca: “Medeni Hal”, “Anne Adı”, “Baba Adı”, “Vize Türü”, “T.C. Kimlik No”, “Doğum Ülkesi”, “Gidiş Tarihi”, “Dönüş Tarihi”.
+
+2) **Cinsiyet alanı kaldırıldı (frontend):**
+   - “Cinsiyet” alanı ve doğrulaması formdan tamamen çıkarıldı.
+   - Cinsiyet artık yalnızca **pasaport AI OCR (MRZ)** üzerinden gelir.
+   - Frontend’de “female” varsayılanları kaldırıldı; passportComplete kontrolünden çıkarıldı.
+
+3) **Model doğrulama güncellendi (backend):**
+   - `models.TravelerIn.gender` artık opsiyonel: `^(male|female|)$`.
+   - Böylece cinsiyet boşken başvuru oluşturma 422’ye düşmez.
+
+4) **Zami aktarım güvenliği:**
+   - Cinsiyet boşsa Zami aktarımı **net Türkçe hata** ile bloke edilir (`_missing_gender_names`).
+
+5) **Admin üzerinden düzeltme:**
+   - Yeni endpoint: `PATCH /api/admin/applications/{id}/traveler` (`index`, `gender`).
+   - Admin başvuru detayında “Cinsiyet okunamadı — Zami aktarımı için seçin” uyarısı + select eklendi.
+
+6) **Bilgi kutusu metni netleştirildi:**
+   - “BAE başvuru formu için gereken 4 ek bilgi” + “Neden soruyoruz?” açıklaması.
+   - Sadece (Medeni Hal / Meslek / Anne Adı / Baba Adı) pasaportta olmadığı, diğer bilgilerin pasaporttan otomatik okunduğu anlatıldı.
+
+**Test**
+- iteration_40: backend 36/36, frontend %100, admin %100, e2e %100
+- “Cinsiyetsiz” başvuru uçtan uca (havale) oluşturuldu.
+
+---
+
 ## 3. Next Actions
 
 ### P0 — Gerçek Firma Bilgileri (USER ACTION REQUIRED)
@@ -240,7 +274,7 @@ Telefon/WhatsApp/adres/TÜRSAB/vergisel bilgiler ve gerçek sosyal kanıt.
 ### P0.1 — Zami “OTP Ayda Bir” Aktifleştirme: İlk OTP’li Giriş (USER ACTION REQUIRED)
 **Yeni önerilen akış (süre kritik):**
 1) Admin → Zami Aktarım → Robot Oturumu
-2) **Oturum Başlat** (artık captcha otomatik geçilip OTP ekranına getirir)
+2) **Oturum Başlat** (captcha otomatik geçilip OTP ekranına getirir)
 3) E-postaya gelen OTP kodunu **hemen** girin (Enter ile gönder)
 
 Beklenen: `device_state` + `last_otp_at` kaydolur → 1 ay OTP’siz yenileme.
@@ -297,6 +331,13 @@ Eğitim + uçuş bilgileri.
   2) Kart tıklaması `/basvuru?vize=<id>` ile sihirbazı açar.
   3) Kart üzerinde **TL kişi başı fiyat** görünür; `/vize-tipleri` ve başvuru özetiyle birebir aynıdır.
 
+- Başvuru formu alan kriterleri (Phase 46):
+  1) Kullanıcı formunda “Cinsiyet” sorulmaz.
+  2) Etiketler Title Case ve tutarlıdır: “Doğum Tarihi”, “Pasaport No”, “Geçerlilik Tarihi” vb.
+  3) “Neden soruyoruz?” açıklaması yalnızca 4 ek bilgiyi (Medeni Hal/Meslek/Anne Adı/Baba Adı) gerekçelendirir.
+  4) Cinsiyet boş olsa bile başvuru uçtan uca oluşturulabilir (havale dahil).
+  5) Zami aktarımı için cinsiyet gerekiyorsa admin panelden tamamlanabilir.
+
 - Zami OTP ayda bir:
   1) İlk OTP’li giriş sonrası `device_state` kayıtlıdır (`trusted_device=true`, `last_otp_at` set).
   2) Oturum düşüşlerinde çoğu durumda OTP’siz auto-relogin başarılı.
@@ -312,6 +353,7 @@ Eğitim + uçuş bilgileri.
 - Phase 1–43: **TAMAMLANDI**.
 - Phase 44 (Kart üstü fiyat): **TAMAMLANDI** — iteration_39 frontend %100.
 - Phase 45 (Zami OTP giriş sağlamlaştırma): **TAMAMLANDI** (kod + UI), ancak **ilk OTP’li giriş hâlâ kullanıcı aksiyonu**.
+- Phase 46 (Başvuru formu alan revizyonu): **TAMAMLANDI** — iteration_40 backend+frontend+admin+e2e %100.
 
 Test raporları (seçme):
 - iteration_35 — OTP ayda bir altyapısı backend PASS
@@ -319,6 +361,7 @@ Test raporları (seçme):
 - iteration_37 — Sky Panels UI regresyon PASS
 - iteration_38 — Vize vitrin seçimi frontend %100
 - iteration_39 — Vitrin kart üstü fiyat frontend %100
+- iteration_40 — Cinsiyet alanı kaldırma + etiket revizyonu PASS (e2e)
 
 Blokajlar / Bekleyen:
 - Gerçek firma bilgileri

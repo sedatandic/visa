@@ -190,6 +190,16 @@ export default function AdminApplicationDetail() {
         load();
     }, [load]);
 
+    const saveTravelerGender = async (index, gender) => {
+        try {
+            const { data: res } = await api.patch(`/admin/applications/${id}/traveler`, { index, gender });
+            setData((d) => ({ ...d, application: res.application }));
+            toast.success("Cinsiyet kaydedildi. Zami aktarımı yapılabilir.");
+        } catch (err) {
+            toast.error(apiError(err, "Cinsiyet kaydedilemedi."));
+        }
+    };
+
     const save = async () => {
         setSaving(true);
         try {
@@ -459,7 +469,33 @@ export default function AdminApplicationDetail() {
                                         </div>
                                         <div className="mt-3 grid gap-x-6 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2">
                                             <p>Doğum: <strong className="text-foreground">{formatDate(t.birth_date)}</strong></p>
-                                            <p>Cinsiyet: <strong className="text-foreground">{t.gender === "female" ? "Kadın" : "Erkek"}</strong></p>
+                                            {t.gender === "male" || t.gender === "female" ? (
+                                                <p>Cinsiyet: <strong className="text-foreground">{t.gender === "female" ? "Kadın" : "Erkek"}</strong></p>
+                                            ) : (
+                                                <div
+                                                    className="flex items-center gap-2 sm:col-span-2"
+                                                    data-testid={`traveler-${i}-gender-missing`}
+                                                >
+                                                    <span className="font-medium text-[hsl(var(--status-warning))]">
+                                                        Cinsiyet okunamadı — Zami aktarımı için seçin:
+                                                    </span>
+                                                    <Select
+                                                        value=""
+                                                        onValueChange={(v) => saveTravelerGender(i, v)}
+                                                    >
+                                                        <SelectTrigger
+                                                            className="h-8 w-32"
+                                                            data-testid={`traveler-${i}-gender-select`}
+                                                        >
+                                                            <SelectValue placeholder="Seçiniz" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="male">Erkek</SelectItem>
+                                                            <SelectItem value="female">Kadın</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            )}
                                             <p>Pasaport: <strong className="text-foreground">{t.passport_no}</strong></p>
                                             <p>Geçerlilik: <strong className="text-foreground">{formatDate(t.passport_expiry)}</strong></p>
                                             {t.national_id ? <p>T.C. No: <strong className="text-foreground">{t.national_id}</strong></p> : null}

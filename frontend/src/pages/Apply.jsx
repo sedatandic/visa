@@ -136,15 +136,14 @@ const ERROR_LABELS = {
     phone: "Telefon numarası",
     first_name: "Ad",
     last_name: "Soyad",
-    birth_date: "Doğum tarihi",
-    gender: "Cinsiyet",
-    marital_status: "Medeni hal",
+    birth_date: "Doğum Tarihi",
+    marital_status: "Medeni Hal",
     profession: "Meslek",
-    mother_name: "Anne adı",
-    father_name: "Baba adı",
+    mother_name: "Anne Adı",
+    father_name: "Baba Adı",
     passport_no: "Pasaport numarası",
     passport_expiry: "Pasaport geçerlilik tarihi",
-    visa_type_id: "Vize türü",
+    visa_type_id: "Vize Türü",
     birth_country: "Doğum ülkesi",
     arrival_date: "Gidiş tarihi",
     departure_date: "Dönüş tarihi",
@@ -241,7 +240,7 @@ export default function Apply() {
                 first_name: saved.first_name || "",
                 last_name: saved.last_name || "",
                 birth_date: saved.birth_date || "",
-                gender: saved.gender || "female",
+                gender: saved.gender || "",
                 national_id: saved.national_id || "",
                 passport_no: saved.passport_no || "",
                 passport_expiry: saved.passport_expiry || "",
@@ -348,7 +347,7 @@ export default function Apply() {
                                 first_name: t.first_name || "",
                                 last_name: t.last_name || "",
                                 birth_date: t.birth_date || "",
-                                gender: t.gender || "female",
+                                gender: t.gender || "",
                                 national_id: t.national_id || "",
                                 passport_no: t.passport_no || "",
                                 passport_expiry: t.passport_expiry || "",
@@ -735,7 +734,6 @@ export default function Apply() {
                 if (t.first_name.trim().length < 2) te.first_name = "Ad zorunlu (en az 2 karakter).";
                 if (t.last_name.trim().length < 2) te.last_name = "Soyad zorunlu (en az 2 karakter).";
                 if (!t.birth_date) te.birth_date = "Doğum tarihi zorunlu.";
-                if (!t.gender) te.gender = "Cinsiyet seçimi zorunlu.";
                 if (!t.marital_status) te.marital_status = "Medeni hal seçimi zorunlu.";
                 if (!t.profession) te.profession = "Meslek seçimi zorunlu.";
                 if (t.mother_name.trim().length < 2) te.mother_name = "Anne adı zorunlu (BAE formu için).";
@@ -1091,8 +1089,9 @@ export default function Apply() {
                                         {travelers.map((t, idx) => {
                                             const te = errors[t.key] || {};
                                             const passportRead = ocr[t.key]?.status === "done";
+                                            // Cinsiyet artik formda sorulmuyor; pasaport MRZ'sinden okunur.
                                             const passportComplete =
-                                                !!t.first_name && !!t.last_name && !!t.birth_date && !!t.gender && !!t.passport_no && !!t.passport_expiry;
+                                                !!t.first_name && !!t.last_name && !!t.birth_date && !!t.passport_no && !!t.passport_expiry;
                                             // OCR bilgileri eksiksiz doldurduysa alanlari ozet karta cevir;
                                             // hata varsa veya kullanici "Duzenle"ye bastiysa formu geri ac.
                                             const passportSummaryVisible =
@@ -1203,10 +1202,9 @@ export default function Apply() {
                                                             <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
                                                                 {[
                                                                     ["Ad Soyad", `${t.first_name} ${t.last_name}`],
-                                                                    ["Doğum tarihi", formatDate(t.birth_date)],
-                                                                    ["Cinsiyet", t.gender === "female" ? "Kadın" : "Erkek"],
-                                                                    ["Pasaport no", t.passport_no],
-                                                                    ["Geçerlilik", formatDate(t.passport_expiry)],
+                                                                    ["Doğum Tarihi", formatDate(t.birth_date)],
+                                                                    ["Pasaport No", t.passport_no],
+                                                                    ["Geçerlilik Tarihi", formatDate(t.passport_expiry)],
                                                                     ...(t.national_id ? [["T.C. kimlik no", t.national_id]] : []),
                                                                 ].map(([label, value]) => (
                                                                     <div key={label} className="flex items-baseline justify-between gap-3 border-b border-border/60 pb-1.5">
@@ -1228,7 +1226,7 @@ export default function Apply() {
                                                         <Field label="Soyad" required error={te.last_name}>
                                                             <Input value={t.last_name} onChange={(e) => updateTraveler(t.key, { last_name: e.target.value })} placeholder="YILMAZ" data-testid={`traveler-${idx}-last-name`} />
                                                         </Field>
-                                                        <Field label="Doğum tarihi" required error={te.birth_date}>
+                                                        <Field label="Doğum Tarihi" required error={te.birth_date}>
                                                             <DateField
                                                                 value={t.birth_date}
                                                                 onChange={(iso) => updateTraveler(t.key, { birth_date: iso })}
@@ -1239,21 +1237,10 @@ export default function Apply() {
                                                                 data-testid={`traveler-${idx}-birth-date`}
                                                             />
                                                         </Field>
-                                                        <Field label="Cinsiyet" required error={te.gender}>
-                                                            <Select value={t.gender} onValueChange={(v) => updateTraveler(t.key, { gender: v })}>
-                                                                <SelectTrigger data-testid={`traveler-${idx}-gender`}>
-                                                                    <SelectValue placeholder="Seçiniz" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="male">Erkek</SelectItem>
-                                                                    <SelectItem value="female">Kadın</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </Field>
-                                                        <Field label="Pasaport no" required error={te.passport_no}>
+                                                        <Field label="Pasaport No" required error={te.passport_no}>
                                                             <Input value={t.passport_no} onChange={(e) => updateTraveler(t.key, { passport_no: e.target.value })} placeholder="U12345678" data-testid={`traveler-${idx}-passport-no`} />
                                                         </Field>
-                                                        <Field label="Geçerlilik" required error={te.passport_expiry}>
+                                                        <Field label="Geçerlilik Tarihi" required error={te.passport_expiry}>
                                                             <DateField
                                                                 value={t.passport_expiry}
                                                                 onChange={(iso) => updateTraveler(t.key, { passport_expiry: iso })}
@@ -1265,7 +1252,7 @@ export default function Apply() {
                                                             />
                                                         </Field>
                                                         {t.national_id || openNationalId[t.key] ? (
-                                                            <Field label="T.C. kimlik no">
+                                                            <Field label="T.C. Kimlik No">
                                                                 <Input value={t.national_id} onChange={(e) => updateTraveler(t.key, { national_id: e.target.value })} placeholder="11 hane" data-testid={`traveler-${idx}-national-id`} />
                                                             </Field>
                                                         ) : (
@@ -1289,16 +1276,19 @@ export default function Apply() {
                                                             <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                                                             <div>
                                                                 <p className="text-sm font-bold text-foreground">
-                                                                    BAE başvuru formu için zorunlu bilgiler
+                                                                    BAE başvuru formu için gereken 4 ek bilgi
                                                                 </p>
                                                                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                                                    Bu bilgiler pasaportta yazmadığı için sizden istiyoruz. Birleşik Arap
-                                                                    Emirlikleri vize sistemi bu alanları zorunlu tutuyor.
+                                                                    Neden soruyoruz? Medeni hal, meslek, anne ve baba adı pasaportta
+                                                                    yer almaz; ancak Birleşik Arap Emirlikleri göçmenlik sistemi bu
+                                                                    dört alanı zorunlu tutuyor ve boş gönderilen başvuruları
+                                                                    reddediyor. Ad, doğum tarihi ve pasaport bilgilerinizi ise
+                                                                    pasaportunuzdan otomatik okuyoruz, tekrar yazmanıza gerek yok.
                                                                 </p>
                                                             </div>
                                                         </div>
                                                         <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                                                            <Field label="Medeni hal" required error={te.marital_status}>
+                                                            <Field label="Medeni Hal" required error={te.marital_status}>
                                                                 <Select
                                                                     value={t.marital_status}
                                                                     onValueChange={(v) => updateTraveler(t.key, { marital_status: v })}
@@ -1332,7 +1322,7 @@ export default function Apply() {
                                                                     </SelectContent>
                                                                 </Select>
                                                             </Field>
-                                                            <Field label="Anne adı" required error={te.mother_name}>
+                                                            <Field label="Anne Adı" required error={te.mother_name}>
                                                                 <Input
                                                                     value={t.mother_name}
                                                                     onChange={(e) => updateTraveler(t.key, { mother_name: e.target.value })}
@@ -1340,7 +1330,7 @@ export default function Apply() {
                                                                     data-testid={`traveler-${idx}-mother-name`}
                                                                 />
                                                             </Field>
-                                                            <Field label="Baba adı" required error={te.father_name}>
+                                                            <Field label="Baba Adı" required error={te.father_name}>
                                                                 <Input
                                                                     value={t.father_name}
                                                                     onChange={(e) => updateTraveler(t.key, { father_name: e.target.value })}
@@ -1392,7 +1382,7 @@ export default function Apply() {
                                                         )}
                                                     </div>
                                                     <div className="mt-4">
-                                                        <Field label="Vize türü" required error={te.visa_type_id}>
+                                                        <Field label="Vize Türü" required error={te.visa_type_id}>
                                                             <Select value={t.visa_type_id} onValueChange={(v) => updateTraveler(t.key, { visa_type_id: v })}>
                                                                 <SelectTrigger data-testid={`traveler-${idx}-visa-type`}>
                                                                     <SelectValue placeholder="Seçiniz" />
@@ -1413,7 +1403,7 @@ export default function Apply() {
                                     </div>
 
                                     <div className="mt-7 grid gap-5 sm:grid-cols-2">
-                                        <Field label="Doğum ülkesi" required error={errors.birth_country}>
+                                        <Field label="Doğum Ülkesi" required error={errors.birth_country}>
                                             <Select value={travel.birth_country} onValueChange={(v) => { setTravel((f) => ({ ...f, birth_country: v })); setErrors((p) => ({ ...p, birth_country: undefined })); }}>
                                                 <SelectTrigger data-testid="select-birth-country">
                                                     <SelectValue />
@@ -1424,7 +1414,7 @@ export default function Apply() {
                                                 </SelectContent>
                                             </Select>
                                         </Field>
-                                        <Field label="Gidiş tarihi" required error={errors.arrival_date}>
+                                        <Field label="Gidiş Tarihi" required error={errors.arrival_date}>
                                             <DateField
                                                 value={travel.arrival_date}
                                                 onChange={(iso) => setTravel((t) => ({ ...t, arrival_date: iso }))}
@@ -1435,7 +1425,7 @@ export default function Apply() {
                                                 data-testid="input-arrival-date"
                                             />
                                         </Field>
-                                        <Field label="Dönüş tarihi" required error={errors.departure_date}>
+                                        <Field label="Dönüş Tarihi" required error={errors.departure_date}>
                                             <DateField
                                                 value={travel.departure_date}
                                                 onChange={(iso) => setTravel((t) => ({ ...t, departure_date: iso }))}

@@ -15,7 +15,9 @@ class TravelerIn(BaseModel):
     first_name: str = Field(..., min_length=2, max_length=60)
     last_name: str = Field(..., min_length=2, max_length=60)
     birth_date: str = Field(..., min_length=4, max_length=20)
-    gender: str = Field(..., pattern="^(male|female)$")
+    # Cinsiyet basvuru formunda sorulmaz; pasaport MRZ'sinden (OCR) okunur.
+    # Okunamazsa bos gelir ve Zami aktarimi oncesi admin tamamlar.
+    gender: str = Field(default="", pattern="^(male|female|)$")
     applicant_type: str = Field(default="adult", pattern="^(adult|child)$")
     nationality: str = Field(default="TR", max_length=40)
     national_id: Optional[str] = Field(default="", max_length=20)
