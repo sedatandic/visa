@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import {
+    ArrowRight,
     BookOpen,
     ChevronDown,
     FileCheck2,
@@ -27,7 +28,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { COMPANY } from "../lib/site";
 import { BrandMark } from "./BrandMark";
-import { UaeFlag } from "./FlagIcons";
+import { TrFlag, UaeFlag } from "./FlagIcons";
 import { useContact } from "../lib/contact";
 
 /** Ust seviyede gorunen ana linkler (donusum odakli). */
@@ -111,7 +112,11 @@ export const Navbar = () => {
                     data-testid="navbar-logo-link"
                 >
                     <BrandMark />
-                    <UaeFlag className="ml-2 hidden h-9 w-[72px] sm:block" />
+                    <span className="ml-2 hidden items-end gap-1.5 sm:flex" data-testid="brand-flag-pair">
+                        <TrFlag className="h-9 w-[54px]" />
+                        <ArrowRight className="mb-2 h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                        <UaeFlag className="h-9 w-[72px]" />
+                    </span>
                 </Link>
 
                 <nav className="hidden items-center gap-1 -mb-1.5 xl:flex" aria-label="Ana menü">
@@ -231,7 +236,7 @@ export const Navbar = () => {
                         <div className="flex h-full flex-col" data-testid="mobile-menu">
                             <div className="flex items-center gap-2.5 border-b border-border px-5 py-4">
                                 <BrandMark />
-                                <UaeFlag className="h-5 w-8" />
+                                <UaeFlag className="h-5 w-10" />
                             </div>
 
                             <div className="flex-1 px-4 py-4">

@@ -35,6 +35,13 @@ Kullanıcı dili: **Türkçe** (tüm yanıtlar Türkçe olmalı).
 - **Marka logosu güncellendi**: yüklenen logo işlenip `public/brand/logo-horizontal.png`
   (yatay kilit: amblem + DUBAI Vize Online), `emblem-512.png` ve `logo-lockup.png` olarak
   hazırlandı; `BrandMark` artık tam yatay logoyu kullanıyor (header, footer, admin)
+- **Partner logoları + bayrak çifti (2026-06)**: 6 havayolu logosu Wikimedia Commons'tan
+  500px PNG olarak `public/brand/partners/` altına indirildi (emirates, flydubai,
+  turkish-airlines, pegasus, ajet, sunexpress); `PARTNERS` artık {name, logo} sözlüğü ve
+  Home partner kutuları logoyu gösteriyor (dosya yoksa marka adına düşer).
+  Logonun yanına TR → BAE bayrak çifti eklendi (`brand-flag-pair`).
+  NOT: Havayolu logoları tescilli markadır; resmî iş ortaklığı yoksa başlığı
+  "Çalıştığımız havayolları" gibi bir ifadeye çevirmek daha güvenli.
 - **Sayfa boşlukları ve genişlikler (2026-06)**: tüm Bilgi & Hizmetler sayfalarında başlık
   paneli ile içerik arası boşluk ~24-32px'e indirildi; SSS, blog listesi ve eSIM/sigorta SSS
   blokları başlık paneliyle aynı genişliğe alındı. Ekspres metni her yerde
