@@ -1,0 +1,24 @@
+{
+  "summary": "Frontend-only verification of new Combo Selector (Ne almak istiyorsunuz?) on wizard Step 4 (index 3) and pre-submit Bank Transfer info panel. ALL 10 acceptance criteria PASSED. Full wizard walkthrough with 1 adult TEST traveler, 30-Day Single Entry visa (5.190₺), trip 01.03.2026->10.03.2026 (9 gün). On Step 4 combo-selector renders with 4 options (combo-option-visa, combo-option-visa_esim, combo-option-visa_ins, combo-option-visa_all). Totals observed: visa=5.190₺ (no bundle row), visa_esim=5.930₺ (5190+740 esim_3gb, no bundle row), visa_ins=5.750₺ (5190+560 ins_15d, no bundle row), visa_all=6.360₺ (5190+560+740-130 bundle) with data-testid=summary-bundle-discount visible only for visa_all. Active combo card correctly gets border-primary highlight after each click. extras-quick-add panel stays mounted so quick-* rows sync with combo picks. Payment method: on payment-method-card, bank-transfer-info NOT rendered (count=0); on payment-method-transfer BEFORE submit, bank-transfer-info renders with bank-account-name='VizeAtlas Turizm ve Danışmanlık A.Ş.', bank-name='Örnek Bank A.Ş.', bank-iban='TR00 0000 0000 0000 0000 0000 00', bank-amount='6.360 ₺', and bank-agency-info block present. Clicking 'Havale bilgilerini al' fires POST /api/applications -> 200, reference_code=DV-NC941982, after which pre-submit bank-transfer-info is replaced by bank-transfer-details block containing same 6.360₺ Tutar (matches summary-total-price).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx is now 2182 lines; the growing wizard should be extracted into StepPeople/StepVisa/StepDocs/StepSummary sub-components with a shared useApplyState hook.",
+    "ComboSelector activeId falls back to undefined when the current picks (e.g., insurance yes + esim no) do not match any of the 4 pre-defined OPTIONS. This is fine today because the OPTIONS cover all boolean combinations, but if a user manually toggles only insurance-off keeping eSIM on, then adds insurance from a different section, activeId will still map to visa_all. Consider indicating 'Özel seçim' state when picks don't cleanly match a combo.",
+    "applyCombo() uses recommendedInsuranceId/recommendedEsimId if present, otherwise first product. For eSIM the first product is esim_1gb (440₺) but the observed run picked esim_3gb (740₺) via the recommendation — this makes 'Sadece vize + eSIM' more expensive than the minimum. Consider adding a subtle info line 'Önerilen paket seçildi — istediğiniz an değiştirin.' beside the combo card."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested", "frontend": "100% - 10/10 acceptance criteria verified"},
+  "test_credentials": "Not required for /basvuru flow.",
+  "seed_data_creation": "Created 1 TEST application via POST /api/applications: reference_code=DV-NC941982, contact TEST KOMBI / test.kombi@example.com / 05551112233, traveler TEST KULLANICI, passport U12345678, 30-Day Single Entry visa, trip 2026-03-01 -> 2026-03-10, combo visa_all (ins_15d + esim_3gb), payment method 'transfer'.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "ComboSelector data-testids: combo-selector wrapper + combo-option-{visa|visa_esim|visa_ins|visa_all}. Bundle row appears as data-testid=summary-bundle-discount only when both insurance + eSIM picked. Pre-submit bank panel: data-testid=bank-transfer-info (rendered when payMethod==='transfer' && !transferInfo) with rows bank-account-name / bank-name / bank-iban / bank-amount and nested bank-agency-info block. Post-submit block: data-testid=bank-transfer-details (with bank-transfer-iban row). Full wizard fill sequence works: Step0 -> Step1 (Radix select for traveler-0-visa-type option regex '30 Günlük Tek Girişli' + DateField gg.aa.yyyy text fill) -> Step2 (upload passport, wait for -uploaded marker, wait ~4s for OCR, then upload photo) -> Step3 (KVKK then combo choices). Test viewport 1440x900. Backend total in POST response body is nested; the visible summary-total-price is the source of truth.",
+  "rca of the issue": "N/A — no issues found. All 4 combos + havale panel toggle behave exactly as spec'd."
+}

@@ -168,3 +168,17 @@ böylece eSIM kârı da gerçek marjla hesaplanır (maliyet girilmezse kâr = ci
   Başvuru yalnız ödeme anında oluşturulduğu için Adım 4 seçimleri fiyata dahil.
 - Testler: iteration_59 (backend /bundles 4/4), iteration_60 (frontend uçtan uca 8/8 kriter).
   Test verileri temizlendi.
+
+## 2026-06-04 · Kombinasyonlar + havale bilgileri + ana sayfa satış blokları
+- `components/ComboSelector.jsx`: Adım 4'te "Ne almak istiyorsunuz?" — Sadece vize / Vize+eSIM /
+  Vize+sigorta / Vize+eSIM+sigorta (%10 indirim). `applyCombo()` ekstraları set/temizler.
+- `components/BankTransferInfo.jsx`: Havale/EFT seçildiği an (başvuru oluşmadan) alıcı, banka,
+  IBAN, tutar + `agency_info.items` şirket bilgileri gösterilir.
+- `components/ExtrasQuickAdd.jsx`: sağ panelde her adımda sigorta/eSIM hızlı ekleme; özet
+  kırılımı ve toplam canlı güncellenir. `changeEsimQty` artık 0'a düşürüp kalemi siler.
+- Ana sayfa: `HomeBundleStrip.jsx` (vize dahil toplamlı 3 paket) + `SeparatePriceCards.jsx`
+  (Vize / Sigorta / eSIM sekmeli ayrı fiyat kartları).
+- Testler: iteration_61 (9/9), iteration_62 (10/10) frontend %100. Test verileri temizlendi.
+- YAPILACAK: `site_settings.bank_transfer` hâlâ örnek veri
+  ("VizeAtlas Turizm ve Danışmanlık A.Ş." / "Örnek Bank A.Ş." / TR00...) — Admin → Havale
+  ekranından gerçek unvan, banka ve IBAN girilmeli.

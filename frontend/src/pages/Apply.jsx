@@ -38,6 +38,9 @@ import { FileDropzone } from "../components/FileDropzone";
 import { DateField, fromISODate } from "../components/DateField";
 import { FxNote } from "../components/FxNote";
 import { BundlePicker } from "../components/BundlePicker";
+import { ExtrasQuickAdd } from "../components/ExtrasQuickAdd";
+import { ComboSelector } from "../components/ComboSelector";
+import { BankTransferInfo } from "../components/BankTransferInfo";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -181,6 +184,8 @@ export default function Apply() {
     const [photoCheck, setPhotoCheck] = useState({});
     const [payMethod, setPayMethod] = useState("card");
     const [transferInfo, setTransferInfo] = useState(null);
+    const [bankInfo, setBankInfo] = useState(null);
+    const [agencyItems, setAgencyItems] = useState([]);
     const [quote, setQuote] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [created, setCreated] = useState(null);
@@ -350,6 +355,8 @@ export default function Apply() {
                 setVisaTypes(v.data);
                 setAddonMeta(c.data.addons || []);
                 setMaxTravelers(c.data.max_travelers || 10);
+                setBankInfo(c.data.bank_transfer || null);
+                setAgencyItems((c.data.agency_info || {}).items || []);
                 const wanted = searchParams.get("vize");
                 if (wanted && v.data.some((x) => x.id === wanted)) {
                     const found = v.data.find((x) => x.id === wanted);
@@ -504,8 +511,7 @@ export default function Apply() {
         }
     }, [insuranceProducts, insurancePick]);
 
-    const applyRecommended = () => {
-        if (!travelDatesReady) {
+    const applyRecommended = () => {        if (!travelDatesReady) {
             toast.error("Önce giriş (gidiş) tarihinizi seçin.");
             return;
         }
@@ -514,6 +520,23 @@ export default function Apply() {
             setEsimQty({ [recommendedEsimId]: Math.min(Math.max(travelerCount, 1), 10) });
         }
         toast.success("Seyahat sürenize en uygun sigorta ve eSIM paketi eklendi. %10 paket indirimi uygulandı.");
+    };
+
+    // Kombinasyon secimi: sadece vize / +eSIM / +sigorta / hepsi
+    const applyCombo = (option) => {
+        if (option.insurance) {
+            const pick = recommendedInsuranceId || insuranceProducts[0]?.id;
+            if (pick) setInsurancePick(pick);
+        } else {
+            setInsurancePick(null);
+        }
+        if (option.esim) {
+            const pick = recommendedEsimId || esimProducts[0]?.id;
+            if (pick) setEsimQty({ [pick]: Math.min(Math.max(travelerCount, 1), 10) });
+        } else {
+            setEsimQty({});
+        }
+        toast.success(`${option.label} seçildi.`);
     };
 
     const RecommendedBadge = ({ testId }) => (
@@ -572,7 +595,11 @@ export default function Apply() {
     const changeEsimQty = (productId, delta) => {
         setEsimQty((prev) => {
             const current = prev[productId] || 0;
-            const value = Math.min(10, Math.max(1, current + delta));
+            const value = Math.min(10, current + delta);
+            if (value <= 0) {
+                const { [productId]: _removed, ...rest } = prev;
+                return rest;
+            }
             return { ...prev, [productId]: value };
         });
     };
@@ -1606,6 +1633,13 @@ export default function Apply() {
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Bilgilerinizi kontrol edip ödemeye geçin.</p>
 
+                                    {/* NE ALMAK ISTIYORSUNUZ (kombinasyonlar) */}
+                                    <ComboSelector
+                                        hasInsurance={Boolean(insurancePick)}
+                                        hasEsim={Object.values(esimQty).some((q) => q > 0)}
+                                        onChange={applyCombo}
+                                    />
+
                                     {/* AKILLI PAKET ONERISI + PAKET INDIRIMI */}
                                     {(insuranceProducts.length > 0 || esimProducts.length > 0) && (
                                         <div
@@ -1950,6 +1984,14 @@ export default function Apply() {
                                             ))}
                                         </div>
 
+                                        {payMethod === "transfer" && !transferInfo && (
+                                            <BankTransferInfo
+                                                bank={bankInfo}
+                                                agencyItems={agencyItems}
+                                                amount={quote ? formatMoney(quote.total, quote.currency) : ""}
+                                            />
+                                        )}
+
                                         {transferInfo && (
                                             <div className="mt-4 rounded-xl border border-primary/30 bg-primary/[0.05] p-5" data-testid="bank-transfer-details">
                                                 <h4 className="font-heading text-sm font-bold">{transferInfo.bank?.title}</h4>
@@ -2100,6 +2142,15 @@ export default function Apply() {
                                     </p>
                                 )}
                             </div>
+
+                            <ExtrasQuickAdd
+                                insuranceProducts={insuranceProducts}
+                                esimProducts={esimProducts}
+                                insurancePick={insurancePick}
+                                onPickInsurance={setInsurancePick}
+                                esimQty={esimQty}
+                                onChangeEsimQty={changeEsimQty}
+                            />
 
                             <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
                                 <div className="flex items-center gap-2">

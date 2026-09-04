@@ -1,0 +1,24 @@
+{
+  "summary": "Frontend-only verification of per-step Ekstraları ekle panel + live summary breakdown, home bundle strip and separate price cards tabs. All acceptance criteria PASSED. Wizard Step 1 (people) shows extras-quick-add with 6 insurance rows (quick-insurance-{ins_8d,ins_15d,ins_30d,ins_30d_plus,ins_60d,ins_60d_plus}) and 4 eSIM rows (esim_1gb/3gb/10gb/unlimited). Selecting ins_15d + esim_3gb +1 on Step 1 keeps summary at 'Fiyat için vize türü seçin.'. Advancing to Step 2, state is preserved (ins_15d highlighted, esim_3gb qty=1). Picking '30 Günlük Tek Girişli Dubai Vizesi – 5.190 ₺' and dates 01.03.2026→10.03.2026 makes aside 'Başvuru özeti' render full breakdown: Vize 5.190₺ + Sigorta 15gün Temel x1 560₺ + eSIM 3GB x1 740₺ − Paket indirimi %10 (-130₺) = Toplam 6.360₺. eSIM +1 recomputes to 7.026₺ (5190+560+1480-204). Reducing eSIM qty to 0 removes the eSIM line AND the paket indirimi row (no ghost), total drops to 5.750₺. Insurance rows filtered by visa duration: with 30-day visa selected only ins_8d/15d/30d/30d_plus listed (ins_60d and ins_60d_plus hidden). Home page: home-bundle-strip renders 3 cards (pack_standard 6.360₺, pack_comfort 8.955,60₺, pack_long 11.828,50₺) each with 'Bu paketle başvur' → /basvuru. separate-price-cards tabs price-tab-visa / price-tab-insurance / price-tab-esim work; visa tab lists visa types with TL prices and Seç buttons; insurance tab lists 6 ins_* cards; eSIM tab lists 4 esim_* cards. Mobile 390x844: aside stacks below content on /basvuru, extras-quick-add-toggle collapses and re-expands, no horizontal overflow (scrollWidth=clientWidth=390).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx has grown to 2145 lines. Consider splitting each wizard step into its own component (StepPeople, StepVisa, StepDocs, StepSummary) plus a shared useApplyState hook.",
+    "ExtrasQuickAdd hides insurance rows when their validity exceeds visa duration but leaves esim rows unfiltered. If a >30-day eSIM is picked with a 30-day visa the summary still applies %10 bundle. Consider filtering esim products the same way or showing a warning.",
+    "Home price-cards visa tab only filters applicant_type==='adult' — visa uzatma / transit visas are shown here too because they are 'adult'. This is expected but a small subtitle differentiating 'ilk başvuru vs uzatma' would help."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested", "frontend": "100% - 9/9 acceptance criteria verified"},
+  "test_credentials": "Not required - all tested surfaces are public.",
+  "seed_data_creation": "Wizard was driven up to Step 2 with TEST data but no application was submitted (no POST /api/applications). No DB rows created this run.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "ExtrasQuickAdd testids: extras-quick-add, extras-quick-add-toggle, quick-insurance-{id}, quick-esim-{id}, quick-esim-minus-{id}, quick-esim-plus-{id}, quick-esim-qty-{id}. Summary aside on right (not summary-price-breakdown testid — that testid only exists in Step 4 content). Live quote is fired by /api/pricing/quote and takes ~1.5-2s. Insurance filter uses max travelers' visa duration_days. On Step 2, visa is picked via Radix select trigger [data-testid=traveler-0-visa-type]; option text is the full 'XX Günlük ... – NNN ₺'. Home page renders <HomeBundleStrip/> and <SeparatePriceCards/> from Home.jsx lines 271/274.",
+  "rca of the issue": "N/A — no blocking issues found."
+}
