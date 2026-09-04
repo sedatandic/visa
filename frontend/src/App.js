@@ -31,6 +31,7 @@ import AdminEmails from "./pages/AdminEmails";
 import AdminVisaTypes from "./pages/AdminVisaTypes";
 import AdminVisaGuides from "./pages/AdminVisaGuides";
 import AdminOrders from "./pages/AdminOrders";
+import AdminInsurance from "./pages/AdminInsurance";
 import AdminTestimonials from "./pages/AdminTestimonials";
 import AdminArticles from "./pages/AdminArticles";
 import AdminBankTransfer from "./pages/AdminBankTransfer";
@@ -86,6 +87,7 @@ function App() {
                     <Route path="/admin/vize-tipleri" element={<RequireAdmin><AdminVisaTypes /></RequireAdmin>} />
                     <Route path="/admin/vize-rehberleri" element={<RequireAdmin><AdminVisaGuides /></RequireAdmin>} />
                     <Route path="/admin/siparisler" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
+                    <Route path="/admin/sigorta" element={<RequireAdmin><AdminInsurance /></RequireAdmin>} />
                     <Route path="/admin/yorumlar" element={<RequireAdmin><AdminTestimonials /></RequireAdmin>} />
                     <Route path="/admin/yazilar" element={<RequireAdmin><AdminArticles /></RequireAdmin>} />
                     <Route path="/admin/banka" element={<RequireAdmin><AdminBankTransfer /></RequireAdmin>} />

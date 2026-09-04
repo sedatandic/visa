@@ -131,3 +131,21 @@ Ayrıca: BAE 4 ek alan (medeni hal, meslek, anne/baba adı) müşteri formundan 
 backend `_fill_uae_defaults()` ile otomatik dolduruluyor (single / Employee|Student / soyad).
 "Yapay zeka" ifadeleri müşteri arayüzünden temizlendi. Menü: "Gelişmeler"→"Dubai'den Haberler",
 "Yanınızdaki Ekstralar"→"Ekstra Hizmetler".
+
+## 2026-06-04 · Otomatik poliçe kesim kuyruğu + kâr paneli
+Poliçe seçenekleri yeniden düzenlendi (kullanıcı isteği: vize süresini AŞMAYAN poliçeler):
+ins_8d 8g/491₺, ins_15d 15g/560₺, ins_30d 30g/644₺, ins_30d_plus 30g/2754₺,
+ins_60d 60g/735₺, ins_60d_plus 60g/3989₺ — her birinde `cost_try` (kaynak maliyet).
+Filtre: `validity_days <= max(vize duration_days)` (Apply.jsx visaCoverDays memo).
+Yeni: `backend/insurance_tasks.py`
+- `queue_policy_tasks(order)`: ödeme paid olduğu anda (kart, havale onayı, vize başvurusu
+  ödemesi) poliçe kesim görevi oluşturur (idempotent), müşteriye "hazırlanıyor" e-postası +
+  admin bildirimi gönderir, sağlayıcı için ön doldurmalı `provider_link` üretir.
+- `issue_policy(task, file_id)`: yüklenen poliçe PDF'ini müşteriye e-postalar, görevi kapatır.
+- `profit_report()`: poliçe başına maliyet/satış/kâr/marj + satılan adet, ciro, toplam kâr.
+Endpointler: GET /api/admin/insurance-tasks, POST /api/admin/insurance-tasks/{id}/issue,
+GET /api/admin/insurance-report. Admin UI: `/admin/sigorta` (AdminInsurance.jsx).
+Ürün kartlarında TL satış + maliyet düzenlenebilir (price_try/cost_try).
+Test: iteration_58 backend 8/8 + frontend %100 (tests/test_insurance_automation.py).
+SINIR: seyahatpolicesi.com açık API sunmuyor; kesim adımı tek tık + PDF yükleme (yarı otomatik).
+Tam otomasyon için sağlayıcı API/portal hesabı gerekir.

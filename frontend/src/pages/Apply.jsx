@@ -396,21 +396,22 @@ export default function Apply() {
         return Math.round((end - start) / 86400000) + 1;
     }, [travel.arrival_date, travel.departure_date]);
 
-    // Poliçe, seçilen vizenin kalış süresini (veya seyahat süresini) karşılamalı
-    const requiredInsuranceDays = useMemo(() => {
+    // Poliçe seçenekleri, seçilen vizenin kalış süresini AŞMAYACAK şekilde listelenir
+    // (30 günlük vizede 30 gün ve altı, 60 günlük vizede 60 gün ve altı poliçeler).
+    const visaCoverDays = useMemo(() => {
         const visaDays = travelers
             .map((t) => Number(visaTypes.find((v) => v.id === t.visa_type_id)?.duration_days || 0))
             .filter(Boolean);
-        return Math.max(tripDays || 0, ...(visaDays.length ? visaDays : [0])) || null;
-    }, [travelers, visaTypes, tripDays]);
+        return visaDays.length ? Math.max(...visaDays) : null;
+    }, [travelers, visaTypes]);
 
     const insuranceProducts = useMemo(() => {
-        if (!requiredInsuranceDays) return allInsuranceProducts;
-        const covering = allInsuranceProducts.filter(
-            (p) => Number(p.validity_days) >= requiredInsuranceDays
+        if (!visaCoverDays) return allInsuranceProducts;
+        const fitting = allInsuranceProducts.filter(
+            (p) => Number(p.validity_days) <= visaCoverDays
         );
-        return covering.length ? covering : allInsuranceProducts;
-    }, [allInsuranceProducts, requiredInsuranceDays]);
+        return fitting.length ? fitting : allInsuranceProducts;
+    }, [allInsuranceProducts, visaCoverDays]);
 
     const productWindow = (product) => {
         if (!travel.arrival_date) return null;

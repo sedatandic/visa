@@ -13,6 +13,7 @@ import {
     Package,
     PanelLeft,
     Send,
+    ShieldCheck,
     Star,
     Tag,
 } from "lucide-react";
@@ -26,6 +27,7 @@ const NAV_GROUPS = [
         items: [
             { to: "/admin", label: "Başvurular", icon: LayoutDashboard, end: true },
             { to: "/admin/siparisler", label: "eSIM & Sigorta", icon: Package },
+            { to: "/admin/sigorta", label: "Sigorta Poliçeleri", icon: ShieldCheck },
             { to: "/admin/zami", label: "Zami Aktarımı", icon: Send },
         ],
     },

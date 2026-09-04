@@ -1042,7 +1042,7 @@ async def admin_products(admin: dict = Depends(require_admin)) -> dict:
 
 @router.patch("/admin/products/{product_id}")
 async def admin_update_product(product_id: str, payload: dict, admin: dict = Depends(require_admin)):
-    allowed = {"price_usd", "price_try", "name", "summary", "active", "popular", "data_amount", "coverage", "validity_days"}
+    allowed = {"price_usd", "price_try", "cost_try", "name", "summary", "active", "popular", "data_amount", "coverage", "validity_days"}
     update = {k: v for k, v in payload.items() if k in allowed}
     if not update:
         raise HTTPException(400, "Guncellenecek gecerli alan yok.")
@@ -1050,6 +1050,8 @@ async def admin_update_product(product_id: str, payload: dict, admin: dict = Dep
         update["price_usd"] = float(update["price_usd"])
     if "price_try" in update:
         update["price_try"] = float(update["price_try"])
+    if "cost_try" in update:
+        update["cost_try"] = float(update["cost_try"])
     if "validity_days" in update:
         update["validity_days"] = int(update["validity_days"])
     res = await products_col.update_one({"id": product_id}, {"$set": update})
@@ -1093,7 +1095,43 @@ async def admin_update_order(order_id: str, payload: dict, admin: dict = Depends
         raise HTTPException(400, "Guncellenecek gecerli alan yok.")
     await orders_col.update_one({"id": order_id}, {"$set": update})
     fresh = await orders_col.find_one({"id": order_id})
+    if update.get("payment.status") == "paid":
+        from insurance_tasks import queue_policy_tasks
+
+        await queue_policy_tasks(fresh)
     return serialize_doc(fresh)
+
+
+@router.get("/admin/insurance-tasks")
+async def admin_insurance_tasks(status: str = "", admin: dict = Depends(require_admin)) -> dict:
+    from db import insurance_tasks_col
+
+    query = {"status": status} if status in {"pending", "issued"} else {}
+    docs = await insurance_tasks_col.find(query).sort("created_at", -1).limit(200).to_list(200)
+    return {"items": serialize_doc(docs)}
+
+
+@router.post("/admin/insurance-tasks/{task_id}/issue")
+async def admin_issue_policy(task_id: str, payload: dict, admin: dict = Depends(require_admin)) -> dict:
+    from insurance_tasks import issue_policy
+
+    policy_file_id = str(payload.get("policy_file_id") or "").strip()
+    if not policy_file_id:
+        raise HTTPException(400, "Police PDF dosyasi yuklemelisiniz.")
+    origin = _resolve_origin(payload.get("origin_url"), None)
+    result = await issue_policy(
+        task_id, policy_file_id, origin, str(payload.get("message") or "")[:1000]
+    )
+    if not result.get("ok"):
+        raise HTTPException(404, "Police gorevi bulunamadi.")
+    return result
+
+
+@router.get("/admin/insurance-report")
+async def admin_insurance_report(admin: dict = Depends(require_admin)) -> dict:
+    from insurance_tasks import profit_report
+
+    return await profit_report()
 
 
 @router.post("/admin/orders/{order_id}/deliver")

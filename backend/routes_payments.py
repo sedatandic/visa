@@ -57,6 +57,9 @@ async def _mark_order_paid(session_id: str, tx: dict):
             kind="order_payment_received",
             meta={"reference_code": fresh["reference_code"]},
         )
+    from insurance_tasks import queue_policy_tasks
+
+    await queue_policy_tasks(fresh)
 
 
 async def _claim_transaction(session_id: str) -> dict | None:

@@ -133,6 +133,7 @@ def _insurance(pid, days, base_try, plus=False, popular=False, order=1):
             else f"{days} güne kadar BAE seyahatlerinde acil sağlık masraflarını karşılayan vize uyumlu poliçe."
         ),
         "price_try": round(base_try * INSURANCE_MARKUP),
+        "cost_try": round(base_try, 2),
         "coverage": "30.000 € teminat + bagaj / seyahat kesintisi" if plus else "30.000 € teminat",
         "validity_days": days,
         "features": _PLUS_FEATURES if plus else _BASIC_FEATURES,
@@ -144,9 +145,9 @@ def _insurance(pid, days, base_try, plus=False, popular=False, order=1):
 INSURANCE_PRODUCTS = [
     _insurance("ins_8d", 8, 245.29, order=1),
     _insurance("ins_15d", 15, 280.11, order=2),
-    _insurance("ins_31d", 31, 322.22, popular=True, order=3),
-    _insurance("ins_63d", 63, 367.71, order=4),
-    _insurance("ins_30d_plus", 30, 1376.87, plus=True, order=5),
+    _insurance("ins_30d", 30, 322.22, popular=True, order=3),
+    _insurance("ins_30d_plus", 30, 1376.87, plus=True, order=4),
+    _insurance("ins_60d", 60, 367.71, order=5),
     _insurance("ins_60d_plus", 60, 1994.61, plus=True, order=6),
 ]
 
@@ -238,6 +239,7 @@ def _build_order_line(product: dict, quantity: int, trip_start: Optional[date]) 
         "quantity": quantity,
         "unit_price": float(product["price"]),
         "unit_price_usd": float(product.get("price_usd") or 0),
+        "unit_cost": float(product.get("cost_try") or 0),
         "total": round(float(product["price"]) * quantity, 2),
         "validity_days": validity_days,
         "starts_on": trip_start.isoformat() if trip_start else None,
@@ -421,6 +423,13 @@ async def sync_application_order_payment(application_id: str, status: str, metho
             {"application_id": application_id, "source": "visa_application"},
             {"$set": update},
         )
+        if status == "paid":
+            from insurance_tasks import queue_policy_tasks
+
+            async for order in orders_col.find(
+                {"application_id": application_id, "source": "visa_application"}
+            ):
+                await queue_policy_tasks(order)
     except Exception as exc:  # pragma: no cover
         logger.warning("linked order payment sync failed: %s", exc)
 

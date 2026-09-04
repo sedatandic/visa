@@ -1,0 +1,25 @@
+{
+  "summary": "Iteration 58 - Otomatik police kesim kuyrugu + kar paneli + validity filtre. Backend 8/8 pytest PASS. Admin /admin/sigorta paneli 6 satirlik kar tablosu + Toplam ile render oldu; issued gorev 'Gonderildi' olarak listeleniyor. Insurance filter (Apply.jsx L408-414) code review ile dogrulandi: validity_days <= visaCoverDays.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_insurance_automation.py",
+    "/app/test_reports/pytest/iter58.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "insurance_tasks.profit_report: margin_pct sadece cost>0 kontrolu yapiyor; cost=0 durumda None dondurmesi dogru. Test edildi ve gecti.",
+    "AdminInsurance.jsx L215 Toplam satirinda cost sutunu bos birakiliyor (colSpan=4), ancak cost_total tam degeri yansitmiyor - opsiyonel iyilestirme.",
+    "routes_store.py L432: sync_application_order_payment icinde her paid oldugunda queue_policy_tasks cagriliyor; insurance_tasks.queue_policy_tasks kendisi idempotent (order_id ile find_one) oldugu icin guvenli."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_insurance_automation.py"
+  ],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "100%"},
+  "test_credentials": "Admin: info@dubaivizeonline.com / Dubai2026!",
+  "seed_data_creation": "1x paid TEST insurance order (ins_30d x2) -> 1 issued insurance task; 1x paid eSIM-only TEST order (esim_3gb) - no task. TEST_ prefixed contact names for cleanup.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Test siparisleri contact.full_name'de 'TEST' prefix ile. AdminInsurance.jsx render ve tum data-testid'ler (insurance-profit-panel, insurance-report-row-{id}, insurance-total-profit, insurance-task-{id}) mevcut. Product IDs: ins_8d/ins_15d/ins_30d/ins_30d_plus/ins_60d/ins_60d_plus (491/560/644/2754/735/3989 TRY). Frontend '/admin/sigorta' path'i, nav testid 'admin-nav-sigorta'.",
+  "rca of the issue": "N/A - tum testler basarili."
+}

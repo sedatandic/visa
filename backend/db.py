@@ -33,6 +33,7 @@ products_col = db["store_products"]
 orders_col = db["store_orders"]
 zami_logs_col = db["zami_logs"]
 zami_handoffs_col = db["zami_handoffs"]
+insurance_tasks_col = db["insurance_tasks"]
 
 
 try:  # bson pymongo ile gelir; yoksa ObjectId kontrolu atlanir
