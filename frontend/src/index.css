@@ -20,8 +20,8 @@
         --popover: 60 20% 98%;
         --popover-foreground: 0 0% 12%;
 
-        /* --- Primary: antrasit pill butonlar --- */
-        --primary: 0 0% 12%;
+        /* --- Primary: logodaki bakır/gold pill butonlar --- */
+        --primary: 30 62% 42%;
         --primary-foreground: 0 0% 100%;
 
         --secondary: 205 55% 92%;
@@ -49,20 +49,20 @@
         --sky-deep: 205 85% 55%;
         --panel: 60 20% 98%;
         --panel-2: 38 78% 96%;
-        --charcoal: 0 0% 12%;
-        --charcoal-2: 0 0% 18%;
+        --charcoal: 30 62% 42%;
+        --charcoal-2: 30 58% 34%;
         --cream-tag: 42 95% 72%;
 
-        --navy: 0 0% 12%; /* koyu bloklar: antrasit */
+        --navy: 34 60% 27%; /* koyu bloklar: derin gold/bronz */
         --sand-surface: 60 20% 98%; /* yüzen panel zemini */
         --cloud: 205 100% 97%; /* en açık gökyüzü zemin */
         --gold: 38 82% 52%; /* sıcak vurgu */
-        --teal-hover: 0 0% 18%;
+        --teal-hover: 30 58% 34%;
         --success: 158 64% 34%;
 
         --brand-green: 205 85% 55%; /* geriye uyumluluk: artık gök mavisi */
         --brand-green-soft: 205 95% 92%;
-        --brand-green-deep: 0 0% 12%;
+        --brand-green-deep: 30 62% 42%;
         --brand-copper: 38 82% 46%;
         --brand-royal: 205 85% 45%;
         --brand-red: 0 72% 50%; /* yalnızca hata/silme */
@@ -94,8 +94,8 @@
 
         --gradient-wave: linear-gradient(
             90deg,
-            hsl(0 0% 12%) 0%,
-            hsl(205 85% 55%) 60%,
+            hsl(30 62% 42%) 0%,
+            hsl(205 85% 45%) 60%,
             hsl(42 95% 72%) 100%
         );
         --sky-bg: linear-gradient(

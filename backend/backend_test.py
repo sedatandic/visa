@@ -4,7 +4,7 @@ import sys
 import time
 from pathlib import Path
 
-BASE_URL = "https://visa-application-ae.preview.emergentagent.com/api"
+BASE_URL = "https://vize-atlas-hub.preview.emergentagent.com/api"
 
 class MandatoryFieldsTester:
     def __init__(self):

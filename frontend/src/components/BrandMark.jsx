@@ -11,16 +11,16 @@ const BRAND_NAME = `${COMPANY.brand} ${COMPANY.brandSuffix}`.trim();
 export const BrandMark = ({ light = false }) => (
     <span className="flex items-center gap-2.5" data-testid="brand-mark">
         <img
-            src="/brand/icon-192.png"
+            src="/brand/emblem-512.png"
             alt=""
             aria-hidden="true"
             className={
                 light
-                    ? "h-10 w-10 shrink-0 rounded-lg bg-white/95 object-contain p-1 shadow-sm"
-                    : "h-10 w-10 shrink-0 object-contain"
+                    ? "h-10 w-auto shrink-0 rounded-lg bg-white/95 object-contain px-1.5 py-1 shadow-sm"
+                    : "h-10 w-auto shrink-0 object-contain"
             }
-            width="192"
-            height="192"
+            width="1060"
+            height="555"
             loading="eager"
             decoding="async"
         />

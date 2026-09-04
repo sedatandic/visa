@@ -74,6 +74,30 @@ def _chrome_executable() -> str | None:
     return None
 
 
+_install_tried = False
+
+
+async def _install_chromium() -> bool:
+    """Tarayici indirilmemisse bir kez indirmeyi dener (yeni sunucu/deploy icin)."""
+    global _install_tried
+    if _install_tried:
+        return False
+    _install_tried = True
+    import asyncio
+    import sys
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, "-m", "playwright", "install", "chromium",
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=300)
+        return proc.returncode == 0
+    except Exception as exc:
+        logger.warning("playwright install failed: %s", exc)
+        return False
+
+
 async def _launch_browser(pw):
     """Once paketle gelen tarayiciyi, olmazsa sistem Chromium'unu kullanir."""
     args = ["--no-sandbox", "--disable-dev-shm-usage"]
@@ -82,6 +106,8 @@ async def _launch_browser(pw):
     except Exception as exc:
         executable = _chrome_executable()
         if not executable:
+            if await _install_chromium():
+                return await pw.chromium.launch(headless=True, args=args)
             raise
         logger.warning("bundled chromium unavailable (%s); using %s", exc, executable)
         return await pw.chromium.launch(headless=True, args=args, executable_path=executable)

@@ -9,7 +9,7 @@ import sys
 import io
 from datetime import datetime
 
-BASE_URL = "https://visa-application-ae.preview.emergentagent.com/api"
+BASE_URL = "https://vize-atlas-hub.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@vizeatlas.com"
 ADMIN_PASSWORD = "Dubai2026!"
 
@@ -862,7 +862,7 @@ class RegressionTester:
             404,
             data={
                 'application_id': 'non-existent-id',
-                'origin_url': 'https://visa-application-ae.preview.emergentagent.com'
+                'origin_url': 'https://vize-atlas-hub.preview.emergentagent.com'
             }
         )
         
@@ -877,7 +877,7 @@ class RegressionTester:
             (200, 502),  # Accept both 200 and 502
             data={
                 'application_id': app_id,
-                'origin_url': 'https://visa-application-ae.preview.emergentagent.com'
+                'origin_url': 'https://vize-atlas-hub.preview.emergentagent.com'
             }
         )
         

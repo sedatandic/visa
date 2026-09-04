@@ -34,6 +34,7 @@ import { SampleVisa } from "../components/SampleVisa";
 import { RouteFlags } from "../components/FlagIcons";
 import { AuthorityStrip } from "../components/AuthorityStrip";
 import { VisaShowcase } from "../components/VisaShowcase";
+import { HeroSlider } from "../components/HeroSlider";
 import { VisaGuideLinks } from "../components/VisaGuideLinks";
 import { FxNote } from "../components/FxNote";
 import {
@@ -109,13 +110,8 @@ export default function Home() {
                             </div>
                         </div>
 
-                        <div className="relative mt-10 overflow-hidden rounded-[var(--radius-lg)] border border-white/60">
-                            <img
-                                src={IMAGES.heroSkyline}
-                                alt="Dubai silueti ve Burj Khalifa gün batımında"
-                                className="h-[220px] w-full object-cover object-center sm:h-[300px]"
-                                loading="eager"
-                            />
+                        <div className="relative mt-10">
+                            <HeroSlider />
                         </div>
 
                         {content?.promo && (

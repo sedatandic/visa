@@ -234,7 +234,7 @@ def test_stripe_checkout():
         )
 
         db = MongoClient(os.environ["MONGO_URL"])[os.environ.get("DB_NAME", "test_database")]
-        origin = "https://visa-application-ae.preview.emergentagent.com"
+        origin = "https://vize-atlas-hub.preview.emergentagent.com"
         webhook_url = f"{origin}/api/webhook/stripe"
         sc = StripeCheckout(api_key=os.environ["STRIPE_API_KEY"], webhook_url=webhook_url)
         amount = PACKAGES["visa_30_single"]
@@ -278,7 +278,7 @@ def test_stripe_status():
         assert record, "tx row missing"
         sc = StripeCheckout(
             api_key=os.environ["STRIPE_API_KEY"],
-            webhook_url="https://visa-application-ae.preview.emergentagent.com/api/webhook/stripe",
+            webhook_url="https://vize-atlas-hub.preview.emergentagent.com/api/webhook/stripe",
         )
         st = asyncio.run(sc.get_checkout_status(SESSION_ID))
         if st.payment_status == "paid" or st.status == "complete":
