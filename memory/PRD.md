@@ -633,3 +633,20 @@ animasyon ekranı aynı sırada ilerlemeli".
   bölündü: **Dubai eSIM** (/esim, Smartphone) + **Dubai Seyahat Sigortası**
   (/seyahat-sigortasi, ShieldCheck). Altbilgide de "Dubai Seyahat Sigortası" adı kullanıldı.
   Doğrulama: menüden tıklama /seyahat-sigortasi sayfasını açıyor.
+
+## 2026-06-06 · Profesyonel seslendirme senaryosu (tonlama planlı)
+Kullanıcı yeni senaryo + yönetmen notu verdi (ilk %30 sıcak/sakin, orta bilgilendirici,
+"uçak bileti gerekmez"de ses yükselsin, "2 iş günü"nde yavaşlasın, son 15 sn satış odaklı).
+- `scripts/generate_narration_eleven.py` yeniden yazıldı: artık **sahne bazlı VoiceSettings**
+  (stability/style/speed) + metin içine gömülü `<break time="0.3-0.5s" />` duraklamaları.
+  intro 0.6/0.20/0.98 · passport 0.55/0.20/1.0 · photo 0.55/0.25/1.0 ·
+  upload 0.45/**0.45**/1.0 (avantaj vurgusu) · track **0.65**/0.15/**0.95** (yavaş, güven) ·
+  extras 0.45/0.50/1.0 · cta **0.35/0.65/1.02** (enerjik kapanış).
+  Ses: İlknur Önal, `eleven_multilingual_v2`, similarity 0.8.
+- 7 klip yenilendi: intro 7.7 / passport 5.8 / photo 10.1 / upload 11.9 / track 10.9 /
+  extras 13.6 / cta 17.7 sn (toplam ~78 sn). `VisaExplainer` altyazıları senaryo metinleriyle,
+  `voiceMs`/`silentMs` yeni sürelerle güncellendi; etiket "Dubai vizenizi **1 dakikada** nasıl
+  alacağınızı anlatalım". Son sahne notu: "TÜRSAB üyesi A Grubu seyahat acentesi güvencesi ·
+  Dubai sizi bekliyor". Duyuru şeridi metni de "A Grubu ... güvencesi" olarak hizalandı.
+- Doğrulama: ilk etkileşimde intro.mp3 (7.7 sn) çalıyor, cta noktasına tıklayınca cta.mp3
+  (17.6 sn) çalıyor, altyazılar yeni senaryo metniyle görünüyor.
