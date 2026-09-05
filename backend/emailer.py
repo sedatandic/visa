@@ -32,19 +32,25 @@ def _html_to_text(html: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
+SITE_URL = (os.environ.get("PUBLIC_SITE_URL") or "").strip().strip('"').rstrip("/")
+LOGO_URL = f"{SITE_URL}/brand/logo-horizontal-gold-palm.png"
+
+
 def _wrap(title: str, body_html: str) -> str:
     return f"""
-<div style="margin:0;padding:24px;background-color:#FBF7F0;font-family:Helvetica,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background-color:#ffffff;border:1px solid #D9E2EC;border-radius:12px;">
-    <tr><td style="padding:20px 24px;border-bottom:1px solid #D9E2EC;background-color:#0B1F33;border-radius:12px 12px 0 0;">
-      <span style="color:#ffffff;font-size:18px;font-weight:bold;letter-spacing:-0.4px;">{BRAND}</span>
+<div style="margin:0;padding:24px;background-color:#F7EEDF;font-family:Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background-color:#ffffff;border:1px solid #EADFCB;border-radius:14px;">
+    <tr><td align="center" style="padding:22px 24px 18px;background-color:#FDF8F0;border-radius:14px 14px 0 0;">
+      <img src="{LOGO_URL}" width="230" alt="{BRAND}" style="display:block;width:230px;max-width:78%;height:auto;border:0;outline:none;text-decoration:none;" />
     </td></tr>
-    <tr><td style="padding:28px 24px;color:#0B1F33;">
-      <h1 style="margin:0 0 16px;font-size:20px;color:#0B1F33;">{title}</h1>
+    <tr><td style="height:4px;background-color:#B06A29;line-height:4px;font-size:0;">&nbsp;</td></tr>
+    <tr><td style="padding:28px 24px;color:#3E2A14;">
+      <h1 style="margin:0 0 16px;font-size:20px;color:#3E2A14;">{title}</h1>
       {body_html}
     </td></tr>
-    <tr><td style="padding:16px 24px;border-top:1px solid #D9E2EC;color:#52606D;font-size:12px;background-color:#F6F8FB;border-radius:0 0 12px 12px;">
-      Bu e-posta {BRAND} tarafından gönderilmiştir. Sorularınız için bu e-postayı yanıtlayabilirsiniz.
+    <tr><td style="padding:16px 24px;border-top:1px solid #EADFCB;color:#8A7355;font-size:12px;background-color:#FBF6EC;border-radius:0 0 14px 14px;">
+      Bu e-posta {BRAND} tarafından gönderilmiştir. Sorularınız için bu e-postayı yanıtlayabilirsiniz.<br />
+      <span style="color:#A08A6B;">TÜRSAB üyesi A Grubu seyahat acentesi</span>
     </td></tr>
   </table>
 </div>
@@ -52,9 +58,12 @@ def _wrap(title: str, body_html: str) -> str:
 
 
 def _row(label: str, value: str) -> str:
+    """Bilgi tablosu satiri: cerceveli, logo renkleriyle."""
     return (
-        f'<tr><td style="padding:6px 0;color:#52606D;font-size:13px;width:42%;">{label}</td>'
-        f'<td style="padding:6px 0;color:#0B1F33;font-size:13px;font-weight:600;">{value}</td></tr>'
+        '<tr><td style="padding:10px 12px;border:1px solid #EADFCB;background-color:#FDF8F0;'
+        f'color:#8A7355;font-size:13px;width:42%;">{label}</td>'
+        '<td style="padding:10px 12px;border:1px solid #EADFCB;color:#3E2A14;font-size:13px;'
+        f'font-weight:600;">{value}</td></tr>'
     )
 
 
@@ -143,10 +152,10 @@ def _travelers_table(app_doc: dict) -> str:
     return (
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         'style="margin:16px 0;border:1px solid #E3E8EF;border-radius:8px;border-collapse:collapse;">'
-        '<tr style="background-color:#F6F8FB;">'
-        '<td style="padding:8px 10px;font-size:11px;text-transform:uppercase;color:#52606D;">Yolcu</td>'
-        '<td style="padding:8px 10px;font-size:11px;text-transform:uppercase;color:#52606D;">Vize</td>'
-        '<td style="padding:8px 10px;font-size:11px;text-transform:uppercase;color:#52606D;text-align:right;">Tutar</td>'
+        '<tr style="background-color:#FBF6EC;">'
+        '<td style="padding:8px 10px;font-size:11px;text-transform:uppercase;color:#8A7355;">Yolcu</td>'
+        '<td style="padding:8px 10px;font-size:11px;text-transform:uppercase;color:#8A7355;">Vize</td>'
+        '<td style="padding:8px 10px;font-size:11px;text-transform:uppercase;color:#8A7355;text-align:right;">Tutar</td>'
         f"</tr>{rows}</table>"
     )
 
@@ -210,8 +219,8 @@ def applicant_received_html(app_doc: dict) -> str:
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {_contact_name(app_doc)},</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Dubai (BAE) vize başvurunuz sistemimize başarıyla kaydedildi. Belgeleriniz danışmanlarımız tarafından kontrol edilecek ve süreç boyunca sizi bilgilendireceğiz.</p>
     <div style="background-color:#F4EBDD;border:1px solid #E4D6BF;border-radius:10px;padding:16px;margin:0 0 8px;">
-      <div style="font-size:12px;color:#52606D;margin-bottom:4px;">Takip Kodunuz</div>
-      <div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:#0B1F33;">{app_doc.get('reference_code','')}</div>
+      <div style="font-size:12px;color:#8A7355;margin-bottom:4px;">Takip Kodunuz</div>
+      <div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:#3E2A14;">{app_doc.get('reference_code','')}</div>
     </div>
     {_travelers_table(app_doc)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -219,7 +228,7 @@ def applicant_received_html(app_doc: dict) -> str:
       {_row('Ödeme Durumu', 'Ödendi' if (app_doc.get('payment') or {}).get('status') == 'paid' else 'Bekliyor')}
       {_row('Tahmini Sonuçlanma', app_doc.get('processing_days', ''))}
     </table>
-    <p style="margin:20px 0 0;font-size:13px;line-height:21px;color:#52606D;">Takip kodunuz ve soyadınızla başvurunuzu sitemizin "Başvuru Takip" sayfasından her an görüntüleyebilirsiniz.</p>
+    <p style="margin:20px 0 0;font-size:13px;line-height:21px;color:#8A7355;">Takip kodunuz ve soyadınızla başvurunuzu sitemizin "Başvuru Takip" sayfasından her an görüntüleyebilirsiniz.</p>
     """
     return _wrap("Başvurunuz alındı", body)
 
@@ -274,24 +283,24 @@ def bank_transfer_html(app_doc: dict, bank: dict) -> str:
       {_row('Banka', bank.get('bank_name',''))}
       {_row('IBAN', bank.get('iban',''))}
     </table>
-    <ul style="margin:16px 0 0;padding-left:18px;color:#52606D;">{steps}</ul>
-    <p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#52606D;">{bank.get('note','')}</p>
+    <ul style="margin:16px 0 0;padding-left:18px;color:#8A7355;">{steps}</ul>
+    <p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#8A7355;">{bank.get('note','')}</p>
     """
     return _wrap("Havale / EFT ödeme bilgileri", body)
 
 
 def status_change_html(app_doc: dict, status_label: str, note: str = "") -> str:
     note_html = (
-        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#52606D;">Danışman notu: {note}</p>'
+        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#8A7355;">Danışman notu: {note}</p>'
         if note
         else ""
     )
     body = f"""
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {_contact_name(app_doc)},</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">{app_doc.get('reference_code','')} kodlu başvurunuzun durumu güncellendi.</p>
-    <div style="background-color:#F6F8FB;border:1px solid #D9E2EC;border-radius:10px;padding:16px;">
-      <div style="font-size:12px;color:#52606D;margin-bottom:4px;">Yeni Durum</div>
-      <div style="font-size:18px;font-weight:bold;color:#0B1F33;">{status_label}</div>
+    <div style="background-color:#FBF6EC;border:1px solid #EADFCB;border-radius:10px;padding:16px;">
+      <div style="font-size:12px;color:#8A7355;margin-bottom:4px;">Yeni Durum</div>
+      <div style="font-size:18px;font-weight:bold;color:#3E2A14;">{status_label}</div>
     </div>
     {note_html}
     """
@@ -300,7 +309,7 @@ def status_change_html(app_doc: dict, status_label: str, note: str = "") -> str:
 
 def visa_ready_html(app_doc: dict, download_url: str, message: str = "") -> str:
     message_html = (
-        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#52606D;">{message}</p>'
+        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#8A7355;">{message}</p>'
         if message
         else ""
     )
@@ -313,10 +322,10 @@ def visa_ready_html(app_doc: dict, download_url: str, message: str = "") -> str:
         <a href="{download_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Vize belgenizi indir</a>
       </td></tr>
     </table>
-    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#52606D;">Buton çalışmıyorsa bu adresi tarayıcınıza kopyalayabilirsiniz:<br/>{download_url}</p>
+    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton çalışmıyorsa bu adresi tarayıcınıza kopyalayabilirsiniz:<br/>{download_url}</p>
     <p style="margin:16px 0 0;font-size:13px;line-height:21px;">Vizeniz elektroniktir ve pasaportunuza işlenmez. Sınır kapısında bu belgeyi (baskısını veya telefonunuzdaki kopyasını) göstermeniz yeterlidir.</p>
     {message_html}
-    <p style="margin:20px 0 0;font-size:13px;line-height:21px;color:#52606D;">İyi yolculuklar dileriz.</p>
+    <p style="margin:20px 0 0;font-size:13px;line-height:21px;color:#8A7355;">İyi yolculuklar dileriz.</p>
     """
     return _wrap("Vizeniz hazır", body)
 
@@ -327,7 +336,7 @@ def document_reminder_html(app_doc: dict, missing: list, upload_url: str = "") -
     for m in missing:
         who = f" — {m['traveler_name']}" if m.get("traveler_name") else ""
         items.append(
-            '<li style="margin:0 0 8px;font-size:14px;line-height:22px;color:#0B1F33;">'
+            '<li style="margin:0 0 8px;font-size:14px;line-height:22px;color:#3E2A14;">'
             f"<strong>{m['label']}</strong>{who}</li>"
         )
     button_html = ""
@@ -338,7 +347,7 @@ def document_reminder_html(app_doc: dict, missing: list, upload_url: str = "") -
         <a href="{upload_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Eksik belgeleri yükle</a>
       </td></tr>
     </table>
-    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#52606D;">Buton çalışmıyorsa bu adresi tarayıcınıza kopyalayabilirsiniz:<br/>{upload_url}</p>
+    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton çalışmıyorsa bu adresi tarayıcınıza kopyalayabilirsiniz:<br/>{upload_url}</p>
     """
     body = f"""
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {_contact_name(app_doc)},</p>
@@ -351,7 +360,7 @@ def document_reminder_html(app_doc: dict, missing: list, upload_url: str = "") -
       <ul style="margin:0;padding-left:18px;">{''.join(items)}</ul>
     </div>
     {button_html}
-    <p style="margin:18px 0 0;font-size:13px;line-height:21px;color:#52606D;">
+    <p style="margin:18px 0 0;font-size:13px;line-height:21px;color:#8A7355;">
       Belgelerinizi telefonunuzla fotoğraflayıp yükleyebilirsiniz. Yükleme sırasında takip kodunuz ve
       soyadınız sorulur. Sorunuz olursa bu e-postayı yanıtlayabilir veya WhatsApp üzerinden bize yazabilirsiniz.
     </p>
@@ -390,7 +399,7 @@ def contact_admin_html(msg: dict) -> str:
 def login_code_html(code: str, ttl_minutes: int, account_url: str = "") -> str:
     """Musteri girisi icin tek kullanimlik kod."""
     link = (
-        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#52606D;">'
+        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#8A7355;">'
         f'Giris sayfasi: <a href="{account_url}" style="color:#B3123A;">{account_url}</a></p>'
         if account_url
         else ""
@@ -400,11 +409,11 @@ def login_code_html(code: str, ttl_minutes: int, account_url: str = "") -> str:
       Basvurularinizi goruntulemek ve yarim kalan basvurunuza devam etmek icin giris kodunuz:
     </p>
     <div style="background-color:#F1F5F9;border:1px solid #E2E8F0;border-radius:10px;padding:18px;text-align:center;">
-      <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#0B1F33;">{code}</div>
-      <div style="margin-top:8px;font-size:12px;color:#52606D;">Kod {ttl_minutes} dakika gecerlidir.</div>
+      <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#3E2A14;">{code}</div>
+      <div style="margin-top:8px;font-size:12px;color:#8A7355;">Kod {ttl_minutes} dakika gecerlidir.</div>
     </div>
     {link}
-    <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#52606D;">
+    <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
       Bu kodu siz talep etmediyseniz bu e-postayi dikkate almayabilirsiniz.
     </p>
     """
@@ -421,7 +430,7 @@ def draft_saved_html(draft: dict, resume_url: str = "") -> str:
         <a href="{resume_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Basvuruya devam et</a>
       </td></tr>
     </table>
-    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#52606D;">Buton calismiyorsa: {resume_url}</p>
+    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton calismiyorsa: {resume_url}</p>
     """
     body = f"""
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
@@ -432,7 +441,7 @@ def draft_saved_html(draft: dict, resume_url: str = "") -> str:
       {_row('Yolcu sayisi', draft.get('traveler_count', 1))}
     </table>
     {button}
-    <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#52606D;">
+    <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
       Kaydedilen bilgiler 60 gun saklanir. Belgeleriniz yalnizca basvurunuz icin kullanilir.
     </p>
     """
@@ -449,7 +458,7 @@ def draft_reminder_html(draft: dict, resume_url: str = "") -> str:
         <a href="{resume_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Basvuruma devam et</a>
       </td></tr>
     </table>
-    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#52606D;">Buton calismiyorsa: {resume_url}</p>
+    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton calismiyorsa: {resume_url}</p>
     """
     body = f"""
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Merhaba,</p>
@@ -462,7 +471,7 @@ def draft_reminder_html(draft: dict, resume_url: str = "") -> str:
       {_row('Yolcu sayisi', draft.get('traveler_count', 1))}
     </table>
     {button}
-    <p style="margin:18px 0 0;font-size:13px;line-height:21px;color:#52606D;">
+    <p style="margin:18px 0 0;font-size:13px;line-height:21px;color:#8A7355;">
       Seyahat tarihiniz yaklastiysa ekspres hizmetimizle basvurunuzu onceliklendirebiliriz.
       Sorulariniz icin bu e-postayi yanitlayabilirsiniz.
     </p>
@@ -489,17 +498,17 @@ def _date_range_note(item: dict) -> str:
     text = f"{_tr_date(starts)} tarihinde baslar"
     if ends:
         text += f" · {_tr_date(ends)} tarihine kadar gecerli"
-    return f'<div style="font-size:12px;color:#52606D;margin-top:2px;">{text}</div>'
+    return f'<div style="font-size:12px;color:#8A7355;margin-top:2px;">{text}</div>'
 
 
 def _order_items_rows(order: dict) -> str:
     rows = []
     for item in order.get("items") or []:
         rows.append(
-            f'<tr><td style="padding:8px 0;font-size:13px;color:#0B1F33;">{item.get("name","")}'
-            f' <span style="color:#52606D;">x{item.get("quantity",1)}</span>'
+            f'<tr><td style="padding:8px 0;font-size:13px;color:#3E2A14;">{item.get("name","")}'
+            f' <span style="color:#8A7355;">x{item.get("quantity",1)}</span>'
             f'{_date_range_note(item)}</td>'
-            f'<td style="padding:8px 0;font-size:13px;text-align:right;color:#0B1F33;">'
+            f'<td style="padding:8px 0;font-size:13px;text-align:right;color:#3E2A14;">'
             f'{item.get("total",0):,.0f} TL</td></tr>'
         )
     return "".join(rows)
@@ -511,14 +520,14 @@ def order_received_html(order: dict, bank: dict | None = None) -> str:
     if bank:
         bank_html = f"""
     <div style="margin-top:18px;background-color:#F1F5F9;border:1px solid #E2E8F0;border-radius:10px;padding:16px;">
-      <div style="font-size:12px;font-weight:bold;color:#0B1F33;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Havale / EFT Bilgileri</div>
+      <div style="font-size:12px;font-weight:bold;color:#3E2A14;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Havale / EFT Bilgileri</div>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         {_row('Banka', bank.get('bank_name',''))}
         {_row('Hesap sahibi', bank.get('account_name',''))}
         {_row('IBAN', bank.get('iban',''))}
         {_row('Aciklama', order.get('reference_code',''))}
       </table>
-      <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#52606D;">
+      <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
         Aciklama alanina siparis kodunuzu yazmayi unutmayin. Odemeniz onaylandiginda teslimat yapilir.
       </p>
     </div>
@@ -571,7 +580,7 @@ def order_delivered_html(order: dict, links: list, message: str = "") -> str:
         for l in links
     )
     note = (
-        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#0B1F33;">{message}</p>'
+        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#3E2A14;">{message}</p>'
         if message
         else ""
     )
@@ -583,7 +592,7 @@ def order_delivered_html(order: dict, links: list, message: str = "") -> str:
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{link_html}</table>
     {note}
-    <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#52606D;">
+    <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
       eSIM kurulumu: Ayarlar > Mobil Veri > eSIM ekle > QR kodu tarat. Kurulum sirasinda internet
       baglantisi gereklidir.
     </p>

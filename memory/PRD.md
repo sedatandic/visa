@@ -775,3 +775,18 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   kimlik sayfası ve telefonla fotoğraflama; `photo.jpg`: iki vesikalık **yan yana, aynı
   hizada** (çapraz/eğik değil) + onay tikleri ve üstü çizili gözlük/şapka ikonları.
   Önceki dosyalar `*.prev.jpg` olarak yedekte. Alt metinler güncellendi.
+
+## 2026-06-06 · E-posta şablonu logo + tablo, anlatım panelinde çakışma düzeltmesi
+- **E-posta (`emailer.py`)**: `_wrap` başlığındaki lacivert metin bloğu yerine gerçek
+  **logo görseli** (`{PUBLIC_SITE_URL}/brand/logo-horizontal-gold-palm.png`, krem zemin +
+  altın 4px şerit) kullanılıyor; `_row` artık **çerçeveli tablo satırı** (etiket hücresi
+  krem `#FDF8F0`, kenarlık `#EADFCB`). Tüm şablonlarda lacivert/gri palet logo renklerine
+  çevrildi (`#3E2A14` metin, `#8A7355` etiket, `#F7EEDF` sayfa zemini). Altbilgiye
+  "TÜRSAB üyesi A Grubu seyahat acentesi" satırı eklendi. 9 şablon render testiyle
+  doğrulandı + tarayıcıda görsel kontrol.
+- **Anlatım paneli (`VisaExplainer.jsx`)**: Masaüstünde görsel `absolute right-0 w-[68%]`
+  olduğu için metin/altyazı görselin üstüne biniyor ve `object-cover` çanta/ayakkabıyı
+  kırpıyordu. Panel artık **2 kolonlu grid** (`sm:grid-cols-[54%_46%]`): metin solda,
+  görsel sağda kendi kolonunda, `object-contain` ile **tam görünür**; gradyan katman
+  kaldırıldı, zoom efekti 1.02'ye indirildi. Doğrulandı: altyazı ile görsel kutuları
+  artık kesişmiyor (x: 486+479 < 996).
