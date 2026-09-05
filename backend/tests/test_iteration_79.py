@@ -93,7 +93,7 @@ class TestTransitRemoved:
         ids = {t.get("id") for t in types}
         slugs = {t.get("slug") for t in types}
         assert "visa_transit_48" not in ids, f"visa_transit_48 still in list: {ids}"
-        assert "transit-vize" not in slugs, f"transit-vize slug still present"
+        assert "transit-vize" not in slugs, "transit-vize slug still present"
 
     def test_visa_guides_no_transit(self, api):
         r = api.get(f"{API}/visa-guides")
@@ -102,7 +102,7 @@ class TestTransitRemoved:
         items = body if isinstance(body, list) else (body.get("items") or body.get("guides") or [])
         assert len(items) == 7, f"expected 7 guides, got {len(items)}"
         slugs = {g.get("slug") for g in items}
-        assert "transit-vize" not in slugs, f"transit-vize guide still present"
+        assert "transit-vize" not in slugs, "transit-vize guide still present"
 
     def test_visa_guide_transit_returns_404(self, api):
         r = api.get(f"{API}/visa-guides/transit-vize")
@@ -142,7 +142,7 @@ class TestVipSafari:
             price = float(p.get("price") or p.get("price_try") or 0)
             assert price > 0, f"missing TRY price on {p['id']}"
             fx = float(p.get("fx_rate") or (body.get("fx") or {}).get("effective_rate") or 0)
-            assert fx > 0, f"missing fx on response"
+            assert fx > 0, "missing fx on response"
             assert p.get("needs_schedule") is True, f"{p['id']} needs_schedule should be True"
             slots = p.get("time_slots") or []
             assert len(slots) == 5, f"{p['id']} expected 5 time_slots, got {len(slots)}"

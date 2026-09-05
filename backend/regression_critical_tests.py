@@ -57,7 +57,7 @@ class CriticalRegressionTester:
             )
             
             if response.status_code == 422:
-                self.log(f"POST /api/photo/check without body correctly returned 422", "PASS")
+                self.log("POST /api/photo/check without body correctly returned 422", "PASS")
                 self.tests_passed += 1
                 return True
             else:
@@ -233,11 +233,11 @@ class CriticalRegressionTester:
                 all_correct = False
             
             if all_correct:
-                self.log(f"Zami mapping verification PASSED: all fields match expected values", "PASS")
+                self.log("Zami mapping verification PASSED: all fields match expected values", "PASS")
                 self.tests_passed += 1
                 return True
             else:
-                self.log(f"Zami mapping verification PASSED with warnings (some counts differ but mapping is intact)", "PASS")
+                self.log("Zami mapping verification PASSED with warnings (some counts differ but mapping is intact)", "PASS")
                 self.tests_passed += 1
                 return True
             
@@ -287,18 +287,18 @@ class CriticalRegressionTester:
                 first_result = results[0]
                 if not first_result.get("ok") and "oturum" in (first_result.get("error") or "").lower():
                     self.log(f"Portal session DOWN as EXPECTED: {first_result.get('error')}", "PASS")
-                    self.log(f"This is CORRECT behavior (portal requires OTP)", "INFO")
+                    self.log("This is CORRECT behavior (portal requires OTP)", "INFO")
                 else:
                     self.log(f"First result: {first_result}", "INFO")
             
             # Important: endpoint returns 200 and ok=true
             if ok:
-                self.log(f"POST /api/admin/zami/check-status-all working correctly (ok=true, response shape preserved)", "PASS")
+                self.log("POST /api/admin/zami/check-status-all working correctly (ok=true, response shape preserved)", "PASS")
                 self.tests_passed += 1
                 return True
             else:
                 self.log(f"Response ok=false: {result.get('error', 'No error message')}", "WARN")
-                self.log(f"Endpoint callable and response shape correct, marking as PASS", "PASS")
+                self.log("Endpoint callable and response shape correct, marking as PASS", "PASS")
                 self.tests_passed += 1
                 return True
             
@@ -344,7 +344,7 @@ class CriticalRegressionTester:
                     self.tests_passed += 1
                     return True
             else:
-                self.log(f"Expected ok=false for invalid session_id, got ok=true", "FAIL")
+                self.log("Expected ok=false for invalid session_id, got ok=true", "FAIL")
                 return False
             
         except Exception as e:

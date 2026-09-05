@@ -178,7 +178,6 @@ class TestAdminInsurance:
     def test_insurance_report(self, session, admin_headers):
         r = session.get(f"{API}/admin/insurance-report", headers=admin_headers, timeout=15)
         assert r.status_code == 200
-        body = r.json()
         # Should return summary + rows (structure may vary; verify no _id leaked)
         text = r.text
         assert '"_id"' not in text

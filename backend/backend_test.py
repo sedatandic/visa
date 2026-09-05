@@ -1,5 +1,6 @@
 """Backend API tests for Dubai Vize Online - REGRESSION TESTING for Code Quality Refactoring"""
 import requests
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -344,7 +345,7 @@ class MandatoryFieldsTester:
             )
             
             if response.status_code == 404:
-                self.log(f"Invalid file_id correctly returned 404", "PASS")
+                self.log("Invalid file_id correctly returned 404", "PASS")
                 self.tests_passed += 1
                 return True
             else:
@@ -522,7 +523,7 @@ class MandatoryFieldsTester:
             )
             
             if response.status_code == 422:
-                self.log(f"Invalid marital_status correctly returned 422", "PASS")
+                self.log("Invalid marital_status correctly returned 422", "PASS")
                 self.tests_passed += 1
                 return True
             else:
@@ -691,7 +692,7 @@ class MandatoryFieldsTester:
                 missing = [f for f in required_fields if f not in field_keys]
                 
                 if not missing:
-                    self.log(f"Zami mapping includes all new traveler fields", "PASS")
+                    self.log("Zami mapping includes all new traveler fields", "PASS")
                     self.tests_passed += 1
                     return True
                 else:
@@ -742,7 +743,7 @@ class MandatoryFieldsTester:
                 self.log(f"WhatsApp settings missing fields: {missing}", "FAIL")
                 return False
             
-            self.log(f"WhatsApp settings has all required fields", "PASS")
+            self.log("WhatsApp settings has all required fields", "PASS")
             self.tests_passed += 1
             return True
             
@@ -785,11 +786,11 @@ class MandatoryFieldsTester:
             if (settings.get("provider") == "manual" and
                 "Test template" in settings.get("template_text", "") and
                 settings.get("only_optin")):
-                self.log(f"WhatsApp settings updated successfully", "PASS")
+                self.log("WhatsApp settings updated successfully", "PASS")
                 self.tests_passed += 1
                 return True
             else:
-                self.log(f"WhatsApp settings not updated correctly", "FAIL")
+                self.log("WhatsApp settings not updated correctly", "FAIL")
                 return False
             
         except Exception as e:
@@ -826,10 +827,10 @@ class MandatoryFieldsTester:
             # Check agency_info.items is populated
             agency_items = result.get("agency_info", {}).get("items", [])
             if not agency_items:
-                self.log(f"agency_info.items is empty", "FAIL")
+                self.log("agency_info.items is empty", "FAIL")
                 return False
             
-            self.log(f"Content site has all required keys and agency_info.items populated", "PASS")
+            self.log("Content site has all required keys and agency_info.items populated", "PASS")
             self.tests_passed += 1
             return True
             
@@ -885,7 +886,7 @@ class MandatoryFieldsTester:
                 self.log(f"2 travelers should have 10% family discount, got {result_b.get('family_discount_rate')}", "FAIL")
                 return False
             
-            self.log(f"Pricing quote combinations working correctly", "PASS")
+            self.log("Pricing quote combinations working correctly", "PASS")
             self.tests_passed += 1
             return True
             
@@ -920,7 +921,7 @@ class MandatoryFieldsTester:
                     self.log(f"ObjectId/_id found in {endpoint} response", "FAIL")
                     return False
             
-            self.log(f"No ObjectId/_id leakage in responses", "PASS")
+            self.log("No ObjectId/_id leakage in responses", "PASS")
             self.tests_passed += 1
             return True
             
@@ -928,107 +929,80 @@ class MandatoryFieldsTester:
             self.log(f"DB serialization test error: {str(e)}", "FAIL")
             return False
     
+    def _tracking_test_payload(self) -> dict:
+        return {
+            "contact": {
+                "full_name": "TRACKING TEST USER",
+                "email": f"track_{int(time.time())}@test.com",
+                "phone": "05551234567"
+            },
+            "travelers": [{
+                "first_name": "TRACKING",
+                "last_name": "TESTUSER",
+                "birth_date": "1990-01-01",
+                "gender": "male",
+                "applicant_type": "adult",
+                "passport_no": "T99999999",
+                "passport_expiry": "2030-01-01",
+                "marital_status": "single",
+                "profession": "Engineer",
+                "mother_name": "MOTHER",
+                "father_name": "FATHER",
+                "visa_type_id": "visa_30_single",
+                "passport_file_id": self.file_id,
+                "photo_file_id": self.photo_file_id
+            }],
+            "travel": {
+                "arrival_date": "2026-03-15",
+                "departure_date": "2026-03-25",
+                "birth_country": "TR"
+            },
+            "addons": {},
+            "extra_documents": {},
+            "kvkk_accepted": True
+        }
+
+    def _assert_tracking_status(self, ref_code: str, last_name: str, expected: int, label: str) -> bool:
+        response = requests.get(
+            f"{BASE_URL}/applications/track",
+            params={"code": ref_code, "last_name": last_name},
+            timeout=10
+        )
+        if response.status_code != expected:
+            self.log(f"{label}: expected {expected}, got {response.status_code}", "FAIL")
+            return False
+        return True
+
     def test_tracking_lastname_validation(self):
         """REGRESSION: Test tracking with correct/wrong/empty last name"""
         self.tests_run += 1
         self.log("Testing tracking last name validation...", "INFO")
-        
-        # First create an application to track
+
         if not self.file_id or not self.photo_file_id:
             self.log("Missing file IDs for tracking test", "FAIL")
             return False
-        
+
         try:
-            # Create application
-            payload = {
-                "contact": {
-                    "full_name": "TRACKING TEST USER",
-                    "email": f"track_{int(time.time())}@test.com",
-                    "phone": "05551234567"
-                },
-                "travelers": [{
-                    "first_name": "TRACKING",
-                    "last_name": "TESTUSER",
-                    "birth_date": "1990-01-01",
-                    "gender": "male",
-                    "applicant_type": "adult",
-                    "passport_no": "T99999999",
-                    "passport_expiry": "2030-01-01",
-                    "marital_status": "single",
-                    "profession": "Engineer",
-                    "mother_name": "MOTHER",
-                    "father_name": "FATHER",
-                    "visa_type_id": "visa_30_single",
-                    "passport_file_id": self.file_id,
-                    "photo_file_id": self.photo_file_id
-                }],
-                "travel": {
-                    "arrival_date": "2026-03-15",
-                    "departure_date": "2026-03-25",
-                    "birth_country": "TR"
-                },
-                "addons": {},
-                "extra_documents": {},
-                "kvkk_accepted": True
-            }
-            
-            response = requests.post(f"{BASE_URL}/applications", json=payload, timeout=30)
-            
+            response = requests.post(f"{BASE_URL}/applications", json=self._tracking_test_payload(), timeout=30)
             if response.status_code != 200:
                 self.log(f"Application creation failed: {response.status_code}", "FAIL")
                 return False
-            
-            result = response.json()
-            ref_code = result.get("reference_code")
-            
-            # Test (a): Correct last name -> 200
-            response_correct = requests.get(
-                f"{BASE_URL}/applications/track",
-                params={"code": ref_code, "last_name": "TESTUSER"},
-                timeout=10
-            )
-            
-            if response_correct.status_code != 200:
-                self.log(f"Tracking with correct last name failed: {response_correct.status_code}", "FAIL")
-                return False
-            
-            # Test (b): Wrong last name -> 404
-            response_wrong = requests.get(
-                f"{BASE_URL}/applications/track",
-                params={"code": ref_code, "last_name": "WRONGNAME"},
-                timeout=10
-            )
-            
-            if response_wrong.status_code != 404:
-                self.log(f"Tracking with wrong last name should return 404, got {response_wrong.status_code}", "FAIL")
-                return False
-            
-            # Test (c): Empty last name -> 400
-            response_empty = requests.get(
-                f"{BASE_URL}/applications/track",
-                params={"code": ref_code, "last_name": ""},
-                timeout=10
-            )
-            
-            if response_empty.status_code != 400:
-                self.log(f"Tracking with empty last name should return 400, got {response_empty.status_code}", "FAIL")
-                return False
-            
-            # Test (d): Last name from contact.full_name (last word) should also work
-            response_contact = requests.get(
-                f"{BASE_URL}/applications/track",
-                params={"code": ref_code, "last_name": "USER"},
-                timeout=10
-            )
-            
-            if response_contact.status_code != 200:
-                self.log(f"Tracking with contact last name failed: {response_contact.status_code}", "FAIL")
-                return False
-            
-            self.log(f"Tracking last name validation working correctly", "PASS")
+
+            ref_code = response.json().get("reference_code")
+            cases = [
+                ("TESTUSER", 200, "correct last name"),
+                ("WRONGNAME", 404, "wrong last name"),
+                ("", 400, "empty last name"),
+                ("USER", 200, "last name from contact.full_name"),
+            ]
+            for last_name, expected, label in cases:
+                if not self._assert_tracking_status(ref_code, last_name, expected, label):
+                    return False
+
+            self.log("Tracking last name validation working correctly", "PASS")
             self.tests_passed += 1
             return True
-            
+
         except Exception as e:
             self.log(f"Tracking validation test error: {str(e)}", "FAIL")
             return False
@@ -1070,22 +1044,22 @@ class MandatoryFieldsTester:
             # Check captured structure
             captured = result.get("captured", {})
             if "form" not in captured or "status" not in captured:
-                self.log(f"Zami config captured missing form/status", "FAIL")
+                self.log("Zami config captured missing form/status", "FAIL")
                 return False
             
             # Check form structure
             form = captured.get("form", {})
             if not all(k in form for k in ["url", "fields", "captured_at"]):
-                self.log(f"Zami config captured.form missing keys", "FAIL")
+                self.log("Zami config captured.form missing keys", "FAIL")
                 return False
             
             # Check status structure
             status = captured.get("status", {})
             if not all(k in status for k in ["url", "fields", "sample_text", "captured_at"]):
-                self.log(f"Zami config captured.status missing keys", "FAIL")
+                self.log("Zami config captured.status missing keys", "FAIL")
                 return False
             
-            self.log(f"Zami config structure correct", "PASS")
+            self.log("Zami config structure correct", "PASS")
             self.tests_passed += 1
             return True
             
@@ -1131,7 +1105,7 @@ class MandatoryFieldsTester:
                     self.log(f"Zami candidate item missing fields: {missing}", "FAIL")
                     return False
             
-            self.log(f"Zami candidates structure correct", "PASS")
+            self.log("Zami candidates structure correct", "PASS")
             self.tests_passed += 1
             return True
             
@@ -1163,10 +1137,10 @@ class MandatoryFieldsTester:
             
             # Check required keys
             if not all(k in result for k in ["checks", "ready_bookmarklet", "ready_robot"]):
-                self.log(f"Zami readiness missing keys", "FAIL")
+                self.log("Zami readiness missing keys", "FAIL")
                 return False
             
-            self.log(f"Zami readiness endpoint working", "PASS")
+            self.log("Zami readiness endpoint working", "PASS")
             self.tests_passed += 1
             return True
             
@@ -1190,15 +1164,15 @@ class MandatoryFieldsTester:
             
             # Check if BASE URL is present (should be replaced from __BASE__)
             if "__BASE__" in content:
-                self.log(f"Zami bookmarklet.js still contains __BASE__ placeholder", "FAIL")
+                self.log("Zami bookmarklet.js still contains __BASE__ placeholder", "FAIL")
                 return False
             
             # Check if it contains expected JavaScript (marka adı: Dubai Vize Online)
             if "Dubai Vize Online" not in content or "function" not in content:
-                self.log(f"Zami bookmarklet.js content seems invalid", "FAIL")
+                self.log("Zami bookmarklet.js content seems invalid", "FAIL")
                 return False
             
-            self.log(f"Zami bookmarklet.js working correctly", "PASS")
+            self.log("Zami bookmarklet.js working correctly", "PASS")
             self.tests_passed += 1
             return True
             
@@ -1222,15 +1196,15 @@ class MandatoryFieldsTester:
             
             # Check if BASE URL is present (should be replaced from __BASE__)
             if "__BASE__" in content:
-                self.log(f"Zami capture.js still contains __BASE__ placeholder", "FAIL")
+                self.log("Zami capture.js still contains __BASE__ placeholder", "FAIL")
                 return False
             
             # Check if it contains expected JavaScript
             if "function" not in content:
-                self.log(f"Zami capture.js content seems invalid", "FAIL")
+                self.log("Zami capture.js content seems invalid", "FAIL")
                 return False
             
-            self.log(f"Zami capture.js working correctly", "PASS")
+            self.log("Zami capture.js working correctly", "PASS")
             self.tests_passed += 1
             return True
             
@@ -1238,224 +1212,158 @@ class MandatoryFieldsTester:
             self.log(f"Zami capture.js test error: {str(e)}", "FAIL")
             return False
     
+    ZAMI_EXPECTED = {
+        "constants_count": 7,
+        "upload_targets_count": 2,
+        "validate_selector": 'button:has-text("CHECK")',
+        "status_submit_selector": 'button:has-text("SEARCH")',
+        "status_search_field": "passport",
+        "helper_selectors_count": 1,
+    }
+    ZAMI_FORM_URL = "https://visa.zamitours.ae/?_=203&s=smrtch.edit"
+
+    def _zami_restore_mapping(self) -> bool:
+        """Orijinal Zami eslesmesini betikle geri yukler."""
+        result = subprocess.run(
+            ["python", "/app/scripts/zami_save_mapping.py"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            self.log(f"Failed to restore original mapping: {result.stderr}", "FAIL")
+            return False
+        time.sleep(1)
+        return True
+
+    def _zami_get_mapping(self, admin_token: str) -> dict | None:
+        response = requests.get(
+            f"{BASE_URL}/admin/zami/config",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            timeout=10,
+        )
+        if response.status_code != 200:
+            self.log(f"Failed to get Zami config: {response.status_code}", "FAIL")
+            return None
+        return response.json().get("mapping", {})
+
+    def _zami_put_mapping(self, admin_token: str, payload: dict, label: str) -> dict | None:
+        response = requests.put(
+            f"{BASE_URL}/admin/zami/mapping",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json=payload,
+            timeout=10,
+        )
+        if response.status_code != 200:
+            self.log(f"{label} failed: {response.status_code}", "FAIL")
+            return None
+        return response.json().get("mapping", {})
+
+    def _zami_check_expected(self, mapping: dict, label: str) -> bool:
+        """Korunmasi gereken alanlarin beklenen degerde oldugunu dogrular."""
+        exp = self.ZAMI_EXPECTED
+        checks = [
+            ("constants", len(mapping.get("constants", {})), exp["constants_count"]),
+            ("upload_targets", len(mapping.get("upload_targets", [])), exp["upload_targets_count"]),
+            ("validate_selector", mapping.get("validate_selector", ""), exp["validate_selector"]),
+            ("status_submit_selector", mapping.get("status_submit_selector", ""), exp["status_submit_selector"]),
+            ("status_search_field", mapping.get("status_search_field", ""), exp["status_search_field"]),
+            ("helper_selectors", len(mapping.get("helper_selectors", [])), exp["helper_selectors_count"]),
+        ]
+        for field, actual, expected in checks:
+            if actual != expected:
+                self.log(f"{label}: {field} mismatch — expected {expected!r}, got {actual!r}", "FAIL")
+                return False
+        return True
+
+    def _zami_partial_update_preserves(self, admin_token: str) -> bool:
+        """(a) Sadece form alanlari gonderildiginde digerleri korunmali."""
+        mapping = self._zami_put_mapping(
+            admin_token,
+            {
+                "form_url": self.ZAMI_FORM_URL,
+                "fields": {
+                    "travel.arrival_date_dmy_dash": '[name="ad"]',
+                    "reference_code": '[name="dr_rf"]',
+                },
+                "traveler_fields": {
+                    "first_name": '[name="fn"]',
+                    "last_name": '[name="ln"]',
+                },
+                "status_url": "https://visa.zamitours.ae/?_=203&s=vs.search",
+            },
+            "Partial mapping update",
+        )
+        if mapping is None or not self._zami_check_expected(mapping, "After partial update"):
+            return False
+        self.log("PASS: All fields preserved after partial update", "PASS")
+        return True
+
+    def _zami_empty_constants_clears(self, admin_token: str) -> bool:
+        """(b) constants:{} acikca gonderilirse temizlenmeli."""
+        mapping = self._zami_put_mapping(
+            admin_token, {"form_url": self.ZAMI_FORM_URL, "constants": {}}, "Clear constants update"
+        )
+        if mapping is None:
+            return False
+        if len(mapping.get("constants", {})) != 0:
+            self.log("FAIL: constants NOT cleared when explicitly sent as empty", "FAIL")
+            return False
+        self.log("PASS: constants cleared when explicitly sent as empty", "PASS")
+        return True
+
+    def _zami_empty_selector_accepted(self, admin_token: str) -> bool:
+        """(c) validate_selector:'' kabul edilmeli (varsayilana donmemeli)."""
+        mapping = self._zami_put_mapping(
+            admin_token, {"form_url": self.ZAMI_FORM_URL, "validate_selector": ""}, "Empty validate_selector update"
+        )
+        if mapping is None:
+            return False
+        if mapping.get("validate_selector", "NOT_FOUND") != "":
+            self.log("FAIL: validate_selector NOT accepted as empty string", "FAIL")
+            return False
+        self.log("PASS: validate_selector accepted as empty string", "PASS")
+        return True
+
+    def _zami_verify_restore(self, admin_token: str) -> None:
+        if not self._zami_restore_mapping():
+            return
+        mapping = self._zami_get_mapping(admin_token)
+        if mapping is None:
+            return
+        if self._zami_check_expected(mapping, "After restore"):
+            self.log("Original mapping restored and verified", "PASS")
+
     def test_zami_mapping_data_preservation(self, admin_token):
         """CRITICAL BUG FIX: Test that Zami mapping preserves fields not sent in PUT request"""
         self.tests_run += 1
         self.log("Testing Zami mapping data preservation (CRITICAL BUG FIX)...", "INFO")
-        
+
         if not admin_token:
             self.log("No admin token available", "FAIL")
             return False
-        
+
         try:
-            # First, restore original mapping using zami_save_mapping.py
-            import subprocess
-            result = subprocess.run(
-                ["python", "/app/scripts/zami_save_mapping.py"],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
-            
-            if result.returncode != 0:
-                self.log(f"Failed to restore original mapping: {result.stderr}", "FAIL")
+            if not self._zami_restore_mapping():
                 return False
-            
-            time.sleep(1)
-            
-            # Get current mapping to verify restoration
-            response = requests.get(
-                f"{BASE_URL}/admin/zami/config",
-                headers={"Authorization": f"Bearer {admin_token}"},
-                timeout=10
-            )
-            
-            if response.status_code != 200:
-                self.log(f"Failed to get Zami config: {response.status_code}", "FAIL")
+
+            original = self._zami_get_mapping(admin_token)
+            if original is None or not self._zami_check_expected(original, "Original mapping"):
                 return False
-            
-            config = response.json()
-            original_mapping = config.get("mapping", {})
-            
-            # Verify original mapping has expected fields
-            expected_constants_count = 7
-            expected_upload_targets_count = 2
-            expected_validate_selector = 'button:has-text("CHECK")'
-            expected_status_submit_selector = 'button:has-text("SEARCH")'
-            expected_status_search_field = "passport"
-            expected_helper_selectors_count = 1
-            
-            constants = original_mapping.get("constants", {})
-            upload_targets = original_mapping.get("upload_targets", [])
-            validate_selector = original_mapping.get("validate_selector", "")
-            
-            if len(constants) != expected_constants_count:
-                self.log(f"Original mapping constants count mismatch: expected {expected_constants_count}, got {len(constants)}", "FAIL")
-                return False
-            
-            if len(upload_targets) != expected_upload_targets_count:
-                self.log(f"Original mapping upload_targets count mismatch: expected {expected_upload_targets_count}, got {len(upload_targets)}", "FAIL")
-                return False
-            
-            if validate_selector != expected_validate_selector:
-                self.log(f"Original mapping validate_selector mismatch: expected '{expected_validate_selector}', got '{validate_selector}'", "FAIL")
-                return False
-            
-            self.log(f"Original mapping verified: constants={len(constants)}, upload_targets={len(upload_targets)}, validate_selector='{validate_selector}'", "PASS")
-            
-            # Test (a): PUT with ONLY form_url+fields+traveler_fields+status_url (NOT sending constants, upload_targets, etc.)
-            # These fields should be PRESERVED from original mapping
-            partial_update = {
-                "form_url": "https://visa.zamitours.ae/?_=203&s=smrtch.edit",
-                "fields": {
-                    "travel.arrival_date_dmy_dash": '[name="ad"]',
-                    "reference_code": '[name="dr_rf"]'
-                },
-                "traveler_fields": {
-                    "first_name": '[name="fn"]',
-                    "last_name": '[name="ln"]'
-                },
-                "status_url": "https://visa.zamitours.ae/?_=203&s=vs.search"
-            }
-            
-            response = requests.put(
-                f"{BASE_URL}/admin/zami/mapping",
-                headers={"Authorization": f"Bearer {admin_token}"},
-                json=partial_update,
-                timeout=10
-            )
-            
-            if response.status_code != 200:
-                self.log(f"Partial mapping update failed: {response.status_code}", "FAIL")
-                return False
-            
-            result = response.json()
-            updated_mapping = result.get("mapping", {})
-            
-            # Verify that constants, upload_targets, validate_selector, etc. are PRESERVED
-            updated_constants = updated_mapping.get("constants", {})
-            updated_upload_targets = updated_mapping.get("upload_targets", [])
-            updated_validate_selector = updated_mapping.get("validate_selector", "")
-            updated_status_submit_selector = updated_mapping.get("status_submit_selector", "")
-            updated_status_search_field = updated_mapping.get("status_search_field", "")
-            updated_helper_selectors = updated_mapping.get("helper_selectors", [])
-            
-            if len(updated_constants) != expected_constants_count:
-                self.log(f"FAIL: constants NOT preserved after partial update: expected {expected_constants_count}, got {len(updated_constants)}", "FAIL")
-                return False
-            
-            if len(updated_upload_targets) != expected_upload_targets_count:
-                self.log(f"FAIL: upload_targets NOT preserved after partial update: expected {expected_upload_targets_count}, got {len(updated_upload_targets)}", "FAIL")
-                return False
-            
-            if updated_validate_selector != expected_validate_selector:
-                self.log(f"FAIL: validate_selector NOT preserved after partial update: expected '{expected_validate_selector}', got '{updated_validate_selector}'", "FAIL")
-                return False
-            
-            if updated_status_submit_selector != expected_status_submit_selector:
-                self.log(f"FAIL: status_submit_selector NOT preserved after partial update: expected '{expected_status_submit_selector}', got '{updated_status_submit_selector}'", "FAIL")
-                return False
-            
-            if updated_status_search_field != expected_status_search_field:
-                self.log(f"FAIL: status_search_field NOT preserved after partial update: expected '{expected_status_search_field}', got '{updated_status_search_field}'", "FAIL")
-                return False
-            
-            if len(updated_helper_selectors) != expected_helper_selectors_count:
-                self.log(f"FAIL: helper_selectors NOT preserved after partial update: expected {expected_helper_selectors_count}, got {len(updated_helper_selectors)}", "FAIL")
-                return False
-            
-            self.log(f"PASS: All fields preserved after partial update: constants={len(updated_constants)}, upload_targets={len(updated_upload_targets)}, validate_selector='{updated_validate_selector}'", "PASS")
-            
-            # Test (b): Explicitly sending constants:{} should CLEAR it (intentional delete)
-            clear_constants_update = {
-                "form_url": "https://visa.zamitours.ae/?_=203&s=smrtch.edit",
-                "constants": {}
-            }
-            
-            response = requests.put(
-                f"{BASE_URL}/admin/zami/mapping",
-                headers={"Authorization": f"Bearer {admin_token}"},
-                json=clear_constants_update,
-                timeout=10
-            )
-            
-            if response.status_code != 200:
-                self.log(f"Clear constants update failed: {response.status_code}", "FAIL")
-                return False
-            
-            result = response.json()
-            cleared_mapping = result.get("mapping", {})
-            cleared_constants = cleared_mapping.get("constants", {})
-            
-            if len(cleared_constants) != 0:
-                self.log(f"FAIL: constants NOT cleared when explicitly sent as empty: got {len(cleared_constants)}", "FAIL")
-                return False
-            
-            self.log(f"PASS: constants cleared when explicitly sent as empty", "PASS")
-            
-            # Test (c): Sending validate_selector:'' (empty string) should ACCEPT it (not revert to default)
-            empty_validate_update = {
-                "form_url": "https://visa.zamitours.ae/?_=203&s=smrtch.edit",
-                "validate_selector": ""
-            }
-            
-            response = requests.put(
-                f"{BASE_URL}/admin/zami/mapping",
-                headers={"Authorization": f"Bearer {admin_token}"},
-                json=empty_validate_update,
-                timeout=10
-            )
-            
-            if response.status_code != 200:
-                self.log(f"Empty validate_selector update failed: {response.status_code}", "FAIL")
-                return False
-            
-            result = response.json()
-            empty_validate_mapping = result.get("mapping", {})
-            empty_validate_selector = empty_validate_mapping.get("validate_selector", "NOT_FOUND")
-            
-            if empty_validate_selector != "":
-                self.log(f"FAIL: validate_selector NOT accepted as empty string: got '{empty_validate_selector}'", "FAIL")
-                return False
-            
-            self.log(f"PASS: validate_selector accepted as empty string", "PASS")
-            
-            # Restore original mapping
-            result = subprocess.run(
-                ["python", "/app/scripts/zami_save_mapping.py"],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
-            
-            if result.returncode != 0:
-                self.log(f"Failed to restore original mapping after tests: {result.stderr}", "WARN")
-            else:
-                self.log(f"Original mapping restored successfully", "PASS")
-            
-            time.sleep(1)
-            
-            # Verify restoration
-            response = requests.get(
-                f"{BASE_URL}/admin/zami/config",
-                headers={"Authorization": f"Bearer {admin_token}"},
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                config = response.json()
-                restored_mapping = config.get("mapping", {})
-                restored_constants = restored_mapping.get("constants", {})
-                restored_validate_selector = restored_mapping.get("validate_selector", "")
-                
-                if len(restored_constants) == expected_constants_count and restored_validate_selector == expected_validate_selector:
-                    self.log(f"Restoration verified: constants={len(restored_constants)}, validate_selector='{restored_validate_selector}'", "PASS")
-                else:
-                    self.log(f"Restoration verification failed: constants={len(restored_constants)}, validate_selector='{restored_validate_selector}'", "WARN")
-            
+            self.log("Original mapping verified", "PASS")
+
+            for case in (
+                self._zami_partial_update_preserves,
+                self._zami_empty_constants_clears,
+                self._zami_empty_selector_accepted,
+            ):
+                if not case(admin_token):
+                    return False
+
+            self._zami_verify_restore(admin_token)
             self.tests_passed += 1
             return True
-            
+
         except Exception as e:
             self.log(f"Zami mapping preservation test error: {str(e)}", "FAIL")
             return False
@@ -1471,24 +1379,24 @@ class MandatoryFieldsTester:
             if response.status_code == 200:
                 content = response.text
                 if "VizeAtlas" in content and "Dubai Vize Online" not in content:
-                    self.log(f"FAIL: bookmarklet.js still contains 'VizeAtlas' instead of 'Dubai Vize Online'", "FAIL")
+                    self.log("FAIL: bookmarklet.js still contains 'VizeAtlas' instead of 'Dubai Vize Online'", "FAIL")
                     return False
                 elif "Dubai Vize Online" in content:
-                    self.log(f"PASS: bookmarklet.js contains 'Dubai Vize Online'", "PASS")
+                    self.log("PASS: bookmarklet.js contains 'Dubai Vize Online'", "PASS")
                 else:
-                    self.log(f"WARN: bookmarklet.js doesn't contain brand name", "WARN")
+                    self.log("WARN: bookmarklet.js doesn't contain brand name", "WARN")
             
             # Test capture.js
             response = requests.get(f"{BASE_URL}/zami/capture.js", timeout=10)
             if response.status_code == 200:
                 content = response.text
                 if "VizeAtlas" in content and "Dubai Vize Online" not in content:
-                    self.log(f"FAIL: capture.js still contains 'VizeAtlas' instead of 'Dubai Vize Online'", "FAIL")
+                    self.log("FAIL: capture.js still contains 'VizeAtlas' instead of 'Dubai Vize Online'", "FAIL")
                     return False
                 elif "Dubai Vize Online" in content:
-                    self.log(f"PASS: capture.js contains 'Dubai Vize Online'", "PASS")
+                    self.log("PASS: capture.js contains 'Dubai Vize Online'", "PASS")
                 else:
-                    self.log(f"WARN: capture.js doesn't contain brand name", "WARN")
+                    self.log("WARN: capture.js doesn't contain brand name", "WARN")
             
             # Test content/site
             response = requests.get(f"{BASE_URL}/content/site", timeout=10)
@@ -1680,7 +1588,7 @@ class MandatoryFieldsTester:
                 traveler = app.get("travelers", [{}])[0]
                 
                 if traveler.get("gender") == "male":
-                    self.log(f"Admin successfully updated traveler gender to 'male'", "PASS")
+                    self.log("Admin successfully updated traveler gender to 'male'", "PASS")
                     self.tests_passed += 1
                     return True
                 else:
@@ -1726,7 +1634,7 @@ class MandatoryFieldsTester:
                         self.log(f"Zami transfer blocked but wrong error: {result.get('error')}", "FAIL")
                         return False
                 else:
-                    self.log(f"Zami transfer should have been blocked but succeeded", "FAIL")
+                    self.log("Zami transfer should have been blocked but succeeded", "FAIL")
                     return False
             else:
                 self.log(f"Zami transfer request failed with status {response.status_code}: {response.text}", "FAIL")
@@ -1773,132 +1681,111 @@ class MandatoryFieldsTester:
             self.log(f"Zami dry run test error: {str(e)}", "FAIL")
             return False
 
-    def run_all_tests(self):
-        """Run all backend tests"""
-        self.log("=" * 70, "INFO")
-        self.log("Dubai Vize Online - REGRESSION TESTING (Code Quality Refactoring)", "INFO")
-        self.log("=" * 70, "INFO")
-        
-        # Test basic endpoints first (regression)
-        self.log("\n--- REGRESSION: Basic Endpoints ---", "INFO")
-        self.test_basic_endpoints()
-        
-        # Test content/site structure
-        self.log("\n--- REGRESSION: Content Site Structure (routes_public.py) ---", "INFO")
-        self.test_content_site_structure()
-        
-        # Test DB serialization (no ObjectId)
-        self.log("\n--- REGRESSION: DB Serialization (db.py) ---", "INFO")
-        self.test_db_serialization_no_objectid()
-        
-        # Test passport upload and OCR (passport_ai.py regression)
+    def _run_section(self, title: str, tests: list) -> None:
+        """Bir bolum basligini yazip icindeki testleri sirayla calistirir."""
+        self.log(f"\n--- {title} ---", "INFO")
+        for test in tests:
+            test()
+
+    def _run_public_sections(self) -> None:
+        self._run_section("REGRESSION: Basic Endpoints", [self.test_basic_endpoints])
+        self._run_section("REGRESSION: Content Site Structure (routes_public.py)", [self.test_content_site_structure])
+        self._run_section("REGRESSION: DB Serialization (db.py)", [self.test_db_serialization_no_objectid])
+
         self.log("\n--- REGRESSION: Passport AI (passport_ai.py) ---", "INFO")
         if self.test_upload_passport():
             time.sleep(1)
             self.test_passport_ocr()
-        
-        # Upload photo for application tests
-        self.log("\n--- Setup: Upload Photo ---", "INFO")
-        self.test_upload_photo()
-        
-        # Upload solid image and PDF for photo check tests
-        self.log("\n--- Setup: Upload Solid Image & PDF ---", "INFO")
-        self.test_upload_solid_image()
-        self.test_upload_pdf()
-        
+
+        self._run_section("Setup: Upload Photo", [self.test_upload_photo])
+        self._run_section("Setup: Upload Solid Image & PDF", [self.test_upload_solid_image, self.test_upload_pdf])
         time.sleep(1)
-        
-        # Test photo check (passport_ai.py regression)
-        self.log("\n--- REGRESSION: Photo Check (passport_ai.py) ---", "INFO")
-        self.test_photo_check_valid()
-        self.test_photo_check_non_portrait()
-        self.test_photo_check_invalid_file_id()
-        self.test_photo_check_pdf()
-        
-        # Test pricing quote (content.py regression)
-        self.log("\n--- REGRESSION: Pricing Computation (content.py) ---", "INFO")
-        self.test_pricing_quote_combinations()
-        
-        # Test new mandatory fields (previous iteration feature)
-        self.log("\n--- REGRESSION: Mandatory Fields (Previous Iteration) ---", "INFO")
-        
-        # Test application creation with new fields
-        success, app_id = self.test_application_with_new_fields()
-        
-        # Test validation
-        self.test_invalid_marital_status()
-        
-        # Test backward compatibility
-        self.test_backward_compatibility()
-        
-        # Test tracking with last name validation (routes_public.py regression)
-        self.log("\n--- REGRESSION: Tracking Last Name Validation (routes_public.py) ---", "INFO")
-        self.test_tracking_lastname_validation()
-        
-        # Test admin endpoints
-        self.log("\n--- REGRESSION: Admin Endpoints ---", "INFO")
-        admin_success, admin_token = self.test_admin_login()
-        
-        if admin_success and app_id:
+
+        self._run_section(
+            "REGRESSION: Photo Check (passport_ai.py)",
+            [
+                self.test_photo_check_valid,
+                self.test_photo_check_non_portrait,
+                self.test_photo_check_invalid_file_id,
+                self.test_photo_check_pdf,
+            ],
+        )
+        self._run_section("REGRESSION: Pricing Computation (content.py)", [self.test_pricing_quote_combinations])
+
+    def _run_admin_sections(self, admin_token: str, app_id: str | None) -> None:
+        if app_id:
             self.test_admin_application_detail(app_id, admin_token)
-        
-        # Test WhatsApp settings (whatsapp.py regression)
-        if admin_success:
-            self.log("\n--- REGRESSION: WhatsApp Settings (whatsapp.py) ---", "INFO")
-            self.test_whatsapp_settings(admin_token)
-            self.test_whatsapp_settings_update(admin_token)
-        
-        # Test Zami endpoints (routes_zami.py regression)
-        if admin_success:
-            self.log("\n--- REGRESSION: Zami Endpoints (routes_zami.py) ---", "INFO")
-            self.test_zami_mapping(admin_token)
-            self.test_zami_config_structure(admin_token)
-            self.test_zami_candidates_structure(admin_token)
-            self.test_zami_readiness(admin_token)
-        
-        # Test Zami public endpoints
-        self.log("\n--- REGRESSION: Zami Public Endpoints (routes_zami.py) ---", "INFO")
-        self.test_zami_bookmarklet_js()
-        self.test_zami_capture_js()
-        
-        # Test CRITICAL BUG FIX: Zami mapping data preservation
-        if admin_success:
-            self.log("\n--- CRITICAL BUG FIX: Zami Mapping Data Preservation ---", "INFO")
-            self.test_zami_mapping_data_preservation(admin_token)
-        
-        # Test brand name changes
-        self.log("\n--- BRAND NAME CHANGES: Backend Texts ---", "INFO")
-        self.test_brand_name_in_backend()
-        
-        # Test NEW FEATURE: Gender field optional (current iteration)
+
+        self._run_section(
+            "REGRESSION: WhatsApp Settings (whatsapp.py)",
+            [lambda: self.test_whatsapp_settings(admin_token), lambda: self.test_whatsapp_settings_update(admin_token)],
+        )
+        self._run_section(
+            "REGRESSION: Zami Endpoints (routes_zami.py)",
+            [
+                lambda: self.test_zami_mapping(admin_token),
+                lambda: self.test_zami_config_structure(admin_token),
+                lambda: self.test_zami_candidates_structure(admin_token),
+                lambda: self.test_zami_readiness(admin_token),
+            ],
+        )
+        self._run_section(
+            "CRITICAL BUG FIX: Zami Mapping Data Preservation",
+            [lambda: self.test_zami_mapping_data_preservation(admin_token)],
+        )
+
+    def _run_gender_sections(self, admin_success: bool, admin_token: str) -> None:
         self.log("\n--- NEW FEATURE: Gender Field Optional (Current Iteration) ---", "INFO")
-        
-        # Test application without gender
-        success_no_gender, app_id_no_gender = self.test_application_without_gender()
-        
-        # Test application with empty gender
-        success_empty_gender, app_id_empty_gender = self.test_application_with_empty_gender()
-        
-        # Test admin update traveler gender
+        _, app_id_no_gender = self.test_application_without_gender()
+        _, app_id_empty_gender = self.test_application_with_empty_gender()
+
         if admin_success and app_id_no_gender:
             self.test_admin_update_traveler_gender(app_id_no_gender, admin_token)
-        
-        # Test Zami transfer blocks missing gender (non-dry-run)
+
         if admin_success and app_id_empty_gender:
             self.test_zami_transfer_blocks_missing_gender(app_id_empty_gender, admin_token)
-            
-        # Test Zami transfer allows dry-run with missing gender
-        if admin_success and app_id_empty_gender:
             self.test_zami_transfer_allows_dry_run_missing_gender(app_id_empty_gender, admin_token)
-        
-        # Print summary
+
+    def _print_summary(self) -> int:
         self.log("=" * 70, "INFO")
         self.log(f"Tests completed: {self.tests_passed}/{self.tests_run} passed", "INFO")
         success_rate = (self.tests_passed / self.tests_run * 100) if self.tests_run > 0 else 0
         self.log(f"Success rate: {success_rate:.1f}%", "INFO")
         self.log("=" * 70, "INFO")
-        
         return 0 if self.tests_passed == self.tests_run else 1
+
+    def run_all_tests(self):
+        """Run all backend tests"""
+        self.log("=" * 70, "INFO")
+        self.log("Dubai Vize Online - REGRESSION TESTING (Code Quality Refactoring)", "INFO")
+        self.log("=" * 70, "INFO")
+
+        self._run_public_sections()
+
+        self.log("\n--- REGRESSION: Mandatory Fields (Previous Iteration) ---", "INFO")
+        _, app_id = self.test_application_with_new_fields()
+        self.test_invalid_marital_status()
+        self.test_backward_compatibility()
+
+        self._run_section(
+            "REGRESSION: Tracking Last Name Validation (routes_public.py)",
+            [self.test_tracking_lastname_validation],
+        )
+
+        self.log("\n--- REGRESSION: Admin Endpoints ---", "INFO")
+        admin_success, admin_token = self.test_admin_login()
+        if admin_success:
+            self._run_admin_sections(admin_token, app_id)
+
+        self._run_section(
+            "REGRESSION: Zami Public Endpoints (routes_zami.py)",
+            [self.test_zami_bookmarklet_js, self.test_zami_capture_js],
+        )
+        self._run_section("BRAND NAME CHANGES: Backend Texts", [self.test_brand_name_in_backend])
+        self._run_gender_sections(admin_success, admin_token)
+
+        return self._print_summary()
+
 
 def main():
     tester = MandatoryFieldsTester()

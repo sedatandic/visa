@@ -8,6 +8,7 @@
 - Admin OTP regression (request-code -> verify-code -> /admin/emails)
 - Applications regression with new phone format '+90 532 588 26 30'
 """
+import subprocess
 import os
 import re
 import io
@@ -111,7 +112,7 @@ class TestAccountRateLimits:
 
     def test_ip_hourly_limit_exceeded(self, api):
         # Restart backend to reset in-memory counters before this test to avoid contamination
-        os.system("sudo supervisorctl restart backend >/dev/null 2>&1")
+        subprocess.run(["sudo", "supervisorctl", "restart", "backend"], check=False, capture_output=True)
         time.sleep(3)
         # After restart, we can issue 15 distinct emails; 16th should 429.
         # But request-code sends REAL emails. Use example.com addresses; Resend will error
@@ -133,7 +134,7 @@ class TestAccountRateLimits:
 # ------------------------------------------------------------ Contact endpoint
 class TestContactEndpoint:
     def test_contact_ok_then_ratelimit(self, api):
-        os.system("sudo supervisorctl restart backend >/dev/null 2>&1")
+        subprocess.run(["sudo", "supervisorctl", "restart", "backend"], check=False, capture_output=True)
         time.sleep(3)
         got_429 = False
         first_status = None
@@ -178,7 +179,7 @@ class TestZamiScripts:
 # ------------------------------------------------------------ Admin OTP regression
 class TestAdminOTP:
     def test_admin_otp_full(self, api):
-        os.system("sudo supervisorctl restart backend >/dev/null 2>&1")
+        subprocess.run(["sudo", "supervisorctl", "restart", "backend"], check=False, capture_output=True)
         time.sleep(3)
         db.admin_login_codes.delete_many({"email": ADMIN_EMAIL.lower()})
         r = api.post(f"{API}/admin/request-code", json={"email": ADMIN_EMAIL}, timeout=15)

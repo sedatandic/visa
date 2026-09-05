@@ -21,7 +21,7 @@ from pydantic import BaseModel, EmailStr, Field
 from content import BANK_TRANSFER, BUNDLE_DISCOUNT, bundle_discount_amount
 from db import orders_col, serialize_doc, settings_col
 from emailer import order_admin_html, order_received_html, send_email
-from fx import get_fx
+from fx import apply_fx_to_list, get_fx
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -97,7 +97,6 @@ BUNDLE_TEMPLATES = [
 async def bundle_list(visa_days: Optional[int] = None) -> dict:
     """Vize suresine uygun hazir paketleri fiyatlariyla dondurur."""
     from db import visa_types_col
-    from routes_public import apply_fx_to_list
 
     products = {p["id"]: p for p in await product_list()}
     visa_docs = await visa_types_col.find({"active": True}).to_list(100)

@@ -8,7 +8,6 @@ import asyncio
 import os
 import sys
 from datetime import datetime, timedelta, timezone
-from unittest.mock import patch, AsyncMock
 
 # Make backend importable when running from /app
 BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

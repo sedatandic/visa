@@ -1,6 +1,5 @@
 """Backend validation rule tests for /api/applications (iteration 65)."""
 import os
-import pytest
 import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://otp-admin-flow.preview.emergentagent.com").rstrip("/")

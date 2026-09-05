@@ -173,3 +173,25 @@ FamilyDiscountMeter'ın 2 yolcuda %10 / 5 yolcuda %15 göstermesi.
 
 ### Test — iteration_86 (2026-06-10)
 `test_reports/iteration_86.json`: backend 11/11, frontend tüm akışlar PASS, kritik/minor hata yok.
+
+## 2026-06-10 — Kod incelemesi düzeltmeleri
+- **Döngüsel import kırıldı**: `routes_store.py` artık `apply_fx_to_list`'i `routes_public`
+  üzerinden değil doğrudan `fx.py`'den (modül seviyesinde) alıyor. `/api/bundles` doğrulandı
+  (5 paket, TL fiyatlar geliyor).
+- **`os.system` kaldırıldı**: `tests/test_iteration_82.py` (3 yer) →
+  `subprocess.run([...], check=False, capture_output=True)`.
+- **Lint temizliği**: ruff `F401/F541/F841` (49 bulgu) otomatik düzeltildi + kalan 1 kullanılmayan
+  değişken elle kaldırıldı. `ruff check . --select F,E9` artık temiz.
+- **`backend_test.py` karmaşıklığı**: `test_zami_mapping_data_preservation` (220 satır) 7 yardımcı
+  metoda bölündü (`_zami_restore_mapping`, `_zami_get_mapping`, `_zami_put_mapping`,
+  `_zami_check_expected`, `_zami_partial_update_preserves`, `_zami_empty_constants_clears`,
+  `_zami_empty_selector_accepted`, `_zami_verify_restore`); `run_all_tests` (125 satır)
+  `_run_section` + `_run_public_sections`/`_run_admin_sections`/`_run_gender_sections`/`_print_summary`
+  şeklinde ayrıldı; `test_tracking_lastname_validation` (103 satır) payload builder + vaka döngüsüne
+  indirildi. En uzun metot artık 82 satır.
+- **Yanlış pozitifler (kod değişikliği yapılmadı, doğrulandı)**:
+  - `zami_rpa.py:90` "exec()" bulgusu → aslında `asyncio.create_subprocess_exec(...)` argüman
+    listesiyle çağrılıyor; shell yok, kod enjeksiyonu riski yok.
+  - "`is` ile literal karşılaştırma" → `ruff --select F632` **0 bulgu**; eşleşmeler docstring/log
+    metinlerindeki "is" kelimesi.
+  - "6 tanımsız değişken" → `ruff --select F821` ve `pyflakes` **0 bulgu**.
