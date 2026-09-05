@@ -325,3 +325,12 @@ Test: iteration_68 backend 7/7 (`tests/test_emailer.py`, monkeypatch ile gerçek
 gönderilmedi) + frontend %100 (8 metin doğrulandı). Ayrıca `tests/test_uae_defaults.py`
 sabit geçmiş tarihleri (2026-03-01) yeni kural nedeniyle 400 alıyordu → dinamik
 `date.today() + 30/36 gün` yapıldı. pytest: 55/55 PASS.
+
+### 2026-06-05 · Gönderici adresi ayarlandı
+Kullanıcı Resend'de dubaivizeonline.com'u ekledi; `backend/.env` → `SENDER_EMAIL`
+`onboarding@resend.dev` → **`info@dubaivizeonline.com`**. Backend yeniden başlatıldı ve
+gerçek bir test postası gönderildi: `status=sent`, provider_id alındı (Resend doğrulanmamış
+alan adından gönderime izin vermediği için alan adı doğrulanmış demektir).
+UYARI: kullanıcı DKIM/SPF/DMARC DNS kayıtlarını eklediğini teyit etmedi ("skipped" dedi).
+Kayıtlar eksikse gönderim çalışsa bile Gmail yine spam'e atabilir; kullanıcının test
+postasının Gelen Kutusu'na düştüğünü doğrulaması gerekiyor.
