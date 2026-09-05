@@ -790,3 +790,8 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   görsel sağda kendi kolonunda, `object-contain` ile **tam görünür**; gradyan katman
   kaldırıldı, zoom efekti 1.02'ye indirildi. Doğrulandı: altyazı ile görsel kutuları
   artık kesişmiyor (x: 486+479 < 996).
+- Düzeltme (kullanıcı: "resimler daha önceki gibi olsun, ayakkabı ve bavul tam görünsün"):
+  görsel yine büyük ve sağda (%52 kolon, `sm:p-5` ile yumuşak çerçeve), `object-contain`
+  olduğu için illüstrasyonun tamamı (bavul + ayakkabı) görünüyor; metin kolonu %48,
+  çakışma ölçümle 0. Gradyan katman kaldırıldı (kliplerin krem tonları farklı olduğu için
+  dikey dikiş izi yapıyordu; artık çerçeveli kart görünümü).
