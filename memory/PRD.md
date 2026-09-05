@@ -376,3 +376,21 @@ ve kartta kapak fotoğrafı. Ajan kararları: hazır saat dilimleri, tarih ZORUN
   `tour-date-error-*` ve `missingTourDate` gönderimi engelliyor; özet satırında
   "10 Aralık 2026 · 15:00" gösterimi. Tur bölümündeki "WhatsApp'tan belirliyoruz" metni kaldırıldı.
 - Test: `backend/tests/test_tour_safari.py` 7/7 PASS (pytest 72/72), iteration_72 frontend %100 (8/8).
+
+## 2026-06-06 · "Sadece pasaport ve fotoğraf" kolaylık mesajları
+Kullanıcı isteği: "Sadece pasaport ve fotoğrafınızla vizenizi alıyoruz" ve "vizeniz çıkmadan
+otel/uçak bileti almanıza gerek yok" gibi kolaylık ibareleri eklenmesi.
+- `content.py REQUIRED_DOCUMENTS`: uçak bileti ve otel rezervasyonu `required: True` → **False**
+  (sihirbazda zaten opsiyoneldi, sayfada "Zorunlu" yazması çelişkiydi); açıklamalar
+  "vizeniz onaylanmadan almanıza gerek yok" diye yeniden yazıldı.
+- `content.py FAQ`: yeni soru "Vize almadan uçak bileti ve otel rezervasyonu yapmam gerekiyor mu?".
+  `visa_guides.py` içindeki aynı konudaki cevap da güncellendi.
+- Ana sayfa hero: CTA'ların üstünde 3 yeşil kolaylık pili (`hero-simplicity-strip`).
+  `ADVANTAGES` ilk iki kart değişti: "Sadece pasaport ve fotoğraf" + "Bilet ve otel şartı yok".
+  Belgeler bölümü paragrafı güncellendi.
+- `/gerekli-belgeler`: başlık açıklaması + "İki belgeyle vizeniz hazır" yeşil kutusu
+  (`documents-simplicity-note`).
+- `/basvuru` Adım 3: "Seyahat belgeleri (opsiyonel)" başlığı ve "vizeniz çıkmadan bilet/otel
+  gerekmez" açıklaması. `/vize-tipleri` hariç tutulanlar listesine "(vize için zorunlu değildir)".
+- Doğrulama: `/api/content/site` → ticket/hotel `required: false`, yeni SSS sorusu dönüyor;
+  ana sayfa ve belgeler sayfası ekran görüntüleriyle kontrol edildi.

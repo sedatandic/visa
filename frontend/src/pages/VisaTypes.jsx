@@ -17,7 +17,7 @@ const INCLUDED = [
 ];
 
 const EXCLUDED = [
-    "Uçak bileti ve otel rezervasyonu",
+    "Uçak bileti ve otel rezervasyonu (vize için zorunlu değildir)",
     "Seyahat sağlık sigortası (ek hizmet olarak eklenebilir)",
     "Ekspres işlem ücreti (ek hizmet olarak eklenebilir)",
     "Biyometrik fotoğraf çekimi",

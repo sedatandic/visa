@@ -1809,9 +1809,11 @@ export default function Apply() {
                                         })}
 
                                         <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
-                                            <p className="font-heading text-sm font-bold">Seyahat belgeleri (tüm başvuru için)</p>
+                                            <p className="font-heading text-sm font-bold">Seyahat belgeleri (opsiyonel)</p>
                                             <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
-                                                Varsa yükleyin, yoksa sonra da ekleyebilirsiniz.
+                                                Bu alanlar zorunlu değil: vizeniz çıkmadan uçak bileti veya otel
+                                                rezervasyonu yapmanıza gerek yok. Elinizde varsa yükleyin, yoksa
+                                                boş bırakıp devam edin.
                                             </p>
                                             <div className="mt-5 grid gap-6 md:grid-cols-3">
                                                 <div>

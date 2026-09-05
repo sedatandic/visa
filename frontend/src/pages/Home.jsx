@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     ArrowRight,
     BadgeCheck,
+    CheckCircle2,
     CreditCard,
     FileCheck2,
     FileText,
@@ -45,7 +46,8 @@ const DOC_ICONS = {
 };
 
 const ADVANTAGES = [
-    { icon: PlaneTakeoff, title: "Online ve hızlı başvuru", detail: "Tüm süreç web üzerinden, ortalama 5 dakikada tamamlanır." },
+    { icon: FileText, title: "Sadece pasaport ve fotoğraf", detail: "Vizenizi yalnızca pasaportunuz ve bir vesikalık fotoğrafla alıyoruz; başka evrak istemiyoruz." },
+    { icon: PlaneTakeoff, title: "Bilet ve otel şartı yok", detail: "Vizeniz çıkmadan uçak bileti veya otel rezervasyonu yapmanıza gerek kalmıyor." },
     { icon: ShieldCheck, title: "Güvenli belge yükleme", detail: "Pasaportunuzu hiçbir yere teslim etmezsiniz; dijital kopya yeterli." },
     { icon: CreditCard, title: "Kolay ödeme seçenekleri", detail: "Kredi kartı veya banka havalesi ile ödeyin." },
     { icon: Radar, title: "Başvuru durumunu takip etme", detail: "Takip kodunuzla her adımı anlık görün." },
@@ -121,6 +123,25 @@ export default function Home() {
                                 Birleşik Arap Emirlikleri Vize Danışmanlığı
                             </span>
                             <HeroHeadline />
+
+                            <ul
+                                className="mt-7 flex flex-wrap items-center justify-center gap-2.5"
+                                data-testid="hero-simplicity-strip"
+                            >
+                                {[
+                                    "Sadece pasaport ve fotoğrafınızla vizenizi alıyoruz",
+                                    "Vizeniz çıkmadan uçak bileti almanıza gerek yok",
+                                    "Otel rezervasyonunu sonra yapabilirsiniz",
+                                ].map((text) => (
+                                    <li
+                                        key={text}
+                                        className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.08)] px-3.5 py-1.5 text-xs font-semibold text-[hsl(var(--brand-green))]"
+                                    >
+                                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                        {text}
+                                    </li>
+                                ))}
+                            </ul>
 
                             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                                 <Button asChild size="lg" data-testid="hero-apply-now-button">
@@ -239,9 +260,9 @@ export default function Home() {
                         <span className="eyebrow">Gerekli Belgeler</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Başvuru için gereken belgeler</h2>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Pasaportunuzun kimlik sayfası ve beyaz fonlu bir vesikalık çoğu başvuru için
-                            yeterli. Telefonunuzla çektiğiniz fotoğrafı yükleyin; kalan evrakları gerekirse
-                            danışmanınız sizden ayrıca ister.
+                            Sadece pasaport ve fotoğrafınızla vizenizi alıyoruz. Pasaportunuzun kimlik sayfası
+                            ve beyaz fonlu bir vesikalık yeterli; telefonunuzla çektiğiniz fotoğrafı yükleyin.
+                            Uçak bileti ve otel rezervasyonu zorunlu değildir.
                         </p>
                     </div>
                     <div className="mt-9 grid items-start gap-8 lg:grid-cols-[0.85fr_1.15fr]">

@@ -22,12 +22,35 @@ export default function Documents() {
             <PageHeader
                 eyebrow="Gerekli Evraklar"
                 title="Başvuru için gereken belgeler"
-                description="Dubai vizesi tamamen elektronik düzenlenir. Pasaportunuzu kargoya vermenize gerek yoktur; aşağıdaki belgelerin dijital kopyaları yeterlidir."
+                description="Sadece pasaport ve fotoğrafınızla vizenizi alıyoruz. Dubai vizesi tamamen elektronik düzenlenir; pasaportunuzu kargoya vermenize, vizeniz çıkmadan uçak bileti veya otel rezervasyonu almanıza gerek yoktur."
             />
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
                     <div>
+                        <div
+                            className="mb-6 rounded-xl border border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.07)] p-6"
+                            data-testid="documents-simplicity-note"
+                        >
+                            <h2 className="font-heading text-base font-bold text-[hsl(var(--brand-green))]">
+                                İki belgeyle vizeniz hazır
+                            </h2>
+                            <ul className="mt-3 space-y-2 text-sm leading-6 text-[hsl(var(--brand-green))]">
+                                <li className="flex items-start gap-2">
+                                    <CheckCircle2 className="mt-1 h-3.5 w-3.5 shrink-0" />
+                                    Sadece pasaportunuzun kimlik sayfası ve bir vesikalık fotoğraf zorunlu.
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <CheckCircle2 className="mt-1 h-3.5 w-3.5 shrink-0" />
+                                    Vizeniz onaylanmadan uçak bileti almanıza gerek yok.
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <CheckCircle2 className="mt-1 h-3.5 w-3.5 shrink-0" />
+                                    Otel rezervasyonunu vizeniz çıktıktan sonra rahatça yapabilirsiniz.
+                                </li>
+                            </ul>
+                        </div>
+
                         <ul className="space-y-4" data-testid="required-documents-checklist">
                             {(content?.required_documents || []).map((d) => (
                                 <li key={d.key} className="card-surface flex items-start gap-4 p-5">

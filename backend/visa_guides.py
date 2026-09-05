@@ -52,7 +52,7 @@ GUIDES = {
             },
             {
                 "q": "Otel ve uçak bileti rezervasyonu zorunlu mu?",
-                "a": "Zorunlu değildir, ancak dönüş bileti ve konaklama belgesi başvurunuzu güçlendirir. Henüz rezervasyon yapmadıysanız tahmini tarihleri yazmanız yeterlidir.",
+                "a": "Zorunlu değildir. Sadece pasaport ve fotoğrafınızla başvurunuzu alıyoruz; uçak biletinizi ve otelinizi vizeniz onaylandıktan sonra almanız daha güvenlidir. Elinizde rezervasyon varsa yüklemek başvurunuzu güçlendirir.",
             },
         ],
     },

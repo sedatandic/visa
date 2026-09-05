@@ -286,14 +286,14 @@ REQUIRED_DOCUMENTS = [
     {
         "key": "ticket",
         "title": "Dönüş Uçak Bileti",
-        "detail": "Dubai'den dönüş uçuşunuzun ad-soyad içeren bilet veya rezervasyon belgesi. Bileti henüz almadıysanız opsiyon/rezervasyon belgesi yüklemeniz yeterlidir.",
-        "required": True,
+        "detail": "Zorunlu değildir. Vizeniz onaylanmadan bilet almanıza gerek yok; varsa rezervasyon/opsiyon belgesini yükleyebilirsiniz, yoksa boş bırakın.",
+        "required": False,
     },
     {
         "key": "hotel",
         "title": "Otel Rezervasyonu",
-        "detail": "Seyahat sürenizi kapsayacak şekilde otel, Airbnb veya konaklama rezervasyon belgesi. Yakınınızda kalacaksanız adres ve davet bilgisi yeterlidir.",
-        "required": True,
+        "detail": "Zorunlu değildir. Otelinizi vizeniz çıktıktan sonra rahatça seçebilirsiniz; elinizde rezervasyon varsa yüklemek başvurunuzu güçlendirir.",
+        "required": False,
     },
 ]
 
@@ -422,6 +422,10 @@ FAQ = [
     {
         "q": "Dubai vizesi için gerekli evraklar nelerdir?",
         "a": "Pasaportunuzun kimlik bilgileri sayfasının fotoğrafı, beyaz fonda bir vesikalık fotoğraf zorunludur. Dönüş uçak bileti ve otel rezervasyonu opsiyoneldir ancak yüklenmesi başvurunuzu güçlendirir.",
+    },
+    {
+        "q": "Vize almadan uçak bileti ve otel rezervasyonu yapmam gerekiyor mu?",
+        "a": "Hayır. Başvurunuz için sadece pasaportunuzun kimlik sayfası ve bir vesikalık fotoğraf yeterlidir. Uçak biletinizi ve otel rezervasyonunuzu vizeniz onaylandıktan sonra almanız hem bütçenizi hem de plan değişikliği riskini korur. Elinizde rezervasyon varsa yüklemek başvurunuzu güçlendirir, ancak zorunlu değildir.",
     },
     {
         "q": "Ailemle birlikte tek başvuru yapabilir miyim?",
