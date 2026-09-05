@@ -924,3 +924,7 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
 - **track.png v3**: e-posta ve WhatsApp madalyonları küçültüldü, telefon büyütüldü ve
   ekranında **vize örneği** (portre foto, BAE amblemi, metin satırları, barkod, yeşil onay
   tiki, specimen şeridi) görünüyor.
+- track.png son hâli: `track.jpg`'den kod ile yeniden kurgulandı (arka plan silindi,
+  telefon 503x825 olduğu gibi, e-posta/WhatsApp madalyonları %55 küçültülerek telefonun
+  iki yanına yerleştirildi, kenar feather). Görsel işlem adımları PIL ile yapıldı;
+  gerekirse `explainer/track.jpg` kaynağından tekrar üretilebilir.
