@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRight, Camera, CheckCircle2, FileText } from "lucid
 import { api } from "../lib/api";
 import { IMAGES, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
+import { ImportantNotice } from "../components/ImportantNotice";
 import { Button } from "../components/ui/button";
 
 export default function Documents() {
@@ -127,6 +128,8 @@ export default function Documents() {
                     </div>
                 </div>
             </section>
+
+            <ImportantNotice />
         </div>
     );
 }

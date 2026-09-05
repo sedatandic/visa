@@ -997,3 +997,40 @@ paketlerini gör (4)" çalışıyor, esnek tarih notu ve seçim aktif.
   1 ay hatırlama) — hâlâ yapılmadı.
 - P1: `ImportantNotice.jsx` bileşeni oluşturuldu ama hiçbir sayfaya bağlanmadı.
 - P2: `email_outbox` kaydına gönderilen HTML gövdesi eklenmesi (admin panelde önizleme).
+
+## 2026-06-08 (2) · Yönetici OTP girişi + Önemli Uyarı yerleşimi + E-posta önizleme
+Kullanıcı seçimleri: şifreli giriş **tamamen kaldırılsın** (sadece OTP); uyarı kutusu
+**başvuru (Vize adımı) + Gerekli Belgeler + SSS** sayfalarında görünsün; e-posta önizleme onaylandı.
+
+Yapılanlar (backend):
+- `POST /api/admin/login` **kaldırıldı** (404). Yerine:
+  - `POST /api/admin/request-code` → 6 haneli kod (sha256+JWT_SECRET ile hashli, `code_plain`
+    destek/test icin), 10 dk TTL; bilinmeyen e-postada da aynı jenerik yanıt (adres sızdırmaz);
+    60 sn bekleme + saatte 5 talep sınırı (429).
+  - `POST /api/admin/verify-code` → `compare_digest` ile doğrulama, 5 hatalı denemede 429,
+    başarıda kod silinir ve **30 gün** geçerli JWT (`session_days: 30`) döner.
+- `db.admin_login_codes` koleksiyonu; `models.AdminCodeRequest/AdminCodeVerify` (AdminLogin silindi).
+- `emailer.admin_code_html` (kod + IP + 30 gün notu); `_record_attempt` artık HTML gövdesini
+  `email_outbox`'a saklıyor (max 120 KB).
+- `GET /api/admin/emails` → gövde hariç liste + `has_preview`; `GET /api/admin/emails/{id}` →
+  tam HTML (yok ise 404).
+- Test yardımcısı `backend/admin_test_token.py` (JWT ile jeton üretir; e-posta göndermez).
+  `backend_test.py`, `regression_critical_tests.py`, `tests/test_insurance_*.py` bu yardımcıya geçti.
+
+Yapılanlar (frontend):
+- `pages/AdminLogin.jsx` iki adımlı OTP arayüzü (e-posta → 6 hane), 60 sn geri sayımlı "yeni kod",
+  "e-postayı değiştir", şifre alanı yok. Jeton `localStorage.dv_admin_token` (30 gün).
+- `components/AdminLayout.jsx > RequireAdmin`: süresi dolmuş/bozuk jetonu temizleyip girişe atar.
+- `pages/AdminEmails.jsx`: satıra tıkla → `email-preview-dialog` (sandbox'lı iframe ile tam HTML),
+  gövdesi olmayan eski kayıtlarda "Önizleme yok" notu.
+- `components/ImportantNotice.jsx` renkleri `--status-warning` ile düzeltildi ve şu sayfalara
+  eklendi: `Apply.jsx` (Vize adımı, compact), `Documents.jsx` (sayfa sonu), `Faq.jsx` (compact).
+
+Test: iteration_81 → frontend 13/13 PASS, backend regresyon iteration_80'de 10/10.
+Main agent ayrıca OTP güvenlik yollarını (jenerik yanıt, cooldown 429, yanlış kod, tekrar
+kullanım, /admin/login 404, 30 gün exp) ve süresi dolmuş jeton temizliğini doğruladı.
+
+### Kalan / backlog
+- P1: `email_outbox` eski kayıtlarında gövde yok (yalnızca bu güncellemeden sonrası önizlenebilir).
+- P2: `code_plain` alanı destek/test için saklanıyor; sıkı tehdit modelinde kaldırılabilir.
+- P2: Tarihi belli olmayan başvurular için "tarihim belli oldu" hatırlatma e-postası.

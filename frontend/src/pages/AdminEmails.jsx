@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Eye, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
 import { formatDateTime } from "../lib/site";
 import { AdminLayout } from "../components/AdminLayout";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "../components/ui/dialog";
 
 const STATUS_UI = {
     sent: { label: "Gönderildi", icon: CheckCircle2, className: "text-[hsl(var(--brand-green))]" },
@@ -17,6 +24,22 @@ export default function AdminEmails() {
     const [sender, setSender] = useState("");
     const [sandbox, setSandbox] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [preview, setPreview] = useState(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
+
+    const openPreview = async (item) => {
+        setPreview({ ...item, html: "" });
+        if (!item.has_preview) return;
+        setPreviewLoading(true);
+        try {
+            const { data } = await api.get(`/admin/emails/${item.id}`);
+            setPreview(data);
+        } catch (err) {
+            toast.error(apiError(err, "E-posta önizlemesi alınamadı."));
+        } finally {
+            setPreviewLoading(false);
+        }
+    };
 
     useEffect(() => {
         api.get("/admin/emails")
@@ -106,6 +129,7 @@ export default function AdminEmails() {
                                     <th className="px-5 py-3 font-semibold">Tür</th>
                                     <th className="px-5 py-3 font-semibold">Durum</th>
                                     <th className="px-5 py-3 font-semibold">Tarih</th>
+                                    <th className="px-5 py-3 font-semibold">Önizleme</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -113,7 +137,12 @@ export default function AdminEmails() {
                                     const ui = STATUS_UI[m.status] || STATUS_UI.error;
                                     const Icon = ui.icon;
                                     return (
-                                        <tr key={m.id} className="border-t border-border">
+                                        <tr
+                                            key={m.id}
+                                            className="cursor-pointer border-t border-border transition-colors duration-150 hover:bg-muted/50"
+                                            onClick={() => openPreview(m)}
+                                            data-testid={`email-row-${m.id}`}
+                                        >
                                             <td className="px-5 py-3.5">{m.to}</td>
                                             <td className="px-5 py-3.5 text-muted-foreground">{m.subject}</td>
                                             <td className="px-5 py-3.5 text-xs text-muted-foreground">{m.kind}</td>
@@ -123,6 +152,16 @@ export default function AdminEmails() {
                                                 </span>
                                             </td>
                                             <td className="px-5 py-3.5 text-xs text-muted-foreground">{formatDateTime(m.created_at)}</td>
+                                            <td className="px-5 py-3.5">
+                                                <span
+                                                    className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
+                                                        m.has_preview ? "text-primary" : "text-muted-foreground"
+                                                    }`}
+                                                >
+                                                    <Eye className="h-3.5 w-3.5" />
+                                                    {m.has_preview ? "Görüntüle" : "Önizleme yok"}
+                                                </span>
+                                            </td>
                                         </tr>
                                     );
                                 })}
@@ -130,6 +169,38 @@ export default function AdminEmails() {
                         </table>
                     </div>
                 )}
+
+                <Dialog open={!!preview} onOpenChange={(open) => !open && setPreview(null)}>
+                    <DialogContent className="max-w-3xl" data-testid="email-preview-dialog">
+                        <DialogHeader>
+                            <DialogTitle className="text-left text-base">
+                                {preview?.subject || "E-posta önizlemesi"}
+                            </DialogTitle>
+                            <DialogDescription className="text-left text-xs">
+                                {preview?.to} · {preview?.kind} ·{" "}
+                                {preview?.created_at ? formatDateTime(preview.created_at) : ""}
+                            </DialogDescription>
+                        </DialogHeader>
+                        {previewLoading ? (
+                            <div className="flex justify-center py-16">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            </div>
+                        ) : preview?.html ? (
+                            <iframe
+                                title="E-posta önizlemesi"
+                                srcDoc={preview.html}
+                                sandbox=""
+                                className="h-[65vh] w-full rounded-lg border border-border bg-white"
+                                data-testid="email-preview-frame"
+                            />
+                        ) : (
+                            <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground" data-testid="email-preview-empty">
+                                Bu kayıt için önizleme yok. E-posta gövdesi yalnızca bu güncellemeden sonra
+                                gönderilen bildirimler için saklanıyor.
+                            </p>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </div>
         </AdminLayout>
     );

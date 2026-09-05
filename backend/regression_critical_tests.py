@@ -9,7 +9,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", ".env"))
 
 ADMIN_LOGIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
-ADMIN_LOGIN_PASSWORD = os.environ["ADMIN_LOGIN_PASSWORD"]
+from admin_test_token import admin_token as _admin_token
 BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 
 class CriticalRegressionTester:
@@ -28,25 +28,18 @@ class CriticalRegressionTester:
         self.log("Testing admin login...", "INFO")
         
         try:
-            response = requests.post(
-                f"{BASE_URL}/admin/login",
-                json={"email": ADMIN_LOGIN_EMAIL, "password": ADMIN_LOGIN_PASSWORD},
-                timeout=10
+            self.admin_token = _admin_token()
+            probe = requests.get(
+                f"{BASE_URL}/admin/stats",
+                headers={"Authorization": f"Bearer {self.admin_token}"},
+                timeout=10,
             )
-            
-            if response.status_code == 200:
-                result = response.json()
-                self.admin_token = result.get("token")
-                if self.admin_token:
-                    self.log(f"Admin login successful", "PASS")
-                    self.tests_passed += 1
-                    return True
-                else:
-                    self.log("Admin login response missing token", "FAIL")
-                    return False
-            else:
-                self.log(f"Admin login failed with status {response.status_code}", "FAIL")
-                return False
+            if probe.status_code == 200:
+                self.log("Admin token accepted (OTP-only login)", "PASS")
+                self.tests_passed += 1
+                return True
+            self.log(f"Admin token rejected with status {probe.status_code}", "FAIL")
+            return False
                 
         except Exception as e:
             self.log(f"Admin login error: {str(e)}", "FAIL")

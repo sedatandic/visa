@@ -29,10 +29,10 @@ export const ImportantNotice = ({ compact = false }) => (
         data-testid="important-notice"
     >
         <div className={compact ? "" : "container-page"}>
-            <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[hsl(var(--warning))]/35 bg-[hsl(var(--warning))]/[0.07]">
-                <div className="flex items-start gap-3 border-b border-[hsl(var(--warning))]/25 px-5 py-4 sm:px-7">
-                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--warning))]/20">
-                        <AlertTriangle className="h-4.5 w-4.5 text-[hsl(var(--warning))]" aria-hidden="true" />
+            <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[hsl(var(--status-warning))]/35 bg-[hsl(var(--status-warning))]/[0.07]">
+                <div className="flex items-start gap-3 border-b border-[hsl(var(--status-warning))]/25 px-5 py-4 sm:px-7">
+                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--status-warning))]/20">
+                        <AlertTriangle className="h-4.5 w-4.5 text-[hsl(var(--status-warning))]" aria-hidden="true" />
                     </span>
                     <div>
                         <h2
@@ -48,7 +48,7 @@ export const ImportantNotice = ({ compact = false }) => (
                     </div>
                 </div>
 
-                <ul className="divide-y divide-[hsl(var(--warning))]/15">
+                <ul className="divide-y divide-[hsl(var(--status-warning))]/15">
                     {POINTS.map((point) => (
                         <li
                             key={point.title}
@@ -56,7 +56,7 @@ export const ImportantNotice = ({ compact = false }) => (
                             data-testid={`important-notice-item-${POINTS.indexOf(point)}`}
                         >
                             <point.icon
-                                className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[hsl(var(--warning))]"
+                                className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[hsl(var(--status-warning))]"
                                 aria-hidden="true"
                             />
                             <div>
@@ -67,7 +67,7 @@ export const ImportantNotice = ({ compact = false }) => (
                     ))}
                 </ul>
 
-                <p className="border-t border-[hsl(var(--warning))]/25 px-5 py-4 text-sm font-semibold sm:px-7">
+                <p className="border-t border-[hsl(var(--status-warning))]/25 px-5 py-4 text-sm font-semibold sm:px-7">
                     Seyahat amacınızla birebir örtüşen vize türünü seçtiğinizden emin olun; kararsız kaldığınızda
                     başvuruyu göndermeden önce bize yazın, doğru türü birlikte belirleyelim.
                 </p>

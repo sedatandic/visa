@@ -69,6 +69,17 @@ const itemClass = ({ isActive }) =>
 export const RequireAdmin = ({ children }) => {
     const token = localStorage.getItem("dv_admin_token");
     if (!token) return <Navigate to="/admin/giris" replace />;
+    // Suresi dolmus jetonu temizle: kisa sureli "girisli" ekran gorunmesin
+    try {
+        const { exp } = JSON.parse(atob(token.split(".")[1]));
+        if (exp && exp * 1000 < Date.now()) {
+            localStorage.removeItem("dv_admin_token");
+            return <Navigate to="/admin/giris" replace />;
+        }
+    } catch {
+        localStorage.removeItem("dv_admin_token");
+        return <Navigate to="/admin/giris" replace />;
+    }
     return children;
 };
 

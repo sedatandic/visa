@@ -1,0 +1,44 @@
+{
+  "summary": "Iteration 81 focused on UI verification of the new passwordless admin OTP login, 30-day session persistence, email HTML preview dialog on /admin/e-postalar, and the ImportantNotice placement on /gerekli-belgeler, /sss and the Apply wizard step 2 (data-testid=wizard-visa-details-form). All targeted UI flows pass. Backend regression sanity was covered by the main agent already; no re-runs needed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_flows": [
+    "AdminLogin: no password field present on /admin/giris; only admin-email-input + admin-request-code-button visible",
+    "admin-request-code-button triggers backend request-code and transitions to admin-code-form (stage='code')",
+    "admin-resend-code-button is disabled during 60s cooldown and shows a live countdown ('Yeni kod (58 sn)')",
+    "Wrong code shows 'Kod hatali. Lutfen tekrar deneyin.' inside admin-login-error and keeps the user on admin-code-form",
+    "admin-change-email-button returns the user to the email stage (admin-login-form) and clears the error",
+    "Second request-code within 60s from UI shows 429 message 'Yeni kod icin lutfen 1 dakika bekleyin.' in admin-login-error",
+    "POST /api/admin/verify-code with correct code returns 200 {token, user, session_days:30}; JWT exp decoded ~30 days (30.00d)",
+    "After storing token in localStorage.dv_admin_token and navigating to /admin, the user is NOT redirected to /admin/giris (session persists)",
+    "/admin/e-postalar loads with admin-emails-page; 50 email rows rendered; both has_preview=true ('Görüntüle') and has_preview=false ('Önizleme yok') rows exist",
+    "Clicking a has_preview row opens email-preview-dialog with email-preview-frame iframe (srcdoc ~2237 chars) containing Turkish characters (ş,ğ,ı,ç,ö,ü)",
+    "Clicking a no-preview row opens the dialog with email-preview-empty note",
+    "/gerekli-belgeler renders data-testid=important-notice",
+    "/sss renders data-testid=important-notice",
+    "/basvuru wizard step-1 code branch (data-testid=wizard-visa-details-form, titled 'Vize ve tarihler') mounts <ImportantNotice compact /> right after the heading — verified by source inspection at /app/frontend/src/pages/Apply.jsx:1610-1618 (deep UI navigation gated behind OCR + traveler form, not re-driven this iteration)"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_80.py",
+    "/app/test_reports/pytest/iter80_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "AdminLogin.jsx `requestCode` writes `dv_admin_remember_email` in lowercase but binds `email` state to the raw casing typed by the user — harmless but slightly inconsistent (verify-code uses the raw string, backend normalises to lower). No bug.",
+    "AdminLogin.jsx does not clear localStorage.dv_admin_token when the token is expired on load; ProtectedRoute presumably handles 401, but a stale expired token could briefly show authenticated UI before the first API call fails. Consider decoding exp on mount and pruning if expired.",
+    "AdminEmails.jsx uses iframe with sandbox='' (all sandboxing on) — good defense against email JS; note this triggers a console 'ERR_BLOCKED_BY_RESPONSE.NotSameOrigin' for the logo <img> in the sample template, which is expected/harmless.",
+    "routes_admin.py admin_request_code always stores code_plain alongside code_hash — this is documented as 'destek/otomasyon icin' but weakens the hashing benefit. If the operator threat model excludes DB-read attackers, this is fine; otherwise consider stripping code_plain after TTL via a background cleanup or storing only during test runs (feature-flag)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "regression already 100% in iter80; not re-run this iteration", "frontend": "100% (13/13 verified flows)"},
+  "test_credentials": "info@dubaivizeonline.com (no password). OTP code read from db.admin_login_codes.code_plain. For direct JWT token use `python /app/backend/admin_test_token.py`.",
+  "seed_data_creation": "None. Cleared admin_login_codes collection at start; created 2 real OTP records during flow (auto-consumed on successful verify).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The passwordless admin flow works end-to-end from the UI. Because each POST /api/admin/request-code sends a REAL email through Resend, minimise UI invocations of that button in future runs. To bypass the 60s cooldown quickly, `db.admin_login_codes.update_one({...},{'$set':{'created_at': <past>}})`. For fastest admin-authenticated UI tests, inject token via `localStorage.setItem('dv_admin_token', <token from admin_test_token.py>)` before navigating. ImportantNotice on Apply.jsx step 2 corresponds to `step === 1` in code (0-indexed wizard) and is inside `data-testid=wizard-visa-details-form`.",
+  "rca of the issue": "N/A — no defects found."
+}

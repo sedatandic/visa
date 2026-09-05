@@ -97,7 +97,9 @@ async def _send_via_resend(api_key: str, params: dict) -> dict:
         return {"status": "error", "reason": str(exc)[:400]}
 
 
-async def _record_attempt(to: str, subject: str, kind: str, meta: Optional[dict], result: dict) -> None:
+async def _record_attempt(
+    to: str, subject: str, kind: str, meta: Optional[dict], result: dict, html: str = ""
+) -> None:
     try:
         await email_outbox_col.insert_one(
             {
@@ -106,6 +108,8 @@ async def _record_attempt(to: str, subject: str, kind: str, meta: Optional[dict]
                 "subject": subject,
                 "kind": kind,
                 "meta": meta or {},
+                # Yonetici panelinde tam onizleme icin gövde saklanir
+                "html": html[:120000],
                 "created_at": datetime.now(timezone.utc),
                 **result,
             }
@@ -129,8 +133,35 @@ async def send_email(to: str, subject: str, html: str, kind: str = "generic", me
         result = await _send_via_resend(api_key, params)
     else:
         result = {"status": "skipped", "reason": "RESEND_API_KEY tanimli degil"}
-    await _record_attempt(to, subject, kind, meta, result)
+    await _record_attempt(to, subject, kind, meta, result, html)
     return result
+
+
+def admin_code_html(code: str, ttl_minutes: int, ip: str = "") -> str:
+    """Yonetici paneli girisi icin tek kullanimlik kod."""
+    ip_note = (
+        f'<p style="margin:12px 0 0;font-size:12px;color:#8A7355;">Talep IP adresi: {ip}</p>'
+        if ip
+        else ""
+    )
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
+      Yönetim paneline giriş için tek kullanımlık kodunuz:
+    </p>
+    <div style="background-color:#FBF6EC;border:1px solid #EADFCB;border-radius:10px;padding:18px;text-align:center;">
+      <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#3E2A14;">{code}</div>
+      <div style="margin-top:8px;font-size:12px;color:#8A7355;">Kod {ttl_minutes} dakika geçerlidir.</div>
+    </div>
+    <p style="margin:18px 0 0;font-size:13px;line-height:21px;">
+      Kodu doğruladıktan sonra bu bilgisayarda <strong>30 gün</strong> boyunca tekrar giriş
+      yapmanız istenmez.
+    </p>
+    {ip_note}
+    <p style="margin:14px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
+      Bu girişi siz talep etmediyseniz kodu kimseyle paylaşmayın ve bize haber verin.
+    </p>
+    """
+    return _wrap("Yönetici giriş kodu", body)
 
 
 def money(amount: float, currency: str = "TRY") -> str:

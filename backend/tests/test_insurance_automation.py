@@ -13,6 +13,8 @@ Kapsam:
 
 import io
 import os
+import sys
+from pathlib import Path
 import time
 import uuid
 
@@ -26,7 +28,6 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".en
 BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 
 ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
-ADMIN_PASS = os.environ["ADMIN_LOGIN_PASSWORD"]
 
 EXPECTED_INSURANCE = {
     "ins_8d": {"days": 8, "price": 491},
@@ -47,10 +48,10 @@ def api():
 
 @pytest.fixture(scope="module")
 def admin_token(api):
-    r = api.post(f"{BASE_URL}/api/admin/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASS})
-    if r.status_code != 200:
-        pytest.skip(f"admin login failed: {r.status_code} {r.text}")
-    return r.json()["token"]
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from admin_test_token import admin_token as make_token
+
+    return make_token()
 
 
 @pytest.fixture(scope="module")

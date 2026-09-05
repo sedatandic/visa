@@ -143,10 +143,15 @@ class ContactCreate(BaseModel):
     message: str = Field(..., min_length=5, max_length=2000)
 
 
-class AdminLogin(BaseModel):
-    email: str
-    password: str
-    remember: bool = False
+class AdminCodeRequest(BaseModel):
+    """Yonetici girisi: e-postaya tek kullanimlik kod talebi."""
+
+    email: EmailStr
+
+
+class AdminCodeVerify(BaseModel):
+    email: EmailStr
+    code: str = Field(..., min_length=6, max_length=6)
 
 
 class StatusUpdate(BaseModel):

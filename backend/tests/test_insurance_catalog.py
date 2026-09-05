@@ -4,6 +4,8 @@ Iterasyon 57 - Dubai Vize Online sigorta akisi.
 """
 
 import os
+import sys
+from pathlib import Path
 import pytest
 import requests
 from dotenv import load_dotenv
@@ -15,7 +17,6 @@ BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 API = f"{BASE_URL}/api"
 
 ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
-ADMIN_PASSWORD = os.environ["ADMIN_LOGIN_PASSWORD"]
 
 EXPECTED_PRICES = {
     "ins_8d": (491, 8),
@@ -36,10 +37,10 @@ def session():
 
 @pytest.fixture(scope="module")
 def admin_token(session):
-    r = session.post(f"{API}/admin/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
-    if r.status_code != 200:
-        pytest.skip(f"Admin login failed ({r.status_code}): {r.text}")
-    return r.json()["token"]
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from admin_test_token import admin_token as make_token
+
+    return make_token()
 
 
 @pytest.fixture(scope="module")

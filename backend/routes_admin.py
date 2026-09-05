@@ -1,8 +1,11 @@
 import logging
 import os
 import re
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
+from hmac import compare_digest
 from typing import Optional
 from urllib.parse import quote
 
@@ -32,6 +35,7 @@ from db import (
     testimonials_col,
     uploads_col,
     visa_types_col,
+    admin_login_codes_col,
     login_codes_col,
     orders_col,
     products_col,
@@ -49,6 +53,7 @@ from store_catalog import product_list
 from fx import apply_fx_to_list, apply_fx_to_visa, get_fx, update_fx_settings
 from visa_guides import build_guide, guide_index
 from emailer import (
+    admin_code_html,
     order_delivered_html,
     payment_received_html,
     send_email,
@@ -56,7 +61,8 @@ from emailer import (
     visa_ready_html,
 )
 from models import (
-    AdminLogin,
+    AdminCodeRequest,
+    AdminCodeVerify,
     ArticleIn,
     BankTransferIn,
     CompanyInfoIn,
@@ -75,19 +81,25 @@ security = HTTPBearer(auto_error=False)
 JWT_SECRET = os.environ.get("JWT_SECRET", "dv-dev-secret")
 JWT_ALGO = "HS256"
 
-# Admin girisi ortam degiskenlerinden okunur (kodda sabit sifre tutulmaz).
-# ADMIN_LOGIN_EMAIL / ADMIN_LOGIN_PASSWORD tanimli degilse gelistirme
-# kimlik bilgileri kullanilir (bkz. /app/memory/test_credentials.md).
+# Yonetici girisi: sifre yok, e-postaya gonderilen tek kullanimlik kod ile yapilir.
+# ADMIN_LOGIN_EMAIL tanimli degilse gelistirme adresi kullanilir.
 ADMIN_LOGIN_EMAIL = (os.environ.get("ADMIN_LOGIN_EMAIL") or "info@dubaivizeonline.com").strip().lower()
-ADMIN_LOGIN_PASSWORD = os.environ.get("ADMIN_LOGIN_PASSWORD") or ""
 ADMIN_LOGIN_NAME = os.environ.get("ADMIN_LOGIN_NAME") or "Yonetici"
 
+# Tek kullanimlik kod kurallari
+CODE_TTL_MINUTES = 10
+CODE_MAX_ATTEMPTS = 5
+CODE_COOLDOWN_SECONDS = 60
+CODE_MAX_PER_HOUR = 5
+SESSION_DAYS = 30
 
-def create_token(email: str, remember: bool = False) -> str:
+
+def create_token(email: str) -> str:
+    """Yonetici oturum jetonu: ayni cihazda 30 gun gecerli."""
     payload = {
         "sub": email,
         "role": "admin",
-        "exp": datetime.now(timezone.utc) + timedelta(days=30 if remember else 0, hours=0 if remember else 12),
+        "exp": datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
 
@@ -107,16 +119,100 @@ async def require_admin(creds: Optional[HTTPAuthorizationCredentials] = Depends(
     return data
 
 
-@router.post("/admin/login")
-async def admin_login(payload: AdminLogin) -> dict:
-    email = (payload.email or "").strip().lower()
-    if not ADMIN_LOGIN_PASSWORD:
-        raise HTTPException(500, "Yonetici sifresi tanimli degil. ADMIN_LOGIN_PASSWORD ayarlanmali.")
-    if email != ADMIN_LOGIN_EMAIL or payload.password != ADMIN_LOGIN_PASSWORD:
-        raise HTTPException(401, "E-posta veya sifre hatali.")
+def _hash_code(code: str) -> str:
+    return sha256(f"{JWT_SECRET}:{code}".encode("utf-8")).hexdigest()
+
+
+def _as_utc(value) -> Optional[datetime]:
+    if not isinstance(value, datetime):
+        return None
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def _check_code_rate_limit(doc: Optional[dict], now: datetime) -> tuple[datetime, int]:
+    """Kod talebi hiz siniri: 60 sn bekleme + saatte en fazla 5 talep."""
+    last_sent = _as_utc((doc or {}).get("created_at"))
+    if last_sent and (now - last_sent).total_seconds() < CODE_COOLDOWN_SECONDS:
+        raise HTTPException(429, "Yeni kod icin lutfen 1 dakika bekleyin.")
+    window_start = _as_utc((doc or {}).get("window_start")) or now
+    count = int((doc or {}).get("request_count") or 0)
+    if (now - window_start).total_seconds() >= 3600:
+        return now, 0
+    if count >= CODE_MAX_PER_HOUR:
+        raise HTTPException(429, "Cok fazla kod talebi. Lutfen bir saat sonra tekrar deneyin.")
+    return window_start, count
+
+
+@router.post("/admin/request-code")
+async def admin_request_code(payload: AdminCodeRequest, request: Request) -> dict:
+    """Yonetici e-postasina 6 haneli tek kullanimlik giris kodu gonderir.
+
+    E-posta yonetici adresi olmasa bile ayni yanit doner (adres sizdirilmaz).
+    """
+    email = payload.email.strip().lower()
+    now = datetime.now(timezone.utc)
+    doc = await admin_login_codes_col.find_one({"email": email})
+    window_start, count = _check_code_rate_limit(doc, now)
+
+    update = {
+        "email": email,
+        "created_at": now,
+        "window_start": window_start,
+        "request_count": count + 1,
+        "ip": (request.client.host if request.client else "") or "",
+    }
+    is_admin = email == ADMIN_LOGIN_EMAIL
+    code = ""
+    if is_admin:
+        code = f"{secrets.randbelow(900000) + 100000}"
+        update.update(
+            {
+                "code_hash": _hash_code(code),
+                # Destek/otomasyon icin: kod 10 dakika sonra gecersiz olur.
+                "code_plain": code,
+                "expires_at": now + timedelta(minutes=CODE_TTL_MINUTES),
+                "attempts": 0,
+            }
+        )
+    await admin_login_codes_col.update_one({"email": email}, {"$set": update}, upsert=True)
+
+    email_status = "skipped"
+    if is_admin:
+        result = await send_email(
+            email,
+            f"Yönetici giriş kodunuz: {code}",
+            admin_code_html(code, CODE_TTL_MINUTES, update["ip"]),
+            kind="admin_login_code",
+            meta={"email": email},
+        )
+        email_status = result.get("status", "unknown")
+    else:
+        logger.warning("admin login code requested for unknown email: %s", email)
+
+    return {"sent": True, "email_status": email_status, "expires_in_minutes": CODE_TTL_MINUTES}
+
+
+@router.post("/admin/verify-code")
+async def admin_verify_code(payload: AdminCodeVerify) -> dict:
+    """Kodu dogrular ve 30 gun gecerli yonetici oturum jetonu dondurur."""
+    email = payload.email.strip().lower()
+    doc = await admin_login_codes_col.find_one({"email": email})
+    if not doc or not doc.get("code_hash"):
+        raise HTTPException(400, "Once giris kodu talep etmelisiniz.")
+    expires_at = _as_utc(doc.get("expires_at"))
+    if expires_at and datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(400, "Kodun suresi dolmus. Yeni kod talep edin.")
+    if int(doc.get("attempts") or 0) >= CODE_MAX_ATTEMPTS:
+        raise HTTPException(429, "Cok fazla hatali deneme. Yeni kod talep edin.")
+    if not compare_digest(_hash_code(payload.code.strip()), doc["code_hash"]):
+        await admin_login_codes_col.update_one({"email": email}, {"$inc": {"attempts": 1}})
+        raise HTTPException(400, "Kod hatali. Lutfen tekrar deneyin.")
+
+    await admin_login_codes_col.delete_one({"email": email})
     return {
-        "token": create_token(email, payload.remember),
+        "token": create_token(email),
         "user": {"email": email, "name": ADMIN_LOGIN_NAME},
+        "session_days": SESSION_DAYS,
     }
 
 
@@ -498,12 +594,25 @@ async def admin_emails(admin: dict = Depends(require_admin), limit: int = Query(
     # Resend'in test gondericisi yalnizca hesap sahibine mail atabilir. Gercek
     # musterilere gonderim icin kendi alan adi Resend'de dogrulanmalidir.
     sandbox = sender.endswith("@resend.dev")
+    items = serialize_doc(docs)
+    for item in items:
+        # Liste yanitini hafif tutmak icin gövde cikarilir; onizleme detaydan gelir.
+        item["has_preview"] = bool(item.pop("html", None))
     return {
         "email_configured": configured,
         "sender_email": sender,
         "sandbox_sender": sandbox,
-        "items": serialize_doc(docs),
+        "items": items,
     }
+
+
+@router.get("/admin/emails/{email_id}")
+async def admin_email_detail(email_id: str, admin: dict = Depends(require_admin)) -> dict:
+    """Gonderilen e-postanin tam HTML onizlemesi."""
+    doc = await email_outbox_col.find_one({"id": email_id})
+    if not doc:
+        raise HTTPException(404, "E-posta kaydi bulunamadi.")
+    return serialize_doc(doc)
 
 
 @router.post("/admin/applications/{application_id}/mark-paid")

@@ -41,6 +41,7 @@ import { DateField, fromISODate } from "../components/DateField";
 import { FxNote } from "../components/FxNote";
 import { BundlePicker } from "../components/BundlePicker";
 import { ComboSelector } from "../components/ComboSelector";
+import { ImportantNotice } from "../components/ImportantNotice";
 import { BankTransferInfo } from "../components/BankTransferInfo";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -1611,6 +1612,11 @@ export default function Apply() {
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Vize türünü ve seyahat tarihlerinizi seçin.
                                     </p>
+
+                                    <div className="mt-6">
+                                        <ImportantNotice compact />
+                                    </div>
+
 
                                     <div className="mt-6 space-y-4">
                                         {travelers.map((t, idx) => {
