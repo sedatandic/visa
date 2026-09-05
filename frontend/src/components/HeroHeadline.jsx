@@ -56,7 +56,7 @@ export const HeroHeadline = () => {
                 </AnimatePresence>
             </h1>
 
-            <div className="mx-auto mt-0 min-h-[4.5em] max-w-2xl sm:min-h-[3.4em]">
+            <div className="mx-auto mt-7 min-h-[4.5em] max-w-2xl sm:min-h-[3.4em]">
                 <AnimatePresence mode="wait">
                     <motion.p
                         key={`sub-${index}`}
