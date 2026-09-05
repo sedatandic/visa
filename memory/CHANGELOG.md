@@ -86,3 +86,46 @@
   `ok.jpg` (düz beyaz zemin), `bad-background.jpg` (kalabalık koyu ortam),
   `bad-sunglasses.jpg` (gözlük + şapka + sert gölge), `bad-selfie.jpg` (selfie açısı, bulanık).
 - Doğrulama: koyu zeminli fotoğraf yüklendi → uyarı çıktı → rehber açıldı (Playwright).
+
+## 2026-06-09 (3) · Kademeli aile indirimi, bilgi amaçlı paket sayfaları, ana sayfa kısaltma
+
+### Kademeli aile indirimi
+- `content.py`: `FAMILY_DISCOUNT_TIERS = [(2, 0.10), (4, 0.15)]`; `family_discount_rate()` artık
+  **en yüksek uyan kademeyi** döndürüyor (önceden ilk eşleşeni dönüyordu → 4+ kişide %10 kalıyordu).
+- Doğrulama (`/api/pricing/quote`): 1 kişi %0, 2-3 kişi %10, 4-5 kişi %15.
+- Metinler güncellendi: `FAMILY_DISCOUNT_TEXT`, SSS cevabı, HeroBannerSlider, HeroHeadline.
+- Özet kartındaki `FamilyDiscountMeter` kademeleri backend'den okuduğu için iki kademeyi
+  otomatik listeler ("2+ yolcu %10", "4+ yolcu %15").
+
+### Fotoğraf rehberi Gerekli Belgeler sayfasında
+- `Documents.jsx` fotoğraf kuralları listesinin altına `PhotoGuide` eklendi
+  (`documents-photo-guide`).
+
+### eSIM ve Seyahat Sigortası sayfaları artık bilgi amaçlı
+- Yeni `components/PlanShowcase.jsx`: paketleri (ad, özet, teminat listesi, fiyat, "en çok
+  tercih edilen" etiketi) sadece listeler; adet seçici, sepet ve ödeme formu YOK.
+- `components/StoreCheckout.jsx` **silindi** (artık referans yok). Satın alma yalnızca vize
+  başvurusu akışından yapılır; sayfa altındaki CTA `/basvuru`'ya yönlendirir.
+- Sayfa metinleri ve SEO başlıkları "Satın Al" yerine "Paketleri" olacak şekilde güncellendi;
+  eSIM adım metni "Başvuruda paketi seçin" oldu.
+
+### Ana sayfa uzunluğu (kullanıcı şikayeti: çok uzun)
+- `body.scrollHeight` **8282px → 6767px** (1920x900'de 9.2 → 7.5 ekran).
+- Kaldırılan/kısaltılan: "4 adımda Dubai vizesi" bölümü tamamen kaldırıldı (hero anlatımı +
+  karşılaştırma tablosu ile tekrar ediyordu); Gerekli Belgeler bölümü 4 kolon kompakt kartlara
+  indi (büyük görsel kaldırıldı); Avantajlar kartları tek satır ikon+metin düzenine geçti;
+  karşılaştırma tablosu 8 satırdan 5 satıra indi ve satır yükseklikleri azaldı;
+  `.section` dolgusu `py-10 sm:py-14` → `py-8 sm:py-12`; hero başlık/alt metin boşlukları azaldı.
+
+### Yasal sayfalar hizalaması
+- `LegalTerms.jsx` ve `Kvkk.jsx`: içerik `container-page max-w-3xl` (ortalanmış) yerine
+  sol hizalı `max-w-3xl px-5 sm:px-8` sarmalayıcıya alındı → metinler üstteki başlık
+  kartıyla aynı sol hizada başlıyor.
+
+### Test — iteration_84 (2026-06-09)
+Tüm senaryolar PASS, kritik/minor hata yok (`test_reports/iteration_84.json`,
+`backend/tests/test_iteration_84.py` 12 test). Doğrulananlar: kademeli aile indirimi (1..5 yolcu),
+`family_discount_tiers` içeriği, 4 rehber görselinin 200 dönmesi, 4 yolculuk başvuruda %15 indirim,
+ana sayfa 6739px ve tüm bölümlerin/linklerin sağlam olması, /esim & /seyahat-sigortasi'nda satın
+alma UI'ının bulunmaması, yasal sayfalarda h1 ile gövde sol hizasının birebir eşleşmesi (441px),
+FamilyDiscountMeter'ın 2 yolcuda %10 / 5 yolcuda %15 göstermesi.

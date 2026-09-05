@@ -18,7 +18,8 @@ export default function Kvkk() {
                 description="Başvuru sırasında paylaştığınız bilgilerin nasıl kullanıldığını şeffaf biçimde açıklıyoruz."
             />
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
-                <div className="container-page max-w-3xl space-y-8 text-sm leading-7 text-muted-foreground">
+                <div className="container-page">
+                    <div className="max-w-3xl space-y-8 px-5 text-sm leading-7 text-muted-foreground sm:px-8">
                     <div>
                         <h2 className="font-heading text-lg font-bold text-foreground">1. Hangi verileri topluyoruz?</h2>
                         <p className="mt-2">
@@ -66,6 +67,7 @@ export default function Kvkk() {
                             hizmet bedelimiz iade edilir. Başvuru gönderilmeden önce yapılan iptal
                             taleplerinde ödeme tamamen iade edilir.
                         </p>
+                    </div>
                     </div>
                 </div>
             </section>

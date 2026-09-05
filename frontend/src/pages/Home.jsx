@@ -55,12 +55,7 @@ const ADVANTAGES = [
     { icon: HeadphonesIcon, title: "Uzman destek ekibi", detail: "Danışmanınız başvurunuzu gönderilmeden önce kontrol eder." },
 ];
 
-const PROCESS = [
-    { step: "1", title: "Bilgilerinizi girin", detail: "Başvuru formunu doldurun ve seyahat bilgilerinizi paylaşın." },
-    { step: "2", title: "Evrakları yükleyin", detail: "Pasaport ve gerekli diğer belgeleri sisteme ekleyin." },
-    { step: "3", title: "Ödemenizi tamamlayın", detail: "Güvenli ödeme altyapısı üzerinden işleminizi tamamlayın." },
-    { step: "4", title: "Sonucunuzu alın", detail: "Onaylanan vize belgeniz e-posta adresinize gönderilir." },
-];
+const PROCESS_UNUSED_REMOVED = true;
 
 const TrackingBox = () => {
     const navigate = useNavigate();
@@ -110,7 +105,7 @@ export default function Home() {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.45 }}
-                        className="relative overflow-hidden rounded-[var(--radius-xl)] border border-white/60 bg-card/70 px-5 pb-10 pt-6 backdrop-blur-sm sm:px-10 sm:pb-14 sm:pt-8"
+                        className="relative overflow-hidden rounded-[var(--radius-xl)] border border-white/60 bg-card/70 px-5 pb-8 pt-5 backdrop-blur-sm sm:px-10 sm:pb-10 sm:pt-6"
                         style={{ boxShadow: "var(--shadow-float)" }}
                     >
                         <div className="hero-glow absolute inset-0" aria-hidden="true" />
@@ -126,7 +121,7 @@ export default function Home() {
                             <HeroHeadline />
 
                             <ul
-                                className="mt-7 flex flex-wrap items-center justify-center gap-2.5"
+                                className="mt-6 flex flex-wrap items-center justify-center gap-2.5"
                                 data-testid="hero-simplicity-strip"
                             >
                                 {[
@@ -160,7 +155,7 @@ export default function Home() {
                             </div>
                         </div>
 
-                        <div className="relative mt-10">
+                        <div className="relative mt-8">
                             <VisaExplainer />
                         </div>
                     </motion.div>
@@ -176,24 +171,25 @@ export default function Home() {
                     <div className="max-w-2xl">
                         <span className="eyebrow">Avantajlar</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Neden bizi tercih etmelisiniz?</h2>
-                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                            Dubai vizesi bizim tek uzmanlık alanımız. Her dosya, yetkili mercilere
-                            iletilmeden önce bir danışmanın elinden geçiyor; ret sebebi olabilecek eksikler
-                            siz farkına varmadan düzeltiliyor.
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                            Dubai vizesi tek uzmanlık alanımız; her dosya yetkili mercilere iletilmeden önce
+                            bir danışmanın elinden geçiyor.
                         </p>
                     </div>
-                    <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {ADVANTAGES.map(({ icon: Icon, title, detail }, i) => (
                             <div
                                 key={title}
-                                className="card-surface card-hoverable p-6"
+                                className="card-surface card-hoverable flex items-start gap-3 p-4"
                                 data-testid={`advantage-card-${i + 1}`}
                             >
-                                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                                    <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                                    <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
                                 </span>
-                                <h3 className="mt-4 font-heading text-base font-semibold">{title}</h3>
-                                <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
+                                <div>
+                                    <h3 className="font-heading text-sm font-bold">{title}</h3>
+                                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -201,34 +197,6 @@ export default function Home() {
             </section>
 
             <EasyCompare />
-
-            {/* BASVURU SURECI */}
-            <section
-                className="section border-y border-border bg-[hsl(var(--cloud))]"
-                data-testid="landing-how-it-works"
-            >
-                <div className="container-page">
-                    <div className="max-w-2xl">
-                        <span className="eyebrow">Başvuru Süreci</span>
-                        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">4 adımda Dubai vizesi</h2>
-                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                            Randevu yok, kargo yok, kuyruk yok. Formu açtığınız yerden onaylı vizenizi
-                            indirdiğiniz ana kadar her adım aynı ekranda ilerliyor.
-                        </p>
-                    </div>
-                    <div className="mt-9 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                        {PROCESS.map((s) => (
-                            <div key={s.step} className="card-surface card-hoverable p-6" data-testid={`process-step-${s.step}`}>
-                                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary font-heading text-base font-bold text-primary-foreground">
-                                    {s.step}
-                                </span>
-                                <h3 className="mt-4 font-heading text-lg font-semibold">{s.title}</h3>
-                                <p className="mt-2 text-sm leading-6 text-muted-foreground">{s.detail}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
 
             {/* DUBAI VIZE TURLERI (fiyatli kartlar) */}
             <VisaShowcase />
@@ -253,50 +221,36 @@ export default function Home() {
                         <span className="eyebrow">Gerekli Belgeler</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Başvuru için gereken belgeler</h2>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Sadece pasaport ve fotoğrafınızla vizenizi alıyoruz. Pasaportunuzun kimlik sayfası
-                            ve beyaz fonlu bir vesikalık yeterli; telefonunuzla çektiğiniz fotoğrafı yükleyin.
-                            Uçak bileti ve otel rezervasyonu zorunlu değildir.
+                            Pasaportunuzun kimlik sayfası ve beyaz fonlu bir vesikalık yeterli. Uçak bileti ve
+                            otel rezervasyonu zorunlu değildir.
                         </p>
                     </div>
-                    <div className="mt-9 grid items-start gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-                        <div
-                            className="overflow-hidden rounded-2xl border border-border lg:sticky lg:top-28"
-                            style={{ boxShadow: "var(--shadow-card)" }}
-                        >
-                            <img
-                                src={IMAGES.passportDocs}
-                                alt="Pasaport ve seyahat belgeleri"
-                                className="h-[280px] w-full object-cover"
-                                loading="lazy"
-                            />
-                        </div>
-                        <div className="grid gap-5 sm:grid-cols-2">
-                            {(content?.required_documents || []).map((d) => {
-                                const Icon = DOC_ICONS[d.key] || FileText;
-                                return (
-                                    <div key={d.key} className="card-surface card-hoverable p-6" data-testid={`doc-card-${d.key}`}>
-                                        <div className="flex items-start justify-between gap-3">
-                                            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                                                <Icon className="h-5 w-5 text-primary" />
-                                            </span>
-                                            <span
-                                                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                                                    d.required
-                                                        ? "border-[hsl(var(--brand-copper)/0.30)] bg-[hsl(var(--brand-copper)/0.08)] text-[hsl(var(--brand-copper))]"
-                                                        : "border-border bg-muted text-muted-foreground"
-                                                }`}
-                                            >
-                                                {d.required ? "Zorunlu" : "Opsiyonel"}
-                                            </span>
-                                        </div>
-                                        <h3 className="mt-4 font-heading text-base font-semibold">{d.title}</h3>
-                                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{d.detail}</p>
+                    <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {(content?.required_documents || []).map((d) => {
+                            const Icon = DOC_ICONS[d.key] || FileText;
+                            return (
+                                <div key={d.key} className="card-surface card-hoverable p-5" data-testid={`doc-card-${d.key}`}>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                                            <Icon className="h-4.5 w-4.5 text-primary" />
+                                        </span>
+                                        <span
+                                            className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                                                d.required
+                                                    ? "border-[hsl(var(--brand-copper)/0.30)] bg-[hsl(var(--brand-copper)/0.08)] text-[hsl(var(--brand-copper))]"
+                                                    : "border-border bg-muted text-muted-foreground"
+                                            }`}
+                                        >
+                                            {d.required ? "Zorunlu" : "Opsiyonel"}
+                                        </span>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                    <h3 className="mt-3 font-heading text-sm font-bold">{d.title}</h3>
+                                    <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{d.detail}</p>
+                                </div>
+                            );
+                        })}
                     </div>
-                    <Button asChild variant="secondary" className="mt-8 h-11 border border-border">
+                    <Button asChild variant="secondary" className="mt-6 h-11 border border-border">
                         <Link to="/gerekli-belgeler">
                             Belge detayları ve fotoğraf kuralları <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>

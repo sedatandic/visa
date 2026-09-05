@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 import { Cpu, Globe2, QrCode, Wifi, Zap } from "lucide-react";
 import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
-import { StoreCheckout } from "../components/StoreCheckout";
+import { PlanShowcase } from "../components/PlanShowcase";
 import { EsimCompare } from "../components/EsimCompare";
 
 const STEPS = [
     {
         icon: QrCode,
-        title: "Paketi seçin, ödeyin",
-        detail: "Kart veya havale ile ödeme yapın. Siparişiniz anında oluşturulur.",
+        title: "Başvuruda paketi seçin",
+        detail: "Vize başvurunuzun Ek hizmetler adımında eSIM paketini işaretleyin; ödemesi vize bedeliyle birlikte alınır.",
     },
     {
         icon: Cpu,
@@ -57,8 +57,8 @@ const FAQ = [
 export default function Esim() {
     useEffect(() => {
         setMeta(
-            "Dubai eSIM Satın Al | Anında Kurulum, QR Kod ile İnternet",
-            "Dubai ve BAE için eSIM paketleri: 1 GB'dan sınırsıza kadar seçenekler, QR kod ile 2 dakikada kurulum, Türkiye numaranız açık kalır. Güncel kurla TL ödeme.",
+            "Dubai eSIM Paketleri | Anında Kurulum, QR Kod ile İnternet",
+            "Dubai ve BAE için eSIM paketleri: 1 GB'dan sınırsıza kadar seçenekler, QR kod ile 2 dakikada kurulum, Türkiye numaranız açık kalır. Paketi vize başvurunuza ekleyin.",
             { canonicalPath: "/esim" }
         );
     }, []);
@@ -68,12 +68,12 @@ export default function Esim() {
             <PageHeader
                 eyebrow="Dubai eSIM"
                 title="Dubai'de ilk dakikadan itibaren internet"
-                description="Roaming faturası sürprizi yok. eSIM paketinizi buradan alın, QR kodu taratın; Dubai'ye indiğiniz an bağlanın."
+                description="Roaming faturası sürprizi yok. Aşağıdaki eSIM paketlerini inceleyin; vize başvurunuz sırasında seçin, QR kodunuz e-postanıza gelsin."
             />
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
-                    <StoreCheckout kind="esim" ctaLabel="eSIM satın al" />
+                    <PlanShowcase kind="esim" />
                 </div>
             </section>
 

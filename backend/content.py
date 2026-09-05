@@ -247,10 +247,13 @@ LEGACY_ADDONS = {
 }
 
 # (minimum traveller count, discount rate on visa subtotal)
-# Aile basvurusu (2 kisi ve uzeri) icin sabit %10 indirim
-FAMILY_DISCOUNT_TIERS = [(2, 0.10)]
+# Aile basvurusu: 2-3 kisi %10, 4 kisi ve uzeri %15 (en yuksek uyan kademe uygulanir)
+FAMILY_DISCOUNT_TIERS = [(2, 0.10), (4, 0.15)]
 
-FAMILY_DISCOUNT_TEXT = "Aile başvurularında (2 kişi ve üzeri) %10 aile indirimi otomatik uygulanır."
+FAMILY_DISCOUNT_TEXT = (
+    "Aile başvurularında 2-3 kişi için %10, 4 kişi ve üzeri için %15 aile indirimi "
+    "otomatik uygulanır."
+)
 
 MAX_TRAVELERS = 10
 
@@ -414,7 +417,7 @@ FAQ = [
     },
     {
         "q": "Ailemle birlikte tek başvuru yapabilir miyim?",
-        "a": "Evet. Başvuru formunda 'Yolcu ekle' butonuyla eşinizi ve çocuklarınızı aynı başvuruya ekleyebilirsiniz. 18 yaş altı yolcular için indirimli çocuk vizesi, 2 kişi ve üzeri başvurularda ise %10 aile indirimi otomatik uygulanır.",
+        "a": "Evet. Başvuru formunda 'Yolcu ekle' butonuyla eşinizi ve çocuklarınızı aynı başvuruya ekleyebilirsiniz. 18 yaş altı yolcular için indirimli çocuk vizesi, 2-3 kişilik başvurularda %10, 4 kişi ve üzeri başvurularda %15 aile indirimi otomatik uygulanır.",
     },
     {
         "q": "Vize işlemi ne kadar sürüyor?",
@@ -585,10 +588,9 @@ AGENCY_INFO = {
 
 
 def family_discount_rate(traveler_count: int) -> float:
-    for minimum, rate in FAMILY_DISCOUNT_TIERS:
-        if traveler_count >= minimum:
-            return rate
-    return 0.0
+    """Yolcu sayisina uyan en yuksek aile indirimi oranini dondurur."""
+    rates = [rate for minimum, rate in FAMILY_DISCOUNT_TIERS if traveler_count >= minimum]
+    return max(rates) if rates else 0.0
 
 
 # Sigorta + eSIM birlikte alindiginda ek urun toplamina uygulanan indirim

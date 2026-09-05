@@ -51,7 +51,8 @@ export default function LegalTerms({ variant = "refund" }) {
             <PageHeader eyebrow={cfg.eyebrow} title={cfg.title} description={cfg.description} />
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
-                <div className="container-page max-w-3xl">
+                <div className="container-page">
+                    <div className="max-w-3xl px-5 sm:px-8">
                     {doc?.updated_at && (
                         <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                             <CalendarDays className="h-3.5 w-3.5" /> Son güncelleme: {formatDate(doc.updated_at)}
@@ -90,6 +91,7 @@ export default function LegalTerms({ variant = "refund" }) {
                                 <Link to="/basvuru">Başvuru Yap</Link>
                             </Button>
                         </div>
+                    </div>
                     </div>
                 </div>
             </section>

@@ -20,7 +20,7 @@ const SLOGANS = [
     {
         top: "Tüm aileniz",
         bottom: "tek formda, tek başvuruda",
-        sub: "Eşinizi ve çocuklarınızı aynı forma ekleyin. 2 kişiden itibaren %10 aile indirimi otomatik uygulanır, çocuk vizeleri indirimli fiyatlanır.",
+        sub: "Eşinizi ve çocuklarınızı aynı forma ekleyin. 2-3 kişide %10, 4 kişi ve üzerinde %15 aile indirimi otomatik uygulanır, çocuk vizeleri indirimli fiyatlanır.",
     },
     {
         top: "Pasaportunuzu yükleyin",
@@ -42,7 +42,7 @@ export const HeroHeadline = () => {
     return (
         <>
             <h1
-                className="mt-6 min-h-[2.2em] font-heading text-4xl font-extrabold sm:text-5xl lg:text-[58px]"
+                className="mt-5 min-h-[2.1em] font-heading text-4xl font-extrabold sm:text-5xl lg:text-[52px]"
                 style={{ perspective: "900px" }}
                 data-testid="hero-headline"
             >
@@ -66,7 +66,7 @@ export const HeroHeadline = () => {
                 </AnimatePresence>
             </h1>
 
-            <div className="mx-auto mt-7 min-h-[4.5em] max-w-2xl sm:min-h-[3.4em]">
+            <div className="mx-auto mt-5 min-h-[4em] max-w-2xl sm:min-h-[2.8em]">
                 <AnimatePresence mode="wait">
                     <motion.p
                         key={`sub-${index}`}
@@ -83,7 +83,7 @@ export const HeroHeadline = () => {
             </div>
 
             {/* Sloganlarin altinda ilerleme cizgileri (anlatim panelindeki gibi) */}
-            <div className="mx-auto mt-5 flex max-w-[260px] items-center gap-1.5" data-testid="hero-progress">
+            <div className="mx-auto mt-4 flex max-w-[260px] items-center gap-1.5" data-testid="hero-progress">
                 {SLOGANS.map((s, i) => (
                     <button
                         key={s.top}

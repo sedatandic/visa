@@ -25,13 +25,6 @@ const ROWS = [
         themNegative: true,
     },
     {
-        key: "appointment",
-        label: "Randevu / ofise gitme",
-        us: "Gerekmiyor, tamamen online",
-        them: "Randevu ve ofis ziyareti",
-        themNegative: true,
-    },
-    {
         key: "speed",
         label: "Sonuç süresi",
         us: "Ortalama 2 iş günü · ekspreste ~8 mesai saati",
@@ -43,19 +36,6 @@ const ROWS = [
         us: "Harç + hizmet bedeli dahil, tek seferlik",
         them: "Sonradan eklenen dosya ve komisyon ücretleri",
         themNegative: true,
-    },
-    {
-        key: "tracking",
-        label: "Başvuru takibi",
-        us: "Takip kodunuzla her adım anlık ekranda",
-        them: "Telefonla arayıp sormak",
-        themNegative: true,
-    },
-    {
-        key: "extras",
-        label: "Seyahat ekstraları",
-        us: "eSIM, sigorta ve çöl safarisi aynı sepette",
-        them: "Ayrı ayrı, farklı firmalardan",
     },
 ];
 
@@ -76,14 +56,13 @@ export const EasyCompare = () => (
             <div className="max-w-2xl">
                 <span className="eyebrow">Karşılaştırma</span>
                 <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Neden bizde kolay?</h2>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Sadece pasaport ve fotoğrafınızla vizenizi alıyoruz. Aşağıda, bizimle çalışırken
-                    yaşadığınız süreci klasik acente yöntemiyle yan yana görebilirsiniz.
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Bizimle çalışırken yaşadığınız süreci klasik acente yöntemiyle yan yana görün.
                 </p>
             </div>
 
             <div
-                className="mt-9 overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card"
+                className="mt-7 overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card"
                 style={{ boxShadow: "var(--shadow-card)" }}
             >
                 <div className="hidden grid-cols-[1.05fr_1.3fr_1.3fr] border-b border-border bg-[hsl(var(--cloud))] md:grid">
@@ -101,19 +80,19 @@ export const EasyCompare = () => (
                 {ROWS.map((row, i) => (
                     <div
                         key={row.key}
-                        className={`grid gap-3 px-6 py-5 md:grid-cols-[1.05fr_1.3fr_1.3fr] md:gap-0 md:px-0 md:py-0 ${
+                        className={`grid gap-3 px-6 py-4 md:grid-cols-[1.05fr_1.3fr_1.3fr] md:gap-0 md:px-0 md:py-0 ${
                             i ? "border-t border-border" : ""
                         }`}
                         data-testid={`compare-row-${row.key}`}
                     >
-                        <span className="font-heading text-sm font-semibold md:px-6 md:py-5">{row.label}</span>
-                        <div className="bg-[hsl(var(--brand-green)/0.06)] p-4 md:border-l md:border-border md:px-6 md:py-5">
+                        <span className="font-heading text-sm font-semibold md:px-6 md:py-4">{row.label}</span>
+                        <div className="bg-[hsl(var(--brand-green)/0.06)] p-4 md:border-l md:border-border md:px-6 md:py-4">
                             <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--brand-green))] md:hidden">
                                 Dubai Vize Online
                             </p>
                             <Cell text={row.us} positive />
                         </div>
-                        <div className="p-4 md:border-l md:border-border md:px-6 md:py-5">
+                        <div className="p-4 md:border-l md:border-border md:px-6 md:py-4">
                             <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground md:hidden">
                                 Klasik acente yöntemi
                             </p>
@@ -123,7 +102,7 @@ export const EasyCompare = () => (
                 ))}
             </div>
 
-            <div className="mt-7 flex flex-wrap items-center gap-4">
+            <div className="mt-6 flex flex-wrap items-center gap-4">
                 <Button asChild size="lg" data-testid="compare-apply-button">
                     <Link to="/basvuru">
                         Pasaportunuzla başlayın <ArrowRight className="ml-1 h-4 w-4" />

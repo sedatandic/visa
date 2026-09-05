@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { BadgeCheck, FileText, HeartPulse, Plane } from "lucide-react";
 import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
-import { StoreCheckout } from "../components/StoreCheckout";
+import { PlanShowcase } from "../components/PlanShowcase";
 
 const REASONS = [
     {
@@ -45,8 +45,8 @@ const FAQ = [
 export default function Insurance() {
     useEffect(() => {
         setMeta(
-            "Dubai Seyahat Sigortası Satın Al | 30.000 € ve 100.000 € Teminat",
-            "Dubai ve BAE seyahatleri için seyahat sağlık sigortası: 30.000 € temel ve 100.000 € geniş kapsam paketleri, bagaj ve iptal teminatı, poliçe PDF olarak e-postanıza.",
+            "Dubai Seyahat Sigortası Paketleri | 30.000 € ve 100.000 € Teminat",
+            "Dubai ve BAE seyahatleri için seyahat sağlık sigortası: 30.000 € temel ve 100.000 € geniş kapsam paketleri, bagaj ve iptal teminatı. Poliçeyi vize başvurunuza ekleyin.",
             { canonicalPath: "/seyahat-sigortasi" }
         );
     }, []);
@@ -56,12 +56,12 @@ export default function Insurance() {
             <PageHeader
                 eyebrow="Seyahat Sigortası"
                 title="Dubai seyahatiniz için sağlık güvencesi"
-                description="Acil sağlık masrafları, bagaj ve iptal riskleri için poliçenizi buradan alın. Poliçeniz PDF olarak e-postanıza gelir."
+                description="Acil sağlık masrafları, bagaj ve iptal risklerini kapsayan poliçe seçeneklerini inceleyin. Poliçenizi vize başvurunuz sırasında ekleyebilirsiniz."
             />
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
-                    <StoreCheckout kind="insurance" ctaLabel="Poliçe satın al" />
+                    <PlanShowcase kind="insurance" />
                 </div>
             </section>
 

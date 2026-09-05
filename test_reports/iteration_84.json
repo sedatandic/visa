@@ -1,0 +1,43 @@
+{
+  "summary": "Iteration 84 backend+frontend verification. All 12 pytest cases in /app/backend/tests/test_iteration_84.py pass: family_discount_rate for 1..5 travelers (0, .10, .10, .15, .15), /api/content/site returns family_discount_tiers=[{min:2,rate:.10},{min:4,rate:.15}] and family_discount_text mentioning both %10 and %15, all 4 /photo-guide/*.jpg assets return 200, /api/applications with 4 travelers computes family_discount_rate=0.15 and discount=15% of subtotal, /api/orders endpoint still present. Frontend: home page height 6739px (<7000) at 1920x900, landing-how-it-works removed, all remaining sections and links present (6 advantages cards, 5 compare rows, doc-cards, review-spotlight, bundle-strip, tracking). /gerekli-belgeler shows documents-photo-guide with 1 good + 3 bad images. /esim (4 plan cards) and /seyahat-sigortasi (6 plan cards) contain NO qty-plus / store-submit-button / store-checkout-panel; both expose plans-*-cta and plans-*-apply-button; clicking apply navigates to /basvuru. Legal pages (/hizmet-sozlesmesi, /iade-kosullari, /kvkk) have h1.left == body.left == 441px (0px offset, well within 5px tolerance). /basvuru FamilyDiscountMeter shows tier-2 + tier-4 markers with 1 traveler and 'Yolcu ekle ve indirimi aç' button; 2 travelers -> '%10 aktif' badge; 5 travelers -> '%15 aktif' badge and summary shows '%15 indirim uygulanıyor.'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verified_backend": [
+    "POST /api/pricing/quote [visa_30_single]*n -> family_discount_rate for n in {1..5} matches (0, .10, .10, .15, .15) and discount amount is subtotal*rate",
+    "GET /api/content/site -> family_discount_tiers list is [{min:2,rate:.10},{min:4,rate:.15}], text mentions %10 and %15",
+    "GET /photo-guide/{ok,bad-background,bad-sunglasses,bad-selfie}.jpg -> 200",
+    "POST /api/applications with 4 adult travelers on visa_30_single -> reference_code starts with DV-, pricing.family_discount_rate=0.15, pricing.subtotal=5190*4=20760, pricing.family_discount=3114.0",
+    "POST /api/orders reachable (not 404)"
+  ],
+  "verified_frontend": [
+    "Home 1920x900 scrollHeight=6739 (<7000)",
+    "landing-hero, landing-authorities, landing-advantages (6 inner cards), landing-easy-compare (5 rows), landing-visa-showcase, home-bundle-strip, landing-documents, landing-tracking, review-spotlight all present; landing-how-it-works missing (correct)",
+    "/gerekli-belgeler: documents-photo-guide present, 1 good + 3 bad",
+    "/esim: plans-esim present, 4 plan cards, 0 qty-plus, 0 store-submit-button, 0 store-checkout-panel, plans-esim-cta + plans-esim-apply-button present; clicking apply navigates to /basvuru",
+    "/seyahat-sigortasi: plans-insurance present, 6 plan cards, no qty/checkout/submit, plans-insurance-cta + apply-button present",
+    "/hizmet-sozlesmesi, /iade-kosullari, /kvkk: h1.left = 441px, first body element.left = 441px (equal)",
+    "/basvuru FamilyDiscountMeter: 1 traveler -> tier-2+tier-4 markers visible + family-discount-add-traveler button; 2 travelers -> '%10 aktif'; 5 travelers -> '%15 aktif' + summary '%15 indirim uygulanıyor.'"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_84.py",
+    "/app/test_reports/pytest/iter84.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "content.py FAMILY_DISCOUNT_TIERS ordering isn't enforced; family_discount_rate() uses max() over matching tiers which is correct even if tiers were reordered, so implementation is robust.",
+    "compute_pricing returns bundle_discount_title unconditionally; if that field is displayed elsewhere it might read as active even when bundle_discount==0. Minor UI concern only.",
+    "test_iteration_83.py still fails on the (pre-existing) apply_background_report() issue for white-bg reference photo; unrelated to iteration 84 changes."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_84.py",
+    "/app/test_reports/pytest/iter84.xml",
+    "/app/test_reports/iteration_84.json"
+  ],
+  "success_rate": {"backend": "100% (12/12 iter84)", "frontend": "100% of iter84 assertions"},
+  "test_credentials": "Admin: info@dubaivizeonline.com (OTP). Customer OTP: delivered@resend.dev.",
+  "seed_data_creation": "1 /api/applications row (TEST_iter84 Aile, 4 travelers), a few uploads (dummy 1x1 PNGs). No cleanup endpoint.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run test_iteration_84.py serially with -n 0 (xdist installed but not needed). QuoteRequest expects field name 'visa_type_ids' (list of ids), NOT 'items'. /api/orders is the store checkout endpoint (not /api/order). To reach 4+ traveler state on /basvuru use data-testid=application-type-group + data-testid=add-adult-traveler-button — the family-discount-add-traveler CTA only shows when there is exactly 1 traveler.",
+  "rca of the issue": "No new bugs found in iter84 scope."
+}

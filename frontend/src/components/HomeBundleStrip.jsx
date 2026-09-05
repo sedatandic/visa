@@ -23,7 +23,7 @@ export const HomeBundleStrip = () => {
     const popularId = bundles.find((b) => b.popular)?.id;
 
     return (
-        <section className="py-14 sm:py-20" data-testid="home-bundle-strip">
+        <section className="section" data-testid="home-bundle-strip">
             <div className="container-page">
                 <span className="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--cream-tag))] px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider">
                     <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Seyahat paketleri
@@ -36,7 +36,7 @@ export const HomeBundleStrip = () => {
                     otomatik uygulanır, poliçe ve QR kod e-postanıza gelir.
                 </p>
 
-                <div className="mt-8 grid gap-5 lg:grid-cols-3">
+                <div className="mt-7 grid gap-5 lg:grid-cols-3">
                     {bundles.map((b) => (
                         <Link
                             key={b.id}
@@ -63,7 +63,7 @@ export const HomeBundleStrip = () => {
 
                             <p className="mt-3 text-sm leading-6 text-muted-foreground">{b.tagline}</p>
 
-                            <ul className="mt-5 space-y-3 text-sm">
+                            <ul className="mt-4 space-y-2.5 text-sm">
                                 {b.visa && (
                                     <li className="flex items-start gap-2.5">
                                         <Plane className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
@@ -101,7 +101,7 @@ export const HomeBundleStrip = () => {
                                 </li>
                             </ul>
 
-                            <div className="mt-auto pt-6">
+                            <div className="mt-auto pt-5">
                                 <p className="text-xs text-muted-foreground">Vize dahil toplam</p>
                                 <p
                                     className="tabular font-heading text-3xl font-extrabold leading-none tracking-tight text-[hsl(30_62%_38%)]"

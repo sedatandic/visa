@@ -24,7 +24,7 @@ const SLIDES = [
         src: "https://images.unsplash.com/photo-1489516408517-0c0a15662682?auto=format&fit=crop&w=2000&q=80",
         alt: "Palm Jumeirah kuş bakışı",
         title: "Tüm aileniz tek başvuruda",
-        text: "2 kişiden itibaren %10 aile indirimi",
+        text: "2-3 kişide %10, 4+ kişide %15 aile indirimi",
     },
     {
         src: "https://images.unsplash.com/photo-1582882198551-c0d7f863c5dd?auto=format&fit=crop&w=2000&q=80",

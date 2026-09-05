@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { IMAGES, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { ImportantNotice } from "../components/ImportantNotice";
+import { PhotoGuide } from "../components/PhotoGuide";
 import { Button } from "../components/ui/button";
 
 export default function Documents() {
@@ -92,6 +93,7 @@ export default function Documents() {
                                     </li>
                                 ))}
                             </ul>
+                            <PhotoGuide testId="documents-photo-guide" />
                         </div>
 
                         <Button asChild className="mt-8 h-12 px-7 text-base" data-testid="documents-apply-button">
