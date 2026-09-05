@@ -29,7 +29,7 @@ async def main():
     tts = OpenAITextToSpeech(api_key=key)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for name, text in LINES.items():
-        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice="coral", speed=0.85)
+        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice="shimmer", speed=0.92)
         path = OUT_DIR / f"{name}.mp3"
         path.write_bytes(audio)
         print(name, len(audio), "bytes ->", path)

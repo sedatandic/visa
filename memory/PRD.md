@@ -474,3 +474,11 @@ ve Türkçe aksanı çok kötü".
    Kalan aksan OpenAI TTS'in yapısal sınırı — tam doğal Türkçe için ElevenLabs gerekiyor.
 Doğrulama: delivered.mp3 7.3 sn çalıp bitiyor, buton "Sesli anlat"a dönüyor, 6 sn sonra
 tekrar başlamıyor (JS kontrolü).
+
+### İngilizce yazı temizliği + daha sıcak ses (2026-06-06)
+Kullanıcı ekran görüntüsünde 3. sahnedeki dizüstü ekranında İngilizce "UPLOADING..." yazısı
+ve 4. sahnede telefonda "DIGITAL VISA APPROVED" yazısı vardı.
+- `upload.jpg` ve `delivered.jpg` yeniden üretildi (Gemini): ekranlarda **hiç yazı yok** —
+  yükleme sahnesinde altın ilerleme halkası + belge ikonları, teslim sahnesinde telefonda
+  yalnız yeşil onay tiki (Burj Khalifa fonunda Türk gezgin).
+- Seslendirme `coral` → **`shimmer`**, hız 0.85 → **0.92** (kullanıcı: "daha sıcak ses tonu").
