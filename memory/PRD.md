@@ -862,3 +862,9 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   dilek ggNaO6NobK7mzVacuMYD, sibel qLdPxFtPuffoxx5gieBJ, asli HZh2tWL1clJO95e2qMt2,
   basak 75LJWFYTuXJDmBjAFvfE, ilknur xFsOR54lR471QiCvQ5re, filiz 151qoe2jIbiWHaD2lbXE,
   pelin FvxJI7vwUDkTkEOO7nd7.
+- **8 enerjik kadın ses daha** (kullanıcı: "daha çok kadın sesi, enerjik olsun, robotik
+  olmasın"): damla A2XgcJ6lQVEFeIaIUyrc, melek xgYIZvUB5h2eFY3HUFNj,
+  tomris bqaNYmxFgK1TN7CL95PZ, fusun cbqdgvVi3C6sgxIWpqIh, nil N0wraTTB0pquzsz3DLG8,
+  lisa LYfSi2g3Frvxg50fRl91, aysel 1dZlYtnYGmIIA3kV1FuX, duygu MzfWWOj9g3sIKex1YFMV.
+  Bu grup daha canlı ayarla üretildi (stability 0.4, style 0.15) — monotonluk azalır.
+  Dinleme sayfasında toplam **20 demo** (13-20 = enerjik kadın grubu).
