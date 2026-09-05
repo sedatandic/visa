@@ -2,6 +2,8 @@
 mother_name, father_name) auto-fill when omitted, are preserved when sent."""
 import io
 import os
+from datetime import date, timedelta
+
 import pytest
 import requests
 
@@ -65,7 +67,10 @@ def _base_payload(uploaded, traveler_overrides=None):
             "whatsapp_optin": False,
         },
         "travelers": [traveler],
-        "travel": {"arrival_date": "2026-03-01", "departure_date": "2026-03-07"},
+        "travel": {
+            "arrival_date": (date.today() + timedelta(days=30)).isoformat(),
+            "departure_date": (date.today() + timedelta(days=36)).isoformat(),
+        },
         "addons": {"express": False, "insurance": False, "esim": False},
         "extra_documents": {
             "ticket_file_id": uploaded["ticket"],
@@ -128,6 +133,21 @@ def test_create_application_child_defaults_student(api, uploaded_files):
             "birth_date": "2018-01-01",
             "visa_type_id": "visa_30_child",
         },
+    )
+    # 18 yas alti yolcu en az bir yetiskinle birlikte basvurabilir
+    payload["travelers"].append(
+        {
+            "first_name": "AYSE",
+            "last_name": "DEMIR",
+            "birth_date": "1988-04-02",
+            "applicant_type": "adult",
+            "nationality": "TR",
+            "passport_no": "U87654321",
+            "passport_expiry": "2030-01-01",
+            "visa_type_id": "visa_30_single",
+            "passport_file_id": uploaded_files["passport"],
+            "photo_file_id": uploaded_files["photo"],
+        }
     )
     r = api.post(f"{BASE_URL}/api/applications", json=payload)
     assert r.status_code == 200, r.text

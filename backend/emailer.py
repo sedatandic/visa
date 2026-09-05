@@ -4,8 +4,10 @@ If RESEND_API_KEY is not configured the send is recorded as "skipped" and the
 application flow is never interrupted.
 """
 import asyncio
+import html as html_lib
 import logging
 import os
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,6 +17,19 @@ from db import email_outbox_col
 logger = logging.getLogger(__name__)
 
 BRAND = "Dubai Vize Online"
+
+# Pazarlama nitelikli postalar: tek tik abonelik iptali basliklari eklenir
+MARKETING_KINDS = {"draft_reminder"}
+
+
+def _html_to_text(html: str) -> str:
+    """HTML govdeden duz metin alternatifi uretir (Gmail HTML-only postalari cezalandirir)."""
+    text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.S | re.I)
+    text = re.sub(r"<br\s*/?>|</p>|</div>|</tr>|</h1>", "\n", text, flags=re.I)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html_lib.unescape(text).replace("\xa0", " ")
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
 def _wrap(title: str, body_html: str) -> str:
@@ -46,18 +61,35 @@ def _row(label: str, value: str) -> str:
 async def send_email(to: str, subject: str, html: str, kind: str = "generic", meta: Optional[dict] = None) -> dict:
     """Never raises. Always records the attempt in email_outbox."""
     api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
-    sender_email = os.environ.get("SENDER_EMAIL") or "onboarding@resend.dev"
+    sender_email = (os.environ.get("SENDER_EMAIL") or "onboarding@resend.dev").strip()
+    reply_to = (os.environ.get("REPLY_TO_EMAIL") or os.environ.get("ADMIN_EMAIL") or "").strip()
     sender = f"{BRAND} <{sender_email}>"
     result = {"status": "skipped", "reason": "RESEND_API_KEY tanimli degil"}
+    if sender_email.endswith("@resend.dev"):
+        # Paylasimli test alan adi: SPF/DKIM markayla hizalanmadigi icin postalar spam'e duser.
+        logger.warning(
+            "SENDER_EMAIL paylasimli resend.dev alan adinda; dogrulanmis alan adi kullanin."
+        )
     if api_key and not api_key.startswith("re_placeholder"):
         try:
             import resend
 
             resend.api_key = api_key
-            res = await asyncio.to_thread(
-                resend.Emails.send,
-                {"from": sender, "to": [to], "subject": subject, "html": html},
-            )
+            params = {
+                "from": sender,
+                "to": [to],
+                "subject": subject,
+                "html": html,
+                "text": _html_to_text(html),
+            }
+            if reply_to:
+                params["reply_to"] = reply_to
+                if kind in MARKETING_KINDS:
+                    params["headers"] = {
+                        "List-Unsubscribe": f"<mailto:{reply_to}?subject=Listeden%20cikar>",
+                        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+                    }
+            res = await asyncio.to_thread(resend.Emails.send, params)
             result = {"status": "sent", "provider_id": (res or {}).get("id")}
         except Exception as exc:  # pragma: no cover
             logger.error("Resend send failed: %s", exc)

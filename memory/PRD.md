@@ -302,3 +302,26 @@ yansır (5.190 + 2.470 = 7.660₺). Switch kapatılırsa ekspres seçilmez.
 Test: iteration_67 frontend %100 (acil/acil değil, ekspres açık/kapalı taşıma, error/warning
 regresyonu). Not: ön kontrol artık uygun vizeyi otomatik seçtiği için upgrade bandı yalnız
 kullanıcı elle kısa süreli vize seçtiğinde görünür (iteration_66'da %100 doğrulanmıştı).
+
+## 2026-06-05 · E-postaların spam'e düşmesi (kullanıcı bildirdi) + bölüme özel metinler
+**Kök neden**: `SENDER_EMAIL=onboarding@resend.dev` — Resend'in paylaşımlı sandbox alan adı.
+Gmail, "Dubai Vize Online" adıyla gelen ama resend.dev'den gönderilen postada SPF/DKIM
+hizalanmadığı için hepsini spam'e atıyor. **Çözüm kullanıcı eylemi gerektirir**:
+resend.com/domains → dubaivizeonline.com ekle → DKIM/SPF/DMARC TXT kayıtlarını DNS'e gir →
+`SENDER_EMAIL`i doğrulanmış adrese çevir (kullanıcıya soruldu, yanıt bekliyor).
+Kod tarafında yapılan teslim edilebilirlik düzeltmeleri (`emailer.py`):
+- Her postaya **düz metin alternatifi** eklendi (`_html_to_text`, html.unescape + \xa0 temizliği);
+  Gmail HTML-only postaları cezalandırıyordu.
+- **`reply_to`** eklendi (REPLY_TO_EMAIL → ADMIN_EMAIL); footer "yanıtlayabilirsiniz" diyor ama
+  yanıtlar resend.dev'e gidiyordu (spam sinyali).
+- `draft_reminder` gibi pazarlama postalarına **List-Unsubscribe + One-Click** başlıkları
+  (MARKETING_KINDS); işlemsel postalara eklenmiyor.
+- Gönderici resend.dev ise başlangıçta uyarı logu.
+**Bölüme özel metinler**: kullanıcı "bu yazıları her başlık için özelleştirelim" dedi; ana
+sayfadaki genel hero paragrafı ve tüm bölüm alt metinleri bölüme özgü, somut cümlelerle
+değiştirildi (hero, avantajlar, süreç, vize türleri, belgeler, takip, SSS, CTA — hiçbiri
+tekrar etmiyor).
+Test: iteration_68 backend 7/7 (`tests/test_emailer.py`, monkeypatch ile gerçek posta
+gönderilmedi) + frontend %100 (8 metin doğrulandı). Ayrıca `tests/test_uae_defaults.py`
+sabit geçmiş tarihleri (2026-03-01) yeni kural nedeniyle 400 alıyordu → dinamik
+`date.today() + 30/36 gün` yapıldı. pytest: 55/55 PASS.

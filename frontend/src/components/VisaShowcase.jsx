@@ -60,7 +60,9 @@ export const VisaShowcase = () => {
                                 Dubai vize türleri ve fiyatları
                             </h2>
                             <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-                                Kartlardan birine dokunun; başvuru formu seçtiğiniz vize türüyle açılır.
+                                Kalış sürenize ve kaç kez giriş yapacağınıza göre seçin. Yazan fiyat nihai
+                                fiyattır: resmî başvuru harcı ve hizmet bedelimiz dahildir, sonradan dosya
+                                ücreti çıkmaz.
                             </p>
                         </div>
                         <Button asChild variant="outline" data-testid="showcase-all-types-button">

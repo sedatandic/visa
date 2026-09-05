@@ -125,8 +125,9 @@ export default function Home() {
                             </span>
                             <HeroHeadline />
                             <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                                Dubai seyahatiniz için vize başvurunuzu tamamen online tamamlayın. Evraklarınızı
-                                yükleyin, başvurunuzu gönderin ve sonucunuzu e-posta ile alın.
+                                Pasaportunuzu hiçbir yere teslim etmeden, telefonunuzdan yaklaşık 5 dakikada
+                                başvurun. Evraklarınızı yükleyin, ödemenizi yapın; onaylanan vizeniz e-posta
+                                adresinize gelir.
                             </p>
 
                             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -196,6 +197,11 @@ export default function Home() {
                     <div className="max-w-2xl">
                         <span className="eyebrow">Avantajlar</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Neden bizi tercih etmelisiniz?</h2>
+                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                            Dubai vizesi bizim tek uzmanlık alanımız. Her dosya, yetkili mercilere
+                            iletilmeden önce bir danışmanın elinden geçiyor; ret sebebi olabilecek eksikler
+                            siz farkına varmadan düzeltiliyor.
+                        </p>
                     </div>
                     <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                         {ADVANTAGES.map(({ icon: Icon, title, detail }, i) => (
@@ -238,6 +244,10 @@ export default function Home() {
                     <div className="max-w-2xl">
                         <span className="eyebrow">Başvuru Süreci</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">4 adımda Dubai vizesi</h2>
+                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                            Randevu yok, kargo yok, kuyruk yok. Formu açtığınız yerden onaylı vizenizi
+                            indirdiğiniz ana kadar her adım aynı ekranda ilerliyor.
+                        </p>
                     </div>
                     <div className="mt-9 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                         {PROCESS.map((s) => (
@@ -276,8 +286,9 @@ export default function Home() {
                         <span className="eyebrow">Gerekli Belgeler</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Başvuru için gereken belgeler</h2>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Geçerli pasaport, biyometrik fotoğraf, gerekirse uçuş bilgileri ve ek destekleyici
-                            belgeler. Dijital kopyaları yüklemeniz yeterli.
+                            Pasaportunuzun kimlik sayfası ve beyaz fonlu bir vesikalık çoğu başvuru için
+                            yeterli. Telefonunuzla çektiğiniz fotoğrafı yükleyin; kalan evrakları gerekirse
+                            danışmanınız sizden ayrıca ister.
                         </p>
                     </div>
                     <div className="mt-9 grid items-start gap-8 lg:grid-cols-[0.85fr_1.15fr]">
@@ -333,8 +344,9 @@ export default function Home() {
                         <span className="eyebrow">Başvuru Takibi</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Başvurunuz nerede?</h2>
                         <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                            Başvuru numaranız ile işleminizin durumunu online olarak kontrol edebilirsiniz.
-                            Durum değiştiğinde e-posta ile de bilgilendirilirsiniz.
+                            Takip kodunuzu girin; başvurunuzun belge kontrolü, resmî başvuru veya sonuç
+                            adımlarından hangisinde olduğunu tarih ve saatiyle görün. Her durum değişikliği
+                            ayrıca e-posta ile de bildirilir.
                         </p>
                         <TrackingBox />
                         <Link
@@ -374,7 +386,8 @@ export default function Home() {
                         <span className="eyebrow">Sıkça sorulan sorular</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Sıkça sorulan sorular</h2>
                         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                            Başvuru öncesi en çok sorulan soruları derledik.
+                            Pasaport geçerliliği, 18 yaş altı başvurusu, kalış süresinin aşılması, ödeme ve
+                            iade koşulları — danışmanlarımıza en çok sorulan başlıklar burada.
                         </p>
                         <Button asChild variant="secondary" className="mt-5 h-11 border border-border" data-testid="faq-see-all-button">
                             <Link to="/sss">Tüm soruları gör</Link>
@@ -397,8 +410,9 @@ export default function Home() {
                     <div>
                         <h2 className="text-2xl font-bold text-white sm:text-3xl">Başvurunuzu şimdi başlatın</h2>
                         <p className="mt-2 max-w-xl text-sm leading-6 text-white/70">
-                            Ortalama tamamlanma süresi 5 dakika. Form doldurmak istemiyorsanız pasaport ve
-                            fotoğrafınızı WhatsApp'tan gönderin, başvurunuzu biz oluşturalım.
+                            Ön kontrolde tarihlerinizi girin, hangi vizenin gerektiğini anında söyleyelim.
+                            Form doldurmak istemiyorsanız pasaport ve fotoğrafınızı WhatsApp'tan gönderin,
+                            başvurunuzu biz oluşturalım.
                         </p>
                     </div>
                     <div className="flex shrink-0 flex-wrap gap-3">
