@@ -335,6 +335,25 @@ async def _click_first(page, selectors: list[str]) -> bool:
     return False
 
 
+SUBMIT_FALLBACK_SELECTORS = (
+    'button[type="submit"]',
+    'input[type="submit"]',
+    'button:has-text("Insert")',
+    'button:has-text("Submit")',
+    'button:has-text("Save")',
+    'button:has-text("Apply")',
+    'button:has-text("Send")',
+    'button:has-text("Kaydet")',
+    'button:has-text("Gönder")',
+    'input[value*="insert" i]',
+    'input[value*="submit" i]',
+    'input[value*="save" i]',
+    'input[value*="apply" i]',
+    'a:has-text("Insert")',
+    'form button:not([type="button"]):not([type="reset"])',
+)
+
+
 async def _mark_trusted_device(page) -> None:
     """Varsa 'Trusted Device' secenegini isaretler; sonraki girislerde OTP azalir.
 
@@ -1163,9 +1182,11 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
 
         submitted = False
         zami_reference = ""
-        if not dry_run and mapping.get("submit_selector"):
+        if not dry_run:
+            candidates = [mapping.get("submit_selector") or "", *SUBMIT_FALLBACK_SELECTORS]
             try:
-                if not await _click_first(page, [mapping["submit_selector"]]):
+                clicked = await _click_first(page, [s for s in candidates if s])
+                if not clicked:
                     raise RuntimeError("Gönder/Kaydet butonu görünür durumda bulunamadı.")
                 await page.wait_for_load_state("domcontentloaded", timeout=45000)
                 await asyncio.sleep(2.5)

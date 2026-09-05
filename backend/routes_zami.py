@@ -202,6 +202,7 @@ class CaptureIn(BaseModel):
     url: Optional[str] = ""
     fields: list = Field(default_factory=list)
     submit_selector: Optional[str] = ""
+    submit_candidates: list = Field(default_factory=list)
     search_selector: Optional[str] = ""
     row_selector: Optional[str] = ""
     sample_text: Optional[str] = ""
@@ -245,6 +246,7 @@ async def zami_capture(token: str, payload: CaptureIn) -> dict:
         "url": (payload.url or "")[:400],
         "fields": (payload.fields or [])[:200],
         "submit_selector": (payload.submit_selector or "")[:200],
+        "submit_candidates": (payload.submit_candidates or [])[:6],
         "search_selector": (payload.search_selector or "")[:200],
         "row_selector": (payload.row_selector or "")[:200],
         "sample_text": (payload.sample_text or "")[:1000],
@@ -270,12 +272,87 @@ async def zami_capture(token: str, payload: CaptureIn) -> dict:
 async def zami_capture_script(request: Request):
     from fastapi.responses import Response
 
-    script = CAPTURE_JS.replace("__BASE__", _base_url(request))
+    script = CAPTURE_JS.replace("__SUBMIT_FINDER__", SUBMIT_FINDER_JS).replace(
+        "__BASE__", _base_url(request)
+    )
     return Response(content=script, media_type="application/javascript; charset=utf-8")
+
+
+# Gonder/Kaydet butonu tespiti: hem yakalama hem bookmarklet ayni mantigi kullanir.
+# Portal butonu type="submit" olmayabilir (input[type=button], <a>, onclick'li <button>),
+# bu yuzden metin + tur puanlamasi yapilir.
+SUBMIT_FINDER_JS = r"""
+  var DVO_SUBMIT_WORDS = [
+    "insert", "submit", "save", "kaydet", "gonder", "gönder", "apply", "basvur", "başvur",
+    "send", "confirm", "onayla", "create", "add", "ekle", "continue", "devam", "next", "ileri"
+  ];
+  var DVO_SUBMIT_BLOCK = [
+    "cancel", "iptal", "reset", "temizle", "clear", "logout", "cikis", "çıkış", "search",
+    "ara", "back", "geri", "delete", "sil", "print", "yazdir", "close", "kapat", "login"
+  ];
+  function dvoText(el) {
+    var t = (el.innerText || el.value || el.getAttribute("title") || el.getAttribute("aria-label") || "");
+    return String(t).replace(/\s+/g, " ").trim().slice(0, 60);
+  }
+  function dvoVisible(el) {
+    if (!el || !el.offsetParent) return false;
+    var r = el.getBoundingClientRect();
+    if (r.width < 8 || r.height < 8) return false;
+    var s = window.getComputedStyle(el);
+    return s.visibility !== "hidden" && s.display !== "none" && Number(s.opacity) > 0.05;
+  }
+  function dvoSelector(el) {
+    var tag = el.tagName.toLowerCase();
+    if (el.id) return "#" + el.id;
+    if (el.name) return tag + '[name="' + el.name + '"]';
+    if (tag === "input" && el.value) return 'input[value="' + String(el.value).slice(0, 40) + '"]';
+    var txt = dvoText(el);
+    if (txt) return tag + ':has-text("' + txt.slice(0, 30) + '")';
+    return tag + '[type="submit"]';
+  }
+  function dvoSubmitCandidates() {
+    var nodes = document.querySelectorAll(
+      'button,input[type="submit"],input[type="button"],input[type="image"],a[role="button"],' +
+      'div[role="button"],span[role="button"],a.btn,a.button'
+    );
+    var out = [];
+    Array.prototype.forEach.call(nodes, function (el) {
+      if (!dvoVisible(el) || el.disabled) return;
+      var tag = el.tagName.toLowerCase();
+      var type = String(el.type || "").toLowerCase();
+      var txt = dvoText(el).toLowerCase();
+      for (var b = 0; b < DVO_SUBMIT_BLOCK.length; b++) {
+        if (txt.indexOf(DVO_SUBMIT_BLOCK[b]) !== -1) return;
+      }
+      var score = 0;
+      if (type === "submit") score += 50;
+      if (tag === "button" && !type) score += 20;
+      if (el.closest("form")) score += 15;
+      if (el.getAttribute("onclick")) score += 8;
+      for (var i = 0; i < DVO_SUBMIT_WORDS.length; i++) {
+        if (txt.indexOf(DVO_SUBMIT_WORDS[i]) !== -1) {
+          score += 60 - i;
+          break;
+        }
+      }
+      if (score <= 0) return;
+      out.push({ el: el, score: score, text: dvoText(el), selector: dvoSelector(el) });
+    });
+    out.sort(function (a, b) {
+      return b.score - a.score;
+    });
+    return out;
+  }
+  function dvoFindSubmit() {
+    var list = dvoSubmitCandidates();
+    return list.length ? list[0] : null;
+  }
+"""
 
 
 CAPTURE_JS = r"""
 (function () {
+__SUBMIT_FINDER__
   var BASE = (function () {
     try {
       var src = document.currentScript && document.currentScript.src;
@@ -326,18 +403,15 @@ CAPTURE_JS = r"""
     });
   });
 
-  var submitEl = document.querySelector('button[type="submit"],input[type="submit"]');
+  var submitList = dvoSubmitCandidates();
   var body = {
     page_type: pageType,
     url: location.href,
     fields: fields,
-    submit_selector: submitEl
-      ? submitEl.id
-        ? "#" + submitEl.id
-        : submitEl.name
-          ? '[name="' + submitEl.name + '"]'
-          : 'button[type="submit"]'
-      : "",
+    submit_selector: submitList.length ? submitList[0].selector : "",
+    submit_candidates: submitList.slice(0, 6).map(function (c) {
+      return { selector: c.selector, text: c.text, score: c.score };
+    }),
     search_selector: (function () {
       var el = document.querySelector(
         'input[type="search"],input[name*="search" i],input[placeholder*="search" i],input[name*="ref" i]'
@@ -418,8 +492,9 @@ def _mapping_checks(mapping: dict) -> list[dict]:
         {
             "key": "submit",
             "label": "Gönder butonu seçicisi (otomatik gönderim için)",
-            "ok": bool(mapping.get("submit_selector")),
-            "detail": mapping.get("submit_selector") or "Boşsa robot formu doldurur ama göndermez",
+            "ok": True,
+            "detail": mapping.get("submit_selector")
+            or "Boş bırakılabilir: robot ve tarayıcı yardımcısı gönder butonunu otomatik bulur",
         },
         {
             "key": "status_url",
@@ -856,12 +931,13 @@ async def zami_bookmarklet(request: Request):
     from fastapi.responses import Response
 
     base = _base_url(request)
-    script = BOOKMARKLET_JS.replace("__BASE__", base)
+    script = BOOKMARKLET_JS.replace("__SUBMIT_FINDER__", SUBMIT_FINDER_JS).replace("__BASE__", base)
     return Response(content=script, media_type="application/javascript; charset=utf-8")
 
 
 BOOKMARKLET_JS = r"""
 (function () {
+__SUBMIT_FINDER__
   var BASE = (function () {
     try {
       var src = document.currentScript && document.currentScript.src;
@@ -943,6 +1019,18 @@ BOOKMARKLET_JS = r"""
           );
         })
         .join("");
+      var submitTarget = (function () {
+        var sel = mapping.submit_selector || "";
+        if (sel && sel.indexOf(":has-text") === -1) {
+          try {
+            var found = document.querySelector(sel);
+            if (found && dvoVisible(found)) return found;
+          } catch (e) {}
+        }
+        var auto = dvoFindSubmit();
+        return auto ? auto.el : null;
+      })();
+      var submitLabel = submitTarget ? dvoText(submitTarget) || "Gönder" : "";
       box.innerHTML =
         "<b>Dubai Vize Online · " +
         (data.reference_code || "") +
@@ -953,10 +1041,35 @@ BOOKMARKLET_JS = r"""
         '<div style="margin-top:8px;font-size:12px;opacity:.85">Belgeler (indirip yükleyin):</div><ul style="margin:4px 0 0;padding-left:18px">' +
         docsHtml +
         "</ul>" +
-        '<div style="margin-top:10px;text-align:right"><button style="background:#1E9E62;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer">Kapat</button></div>';
-      box.querySelector("button").onclick = function () {
+        (submitTarget
+          ? '<div style="margin-top:10px;font-size:12px;opacity:.85">Gönder butonu bulundu: <b>' +
+            submitLabel +
+            "</b></div>"
+          : '<div style="margin-top:10px;font-size:12px;color:#FFC48A">Gönder butonu bulunamadı, formu elle gönderin.</div>') +
+        '<div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">' +
+        (submitTarget
+          ? '<button data-dvo="submit" style="background:#C9791F;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer">Formu gönder</button>'
+          : "") +
+        '<button data-dvo="close" style="background:#1E9E62;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer">Kapat</button></div>';
+      box.querySelector('[data-dvo="close"]').onclick = function () {
         box.remove();
       };
+      var submitBtn = box.querySelector('[data-dvo="submit"]');
+      if (submitBtn) {
+        submitTarget.style.outline = "3px solid #C9791F";
+        submitTarget.scrollIntoView({ block: "center", behavior: "smooth" });
+        submitBtn.onclick = function () {
+          if (!window.confirm('"' + submitLabel + '" butonuna basılacak. Onaylıyor musunuz?')) return;
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Gönderiliyor…";
+          try {
+            submitTarget.click();
+          } catch (e) {
+            var f = submitTarget.closest("form");
+            if (f) f.submit();
+          }
+        };
+      }
     })
     .catch(function (err) {
       box.innerHTML = "<b>Dubai Vize Online</b><br>Hata: " + err.message;

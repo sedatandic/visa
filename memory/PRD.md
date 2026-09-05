@@ -712,3 +712,31 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   (30 gün / 12 saat).
 - Bekleyen: Zami bookmarklet "Submit" yakalama (P2, 3. tekrar);
   `insurance_tasks.queue_policy_tasks` ve `emailer.send_email` karmaşıklık refaktörü (P2).
+
+## 2026-06-06 · Zami "Gönder" butonu tespiti + mobil "Dinle" düğmesi
+- **Zami submit yakalama (P2, 3. tekrar) çözüldü**: Eski kod yalnızca
+  `button[type="submit"],input[type="submit"]` arıyordu; Zami portalındaki type'sız
+  `<button onclick>`, `input[type=button][value=SAVE]`, `<a class=btn>` gibi butonları
+  kaçırıyordu → `submit_selector` boş kalıyor, robot formu doldurup göndermiyordu.
+  - `routes_zami.py`: yeni `SUBMIT_FINDER_JS` (hem `capture.js` hem `bookmarklet.js` içine
+    enjekte ediliyor) — metin (insert/submit/save/kaydet/gönder/apply/onayla…) + tür +
+    form içi olma puanlaması, cancel/iptal/search/logout gibi kelimeler dışlanıyor,
+    görünürlük kontrolü var. Seçici üretimi: `#id` → `tag[name=…]` → `input[value=…]` →
+    `tag:has-text("…")`.
+  - Yakalama artık `submit_candidates` (ilk 6 aday: selector+metin+puan) de gönderiyor
+    (`CaptureIn.submit_candidates`, capture kaydına yazılıyor).
+  - `bookmarklet.js`: doldurma sonrası gönder butonu bulunup **turuncu çerçeveyle
+    işaretleniyor**, panele **"Formu gönder"** düğmesi eklendi (onay soruyor, tıklama
+    başarısızsa `form.submit()` fallback).
+  - `zami_rpa.py`: yeni `SUBMIT_FALLBACK_SELECTORS`; artık `if not dry_run:` ile mapping
+    seçicisi + 15 yedek seçici sırayla denenerek **her seferinde gönderim tetikleniyor**
+    (eskiden mapping boşsa hiç göndermiyordu). Readiness'ta submit artık her zaman "ok".
+  - Test: `backend/tests/test_submit_finder.py` — gerçek Chromium'da 6 buton varyantı
+    (type=submit / input[type=button] / `<a class=btn>` / type'sız button + Cancel ayıklama /
+    `div[role=button]` / hiç buton yok) hepsi doğru; RPA fallback tıklaması doğrulandı.
+- **Mobil "Anlatımı dinle" düğmesi**: `VisaExplainer.jsx` — `playing` state (audio
+  onPlay/onPause) ve `startNarration()`; illüstrasyonun hemen altında tam genişlikte
+  `sm:hidden` büyük düğme (`explainer-listen-button`), anlatım çalarken gizleniyor.
+  Doğrulandı: 390px'te düğme görünüyor, dokununca `intro.mp3` çalıyor, düğme kayboluyor.
+- **WhatsApp**: altyapı hazır (`whatsapp.py`, `/admin/whatsapp`) ve `manual` modda; Meta
+  Cloud API veya Twilio anahtarları kullanıcıdan gelince otomatik gönderim açılacak (bekliyor).

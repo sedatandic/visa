@@ -137,6 +137,7 @@ export const VisaExplainer = () => {
     const [captions, setCaptions] = useState(true);
     const [audioProgress, setAudioProgress] = useState(0);
     const [audioMs, setAudioMs] = useState(0);
+    const [playing, setPlaying] = useState(false);
     const audioRef = useRef(null);
     const scene = SCENES[index];
     const SceneIcon = scene.icon;
@@ -180,6 +181,16 @@ export const VisaExplainer = () => {
         return () => events.forEach((e) => window.removeEventListener(e, start));
     }, [soundOn, paused]);
 
+    // Mobilde tek dokunusla anlatimi baslatir (tarayici autoplay engelini asar).
+    const startNarration = () => {
+        const audio = audioRef.current;
+        setSoundOn(true);
+        setPaused(false);
+        if (!audio) return;
+        if (!audio.src.includes(`${scene.key}.mp3`)) audio.src = `/audio/explainer/${scene.key}.mp3`;
+        audio.play().catch(() => {});
+    };
+
     return (
         <div
             className="relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--panel-2))] sm:block"
@@ -214,6 +225,17 @@ export const VisaExplainer = () => {
 
             {/* METIN KATMANI */}
             <div className="relative order-2 flex flex-col justify-between gap-5 p-6 pt-2 sm:order-none sm:min-h-[400px] sm:gap-6 sm:p-9">
+                {!playing && (
+                    <button
+                        type="button"
+                        onClick={startNarration}
+                        className="-mt-1 flex w-full items-center justify-center gap-2.5 rounded-full bg-primary px-5 py-4 text-sm font-bold text-primary-foreground shadow-lg transition-transform duration-200 active:scale-[0.97] sm:hidden"
+                        data-testid="explainer-listen-button"
+                    >
+                        <Headphones className="h-4.5 w-4.5" aria-hidden="true" />
+                        Anlatımı dinle · 1 dakika
+                    </button>
+                )}
                 <div className="max-w-md">
                     <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary sm:text-[11px]">
                         Dubai vizenizi 1 dakikada nasıl alacağınızı anlatalım
@@ -349,6 +371,8 @@ export const VisaExplainer = () => {
                     const el = e.currentTarget;
                     if (el.duration) setAudioProgress(el.currentTime / el.duration);
                 }}
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
                 onEnded={() => {
                     // Sesli anlatim bir kez calisir: son sahnede ses kapanir, gorsel dongu devam eder.
                     if (index === SCENES.length - 1) {
