@@ -32,19 +32,17 @@ export const HeroHeadline = () => {
     return (
         <>
             <h1
-                className="mt-6 min-h-[2.2em] font-heading text-4xl font-extrabold sm:text-5xl lg:text-[58px]"
-                style={{ perspective: "900px" }}
+                className="mt-6 min-h-[2.2em] overflow-hidden font-heading text-4xl font-extrabold sm:text-5xl lg:text-[58px]"
                 data-testid="hero-headline"
             >
                 <AnimatePresence mode="wait">
                     <motion.span
                         key={index}
-                        initial={{ opacity: 0, rotateX: -75, y: 14 }}
-                        animate={{ opacity: 1, rotateX: 0, y: 0 }}
-                        exit={{ opacity: 0, rotateX: 70, y: -14 }}
-                        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                        initial={{ opacity: 0, x: 120 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -120 }}
+                        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
                         className="block"
-                        style={{ transformOrigin: "center bottom" }}
                         data-testid={`hero-slogan-${index}`}
                     >
                         <span className="display-italic" style={{ color: "hsl(38 82% 46%)" }}>
@@ -56,14 +54,14 @@ export const HeroHeadline = () => {
                 </AnimatePresence>
             </h1>
 
-            <div className="mx-auto mt-7 min-h-[4.5em] max-w-2xl sm:min-h-[3.4em]">
+            <div className="mx-auto mt-7 min-h-[4.5em] max-w-2xl overflow-hidden sm:min-h-[3.4em]">
                 <AnimatePresence mode="wait">
                     <motion.p
                         key={`sub-${index}`}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        initial={{ opacity: 0, x: 90 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -90 }}
+                        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
                         className="text-base leading-7 text-muted-foreground sm:text-lg"
                         data-testid={`hero-subtitle-${index}`}
                     >

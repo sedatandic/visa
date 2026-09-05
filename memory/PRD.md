@@ -517,3 +517,17 @@ Kullanıcı: "resimler çok koyu, açık renk olsun zemin", "yazılar okunmuyor"
   `scripts/generate_narration_eleven.py` ile Pelin Yıldız sesine geçilecek.
 - Doğrulama: 3 sahne ekran görüntüsüyle kontrol edildi (metinler okunuyor), CTA butonu
   render ediliyor, ses açılınca cta.mp3 çalıyor.
+
+### Ek istekler (2026-06-06)
+- "Animasyonda Hintli kıyafet olmasın, UAE bayrağı ve uçak olsun": intro/track/cta çizimleri
+  modern batı tarzı kıyafet (kot + bluz/blazer) + **BAE bayrağı + uçak** ile yeniden üretildi.
+- "Seyahat sigortası ve eSIM'den de bahsedelim": **7. sahne `extras`** eklendi
+  (`Wifi` ikonu, yeni çizim, 11.4 sn klip): "Dilerseniz seyahat sigortanızı ve Dubai
+  eSIM'inizi de aynı başvuruya ekleyin...".
+- "TÜRSAB onaylı acente" cümlesi: son sahne başlığı **"TÜRSAB onaylı acente güvencesiyle
+  başvurun"**, altyazı/ses "Başvurunuzu TÜRSAB üyesi, A grubu seyahat acentesi güvencesiyle
+  yapın..." (site zaten TÜRSAB üyeliğini beyan ediyor, `content.py COMPANY`).
+  Badge "Çizgi anlatım · 55 saniye".
+- "Sola doğru kayan yazılar (dubaivizeal.com gibi)": `HeroHeadline` geçişi 3D flip'ten
+  **slider kaydırmasına** çevrildi — başlık x:120→0, çıkışta x:-120; alt metin x:90→0
+  (80 ms gecikmeli), kaplar `overflow-hidden`. Doğrulama: 4.4 sn'de slogan 1→2 geçişi.

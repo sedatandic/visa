@@ -14,6 +14,7 @@ import {
     UploadCloud,
     Volume2,
     VolumeX,
+    Wifi,
 } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -77,15 +78,28 @@ const SCENES = [
         voiceMs: 10800,
     },
     {
+        key: "extras",
+        step: "Ekstra",
+        icon: Wifi,
+        title: "Seyahat sigortası ve Dubai eSIM",
+        note: "Aynı başvuruya ekleyin, iniş anında internet ve teminat hazır",
+        subtitle:
+            "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de aynı başvuruya ekleyin. Böylece uçaktan indiğiniz anda internetiniz hazır, sigortanız devrede olur.",
+        alt: "eSIM ve seyahat sigortası simgeleri çizimi",
+        silentMs: 9000,
+        voiceMs: 11400,
+    },
+    {
         key: "cta",
         step: "Son adım",
         icon: Plane,
-        title: "Yolculuğunuz bugün başlasın",
-        note: "Hemen başvurun, ilk adımı bugün atın",
-        subtitle: "Hemen başvurunuzu yapın, Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
-        alt: "Dubai silüetine doğru havalanan uçak çizimi",
-        silentMs: 5500,
-        voiceMs: 5600,
+        title: "TÜRSAB onaylı acente güvencesiyle başvurun",
+        note: "A grubu seyahat acentesi · yolculuğunuz bugün başlasın",
+        subtitle:
+            "Başvurunuzu TÜRSAB üyesi, A grubu seyahat acentesi güvencesiyle yapın. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
+        alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
+        silentMs: 8000,
+        voiceMs: 10400,
         cta: true,
     },
 ];
@@ -185,7 +199,7 @@ export const VisaExplainer = () => {
             <div className="relative flex min-h-[340px] flex-col justify-between gap-6 p-6 sm:min-h-[380px] sm:p-9 lg:min-h-[400px]">
                 <div className="max-w-md">
                     <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary sm:text-[11px]">
-                        Çizgi anlatım · 40 saniye
+                        Çizgi anlatım · 55 saniye
                     </span>
                     <p className="mt-3 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
                         Sadece 2 belgeyle Dubai vizesi

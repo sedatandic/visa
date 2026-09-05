@@ -23,7 +23,8 @@ LINES = {
     "photo": "İkincisi ise beyaz fonda çekilmiş güncel bir vesikalık fotoğraf. Fotoğrafın gözlüksüz ve şapkasız olması gerektiğini unutmayın.",
     "upload": "Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza veya otel rezervasyonu yaptırmanıza gerek yok.",
     "track": "Başvurunuzun tüm sürecini sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-posta adresinize gönderiliyor.",
-    "cta": "Hemen başvurunuzu yapın, Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
+    "extras": "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de aynı başvuruya ekleyin. Böylece uçaktan indiğiniz anda internetiniz hazır, sigortanız devrede olur.",
+    "cta": "Başvurunuzu TÜRSAB üyesi, A grubu seyahat acentesi güvencesiyle yapın. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
 }
 
 
