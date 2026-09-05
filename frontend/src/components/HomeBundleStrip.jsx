@@ -38,10 +38,11 @@ export const HomeBundleStrip = () => {
 
                 <div className="mt-8 grid gap-5 lg:grid-cols-3">
                     {bundles.map((b) => (
-                        <div
+                        <Link
                             key={b.id}
-                            className={`flex h-full flex-col rounded-2xl border-2 bg-card p-6 transition-shadow duration-200 ${
-                                b.id === popularId ? "border-primary" : "border-border"
+                            to={`/basvuru?paket=${b.id}`}
+                            className={`group flex h-full flex-col rounded-2xl border-2 bg-card p-6 text-left transition-all duration-200 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                                b.id === popularId ? "border-primary" : "border-border hover:border-primary/60"
                             }`}
                             style={{ boxShadow: b.id === popularId ? "var(--shadow-soft)" : "var(--shadow-card)" }}
                             data-testid={`home-bundle-${b.id}`}
@@ -111,15 +112,14 @@ export const HomeBundleStrip = () => {
                                 <p className="mt-1 text-xs text-muted-foreground">
                                     kişi başı · ekstralar {formatMoney(b.price, b.currency)}
                                 </p>
-                                <Link
-                                    to="/basvuru"
-                                    className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-transform duration-150 hover:-translate-y-0.5"
+                                <span
+                                    className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-transform duration-150 group-hover:-translate-y-0.5"
                                     data-testid={`home-bundle-cta-${b.id}`}
                                 >
                                     Bu paketle başvur <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                                </Link>
+                                </span>
                             </div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </div>

@@ -334,3 +334,26 @@ alan adından gönderime izin vermediği için alan adı doğrulanmış demektir
 UYARI: kullanıcı DKIM/SPF/DMARC DNS kayıtlarını eklediğini teyit etmedi ("skipped" dedi).
 Kayıtlar eksikse gönderim çalışsa bile Gmail yine spam'e atabilir; kullanıcının test
 postasının Gelen Kutusu'na düştüğünü doğrulaması gerekiyor.
+
+## 2026-06-05 · Çöl safarisi ürünü + paket kartı tıklanabilirliği + fiyat sekmeleri
+**Rakip analizi (vizemdubai.com)**: eksiklerimiz kullanıcıya sunuldu; kullanıcı yalnızca
+"çöl safarisini ekle" dedi (kurumsal hizmetler, acente paneli, güven paketi = gerek yok).
+- **Çöl Safarisi** (`tour_desert_safari`, kind `tour`, 45$ ≈ 2.220₺/kişi): `routes_store.py`
+  TOUR_PRODUCTS + KIND_LABELS["tour"]="Dubai turu"; `scripts/sync_products.py` ile DB'ye eklendi.
+  Sihirbazda "Dubai'de yapacaklarınız" bölümü (`apply-tour-section`): switch + kişi sayısı
+  arttır/azalt, tarih seçimi gerektirmez, fiyat özetine ve siparişe yansır.
+  eSIM/sigorta mağaza sayfalarında çapraz satış olarak GÖSTERİLMEZ (StoreCheckout crossProducts).
+- **Paket kartları tamamen tıklanabilir** (kullanıcı: "cant click on each summary cards"):
+  kart artık `/basvuru?paket=<id>` linki; iç buton span oldu (iç içe <a> yok). Apply'da
+  `?paket=` okunup vize + sigorta + eSIM hazır seçiliyor (bundleApplied useRef ile tek sefer).
+- **Fiyat sekmeleri**: "Tek Girişli" → **Tek Girişli Vize**, "Çok Girişli" → **Çok Girişli Vize**,
+  **"Diğer Hizmetler" sekmesi kaldırıldı**; vize uzatma ve transit vize artık tek girişli
+  vizelerle aynı satırda (4 kart, xl:grid-cols-4).
+  ÖNEMLİ: uzatma/transit `category=single` olduğu için otomatik önerilere karışmasın diye
+  `auto_suggest: False` alanı eklendi (content.py + DB, `scripts/sync_visa_categories.py`);
+  ön kontrol ve upgrade bandı bu alanı filtreliyor — 2 günlük kalışta bile 30 günlük vize
+  öneriliyor, transit/uzatma asla önerilmiyor.
+Test: iteration_70 (safari) backend %100 / frontend 83% → çapraz satış hatası düzeltildi;
+iteration_71 backend %100 + frontend %100 (sekmeler, 4 kart, auto_suggest koruması,
+çapraz satış düzeltmesi, paket ön seçimi regresyonu).
+Bilinen teknik borç: `Apply.jsx` 2453 satır — adım bileşenlerine bölünmesi öneriliyor.

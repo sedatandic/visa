@@ -7,6 +7,7 @@ import {
     ArrowRight,
     Baby,
     CalendarDays,
+    Check,
     CheckCircle2,
     CreditCard,
     FileText,
@@ -20,6 +21,7 @@ import {
     Save,
     ShieldCheck,
     Signal,
+    Sparkles,
     ScanLine,
     Star,
     Tag,
@@ -178,6 +180,7 @@ export default function Apply() {
     const [bundleInfo, setBundleInfo] = useState(null);
     const [insurancePick, setInsurancePick] = useState(null);
     const [esimQty, setEsimQty] = useState({});
+    const [tourQty, setTourQty] = useState({});
     const [extraDocs, setExtraDocs] = useState({ ticket: null, hotel: null, other: null });
     const [kvkk, setKvkk] = useState(false);
     const [errors, setErrors] = useState({});
@@ -249,7 +252,7 @@ export default function Apply() {
                 step,
                 traveler_count: travelers.length,
                 title: `${travelers.length} yolcu · ${contact.full_name || contact.email}`,
-                data: { contact, travelers, travel, addons, extraDocs, step, insurancePick, esimQty },
+                data: { contact, travelers, travel, addons, extraDocs, step, insurancePick, esimQty, tourQty },
             });
             setDraft({ id: data.draft_id, code: data.resume_code });
             if (!silent) {
@@ -297,6 +300,7 @@ export default function Apply() {
             if (d.addons) setAddons((a) => ({ ...a, ...d.addons }));
             if (d.insurancePick) setInsurancePick(d.insurancePick);
             if (d.esimQty && typeof d.esimQty === "object") setEsimQty(d.esimQty);
+            if (d.tourQty && typeof d.tourQty === "object") setTourQty(d.tourQty);
             if (d.extraDocs) setExtraDocs((e) => ({ ...e, ...d.extraDocs }));
             if (typeof d.step === "number") setStep(Math.min(d.step, 3));
         };
@@ -390,6 +394,7 @@ export default function Apply() {
     }, []);
 
     const esimProducts = useMemo(() => storeProducts.filter((p) => p.kind === "esim"), [storeProducts]);
+    const tourProducts = useMemo(() => storeProducts.filter((p) => p.kind === "tour"), [storeProducts]);
     const allInsuranceProducts = useMemo(
         () => storeProducts.filter((p) => p.kind === "insurance"),
         [storeProducts]
@@ -506,6 +511,30 @@ export default function Apply() {
         toast.success(`${bundle.name} eklendi.`);
     };
 
+    // Ana sayfadan paket secilerek gelindiyse (?paket=pack_x) secimleri hazir getir
+    const bundleParam = searchParams.get("paket");
+    const bundleApplied = useRef(false);
+    useEffect(() => {
+        if (!bundleParam || bundleApplied.current) return;
+        api.get("/bundles")
+            .then(({ data }) => {
+                const match = (data.items || []).find((b) => b.id === bundleParam);
+                if (!match) return;
+                bundleApplied.current = true;
+                setInsurancePick(match.insurance.id);
+                setEsimQty({ [match.esim.id]: 1 });
+                if (match.visa?.id) {
+                    setTravelers((list) =>
+                        list.map((t) =>
+                            t.applicant_type === "child" ? t : { ...t, visa_type_id: match.visa.id }
+                        )
+                    );
+                }
+                toast.success(`${match.name} seçildi. Vize, sigorta ve eSIM hazır geldi.`);
+            })
+            .catch(() => {});
+    }, [bundleParam]);
+
     // Süre değişince kapsamı yetmeyen poliçe seçimini düşür
     useEffect(() => {
         if (insurancePick && !insuranceProducts.some((p) => p.id === insurancePick)) {
@@ -571,8 +600,11 @@ export default function Apply() {
         Object.entries(esimQty).forEach(([pid, qty]) => {
             if (qty > 0) items.push({ product_id: pid, quantity: Math.min(qty, 10) });
         });
-        return items.slice(0, 6);
-    }, [insurancePick, esimQty, travelerCount]);
+        Object.entries(tourQty).forEach(([pid, qty]) => {
+            if (qty > 0) items.push({ product_id: pid, quantity: Math.min(qty, 10) });
+        });
+        return items.slice(0, 8);
+    }, [insurancePick, esimQty, tourQty, travelerCount]);
 
     const toggleEsim = (product) => {
         if (!travelDatesReady) {
@@ -603,6 +635,27 @@ export default function Apply() {
                 return rest;
             }
             return { ...prev, [productId]: value };
+        });
+    };
+
+    const changeTourQty = (productId, delta) => {
+        setTourQty((prev) => {
+            const value = Math.min(10, (prev[productId] || 0) + delta);
+            if (value <= 0) {
+                const { [productId]: _removed, ...rest } = prev;
+                return rest;
+            }
+            return { ...prev, [productId]: value };
+        });
+    };
+
+    const toggleTour = (product) => {
+        setTourQty((prev) => {
+            if (prev[product.id]) {
+                const { [product.id]: _removed, ...rest } = prev;
+                return rest;
+            }
+            return { ...prev, [product.id]: Math.min(Math.max(travelerCount, 1), 10) };
         });
     };
 
@@ -641,7 +694,7 @@ export default function Apply() {
     const pickVisaFor = (days, traveler) => {
         const current = visaById(traveler.visa_type_id);
         const fitting = visaOptionsFor(traveler.applicant_type).filter(
-            (v) => Number(v.duration_days) >= days
+            (v) => Number(v.duration_days) >= days && v.auto_suggest !== false
         );
         const sameEntry = fitting.filter((v) => v.entry_type === (current?.entry_type || "single"));
         const pool = (sameEntry.length ? sameEntry : fitting).slice().sort(
@@ -1960,6 +2013,93 @@ export default function Apply() {
                                                                             disabled={qty >= 10}
                                                                             aria-label="Adet arttır"
                                                                             data-testid={`esim-qty-plus-${p.id}`}
+                                                                        >
+                                                                            <Plus className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* DUBAI AKTIVITELERI (col safarisi) */}
+                                    {tourProducts.length > 0 && (
+                                        <div className="mt-10" data-testid="apply-tour-section">
+                                            <div className="flex items-center gap-2">
+                                                <Sparkles className="h-5 w-5 text-primary" />
+                                                <h3 className="font-heading text-base font-bold">Dubai'de yapacaklarınız</h3>
+                                            </div>
+                                            <p className="mt-1.5 text-sm text-muted-foreground">
+                                                Yerinizi şimdiden ayırtın; tur tarihini vizeniz onaylandıktan sonra
+                                                WhatsApp'tan birlikte belirliyoruz.
+                                            </p>
+                                            <div className="mt-4 space-y-4">
+                                                {tourProducts.map((p) => {
+                                                    const qty = tourQty[p.id] || 0;
+                                                    const selected = qty > 0;
+                                                    return (
+                                                        <div
+                                                            key={p.id}
+                                                            className={`rounded-xl border p-5 transition-colors duration-200 ${
+                                                                selected ? "border-primary bg-primary/5" : "border-border bg-card"
+                                                            }`}
+                                                            data-testid={`tour-option-${p.id}`}
+                                                        >
+                                                            <div className="flex flex-wrap items-start gap-4">
+                                                                <Switch
+                                                                    checked={selected}
+                                                                    onCheckedChange={() => toggleTour(p)}
+                                                                    className="mt-1"
+                                                                    data-testid={`tour-switch-${p.id}`}
+                                                                />
+                                                                <div className="min-w-[200px] flex-1">
+                                                                    <p className="font-heading text-sm font-bold">{p.name}</p>
+                                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                                                                        {p.summary}
+                                                                    </p>
+                                                                    <ul className="mt-2 space-y-1">
+                                                                        {(p.features || []).slice(0, 3).map((f) => (
+                                                                            <li key={f} className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
+                                                                                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                                                                                {f}
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                    <p className="mt-2 text-sm font-semibold text-primary">
+                                                                        + {formatMoney(p.price, p.currency)} / kişi
+                                                                    </p>
+                                                                </div>
+                                                                {selected && (
+                                                                    <div className="flex items-center gap-2" data-testid={`tour-qty-${p.id}`}>
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() => changeTourQty(p.id, -1)}
+                                                                            disabled={qty <= 1}
+                                                                            aria-label="Kişi sayısını azalt"
+                                                                            data-testid={`tour-qty-minus-${p.id}`}
+                                                                        >
+                                                                            <Minus className="h-4 w-4" />
+                                                                        </Button>
+                                                                        <span
+                                                                            className="w-9 text-center font-heading text-sm font-bold"
+                                                                            data-testid={`tour-qty-value-${p.id}`}
+                                                                        >
+                                                                            {qty}
+                                                                        </span>
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() => changeTourQty(p.id, 1)}
+                                                                            disabled={qty >= 10}
+                                                                            aria-label="Kişi sayısını arttır"
+                                                                            data-testid={`tour-qty-plus-${p.id}`}
                                                                         >
                                                                             <Plus className="h-4 w-4" />
                                                                         </Button>

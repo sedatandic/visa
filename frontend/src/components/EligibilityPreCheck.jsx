@@ -48,6 +48,7 @@ export const EligibilityPreCheck = ({ visaTypes = [], expressAddon = null, onApp
                 (v) =>
                     v.applicant_type !== "child" &&
                     (v.category || "single") === "single" &&
+                    v.auto_suggest !== false &&
                     Number(v.duration_days) >= stayDays
             )
             .sort((a, b) => Number(a.duration_days) - Number(b.duration_days));

@@ -1,0 +1,38 @@
+{
+  "summary": "Frontend-only regression for HomeBundleStrip whole-card click fix + Apply.jsx ?paket= preselection. All 6 requested scenarios PASS. Card body clicks, CTA clicks, preselection (visa+insurance+eSIM+10% paket indirimi), totals, idempotence, and /basvuru regression (precheck happy path) all verified.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx effect at line ~512 depends on visaTypes.length; if /visa-types call fails, the paket preselect never fires. Consider not gating on visaTypes for insurance/eSIM at least.",
+    "Apply.jsx is >1500 lines - candidate to split into smaller modules (steps, sidebar, hooks) per file-size guideline."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "test_credentials": "not needed",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Home has 3 bundle cards data-testid=home-bundle-pack_standard/comfort/long, each is a single <a> wrapping the whole card content; inner CTA is a <span data-testid=home-bundle-cta-...>. /basvuru?paket=<id> preselects insurance + esimQty[esim]=1 + adult traveler visa_type_id, shows success toast, applies 10% paket indirimi. Verified totals: pack_standard=6.360₺, pack_long=11.828,50₺. Idempotence guarded by bundleApplied useRef so manual insurance changes persist. Precheck (01.12.2026/10.12.2026/01.01.2030) shows precheck-result-ok and carries into wizard. Only 1 'En çok seçilen' badge across cards; hero-subtitle-0 visible (rotates).",
+  "detailed_results": {
+    "card_body_click_pack_standard": "OK -> /basvuru?paket=pack_standard",
+    "card_body_click_pack_comfort": "OK -> /basvuru?paket=pack_comfort",
+    "card_body_click_pack_long": "OK -> /basvuru?paket=pack_long",
+    "cta_click_pack_comfort": "OK -> /basvuru?paket=pack_comfort",
+    "nested_anchor_check": "0 nested <a> inside any bundle card, no console warnings",
+    "preselect_pack_standard_toast": "'Standart Tatil Paketi seçildi. Vize, sigorta ve eSIM hazır geldi.'",
+    "preselect_pack_standard_total": "6.360 ₺ (matches home card)",
+    "preselect_pack_long_toast": "'Uzun Konaklama Paketi seçildi. Vize, sigorta ve eSIM hazır geldi.'",
+    "preselect_pack_long_total": "11.828,50 ₺ (60 Gün Temel sigorta 7.354₺ + eSIM 10GB/30 gün 1.430₺ + vize 9.880₺ - 216,50 paket indirimi)",
+    "idempotence": "Switched insurance to ins_30d_plus -> total 8.334,60 ₺; waited 4s, no re-application, no repeated toast",
+    "regression_no_param": "eligibility-precheck panel visible, no preselect toast",
+    "regression_precheck_happy_path": "precheck-result-ok shown; precheck-continue-button carried arrival/departure/passport expiry into wizard (total 5.190 ₺)",
+    "home_badges": "Exactly 1 'En çok seçilen' badge",
+    "hero_subtitle": "hero-subtitle-0 rendered (rotator, others render per active slogan)"
+  }
+}

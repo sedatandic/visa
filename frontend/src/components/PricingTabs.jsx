@@ -71,11 +71,13 @@ export const PricingTabs = ({ compactHeading = false }) => {
 
             <div
                 className={`mt-7 grid gap-6 ${
-                    loading || visible.length >= 3
+                    loading || visible.length === 3
                         ? "md:grid-cols-2 lg:grid-cols-3"
-                        : visible.length === 2
-                          ? "md:grid-cols-2"
-                          : "md:grid-cols-1"
+                        : visible.length >= 4
+                          ? "md:grid-cols-2 xl:grid-cols-4"
+                          : visible.length === 2
+                            ? "md:grid-cols-2"
+                            : "md:grid-cols-1"
                 }`}
                 data-testid="pricing-grid"
             >

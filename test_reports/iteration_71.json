@@ -1,0 +1,18 @@
+{
+  "summary": "Verified iteration_71 changes: /vize-tipleri pricing tabs renamed to 'Tek Girişli Vize', 'Çok Girişli Vize', 'Çocuk Vizesi'; 'Diğer Hizmetler' tab removed; extension_30 and transit_48 now appear in the Single tab as 4 cards in one row (xl:grid-cols-4). Backend /api/content/site returns exactly the 3 categories with new labels. /api/visa-types shows visa_extension_30 and visa_transit_48 with category='single' and auto_suggest=false; other 6 visas auto_suggest=true. Auto-suggest guard confirmed: precheck for both 10-day and 2-day stays recommends '30 Günlük Tek Girişli Dubai Vizesi · 5.190 ₺' (never extension or transit). Cross-sell fix confirmed: eSIM page shows only insurance cross-cards, insurance page shows only eSIM cross-cards; no cross-product-card-tour_desert_safari on either. Regression checks pass: home page loads without console errors and renders visa prices; /basvuru?paket=pack_standard preselects Standart Tatil Paketi (toast + 6.360 ₺ summary).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_visa_categories.py", "/app/test_reports/pytest/iter71.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx is 2453 lines — recommend splitting into smaller focused components (step1/step2/step3/step4, upgrade banner, tour section, precheck integration). >700 line guideline exceeded significantly.",
+    "PricingTabs.jsx grid uses fixed conditions on visible.length; consider a single utility that picks columns to reduce nested ternary."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration_71 fully validated. Backend visa categories/types confirmed via /app/backend/tests/test_visa_categories.py (3/3 passing). Auto-suggest guard tested only via UI precheck (both stays recommend 30-day single); upgrade banner override (transit → 30-day suggestion) was not exercised via UI due to time — code path in Apply.jsx uses same pickVisaFor filter (v.auto_suggest !== false) which is proven correct by precheck test. If desired, next agent can select transit visa on step 2 and verify the visa-upgrade-suggestion banner uses 30-day single.",
+  "rca of the issue": "N/A — no bugs found."
+}

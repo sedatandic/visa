@@ -1,0 +1,27 @@
+{
+  "summary": "Tested new 'Çöl Safarisi' tour product feature end-to-end. Backend GET /api/products?kind=tour, GET /api/products (no filter), and POST /api/pricing/quote all behave correctly: single active tour_desert_safari at 45 USD ≈ 2.220 TRY, kind_label 'Dubai turu', 5 features, no bundle discount when tour is added alone or without both esim+insurance. Frontend wizard /basvuru step 3 renders apply-tour-section with correct heading 'Dubai'de yapacaklarınız', the tour card shows name/summary/features/price, toggling ON defaults qty to traveler count (1), pricing summary shows Çöl Safarisi line with correct 2.220 ₺, + button increments qty and updates total (grand 7.410 ₺ for visa_30_single + 1 tour), - button decrements, toggle OFF removes both stepper and summary line, and no 'gidiş tarihi seçin' error is triggered. HOWEVER, ONE CRITICAL BUG FOUND: the tour DOES appear as a cross-sell card on /esim and /seyahat-sigortasi pages, which the requirement explicitly forbids.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "StoreCheckout.jsx (crossProducts memo, line 63)", "issue": "Tour (tour_desert_safari) still appears as a cross-sell card on the eSIM store page (/esim) and insurance store page (/seyahat-sigortasi). The filter is `allProducts.filter(p => p.kind !== kind)` which only removes the current kind but keeps 'tour'. Requirement says tours must NOT be shown as cross-sell on eSIM or insurance pages. Change to e.g. `p.kind !== kind && p.kind !== 'tour'`.", "selector": "cross-product-card-tour_desert_safari", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_tour_safari.py", "/app/test_reports/pytest/tour_safari.xml"],
+  "action_items": [
+    "Fix /app/frontend/src/components/StoreCheckout.jsx line 63: exclude kind==='tour' from crossProducts so the desert safari does NOT appear as a cross-sell card on the eSIM (/esim) or insurance (/seyahat-sigortasi) store pages. One-line change: `allProducts.filter((p) => p.kind !== kind && p.kind !== 'tour')`."
+  ],
+  "critical_code_review_comments": [
+    "StoreCheckout crossProducts filter forgot to exclude 'tour' kind despite the feature statement claiming it was excluded.",
+    "Apply.jsx is 2453 lines — approaching maintainability threshold; consider splitting the wizard steps into separate components (Step0Personal, Step1Visa, Step2Docs, Step3Summary+Extras).",
+    "routes_store.py DEFAULT_PRODUCTS falls back to hard-coded lists when DB is empty — fine for dev but note this fallback bypasses the products_col mongo state."
+  ],
+  "updated_files": ["/app/backend/tests/test_tour_safari.py"],
+  "success_rate": {"backend": "100%", "frontend": "83% (5/6 requirements passed; cross-sell exclusion failed)"},
+  "seed_data_creation": "None. No orders/applications were created — the full submit regression was skipped because the cross-sell bug is the primary blocker and Apply.jsx flow required extensive automation that already validated pricing integration in step 3. Tour section rendering and pricing math were verified interactively.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend tour product + pricing are fully working (test_tour_safari.py 4/4 pass). Frontend wizard step 3 tour section, toggle, qty stepper, and pricing summary all work perfectly (verified via Playwright at /basvuru — reach step 3 by filling contact info + traveler + pre-check dates 10.12.2026/17.12.2026/01.06.2030, selecting visa_30_single via traveler-0-visa-type Radix Select, uploading a dummy jpg to the 5 file inputs on step 2). The only remaining issue is StoreCheckout crossProducts not excluding 'tour' kind — one-line fix in /app/frontend/src/components/StoreCheckout.jsx line 63. Full end-to-end application submit + linked order verification was not performed; recommend main agent verify after applying fix.",
+  "rca of the issue": "Root cause: /app/frontend/src/components/StoreCheckout.jsx line 63 memo `const crossProducts = useMemo(() => allProducts.filter((p) => p.kind !== kind), [allProducts, kind]);` — filter only removes items matching the current page kind, so on kind='esim' page it returns both insurance products AND tour products. The reference note in the review request stated 'crossProducts now excludes kind tour' but this exclusion was never implemented. Reproduction: open https://insurance-checkout-3.preview.emergentagent.com/esim → scroll to 'Seyahat paketi indirimi' cross-sell block → 'Çöl Safarisi · Akşam Turu' card is visible with testid cross-product-card-tour_desert_safari. Same on /seyahat-sigortasi. Fix: change filter to `p.kind !== kind && p.kind !== 'tour'` (or introduce a whitelist of cross-sell kinds)."
+}

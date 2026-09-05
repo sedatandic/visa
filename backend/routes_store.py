@@ -151,9 +151,29 @@ INSURANCE_PRODUCTS = [
     _insurance("ins_60d_plus", 60, 1994.61, plus=True, order=6),
 ]
 
-DEFAULT_PRODUCTS = ESIM_PRODUCTS + INSURANCE_PRODUCTS
+# Dubai aktiviteleri: teslimat/rezervasyon acente eliyle yapilir
+TOUR_PRODUCTS = [
+    {
+        "id": "tour_desert_safari",
+        "kind": "tour",
+        "name": "Çöl Safarisi · Akşam Turu",
+        "summary": "4x4 araçlarla kumul turu, deve gezisi, kum sörfü ve geleneksel Arap kampında açık büfe akşam yemeği.",
+        "price_usd": 45.0,
+        "features": [
+            "Otelinizden alış ve dönüş dahil",
+            "Kum sörfü, deve gezisi ve gün batımı molası",
+            "Geleneksel kampta açık büfe akşam yemeği",
+            "Türkçe konuşan rehber eşliğinde",
+            "Yaklaşık 7 saat sürer, öğleden sonra başlar",
+        ],
+        "order": 1,
+        "popular": True,
+    },
+]
 
-KIND_LABELS = {"esim": "eSIM", "insurance": "Seyahat sigortası"}
+DEFAULT_PRODUCTS = ESIM_PRODUCTS + INSURANCE_PRODUCTS + TOUR_PRODUCTS
+
+KIND_LABELS = {"esim": "eSIM", "insurance": "Seyahat sigortası", "tour": "Dubai turu"}
 
 
 def new_order_reference() -> str:

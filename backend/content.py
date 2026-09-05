@@ -159,7 +159,7 @@ VISA_TYPES = [
         "slug": "30-gun-vize-uzatma",
         "name": "30 Günlük Vize Uzatma",
         "short_name": "Vize Uzatma",
-        "category": "other",
+        "category": "single",
         "duration_days": 30,
         "entry_type": "single",
         "entry_label": "Uzatma",
@@ -170,6 +170,7 @@ VISA_TYPES = [
         "processing_days": "2-4 iş günü",
         "popular": False,
         "order": 7,
+        "auto_suggest": False,
         "description": "Dubai'deyken ülkeden çıkış yapmadan 30 gün daha kalmak istiyorsanız bu hizmet uygundur.",
         "features": [
             "30 gün ek kalış hakkı",
@@ -184,7 +185,7 @@ VISA_TYPES = [
         "slug": "transit-vize",
         "name": "48 Saatlik Transit Vize",
         "short_name": "Transit Vize",
-        "category": "other",
+        "category": "single",
         "duration_days": 2,
         "entry_type": "single",
         "entry_label": "Transit",
@@ -195,6 +196,7 @@ VISA_TYPES = [
         "processing_days": "1-2 iş günü",
         "popular": False,
         "order": 8,
+        "auto_suggest": False,
         "description": "BAE üzerinden başka bir ülkeye aktarma yapacaksanız ve 48 saat şehre çıkmak istiyorsanız bu vize uygundur.",
         "features": [
             "48 saat kalış hakkı",
@@ -207,10 +209,9 @@ VISA_TYPES = [
 ]
 
 VISA_CATEGORIES = [
-    {"id": "single", "label": "Tek Girişli"},
-    {"id": "multiple", "label": "Çok Girişli"},
+    {"id": "single", "label": "Tek Girişli Vize"},
+    {"id": "multiple", "label": "Çok Girişli Vize"},
     {"id": "child", "label": "Çocuk Vizesi"},
-    {"id": "other", "label": "Diğer Hizmetler"},
 ]
 
 # Optional paid add-ons, priced per traveller

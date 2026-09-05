@@ -60,7 +60,10 @@ export const StoreCheckout = ({ kind, ctaLabel = "Satın al" }) => {
     }, [kind]);
 
     const products = useMemo(() => allProducts.filter((p) => p.kind === kind), [allProducts, kind]);
-    const crossProducts = useMemo(() => allProducts.filter((p) => p.kind !== kind), [allProducts, kind]);
+    const crossProducts = useMemo(
+        () => allProducts.filter((p) => p.kind !== kind && p.kind !== "tour"),
+        [allProducts, kind]
+    );
     const crossLabel = kind === "esim" ? "Seyahat sağlık sigortası" : "Dubai eSIM (internet paketi)";
 
     const setQty = (id, delta) =>
