@@ -198,7 +198,7 @@ export const VisaExplainer = () => {
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="relative order-1 aspect-[3/2] w-full sm:absolute sm:inset-y-0 sm:right-0 sm:order-none sm:aspect-auto sm:h-auto sm:w-[52%] sm:p-5">
+            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:absolute sm:inset-y-0 sm:right-0 sm:order-none sm:aspect-auto sm:h-auto sm:w-[52%] sm:p-5">
                 <AnimatePresence initial={false}>
                     <motion.img
                         key={scene.key}
