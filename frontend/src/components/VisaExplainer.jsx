@@ -275,11 +275,33 @@ export const VisaExplainer = () => {
                             </div>
 
                             {scene.cta && (
-                                <Button asChild size="lg" className="mt-4" data-testid="explainer-cta-button">
-                                    <Link to="/basvuru">
-                                        Başvuruya başla <ArrowRight className="ml-1 h-4 w-4" />
-                                    </Link>
-                                </Button>
+                                <div className="mt-4 flex flex-wrap items-center gap-3">
+                                    <Button asChild size="lg" data-testid="explainer-cta-button">
+                                        <Link to="/basvuru">
+                                            Başvuruya başla <ArrowRight className="ml-1 h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: 0.35, duration: 0.4 }}
+                                        className="flex items-center gap-2.5 rounded-xl border border-primary/25 bg-white/90 px-3 py-2 shadow-sm"
+                                        data-testid="explainer-tursab-seal"
+                                    >
+                                        <img
+                                            src="/brand/tursab.png"
+                                            alt="TÜRSAB - Türkiye Seyahat Acentaları Birliği"
+                                            className="h-7 w-auto object-contain"
+                                            decoding="async"
+                                        />
+                                        <span className="border-l border-border pl-2.5 text-[10px] font-bold uppercase leading-3.5 tracking-[0.06em] text-foreground">
+                                            TÜRSAB üyesi
+                                            <span className="mt-0.5 block text-[10px] font-semibold normal-case tracking-normal text-muted-foreground">
+                                                A Grubu seyahat acentesi
+                                            </span>
+                                        </span>
+                                    </motion.div>
+                                </div>
                             )}
                         </motion.div>
                     </AnimatePresence>

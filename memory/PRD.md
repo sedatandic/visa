@@ -819,3 +819,7 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
 - **passport.jpg** son hâli: bordo kapakta **TÜRKİYE CUMHURİYETİ**, altında
   **REPUBLIC OF TÜRKİYE**, hilal-yıldız, **PASAPORT** ve altta **biyometrik çip simgesi**;
   sağda kimlik sayfası + telefon.
+- **Kapanış sahnesi kurumsallaştırıldı**: `VisaExplainer.jsx` cta sahnesinde "Başvuruya
+  başla" düğmesinin yanında **TÜRSAB güven mührü** (`/brand/tursab.png` + "TÜRSAB üyesi /
+  A Grubu seyahat acentesi", `data-testid="explainer-tursab-seal"`) 0.35 sn gecikmeli
+  yumuşak giriş animasyonuyla görünüyor. Masaüstü + mobilde doğrulandı.
