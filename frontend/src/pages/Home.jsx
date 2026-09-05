@@ -124,11 +124,6 @@ export default function Home() {
                                 Birleşik Arap Emirlikleri Vize Danışmanlığı
                             </span>
                             <HeroHeadline />
-                            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                                Pasaportunuzu hiçbir yere teslim etmeden, telefonunuzdan yaklaşık 5 dakikada
-                                başvurun. Evraklarınızı yükleyin, ödemenizi yapın; onaylanan vizeniz e-posta
-                                adresinize gelir.
-                            </p>
 
                             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                                 <Button asChild size="lg" data-testid="hero-apply-now-button">

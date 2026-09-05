@@ -2,9 +2,21 @@ import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const SLOGANS = [
-    { top: "Dubai vizeniz", bottom: "2 iş gününde hazır" },
-    { top: "Tüm aileniz", bottom: "tek formda, tek başvuruda" },
-    { top: "Pasaportunuzu yükleyin", bottom: "gerisini biz halledelim" },
+    {
+        top: "Dubai vizeniz",
+        bottom: "2 iş gününde hazır",
+        sub: "Dubai seyahatiniz için vize başvurunuzu tamamen online tamamlayın. Evraklarınızı yükleyin, başvurunuzu gönderin ve sonucunuzu e-posta ile alın.",
+    },
+    {
+        top: "Tüm aileniz",
+        bottom: "tek formda, tek başvuruda",
+        sub: "Eşinizi ve çocuklarınızı aynı forma ekleyin. 2 kişiden itibaren %10 aile indirimi otomatik uygulanır, çocuk vizeleri indirimli fiyatlanır.",
+    },
+    {
+        top: "Pasaportunuzu yükleyin",
+        bottom: "gerisini biz halledelim",
+        sub: "Pasaportunuzun fotoğrafını ve vesikalığınızı yükleyin. Formunuzu danışmanınız kontrol eder, resmî başvuruyu yetkili merciler nezdinde biz yaparız.",
+    },
 ];
 
 export const HeroHeadline = () => {
@@ -18,29 +30,47 @@ export const HeroHeadline = () => {
     const slogan = SLOGANS[index];
 
     return (
-        <h1
-            className="mt-6 min-h-[2.6em] font-heading text-4xl font-extrabold sm:text-5xl lg:text-[58px]"
-            style={{ perspective: "900px" }}
-            data-testid="hero-headline"
-        >
-            <AnimatePresence mode="wait">
-                <motion.span
-                    key={index}
-                    initial={{ opacity: 0, rotateX: -75, y: 14 }}
-                    animate={{ opacity: 1, rotateX: 0, y: 0 }}
-                    exit={{ opacity: 0, rotateX: 70, y: -14 }}
-                    transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                    className="block"
-                    style={{ transformOrigin: "center bottom" }}
-                    data-testid={`hero-slogan-${index}`}
-                >
-                    <span className="display-italic" style={{ color: "hsl(38 82% 46%)" }}>
-                        {slogan.top}
-                    </span>
-                    <br />
-                    <span style={{ color: "hsl(30 62% 38%)" }}>{slogan.bottom}</span>
-                </motion.span>
-            </AnimatePresence>
-        </h1>
+        <>
+            <h1
+                className="mt-6 min-h-[2.6em] font-heading text-4xl font-extrabold sm:text-5xl lg:text-[58px]"
+                style={{ perspective: "900px" }}
+                data-testid="hero-headline"
+            >
+                <AnimatePresence mode="wait">
+                    <motion.span
+                        key={index}
+                        initial={{ opacity: 0, rotateX: -75, y: 14 }}
+                        animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                        exit={{ opacity: 0, rotateX: 70, y: -14 }}
+                        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                        className="block"
+                        style={{ transformOrigin: "center bottom" }}
+                        data-testid={`hero-slogan-${index}`}
+                    >
+                        <span className="display-italic" style={{ color: "hsl(38 82% 46%)" }}>
+                            {slogan.top}
+                        </span>
+                        <br />
+                        <span style={{ color: "hsl(30 62% 38%)" }}>{slogan.bottom}</span>
+                    </motion.span>
+                </AnimatePresence>
+            </h1>
+
+            <div className="mx-auto mt-5 min-h-[5.5em] max-w-2xl sm:min-h-[4.5em]">
+                <AnimatePresence mode="wait">
+                    <motion.p
+                        key={`sub-${index}`}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="text-base leading-7 text-muted-foreground sm:text-lg"
+                        data-testid={`hero-subtitle-${index}`}
+                    >
+                        {slogan.sub}
+                    </motion.p>
+                </AnimatePresence>
+            </div>
+        </>
     );
 };
