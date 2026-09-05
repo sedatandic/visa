@@ -71,7 +71,7 @@ async def seed_products() -> None:
 
     for product in DEFAULT_PRODUCTS:
         doc = dict(product)
-        price_usd = doc.pop("price_usd")
+        price_usd = doc.pop("price_usd", None)
         popular = doc.pop("popular", False)
         await products_col.update_one(
             {"id": doc["id"]},

@@ -672,3 +672,26 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
 - `photo.jpg`: kullanıcı isteğiyle **erkek + kadın** iki vesikalık kartı, nötr cilt tonu
   (kırmızı yüz sorunu giderildi), izometrik çerçeveler + onay tikleri, üstü çizili gözlük/şapka.
   Eski dosyalar `*.old.jpg` olarak duruyor.
+
+## 2026-06-06 · Eleven v3 sesi, mobil boşluk, log temizliği, eSIM tablosu (iteration_76)
+- **Ses (BUG: "bilgisayar konuşması olduğu belli")**: ElevenLabs **`eleven_v3`** modeline
+  geçildi (multilingual_v2 yerine; v3 Türkçe destekliyor ve metin içi **audio tag**'leri
+  yorumluyor). `scripts/generate_narration_eleven.py` yeniden yazıldı: sahne bazlı etiketler
+  `[warm][smiling]`, `[informative]`, `[emphatic]`, `[slowly][reassuring]`, `[excited]`,
+  `[confident][premium]` + sahne bazlı stability/style. 7 klip: intro 6.9 / passport 6.6 /
+  photo 8.6 / upload 9.7 / track 8.9 / extras 12.6 / cta 16.6 sn; `voiceMs` güncellendi.
+  (Not: script artık `requests` ile REST çağırıyor, elevenlabs SDK'sı v3'ü desteklemiyordu.)
+- **Mobil boşluk (BUG)**: `VisaExplainer` mobilde dikey yığın — metin `order-1`, illüstrasyon
+  `order-2` (176px blok, `object-center`), gradyan yalnız `sm:` üstünde; `min-h` kaldırıldı,
+  `sm:absolute` ile masaüstünde eski yan yana düzen korunuyor.
+- **Log temizliği**: `zami_rpa.py` "bundled chromium unavailable" → `logger.warning` yerine
+  `logger.info`.
+- **eSIM sayfası**: yeni `components/EsimCompare.jsx` — `/api/products`'tan 4 eSIM paketini
+  çekip **karşılaştırma tablosu** (veri, geçerlilik, hotspot ✓/–, BAE kapsaması, Türkiye
+  numarası, kime uygun) + fiyatlar; mobilde yatay kaydırma. `Esim.jsx` adım metinleri
+  detaylandırıldı ve **6 adımlık kurulum listesi** (`esim-setup-steps`) eklendi.
+- **Ek düzeltme (testing_agent bulgusu)**: `server.py seed_products()` içinde
+  `doc.pop("price_usd")` KeyError atıp her açılışta "startup db init failed: price_usd"
+  hatası veriyor ve sonraki seed'leri engelliyordu → `doc.pop("price_usd", None)`.
+  Artık açılışta "store products seeded (11)" ve hata yok.
+- Test: iteration_76 → frontend %100, backend %95 (tek minör bulgu yukarıda düzeltildi).

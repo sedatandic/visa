@@ -109,7 +109,7 @@ async def _launch_browser(pw):
             if await _install_chromium():
                 return await pw.chromium.launch(headless=True, args=args)
             raise
-        logger.warning("bundled chromium unavailable (%s); using %s", exc, executable)
+        logger.info("bundled chromium unavailable (%s); using %s", exc, executable)
         return await pw.chromium.launch(headless=True, args=args, executable_path=executable)
 
 _sessions: dict = {}

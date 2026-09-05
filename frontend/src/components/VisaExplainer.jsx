@@ -28,7 +28,7 @@ const SCENES = [
         subtitle: "Dubai vizesi almak artık çok kolay. Başvurunuzu tamamlamak için yalnızca iki belgeye ihtiyacınız var.",
         alt: "Bavuluyla gülümseyen gezgin çizimi",
         silentMs: 6000,
-        voiceMs: 7700,
+        voiceMs: 7000,
     },
     {
         key: "passport",
@@ -39,7 +39,7 @@ const SCENES = [
         subtitle: "İlk olarak, pasaportunuzun kimlik bilgilerinin yer aldığı sayfanın fotoğrafını yükleyin.",
         alt: "Açık pasaport ve telefonla fotoğraflama çizimi",
         silentMs: 5000,
-        voiceMs: 5800,
+        voiceMs: 6700,
     },
     {
         key: "photo",
@@ -51,7 +51,7 @@ const SCENES = [
             "Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. Fotoğrafın gözlüksüz ve şapkasız olması gerektiğini lütfen unutmayın.",
         alt: "Vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
         silentMs: 8500,
-        voiceMs: 10100,
+        voiceMs: 8600,
     },
     {
         key: "upload",
@@ -63,7 +63,7 @@ const SCENES = [
             "Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza ya da otel rezervasyonu yaptırmanıza gerek yok.",
         alt: "Belgelerin bulut simgesine yüklendiği çizim",
         silentMs: 10000,
-        voiceMs: 11900,
+        voiceMs: 9700,
     },
     {
         key: "track",
@@ -75,7 +75,7 @@ const SCENES = [
             "Başvurunuzun tüm aşamalarını sizin adınıza takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-posta adresinize gönderilir.",
         alt: "Kulaklıklı danışman ve onay listesi çizimi",
         silentMs: 9000,
-        voiceMs: 10900,
+        voiceMs: 8900,
     },
     {
         key: "extras",
@@ -87,7 +87,7 @@ const SCENES = [
             "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de başvurunuza ekleyebilirsiniz. Böylece Dubai'ye vardığınız anda internet bağlantınız hazır olur ve seyahat sigortanız anında devreye girer.",
         alt: "eSIM ve seyahat sigortası simgeleri çizimi",
         silentMs: 11000,
-        voiceMs: 13600,
+        voiceMs: 12700,
     },
     {
         key: "cta",
@@ -99,7 +99,7 @@ const SCENES = [
             "Dubai vizenizi Dubai Vize Online güvencesiyle kolayca alın. TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle başvurunuzu güvenle tamamlayın. Hemen başvurun ve Dubai yolculuğunuzun ilk adımını bugün atın. Dubai sizi bekliyor!",
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
         silentMs: 12000,
-        voiceMs: 17700,
+        voiceMs: 16700,
         cta: true,
     },
 ];
@@ -182,12 +182,12 @@ export const VisaExplainer = () => {
 
     return (
         <div
-            className="relative overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--panel-2))]"
+            className="relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--panel-2))] sm:block"
             style={{ boxShadow: "var(--shadow-card)" }}
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="absolute inset-y-0 right-0 w-full sm:w-[68%]">
+            <div className="relative order-2 h-44 w-full sm:absolute sm:inset-y-0 sm:right-0 sm:order-none sm:h-auto sm:w-[68%]">
                 <AnimatePresence initial={false}>
                     <motion.img
                         key={scene.key}
@@ -201,18 +201,18 @@ export const VisaExplainer = () => {
                             x: { duration: 0.7, ease: "easeOut" },
                             scale: { duration: paused ? 0.4 : sceneMs / 1000, ease: "linear" },
                         }}
-                        className="absolute inset-0 h-full w-full object-cover object-right"
+                        className="absolute inset-0 h-full w-full object-cover object-center sm:object-right"
                         data-testid={`explainer-image-${scene.key}`}
                     />
                 </AnimatePresence>
                 <div
-                    className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--panel-2))] via-[hsl(var(--panel-2)/0.75)] to-transparent sm:via-[hsl(var(--panel-2)/0.35)]"
+                    className="absolute inset-0 hidden bg-gradient-to-r from-[hsl(var(--panel-2))] via-[hsl(var(--panel-2)/0.35)] to-transparent sm:block"
                     aria-hidden="true"
                 />
             </div>
 
             {/* METIN KATMANI */}
-            <div className="relative flex min-h-[340px] flex-col justify-between gap-6 p-6 sm:min-h-[380px] sm:p-9 lg:min-h-[400px]">
+            <div className="relative order-1 flex flex-col justify-between gap-5 p-6 sm:order-none sm:min-h-[400px] sm:gap-6 sm:p-9">
                 <div className="max-w-md">
                     <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary sm:text-[11px]">
                         Dubai vizenizi 1 dakikada nasıl alacağınızı anlatalım

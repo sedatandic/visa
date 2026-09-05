@@ -4,6 +4,7 @@ import { Cpu, Globe2, QrCode, Wifi, Zap } from "lucide-react";
 import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { StoreCheckout } from "../components/StoreCheckout";
+import { EsimCompare } from "../components/EsimCompare";
 
 const STEPS = [
     {
@@ -14,13 +15,24 @@ const STEPS = [
     {
         icon: Cpu,
         title: "QR kodunuz e-postanıza gelir",
-        detail: "Ödeme onayından sonra eSIM QR kodunuz e-posta ile iletilir.",
+        detail:
+            "Ödeme onayından sonra eSIM QR kodunuz e-posta ile iletilir. Telefonunuzda Ayarlar → Hücresel/SIM → eSIM ekle adımını açın.",
     },
     {
         icon: Wifi,
-        title: "Dubai'ye inince aktif olur",
-        detail: "QR kodu taratıp eSIM'i kurun; uçaktan indiğinizde internetiniz hazır.",
+        title: "QR'ı taratın, Dubai'de aktif olur",
+        detail:
+            "QR kodu taratıp hattı kurun; veri hattı olarak eSIM'i seçin. Uçaktan indiğinizde internetiniz hazır olur.",
     },
+];
+
+const SETUP = [
+    "Türkiye'de, Wi-Fi bağlantısı varken kuruluma başlayın (QR kodu tek seferlik kullanılır).",
+    "Ayarlar → Hücresel/Mobil Veri → eSIM veya Mobil Plan Ekle adımını açın.",
+    "E-postanızdaki QR kodu telefonunuzun kamerasıyla okutun; hat telefonunuza eklenir.",
+    "Hattı \"Dubai eSIM\" gibi bir etiketle isimlendirin ve şimdilik kapalı bırakın.",
+    "Dubai'ye indiğinizde eSIM hattını açın, veri hattı olarak seçin ve dolaşımı (data roaming) etkinleştirin.",
+    "Türkiye numaranızın mobil verisini kapatın; aramalar ve WhatsApp Türkiye hattınızda çalışmaya devam eder.",
 ];
 
 const FAQ = [
@@ -65,6 +77,8 @@ export default function Esim() {
                 </div>
             </section>
 
+            <EsimCompare />
+
             <section className="section border-y border-border bg-[hsl(var(--cloud))]" data-testid="esim-steps">
                 <div className="container-page">
                     <span className="eyebrow">Nasıl çalışır?</span>
@@ -84,6 +98,24 @@ export default function Esim() {
                                 <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{detail}</p>
                             </div>
                         ))}
+                    </div>
+
+                    <div className="mt-8 rounded-[var(--radius-lg)] border border-border bg-card p-6" data-testid="esim-setup-steps">
+                        <h3 className="font-heading text-base font-bold">Kurulum adımları (adım adım)</h3>
+                        <ol className="mt-4 space-y-3">
+                            {SETUP.map((text, i) => (
+                                <li key={text} className="flex gap-3 text-sm leading-6 text-muted-foreground">
+                                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-bold text-primary">
+                                        {i + 1}
+                                    </span>
+                                    {text}
+                                </li>
+                            ))}
+                        </ol>
+                        <p className="mt-4 text-xs text-muted-foreground">
+                            Kurulumda takılırsanız WhatsApp'tan yazın; ekran görüntüsüyle birlikte adım
+                            adım yardımcı oluyoruz.
+                        </p>
                     </div>
                 </div>
             </section>
