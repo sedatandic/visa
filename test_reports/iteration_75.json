@@ -1,0 +1,40 @@
+{
+  "summary": "Regression verification round for code-review false-positive claims. Confirmed NO runtime regressions: uvicorn healthy, no NameError/ImportError/circular-import traces in backend logs, pytest suite 65/65 pass, all requested API endpoints working, and the new 'extras' explainer illustration renders correctly.",
+  "code_review_false_positives_verified": {
+    "exec_vulnerability_zami_rpa_py_L90": "FALSE POSITIVE confirmed. Line 90 is `await asyncio.create_subprocess_exec(sys.executable, '-m', 'playwright', 'install', 'chromium', ...)` — a safe subprocess spawn with a fixed argv list, not the Python `exec()` builtin. No exec()/eval() anywhere in zami_rpa.py.",
+    "circular_import_insurance_tasks_routes_store": "FALSE POSITIVE confirmed. insurance_tasks.py:17 imports only from db (`insurance_tasks_col, notifications_col, orders_col, serialize_doc`). routes_store.py:575 does `from insurance_tasks import queue_policy_tasks` inside the create_order function body (lazy). Backend imports cleanly (`python -c 'import server'` OK) and POST /api/orders with an insurance product returns 200 — proving the lazy import path actually executes without error.",
+    "F821_undefined_names_7_count": "FALSE POSITIVE. Server starts and imports without NameError; all 65 pytest tests pass.",
+    "F632_is_with_literals": "FALSE POSITIVE. grep of zami_rpa.py shows all `is`/`is not` usages are against None (e.g., `is None`, `is not None`, `browser is None`) — never against literals."
+  },
+  "backend_test_results": {
+    "pytest": "65 passed in 7.77s (backend/tests/, junit=/app/test_reports/pytest/iter75.xml)",
+    "GET /api/content/site": "200 — addons list contains both `express` and `instant_express` products.",
+    "GET /api/products": "200 — catalog returns esim_1gb, ins_8d, tour_desert_safari, etc.",
+    "POST /api/pricing/quote (visa_30_single + express)": "200 — subtotal=5190, express addon=2470, total=7660 TRY.",
+    "POST /api/pricing/quote (tour_desert_safari, no scheduled_date)": "400 with message 'Çöl Safarisi · Akşam Turu icin tur tarihi secmelisiniz.' — validation regression NOT introduced.",
+    "POST /api/pricing/quote (tour_desert_safari, scheduled_date within arrival/departure)": "200 — line total=4460 TRY, scheduled_date=2026-03-15, scheduled_time=14:00.",
+    "POST /api/orders (esim_1gb)": "200 — order created (SV-UKNLMXM3). Lazy import branch for insurance_tasks not triggered (esim), no error.",
+    "POST /api/orders (ins_8d insurance)": "200 — order created (SV-3RYHEHX0) with starts_on=2026-03-14, ends_on=2026-03-21. The routes_store -> insurance_tasks lazy import path executes queue_policy_tasks successfully (no 500, no circular-import).",
+    "GET /api/admin/zami/readiness (with admin auth)": "200 — zami_rpa module operational (84 fields captured, form_url set).",
+    "GET /api/admin/zami/config": "200 — settings and mapping returned OK."
+  },
+  "frontend_test_results": {
+    "home_page_load": "OK — no runtime console errors.",
+    "explainer_extras_scene": "OK — clicking [data-testid=explainer-dot-extras] transitions to the extras scene; [data-testid=explainer-image-extras] loads /explainer/extras.jpg (HTTP 206, naturalWidth=1264, naturalHeight=848, complete=true). New monoline illustration (phone with eSIM + umbrella-shield) renders correctly. Title 'Seyahat sigortası ve Dubai eSIM' visible."
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/test_reports/pytest/iter75.xml", "/app/backend/tests/"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "backend/zami_rpa.py logs a persistent WARNING every ~10 minutes ('bundled chromium unavailable ... Please run: playwright install'). Not a runtime bug (fallback to /usr/local/bin/browser-use-chromium works) but log spam — consider running `playwright install chromium` once at container build or downgrading log level to INFO after the first fallback."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (65/65 pytest + all 9 targeted endpoint checks)", "frontend": "100% (extras scene smoke test)"},
+  "test_credentials": "Admin: info@dubaivizeonline.com / Dubai2026! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Two throwaway store orders created via POST /api/orders (SV-UKNLMXM3 esim, SV-3RYHEHX0 insurance) — status=pending, payment=bank_transfer. Not linked to any real customer; safe to leave or clean.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "This iteration was a 'no-code-change' verification of external code-review claims. All four claims (exec() vulnerability, circular import, F821 undefined names, F632 is-with-literal) were confirmed FALSE POSITIVES. Backend imports clean, pytest 65/65, all Turkish-language validation messages intact, tour date validation regression NOT introduced, extras illustration renders. Nothing to fix.",
+  "rca of the issue": "N/A — external code review used a non-Python-aware linter/heuristic that (a) matched the substring 'exec' inside asyncio.create_subprocess_exec, (b) flagged a function-local lazy import as top-level circular, (c) reported phantom F821s and F632s that ruff itself confirms as 0 errors. Main agent's diagnosis is correct: no code change required."
+}

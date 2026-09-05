@@ -650,3 +650,25 @@ Kullanıcı yeni senaryo + yönetmen notu verdi (ilk %30 sıcak/sakin, orta bilg
   Dubai sizi bekliyor". Duyuru şeridi metni de "A Grubu ... güvencesi" olarak hizalandı.
 - Doğrulama: ilk etkileşimde intro.mp3 (7.7 sn) çalıyor, cta noktasına tıklayınca cta.mp3
   (17.6 sn) çalıyor, altyazılar yeni senaryo metniyle görünüyor.
+
+## 2026-06-06 · Kod inceleme bulguları: TAMAMI FALSE POSITIVE (iteration_75)
+Kullanıcının paylaştığı rapordaki 4 "kritik" bulgu doğrulandı ve **kod değişikliği
+gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 65/65 pytest):
+- `zami_rpa.py:90` "exec() güvenlik açığı" → satır `await asyncio.create_subprocess_exec(...)`;
+  sabit argv ile playwright kurulumu. Projede hiçbir yerde `exec()`/`eval()` yok.
+- "insurance_tasks ↔ routes_store döngüsel import" → `insurance_tasks.py:17` yalnızca `db`den
+  import ediyor; `routes_store.py:575` importu fonksiyon gövdesinde (lazy).
+  POST /api/orders (ins_8d) 200 → lazy import yolu gerçekten çalışıyor.
+- "7 tanımsız değişken (F821)" → `ruff check --select F821` 0 hata; server import/başlatma temiz.
+- "`is` ile literal karşılaştırma (F632)" → tüm kullanımlar `is None` / `is not None`;
+  ruff F632/E711/E712 = 0.
+- Not (testing_agent'tan): `zami_rpa` her ~10 dk "bundled chromium unavailable" WARNING
+  yazıyor; çalışmayı etkilemiyor (fallback var), sadece log gürültüsü — istenirse log seviyesi
+  düşürülebilir.
+
+### Anlatım görselleri profesyonelleştirildi (2026-06-06)
+- `extras.jpg`: oyuncak görünümlü çizim yerine **monoline (ince çizgi) kurumsal illüstrasyon**
+  (telefon + eSIM sinyalleri, şemsiyeli kalkan, BAE bayrak detayı).
+- `photo.jpg`: kullanıcı isteğiyle **erkek + kadın** iki vesikalık kartı, nötr cilt tonu
+  (kırmızı yüz sorunu giderildi), izometrik çerçeveler + onay tikleri, üstü çizili gözlük/şapka.
+  Eski dosyalar `*.old.jpg` olarak duruyor.
