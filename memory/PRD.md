@@ -795,3 +795,16 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   olduğu için illüstrasyonun tamamı (bavul + ayakkabı) görünüyor; metin kolonu %48,
   çakışma ölçümle 0. Gradyan katman kaldırıldı (kliplerin krem tonları farklı olduğu için
   dikey dikiş izi yapıyordu; artık çerçeveli kart görünümü).
+
+## 2026-06-06 · Anlatım: boşluk azaltma, pasaport yazısı, uçak/otel sahnesi
+- Kullanıcı a şıkkını seçti: görsel yine kenardan kenara (%68, `object-cover object-right`,
+  gradyanlı) — çerçeveli kart kaldırıldı. Animasyon 961860d ile birebir aynı.
+- **Boşluklar ~%50 azaltıldı**: `sm:min-h` 400→320, `sm:p-9`→`sm:p-6`, `sm:gap-6`→`gap-4`,
+  mobil `p-6`→`p-5`, altyazı `mt-4 max-w-xl`→`mt-3 max-w-md`, kontroller `mt-5`→`mt-4`.
+  Panel yüksekliği 430px → 349-373px.
+- **passport.jpg yenilendi**: kapakta okunur şekilde **"TÜRKİYE CUMHURİYETİ"** ve
+  **"PASAPORT"** yazıyor (altın, hilal-yıldız amblemiyle).
+- **upload.jpg yenilendi**: uçak bileti + otel binası, ikisi de üstü çizili ve yasak
+  işaretli, altında **"GEREK YOK"** yazısı; yanda onaylı belge kartı.
+- **Vesikalık sahnesinde çakışma bitti**: metin kolonu `sm:w-[50%]` + altyazı `max-w-md`;
+  ölçüm: altyazı 682'de bitiyor, portreler 720'de başlıyor.

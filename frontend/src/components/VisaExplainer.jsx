@@ -224,7 +224,7 @@ export const VisaExplainer = () => {
             </div>
 
             {/* METIN KATMANI */}
-            <div className="relative order-2 flex flex-col justify-between gap-5 p-6 pt-2 sm:order-1 sm:min-h-[400px] sm:w-[56%] sm:gap-6 sm:p-9">
+            <div className="relative order-2 flex flex-col justify-between gap-4 p-5 pt-2 sm:order-1 sm:min-h-[320px] sm:w-[50%] sm:gap-4 sm:p-6">
                 {!playing && (
                     <button
                         type="button"
@@ -240,7 +240,7 @@ export const VisaExplainer = () => {
                     <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary sm:text-[11px]">
                         Dubai vizenizi nasıl alacağınızı 1 dakikada anlatalım
                     </span>
-                    <p className="mt-3 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
+                    <p className="mt-2 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
                         Sadece 2 belgeyle Dubai vizesi
                     </p>
                 </div>
@@ -285,7 +285,7 @@ export const VisaExplainer = () => {
                     </AnimatePresence>
 
                     {captions && (
-                        <div className="mt-4 max-w-xl">
+                        <div className="mt-3 max-w-md">
                             <Subtitle
                                 text={scene.subtitle}
                                 durationMs={sceneMs}
@@ -296,7 +296,7 @@ export const VisaExplainer = () => {
                         </div>
                     )}
 
-                    <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <div className="mt-4 flex flex-wrap items-center gap-2.5">
                         <div className="flex min-w-[140px] flex-1 gap-1.5 sm:max-w-[240px]">
                             {SCENES.map((s, i) => (
                                 <button
