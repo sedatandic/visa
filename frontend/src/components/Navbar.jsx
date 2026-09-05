@@ -121,7 +121,7 @@ export const Navbar = () => {
             data-testid="site-navbar"
         >
             <div className="h-px w-full bg-border" aria-hidden="true" />
-            <div className="container-page flex h-[108px] items-end justify-between gap-4 pb-3.5">
+            <div className="mx-auto flex h-[108px] w-full max-w-[88rem] items-end justify-between gap-4 px-4 pb-3.5 sm:px-6">
                 <Link
                     to="/"
                     className="flex shrink-0 items-end gap-2.5 rounded-lg focus-visible:outline-none"
