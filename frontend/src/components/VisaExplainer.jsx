@@ -1,71 +1,111 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Captions, CheckCircle2, IdCard, MailCheck, Pause, Play, UploadCloud, Volume2, VolumeX } from "lucide-react";
-
-const SILENT_MS = 5000;
-const VOICE_MS = 7800;
+import { Link } from "react-router-dom";
+import {
+    ArrowRight,
+    BadgeCheck,
+    Camera,
+    Captions,
+    Headphones,
+    IdCard,
+    Pause,
+    Play,
+    Plane,
+    UploadCloud,
+    Volume2,
+    VolumeX,
+} from "lucide-react";
+import { Button } from "./ui/button";
 
 const SCENES = [
     {
+        key: "intro",
+        step: "Adım 1",
+        icon: BadgeCheck,
+        title: "Dubai vizesi almak artık çok kolay",
+        note: "Başvurunuz için sadece iki belge yeterli",
+        subtitle: "Dubai vizesi almak artık çok kolay. Başvurunuz için sadece iki belge yeterli.",
+        alt: "Bavuluyla gülümseyen gezgin çizimi",
+        silentMs: 5000,
+        voiceMs: 5600,
+    },
+    {
         key: "passport",
-        step: "1",
+        step: "1. belge",
         icon: IdCard,
         title: "Pasaportunuzun kimlik sayfası",
-        note: "Telefonunuzla çektiğiniz net bir fotoğraf yeterli",
-        subtitle:
-            "Dubai vizesi için sadece iki belge yeterli. Birincisi, pasaportunuzun kimlik sayfasının fotoğrafı.",
-        alt: "Telefonla pasaportun kimlik sayfası fotoğraflanıyor",
+        note: "Kimlik bilgilerinizin bulunduğu sayfanın fotoğrafı",
+        subtitle: "Birincisi, pasaportunuzun kimlik bilgilerinin bulunduğu sayfa.",
+        alt: "Açık pasaport ve telefonla fotoğraflama çizimi",
+        silentMs: 4500,
+        voiceMs: 4400,
     },
     {
         key: "photo",
-        step: "2",
+        step: "2. belge",
         icon: Camera,
-        title: "Bir vesikalık fotoğraf",
-        note: "Beyaz fon, son 6 ay içinde çekilmiş, gözlüksüz",
+        title: "Güncel bir vesikalık fotoğraf",
+        note: "Beyaz fon, gözlüksüz ve şapkasız",
         subtitle:
-            "İkincisi, beyaz fonda çekilmiş bir vesikalık fotoğraf. Gözlüksüz ve şapkasız olması gerekiyor.",
-        alt: "Beyaz fonlu biyometrik vesikalık fotoğraf ve pasaport",
+            "İkincisi ise beyaz fonda çekilmiş güncel bir vesikalık fotoğraf. Fotoğrafın gözlüksüz ve şapkasız olması gerektiğini unutmayın.",
+        alt: "Vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
+        silentMs: 8000,
+        voiceMs: 10100,
     },
     {
         key: "upload",
-        step: "3",
+        step: "Adım 2",
         icon: UploadCloud,
-        title: "Yükleyin ve ödemeyi yapın",
-        note: "Uçak bileti ve otel rezervasyonu şartı yok",
+        title: "Yükleyin ve ödemeyi tamamlayın",
+        note: "Uçak bileti veya otel rezervasyonu gerekmiyor",
         subtitle:
-            "Belgeleri yükleyip ödemenizi yapın. Vizeniz çıkmadan uçak bileti ya da otel rezervasyonu gerekmiyor.",
-        alt: "Belgeler bilgisayardan yükleniyor",
+            "Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza veya otel rezervasyonu yaptırmanıza gerek yok.",
+        alt: "Belgelerin bulut simgesine yüklendiği çizim",
+        silentMs: 9500,
+        voiceMs: 12100,
     },
     {
-        key: "delivered",
-        step: "4",
-        icon: MailCheck,
-        title: "Vizeniz e-postanıza gelir",
-        note: "Ortalama 2 iş günü · ekspreste ~8 mesai saati",
+        key: "track",
+        step: "Adım 3",
+        icon: Headphones,
+        title: "Süreci sizin adınıza biz takip ediyoruz",
+        note: "Onaylanan vizeniz ortalama 2 iş gününde e-postanızda",
         subtitle:
-            "Başvurunuzu biz takip ediyoruz. Onaylanan vizeniz ortalama iki iş gününde e-postanıza geliyor.",
-        alt: "Onaylı Dubai vizesini telefonunda gösteren gezgin",
+            "Başvurunuzun tüm sürecini sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-posta adresinize gönderiliyor.",
+        alt: "Kulaklıklı danışman ve onay listesi çizimi",
+        silentMs: 9000,
+        voiceMs: 10800,
+    },
+    {
+        key: "cta",
+        step: "Son adım",
+        icon: Plane,
+        title: "Yolculuğunuz bugün başlasın",
+        note: "Hemen başvurun, ilk adımı bugün atın",
+        subtitle: "Hemen başvurunuzu yapın, Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
+        alt: "Dubai silüetine doğru havalanan uçak çizimi",
+        silentMs: 5500,
+        voiceMs: 5600,
+        cta: true,
     },
 ];
 
 const Subtitle = ({ text, durationMs, paused, sceneKey, progress }) => {
     const words = text.split(" ");
-    const step = Math.max(0.12, durationMs / 1000 / (words.length + 2));
+    const step = Math.max(0.1, durationMs / 1000 / (words.length + 2));
     const spoken = progress === null ? -1 : Math.round(progress * words.length);
     return (
         <p
-            className="mx-auto max-w-2xl rounded-xl bg-black/45 px-4 py-2.5 text-center text-xs font-medium leading-5 text-white backdrop-blur-sm sm:text-sm sm:leading-6"
+            className="rounded-xl bg-white/85 px-4 py-2.5 text-xs font-medium leading-5 text-foreground shadow-sm backdrop-blur-sm sm:text-sm sm:leading-6"
             data-testid="explainer-subtitle"
         >
             {words.map((word, i) => (
                 <motion.span
                     key={`${sceneKey}-${i}`}
-                    initial={{ opacity: 0.28 }}
-                    animate={{ opacity: progress === null ? 1 : i < spoken ? 1 : 0.32 }}
+                    initial={{ opacity: 0.3 }}
+                    animate={{ opacity: progress === null ? 1 : i < spoken ? 1 : 0.35 }}
                     transition={
-                        progress === null
-                            ? { delay: paused ? 0 : i * step, duration: 0.25 }
-                            : { duration: 0.18 }
+                        progress === null ? { delay: paused ? 0 : i * step, duration: 0.25 } : { duration: 0.18 }
                     }
                     className="mr-1 inline-block"
                 >
@@ -85,14 +125,13 @@ export const VisaExplainer = () => {
     const audioRef = useRef(null);
     const scene = SCENES[index];
     const SceneIcon = scene.icon;
-    const sceneMs = soundOn ? VOICE_MS : SILENT_MS;
+    const sceneMs = soundOn ? scene.voiceMs : scene.silentMs;
 
-    // Sessiz modda sahneler 5 sn'de gecer; ses acikken anlatim bitince gecer.
     useEffect(() => {
         if (paused || soundOn) return;
-        const timer = setTimeout(() => setIndex((i) => (i + 1) % SCENES.length), SILENT_MS);
+        const timer = setTimeout(() => setIndex((i) => (i + 1) % SCENES.length), scene.silentMs);
         return () => clearTimeout(timer);
-    }, [index, paused, soundOn]);
+    }, [index, paused, soundOn, scene.silentMs]);
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -113,144 +152,158 @@ export const VisaExplainer = () => {
 
     return (
         <div
-            className="relative aspect-[16/10] w-full overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--charcoal))] sm:aspect-[16/9] lg:aspect-[21/9]"
-            style={{ boxShadow: "var(--shadow-float)" }}
+            className="relative overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--panel-2))]"
+            style={{ boxShadow: "var(--shadow-card)" }}
             data-testid="visa-explainer"
         >
-            {/* GORUNTU KATMANI: Ken Burns yakinlasmasi + capraz gecis */}
-            <AnimatePresence initial={false}>
-                <motion.img
-                    key={scene.key}
-                    src={`/explainer/${scene.key}.jpg`}
-                    alt={scene.alt}
-                    initial={{ opacity: 0, scale: 1.02 }}
-                    animate={{ opacity: 1, scale: paused ? 1.04 : 1.12 }}
-                    exit={{ opacity: 0 }}
-                    transition={{
-                        opacity: { duration: 0.8 },
-                        scale: { duration: paused ? 0.6 : sceneMs / 1000, ease: "linear" },
-                    }}
-                    className="absolute inset-0 h-full w-full object-cover"
-                    data-testid={`explainer-image-${scene.key}`}
+            {/* CIZIM KATMANI */}
+            <div className="absolute inset-y-0 right-0 w-full sm:w-[68%]">
+                <AnimatePresence initial={false}>
+                    <motion.img
+                        key={scene.key}
+                        src={`/explainer/${scene.key}.jpg`}
+                        alt={scene.alt}
+                        initial={{ opacity: 0, scale: 1.04, x: 30 }}
+                        animate={{ opacity: 1, scale: paused ? 1.01 : 1.06, x: 0 }}
+                        exit={{ opacity: 0, x: -24 }}
+                        transition={{
+                            opacity: { duration: 0.6 },
+                            x: { duration: 0.7, ease: "easeOut" },
+                            scale: { duration: paused ? 0.4 : sceneMs / 1000, ease: "linear" },
+                        }}
+                        className="absolute inset-0 h-full w-full object-cover object-right"
+                        data-testid={`explainer-image-${scene.key}`}
+                    />
+                </AnimatePresence>
+                <div
+                    className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--panel-2))] via-[hsl(var(--panel-2)/0.75)] to-transparent sm:via-[hsl(var(--panel-2)/0.35)]"
+                    aria-hidden="true"
                 />
-            </AnimatePresence>
+            </div>
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25" aria-hidden="true" />
-
-            {/* UST BILGI */}
-            <div className="absolute left-5 right-5 top-5 flex flex-wrap items-center justify-between gap-3 sm:left-8 sm:right-8 sm:top-7">
-                <div>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/12 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md sm:text-[11px]">
-                        20 saniyede süreç
+            {/* METIN KATMANI */}
+            <div className="relative flex min-h-[340px] flex-col justify-between gap-6 p-6 sm:min-h-[380px] sm:p-9 lg:min-h-[400px]">
+                <div className="max-w-md">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary sm:text-[11px]">
+                        Çizgi anlatım · 40 saniye
                     </span>
-                    <p className="mt-3 font-heading text-xl font-extrabold text-white drop-shadow sm:text-3xl">
+                    <p className="mt-3 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
                         Sadece 2 belgeyle Dubai vizesi
                     </p>
                 </div>
-                <span className="hidden items-center gap-2 rounded-full bg-[hsl(var(--brand-green))] px-3.5 py-1.5 text-xs font-bold text-white sm:inline-flex">
-                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Pasaport + fotoğraf yeterli
-                </span>
-            </div>
 
-            {/* SAHNE METNI */}
-            <div className="absolute bottom-5 left-5 right-5 sm:bottom-7 sm:left-8 sm:right-8">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={scene.key}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.4 }}
-                        className="flex items-start gap-3"
-                    >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/15 backdrop-blur-md">
-                            <SceneIcon className="h-5 w-5 text-white" aria-hidden="true" />
-                        </span>
-                        <div>
-                            <p
-                                className="font-heading text-base font-bold text-white sm:text-lg"
-                                data-testid="explainer-scene-title"
-                            >
-                                {scene.step}. {scene.title}
-                            </p>
-                            <p className="mt-1 text-xs leading-5 text-white/85 sm:text-sm">{scene.note}</p>
+                <div className="max-w-lg">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={scene.key}
+                            initial={{ opacity: 0, y: 18 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -12 }}
+                            transition={{ duration: 0.4 }}
+                        >
+                            <div className="flex items-start gap-3">
+                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+                                    <SceneIcon className="h-5 w-5" aria-hidden="true" />
+                                </span>
+                                <div>
+                                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
+                                        {scene.step}
+                                    </span>
+                                    <p
+                                        className="font-heading text-base font-bold leading-snug sm:text-lg"
+                                        data-testid="explainer-scene-title"
+                                    >
+                                        {scene.title}
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-muted-foreground sm:text-sm">
+                                        {scene.note}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {scene.cta && (
+                                <Button asChild size="lg" className="mt-4" data-testid="explainer-cta-button">
+                                    <Link to="/basvuru">
+                                        Başvuruya başla <ArrowRight className="ml-1 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+
+                    {captions && (
+                        <div className="mt-4 max-w-xl">
+                            <Subtitle
+                                text={scene.subtitle}
+                                durationMs={sceneMs}
+                                paused={paused}
+                                sceneKey={scene.key}
+                                progress={soundOn ? audioProgress : null}
+                            />
                         </div>
-                    </motion.div>
-                </AnimatePresence>
+                    )}
 
-                {captions && (
-                    <div className="mt-4">
-                        <Subtitle
-                            text={scene.subtitle}
-                            durationMs={sceneMs}
-                            paused={paused}
-                            sceneKey={scene.key}
-                            progress={soundOn ? audioProgress : null}
-                        />
+                    <div className="mt-5 flex flex-wrap items-center gap-3">
+                        <div className="flex min-w-[140px] flex-1 gap-1.5 sm:max-w-[240px]">
+                            {SCENES.map((s, i) => (
+                                <button
+                                    key={s.key}
+                                    type="button"
+                                    onClick={() => setIndex(i)}
+                                    aria-label={`${s.step}: ${s.title}`}
+                                    className="h-1.5 flex-1 overflow-hidden rounded-full bg-foreground/15"
+                                    data-testid={`explainer-dot-${s.key}`}
+                                >
+                                    <motion.span
+                                        key={`${s.key}-${index}-${paused}-${soundOn}`}
+                                        initial={{ width: i < index ? "100%" : "0%" }}
+                                        animate={{ width: i <= index ? "100%" : "0%" }}
+                                        transition={{
+                                            duration: i === index && !paused ? sceneMs / 1000 : 0,
+                                            ease: "linear",
+                                        }}
+                                        className="block h-full bg-primary"
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setSoundOn((s) => !s)}
+                            aria-label={soundOn ? "Sesi kapat" : "Sesli anlatımı aç"}
+                            className={`flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold transition-colors duration-200 ${
+                                soundOn
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border bg-white/85 text-foreground hover:border-primary/60"
+                            }`}
+                            data-testid="explainer-sound-button"
+                        >
+                            {soundOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                            {soundOn ? "Ses açık" : "Sesli anlat"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setCaptions((c) => !c)}
+                            aria-label={captions ? "Altyazıyı kapat" : "Altyazıyı aç"}
+                            className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-colors duration-200 ${
+                                captions
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border bg-white/85 text-foreground hover:border-primary/60"
+                            }`}
+                            data-testid="explainer-captions-button"
+                        >
+                            <Captions className="h-3.5 w-3.5" /> CC
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPaused((p) => !p)}
+                            aria-label={paused ? "Anlatımı oynat" : "Anlatımı duraklat"}
+                            className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-white/85 text-foreground transition-colors duration-200 hover:border-primary/60"
+                            data-testid="explainer-toggle-button"
+                        >
+                            {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+                        </button>
                     </div>
-                )}
-
-                <div className="mt-5 flex items-center gap-3">
-                    <div className="flex flex-1 gap-1.5 sm:max-w-[300px]">
-                        {SCENES.map((s, i) => (
-                            <button
-                                key={s.key}
-                                type="button"
-                                onClick={() => setIndex(i)}
-                                aria-label={`${s.step}. sahne: ${s.title}`}
-                                className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/30"
-                                data-testid={`explainer-dot-${s.key}`}
-                            >
-                                <motion.span
-                                    key={`${s.key}-${index}-${paused}-${soundOn}`}
-                                    initial={{ width: i < index ? "100%" : "0%" }}
-                                    animate={{ width: i <= index ? "100%" : "0%" }}
-                                    transition={{
-                                        duration: i === index && !paused ? sceneMs / 1000 : 0,
-                                        ease: "linear",
-                                    }}
-                                    className="block h-full bg-white"
-                                />
-                            </button>
-                        ))}
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setSoundOn((s) => !s)}
-                        aria-label={soundOn ? "Sesi kapat" : "Sesli anlatımı aç"}
-                        className={`flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold backdrop-blur-md transition-colors duration-200 ${
-                            soundOn
-                                ? "border-white bg-white text-foreground"
-                                : "border-white/30 bg-white/12 text-white hover:bg-white/20"
-                        }`}
-                        data-testid="explainer-sound-button"
-                    >
-                        {soundOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-                        {soundOn ? "Ses açık" : "Sesli anlat"}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setCaptions((c) => !c)}
-                        aria-label={captions ? "Altyazıyı kapat" : "Altyazıyı aç"}
-                        title={captions ? "Altyazıyı kapat" : "Altyazıyı aç"}
-                        className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-bold backdrop-blur-md transition-colors duration-200 ${
-                            captions
-                                ? "border-white bg-white text-foreground"
-                                : "border-white/30 bg-white/12 text-white hover:bg-white/20"
-                        }`}
-                        data-testid="explainer-captions-button"
-                    >
-                        <Captions className="h-3.5 w-3.5" /> CC
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setPaused((p) => !p)}
-                        aria-label={paused ? "Anlatımı oynat" : "Anlatımı duraklat"}
-                        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-white/12 text-white backdrop-blur-md transition-colors duration-200 hover:bg-white/20"
-                        data-testid="explainer-toggle-button"
-                    >
-                        {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-                    </button>
                 </div>
             </div>
 

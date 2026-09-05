@@ -1,7 +1,9 @@
-"""Hero anlatimi icin Turkce seslendirme dosyalarini bir kez uretir.
+"""Hero anlatimi icin Turkce seslendirme dosyalarini bir kez uretir (OpenAI TTS).
 
 Kullanim: python /app/scripts/generate_narration.py
 Cikti: /app/frontend/public/audio/explainer/{key}.mp3
+Not: ElevenLabs Turk seslendirmecileri ucretsiz planda API'ye kapali oldugu icin
+yedek olarak bu script kullaniliyor (bkz. generate_narration_eleven.py).
 """
 import asyncio
 import os
@@ -15,12 +17,13 @@ from emergentintegrations.llm.openai import OpenAITextToSpeech  # noqa: E402
 
 OUT_DIR = Path("/app/frontend/public/audio/explainer")
 
-# Turkce karakterler korunur: aksan ve telaffuz belirgin sekilde duzeliyor.
 LINES = {
-    "passport": "Dubai vizesi için sadece iki belge yeterli. Birincisi, pasaportunuzun kimlik sayfasının fotoğrafı.",
-    "photo": "İkincisi, beyaz fonda çekilmiş bir vesikalık fotoğraf. Gözlüksüz ve şapkasız olması gerekiyor.",
-    "upload": "Belgeleri yükleyip ödemenizi yapın. Vizeniz çıkmadan uçak bileti ya da otel rezervasyonu gerekmiyor.",
-    "delivered": "Başvurunuzu biz takip ediyoruz. Onaylanan vizeniz, ortalama iki iş gününde e-postanıza geliyor.",
+    "intro": "Dubai vizesi almak artık çok kolay. Başvurunuz için sadece iki belge yeterli.",
+    "passport": "Birincisi, pasaportunuzun kimlik bilgilerinin bulunduğu sayfa.",
+    "photo": "İkincisi ise beyaz fonda çekilmiş güncel bir vesikalık fotoğraf. Fotoğrafın gözlüksüz ve şapkasız olması gerektiğini unutmayın.",
+    "upload": "Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza veya otel rezervasyonu yaptırmanıza gerek yok.",
+    "track": "Başvurunuzun tüm sürecini sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-posta adresinize gönderiliyor.",
+    "cta": "Hemen başvurunuzu yapın, Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
 }
 
 
@@ -29,7 +32,7 @@ async def main():
     tts = OpenAITextToSpeech(api_key=key)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for name, text in LINES.items():
-        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice="shimmer", speed=0.92)
+        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice="shimmer", speed=0.9)
         path = OUT_DIR / f"{name}.mp3"
         path.write_bytes(audio)
         print(name, len(audio), "bytes ->", path)

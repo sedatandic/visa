@@ -497,3 +497,23 @@ Kullanıcı ElevenLabs anahtarını paylaştı → `backend/.env` → `ELEVENLAB
   (~6.5 sn). `VOICE_MS` 6800 yapıldı. OpenAI TTS scripti (`generate_narration.py`) yedek
   olarak duruyor.
 - Doğrulama: ses butonu → passport.mp3 6.5 sn çalıyor (JS kontrolü + ekran görüntüsü).
+
+## 2026-06-06 · Anlatım çizgi film tarzına dönüştürüldü (yeni metin)
+Kullanıcı: "resimler çok koyu, açık renk olsun zemin", "yazılar okunmuyor",
+"aslında animasyon yapmak istiyorum çizgi film gibi" + yeni 9 cümlelik seslendirme metni.
+- **6 sahne** (`intro, passport, photo, upload, track, cta`) — kullanıcının verdiği metin
+  6 parçaya bölündü; sahne süreleri klip uzunluğuna göre ayrı ayrı tanımlı
+  (`silentMs` / `voiceMs`, 4.4-12.1 sn). Toplam ~40 sn, badge "Çizgi anlatım · 40 saniye".
+- **Görseller**: fotoğraf yerine Gemini ile üretilmiş **düz vektör çizgi film illüstrasyonları**
+  (krem zemin, bakır/altın vurgu) — `frontend/public/explainer/{intro,passport,photo,upload,track,cta}.jpg`.
+- **Yerleşim açık temaya çevrildi**: illüstrasyon sağda (sm+ %68 genişlik), soldan krem
+  gradyan; tüm metinler koyu (foreground), altyazı beyaz yarı saydam pill üzerinde koyu metin
+  → okunabilirlik sorunu çözüldü. Panel `bg-[hsl(var(--panel-2))]`, resim `object-right`,
+  giriş animasyonu: hafif kayma (x) + Ken Burns.
+- **Son sahnede CTA**: "Başvuruya başla" butonu (`explainer-cta-button`).
+- **Ses**: yeni metin OpenAI TTS `tts-1-hd` / `shimmer` / speed 0.9 ile 6 klip olarak üretildi
+  (`scripts/generate_narration.py` güncellendi). ElevenLabs Türk seslendirmecileri ücretsiz
+  planda API'ye kapalı (sesi hesaba eklemek de işe yaramadı, 402); Starter planı alınırsa
+  `scripts/generate_narration_eleven.py` ile Pelin Yıldız sesine geçilecek.
+- Doğrulama: 3 sahne ekran görüntüsüyle kontrol edildi (metinler okunuyor), CTA butonu
+  render ediliyor, ses açılınca cta.mp3 çalıyor.
