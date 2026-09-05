@@ -536,3 +536,27 @@ Kullanıcı: "resimler çok koyu, açık renk olsun zemin", "yazılar okunmuyor"
   "Vizeniz çıkmadan uçak bileti ve otel rezervasyonu yapmanıza gerek yok...".
   3. slogan alt metni de aynı mesajla güncellendi (4 slogan döngüde).
 - Anlatım paneli etiketi: "Dubai vizenizi 55 saniyede nasıl alacağınızı anlatalım".
+
+## 2026-06-06 · Hero banner slider + duyuru şeridi + flip geri döndü
+- Kullanıcı "flipping'e geri dönelim" dedi → `HeroHeadline` geçişi tekrar 3D flip
+  (rotateX -75→0, çıkış 70) + alt metin y kaymalı fade (80 ms gecikme).
+- **`components/HeroBannerSlider.jsx` (yeni)**: navbar altında tam genişlikte, 5 slaytlı
+  otomatik banner slider (translateX ile yatay kayma, 5 sn, hover'da durur, ok butonları
+  `hero-banner-prev/next`, noktalar `hero-banner-dot-{i}`). Her slaytta koyu gradyan üzerine
+  beyaz başlık + alt metin (vize süresi, 2 belge, ekspres, aile indirimi, eSIM/sigorta).
+  Sayfa ortasındaki `landing-gallery` bölümü (eski `HeroSlider`) kaldırıldı; `HeroSlider.jsx`
+  dosyası duruyor ama artık kullanılmıyor.
+- **`components/AnnouncementTicker.jsx` (yeni)**: `SiteLayout` içinde navbar'ın ÜSTÜNDE,
+  sola akan sonsuz duyuru şeridi (`ticker-track` CSS animasyonu, 34 sn linear infinite,
+  hover'da durur, prefers-reduced-motion desteği). 6 madde: TÜRSAB üyesi A grubu acente,
+  ekspres ~8 mesai saati, sadece pasaport+fotoğraf, bilet/otel şartı yok, eSIM+sigorta,
+  pasaport sizde kalır. NOT: `site_settings.company.tursab_no` boş olduğu için şeritte
+  belge numarası YAZILMIYOR (uydurma numara riski) — numara girildiğinde eklenebilir.
+- **ElevenLabs Türk seslendirmeci hâlâ yapılamadı**: hesap ücretsiz planda,
+  `paid_plan_required` (402) devam ediyor. Starter alınınca
+  `python scripts/generate_narration_eleven.py` (VOICE_ID Pelin Yıldız) yeterli.
+- Doğrulama: şerit ve slider görünür, slider 5.5 sn'de bir sonraki slayta kayıyor
+  (x: 0 → -1920), 4. noktaya tıklama çalışıyor.
+- **GERİ ALINDI**: kullanıcı "resim koyma, eskisi gibi sadece flipping yazılar olsun" dedi →
+  `HeroBannerSlider` ana sayfadan kaldırıldı (dosya duruyor, istenirse tek satırla geri gelir).
+  Hero yine sadece flip'li başlıklardan oluşuyor. Duyuru şeridi kalmaya devam ediyor.

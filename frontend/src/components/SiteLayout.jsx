@@ -2,9 +2,11 @@ import React from "react";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { SocialDock } from "./SocialDock";
+import { AnnouncementTicker } from "./AnnouncementTicker";
 
 export const SiteLayout = ({ children }) => (
     <div className="sky-shell relative flex min-h-screen flex-col">
+        <AnnouncementTicker />
         <Navbar />
         <main className="relative flex-1">{children}</main>
         <Footer />

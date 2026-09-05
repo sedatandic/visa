@@ -26,7 +26,6 @@ import { Input } from "../components/ui/input";
 import { ReviewSpotlight } from "../components/ReviewSpotlight";
 import { AuthorityStrip } from "../components/AuthorityStrip";
 import { VisaShowcase } from "../components/VisaShowcase";
-import { HeroSlider } from "../components/HeroSlider";
 import { VisaExplainer } from "../components/VisaExplainer";
 import { HeroHeadline } from "../components/HeroHeadline";
 import { HomeBundleStrip } from "../components/HomeBundleStrip";
@@ -237,13 +236,6 @@ export default function Home() {
                         Fiyatlar dolar bazlıdır, tahsilat güncel kurla TL olarak yapılır. Başvuru harcı ve hizmet
                         bedelimizin tamamı fiyata dahildir.
                     </span>
-                </div>
-            </section>
-
-            {/* DUBAI GORSELLERI */}
-            <section className="section pt-0" data-testid="landing-gallery">
-                <div className="container-page">
-                    <HeroSlider />
                 </div>
             </section>
 
