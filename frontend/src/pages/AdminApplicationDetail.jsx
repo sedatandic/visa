@@ -448,6 +448,28 @@ export default function AdminApplicationDetail() {
                                 <Row label="Telefon" value={a.contact?.phone} />
                                 <Row label="Şehir" value={a.contact?.address_city} />
                             </div>
+                            <div className="mt-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4" data-testid="admin-consents">
+                                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Onay kayıtları</p>
+                                <div className="mt-2 grid gap-1 text-xs sm:grid-cols-2">
+                                    {[
+                                        ["KVKK aydınlatma", a.kvkk_accepted],
+                                        ["İade + Gizlilik", a.consents?.refund_privacy_accepted],
+                                        ["Şartlar / sözleşme", a.consents?.service_terms_accepted],
+                                        ["WhatsApp bildirimi", a.whatsapp_optin],
+                                        ["Ticari ileti (pazarlama)", a.consents?.marketing_email_optin],
+                                        ["Reklam eşleştirmesi", a.consents?.ad_personalization_optin],
+                                    ].map(([label, given]) => (
+                                        <p key={label} className={given ? "text-foreground" : "text-muted-foreground"}>
+                                            {given ? "✓" : "—"} {label}
+                                        </p>
+                                    ))}
+                                </div>
+                                {a.consents?.accepted_at ? (
+                                    <p className="mt-2 text-[11px] text-muted-foreground">
+                                        Onay zamanı: {formatDate(a.consents.accepted_at)}
+                                    </p>
+                                ) : null}
+                            </div>
                         </div>
 
                         <div className="card-surface p-6">

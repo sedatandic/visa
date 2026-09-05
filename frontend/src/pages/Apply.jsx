@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
     AlertCircle,
     AlertTriangle,
@@ -216,6 +216,12 @@ export default function Apply() {
     const [tourSchedule, setTourSchedule] = useState({});
     const [extraDocs, setExtraDocs] = useState({ ticket: null, hotel: null, other: null });
     const [kvkk, setKvkk] = useState(false);
+    const [consents, setConsents] = useState({
+        refund_privacy_accepted: false,
+        service_terms_accepted: false,
+        marketing_email_optin: false,
+        ad_personalization_optin: false,
+    });
     const [errors, setErrors] = useState({});
     const [ocr, setOcr] = useState({});
     const [photoCheck, setPhotoCheck] = useState({});
@@ -1201,9 +1207,19 @@ export default function Apply() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
+    const setConsent = (key, value) => setConsents((s) => ({ ...s, [key]: value }));
+
     const submitApplication = async () => {
         if (!kvkk) {
             toast.error("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekir.");
+            return null;
+        }
+        if (!consents.refund_privacy_accepted) {
+            toast.error("İade ve İptal Koşulları ile Gizlilik Politikası'nı onaylamanız gerekir.");
+            return null;
+        }
+        if (!consents.service_terms_accepted) {
+            toast.error("Şartlar ve Mesafeli Hizmet Sözleşmesi'ni onaylamanız gerekir.");
             return null;
         }
         if (missingTourDate) {
@@ -1244,6 +1260,7 @@ export default function Apply() {
                     other_file_ids: extraDocs.other ? [extraDocs.other.file_id] : [],
                 },
                 kvkk_accepted: true,
+                consents,
             });
             setCreated(data);
             toast.success(`Başvurunuz oluşturuldu. Takip kodu: ${data.reference_code}`);
@@ -1559,13 +1576,15 @@ export default function Apply() {
                                             Yolcular <span className="text-muted-foreground">({travelers.length})</span>
                                         </h3>
                                         <div className="flex flex-wrap gap-2">
-                                            <Button type="button" variant="secondary" className="h-10 border border-border" onClick={() => addTraveler("adult")} data-testid="add-adult-traveler-button">
-                                                <Plus className="mr-1 h-4 w-4" />
-                                                <User className="mr-1.5 h-4 w-4" /> Yetişkin ekle
+                                            <Button type="button" variant="secondary" className="h-10 gap-1.5 border border-border" onClick={() => addTraveler("adult")} data-testid="add-adult-traveler-button">
+                                                <Plus className="h-4 w-4" />
+                                                <User className="h-4 w-4" />
+                                                <span>Yetişkin ekle</span>
                                             </Button>
-                                            <Button type="button" variant="secondary" className="h-10 border border-border" onClick={() => addTraveler("child")} data-testid="add-child-traveler-button">
-                                                <Plus className="mr-1 h-4 w-4" />
-                                                <Baby className="mr-1.5 h-4 w-4" /> Çocuk ekle
+                                            <Button type="button" variant="secondary" className="h-10 gap-1.5 border border-border" onClick={() => addTraveler("child")} data-testid="add-child-traveler-button">
+                                                <Plus className="h-4 w-4" />
+                                                <Baby className="h-4 w-4" />
+                                                <span>Çocuk ekle</span>
                                             </Button>
                                         </div>
                                     </div>
@@ -2869,13 +2888,83 @@ export default function Apply() {
                                     </div>
 
                                     {!created && (
-                                        <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
-                                            <Checkbox checked={kvkk} onCheckedChange={(v) => setKvkk(!!v)} className="mt-0.5" data-testid="kvkk-checkbox" />
-                                            <span className="text-sm leading-6">
-                                                KVKK aydınlatma metnini okudum, bilgilerimin ve yüklediğim belgelerin vize
-                                                başvurumun hazırlanması amacıyla işlenmesini onaylıyorum.
-                                            </span>
-                                        </label>
+                                        <div className="mt-6 space-y-3" data-testid="consent-block">
+                                            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
+                                                <Checkbox checked={kvkk} onCheckedChange={(v) => setKvkk(!!v)} className="mt-0.5" data-testid="kvkk-checkbox" />
+                                                <span className="text-sm leading-6">
+                                                    <Link to="/kvkk" target="_blank" className="font-semibold text-primary hover:underline">
+                                                        KVKK aydınlatma metnini
+                                                    </Link>{" "}
+                                                    okudum, bilgilerimin ve yüklediğim belgelerin vize başvurumun
+                                                    hazırlanması amacıyla işlenmesini onaylıyorum.
+                                                </span>
+                                            </label>
+                                            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
+                                                <Checkbox
+                                                    checked={consents.refund_privacy_accepted}
+                                                    onCheckedChange={(v) => setConsent("refund_privacy_accepted", !!v)}
+                                                    className="mt-0.5"
+                                                    data-testid="consent-refund-privacy-checkbox"
+                                                />
+                                                <span className="text-sm leading-6">
+                                                    <Link to="/iade-kosullari" target="_blank" className="font-semibold text-primary hover:underline">
+                                                        İade ve İptal Koşulları
+                                                    </Link>{" "}
+                                                    ile{" "}
+                                                    <Link to="/gizlilik-politikasi" target="_blank" className="font-semibold text-primary hover:underline">
+                                                        Gizlilik Politikası
+                                                    </Link>
+                                                    'nı okudum, kabul ediyorum.
+                                                </span>
+                                            </label>
+                                            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
+                                                <Checkbox
+                                                    checked={consents.service_terms_accepted}
+                                                    onCheckedChange={(v) => setConsent("service_terms_accepted", !!v)}
+                                                    className="mt-0.5"
+                                                    data-testid="consent-service-terms-checkbox"
+                                                />
+                                                <span className="text-sm leading-6">
+                                                    <Link to="/hizmet-sozlesmesi" target="_blank" className="font-semibold text-primary hover:underline">
+                                                        Şartlar ve Mesafeli Hizmet Sözleşmesi
+                                                    </Link>
+                                                    'ni okudum, kabul ediyorum. Vize kararının resmî makamlara ait
+                                                    olduğunu ve başvuru sisteme girildikten sonra harç iadesi
+                                                    yapılmadığını biliyorum.
+                                                </span>
+                                            </label>
+                                            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-dashed border-border p-4">
+                                                <Checkbox
+                                                    checked={consents.marketing_email_optin}
+                                                    onCheckedChange={(v) => setConsent("marketing_email_optin", !!v)}
+                                                    className="mt-0.5"
+                                                    data-testid="consent-marketing-checkbox"
+                                                />
+                                                <span className="text-sm leading-6">
+                                                    Kampanya ve fırsat bildirimleri almak istiyorum.{" "}
+                                                    <Link to="/ticari-ileti-onami" target="_blank" className="font-semibold text-primary hover:underline">
+                                                        Ticari Elektronik İleti Onam Formu
+                                                    </Link>{" "}
+                                                    <span className="text-muted-foreground">(isteğe bağlı)</span>
+                                                </span>
+                                            </label>
+                                            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-dashed border-border p-4">
+                                                <Checkbox
+                                                    checked={consents.ad_personalization_optin}
+                                                    onCheckedChange={(v) => setConsent("ad_personalization_optin", !!v)}
+                                                    className="mt-0.5"
+                                                    data-testid="consent-ads-checkbox"
+                                                />
+                                                <span className="text-sm leading-6">
+                                                    Bana uygun Dubai fırsatlarını sosyal medyada görmek istiyorum.
+                                                    <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                                                        İletişim bilgim Instagram, Facebook ve Google'a şifrelenmiş
+                                                        (hash) olarak iletilir; açık hâlde paylaşılmaz veya satılmaz.
+                                                        İşaretlemeseniz de başvurunuz aynı şekilde tamamlanır.
+                                                    </span>
+                                                </span>
+                                            </label>
+                                        </div>
                                     )}
 
                                     {/* ÖDEME YÖNTEMİ */}

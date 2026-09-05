@@ -68,9 +68,11 @@ export const Footer = () => {
                     <li><Link to="/sss" className="transition-colors hover:text-primary">Sıkça Sorulan Sorular</Link></li>
                     <li><Link to="/takip" className="transition-colors hover:text-primary">Başvuru Takip</Link></li>
                     <li><Link to="/hakkimizda" className="transition-colors hover:text-primary">Hakkımızda</Link></li>
-                    <li><Link to="/kvkk" className="transition-colors hover:text-primary">KVKK & Gizlilik</Link></li>
+                    <li><Link to="/kvkk" className="transition-colors hover:text-primary">KVKK Aydınlatma Metni</Link></li>
+                    <li><Link to="/gizlilik-politikasi" className="transition-colors hover:text-primary" data-testid="footer-privacy-link">Gizlilik Politikası</Link></li>
                     <li><Link to="/iade-kosullari" className="transition-colors hover:text-primary" data-testid="footer-refund-link">İade ve İptal Koşulları</Link></li>
-                    <li><Link to="/hizmet-sozlesmesi" className="transition-colors hover:text-primary" data-testid="footer-service-terms-link">Mesafeli Hizmet Sözleşmesi</Link></li>
+                    <li><Link to="/hizmet-sozlesmesi" className="transition-colors hover:text-primary" data-testid="footer-service-terms-link">Şartlar ve Hizmet Sözleşmesi</Link></li>
+                    <li><Link to="/ticari-ileti-onami" className="transition-colors hover:text-primary" data-testid="footer-marketing-consent-link">Ticari Elektronik İleti Onamı</Link></li>
                 </ul>
             </div>
 

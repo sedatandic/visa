@@ -96,6 +96,13 @@ class ExtraDocumentsIn(BaseModel):
     other_file_ids: List[str] = Field(default_factory=list)
 
 
+class ConsentsIn(BaseModel):
+    refund_privacy_accepted: bool = False
+    service_terms_accepted: bool = False
+    marketing_email_optin: bool = False
+    ad_personalization_optin: bool = False
+
+
 class ApplicationCreate(BaseModel):
     contact: ContactIn
     travelers: List[TravelerIn] = Field(..., min_length=1, max_length=10)
@@ -104,6 +111,7 @@ class ApplicationCreate(BaseModel):
     store_items: List[StoreItemIn] = Field(default_factory=list, max_length=6)
     extra_documents: ExtraDocumentsIn = Field(default_factory=ExtraDocumentsIn)
     kvkk_accepted: bool = True
+    consents: ConsentsIn = Field(default_factory=ConsentsIn)
 
 
 class TravelerDocumentIn(BaseModel):

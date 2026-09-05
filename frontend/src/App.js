@@ -70,6 +70,8 @@ function App() {
                     <Route path="/kvkk" element={<Site><Kvkk /></Site>} />
                     <Route path="/iade-kosullari" element={<Site><LegalTerms variant="refund" /></Site>} />
                     <Route path="/hizmet-sozlesmesi" element={<Site><LegalTerms variant="service" /></Site>} />
+                    <Route path="/gizlilik-politikasi" element={<Site><LegalTerms variant="privacy" /></Site>} />
+                    <Route path="/ticari-ileti-onami" element={<Site><LegalTerms variant="marketing" /></Site>} />
                     <Route path="/basvuru" element={<Site><Apply /></Site>} />
                     <Route path="/takip" element={<Site><Track /></Site>} />
                     <Route path="/hesabim" element={<Site><MyAccount /></Site>} />

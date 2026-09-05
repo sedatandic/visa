@@ -10,6 +10,8 @@ from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
 
 from content import (
+    MARKETING_CONSENT,
+    PRIVACY_POLICY,
     AGENCY_INFO,
     ARTICLES,
     BANK_TRANSFER,
@@ -26,8 +28,7 @@ from content import (
     REFUND_TERMS,
     REQUIRED_DOCUMENTS,
     REVIEW_SUMMARY,
-    SERVICE_TERMS,
-    SERVICES,
+    SERVICE_TERMS,    SERVICES,
     STATUS_LABELS,
     TESTIMONIALS,
     TOURS,
@@ -330,7 +331,12 @@ async def get_site_content() -> dict:
 
 @router.get("/content/legal")
 async def get_legal_content() -> dict:
-    return {"refund_terms": REFUND_TERMS, "service_terms": SERVICE_TERMS}
+    return {
+        "refund_terms": REFUND_TERMS,
+        "service_terms": SERVICE_TERMS,
+        "privacy_policy": PRIVACY_POLICY,
+        "marketing_consent": MARKETING_CONSENT,
+    }
 
 
 @router.get("/articles")
@@ -908,6 +914,10 @@ def _build_application_doc(
         },
         "visa_result": None,
         "kvkk_accepted": bool(payload.kvkk_accepted),
+        "consents": {
+            **payload.consents.model_dump(),
+            "accepted_at": now,
+        },
         "admin_notes": "",
         "status_history": [{"status": "submitted", "at": now, "note": "Basvuru olusturuldu"}],
         "created_at": now,

@@ -694,8 +694,8 @@ BANK_TRANSFER = {
 }
 
 REFUND_TERMS = {
-    "updated_at": "2026-08-01",
-    "intro": "Aşağıdaki koşullar, Dubai Vize Online üzerinden alınan vize danışmanlık hizmetleri için geçerlidir. Başvurunuzu tamamladığınızda bu koşulları kabul etmiş sayılırsınız.",
+    "updated_at": "2026-06-09",
+    "intro": "Aşağıdaki koşullar, Dubai Vize Online üzerinden alınan vize danışmanlığı ile tur, aktivite ve transfer hizmetleri için geçerlidir. Başvurunuzu veya rezervasyonunuzu tamamladığınızda bu koşulları kabul etmiş sayılırsınız.",
     "sections": [
         {
             "title": "Başvuru öncesi iptal",
@@ -741,11 +741,36 @@ REFUND_TERMS = {
                 "Kredi kartı iadelerinin hesabınıza yansıması bankanıza bağlı olarak 5-14 gün sürebilir.",
             ],
         },
+        {
+            "title": "Tur, aktivite ve transfer rezervasyonları",
+            "items": [
+                "Aktivite, tur ve transfer hizmetleri Dubai'deki yerel operatör firmalar tarafından sağlanır; biz rezervasyonu iletir ve belgenizi (voucher) düzenleriz.",
+                "Rezervasyon oluşturulup voucher düzenlendikten sonra hizmet başlamış sayılır ve nakit iade yapılmaz.",
+                "Tarihi ve saati belirli etkinlik biletlerinde, katılım saatine 24 saatten az kalan rezervasyonlarda, yolcunun buluşma noktasında hazır olmadığı (no-show) veya geç kaldığı durumlarda ücret iadesi mümkün değildir.",
+                "Yolcunun yanlış tarih, yanlış isim veya hatalı kişi sayısı seçmesinden kaynaklanan iptallerde iade yapılmaz; uygunsa operatörden tarih değişikliği talep edilir.",
+                "Transferli aktivitelerde araç, belirtilen saatte buluşma noktasında en fazla 5 dakika bekler; trafik, taksi gecikmesi veya adres karışıklığı geçerli mazeret sayılmaz.",
+            ],
+        },
+        {
+            "title": "Hava koşulları ve mücbir sebep",
+            "items": [
+                "Açık havada yapılan aktivitelerde (çöl safarisi, deniz sporları, yat turu vb.) operatör güvenlik gerekçesiyle programı erteleyebilir veya iptal edebilir.",
+                "Bu durumda öncelikli çözüm yeni tarih ya da eşdeğer bir alternatif; nakit iade taahhüdümüz bulunmaz.",
+                "Doğal afet, salgın, savaş, resmî yasak ve kısıtlamalar, liman/çöl güvenlik kapatmaları ile operatör kaynaklı teknik arızalar mücbir sebep sayılır.",
+            ],
+        },
+        {
+            "title": "Ödeme itirazı (chargeback)",
+            "items": [
+                "Ödeme onayınız, 3D Secure kaydınız, IP bilgisi, onay saatiniz ve gönderilen belgeler işlem kanıtı olarak saklanır.",
+                "Hizmet usulüne uygun sunulduğu hâlde yapılan haksız ödeme itirazlarında bu kayıtlar bankaya sunulur ve doğan masraflar talep edilir.",
+            ],
+        },
     ],
 }
 
 SERVICE_TERMS = {
-    "updated_at": "2026-08-01",
+    "updated_at": "2026-06-09",
     "intro": "Bu mesafeli hizmet sözleşmesi, Dubai Vize Online (Hizmet Sağlayıcı) ile online başvuru yapan misafir (Alıcı) arasında elektronik ortamda kurulur.",
     "sections": [
         {
@@ -792,9 +817,205 @@ SERVICE_TERMS = {
             ],
         },
         {
-            "title": "7. Uyuşmazlık",
+            "title": "7. Aracılık statüsü ve tur/aktivite hizmetleri",
+            "items": [
+                "Vize dışındaki tur, aktivite, etkinlik bileti ve transfer hizmetlerinde Hizmet Sağlayıcı aracı konumundadır; hizmeti fiilen Dubai'deki yetkili yerel operatörler yürütür.",
+                "Programın uygulanması, araç ve ekipman güvenliği ile saha organizasyonu ilgili operatörün sorumluluğundadır.",
+                "Operatör, hava ve güvenlik koşullarına bağlı olarak program akışında değişiklik yapabilir.",
+            ],
+        },
+        {
+            "title": "8. Riskli aktivitelerde katılım beyanı",
+            "items": [
+                "Çöl safarisi, ATV/buggy, jet ski, yamaç paraşütü, su sporları gibi hareketli aktiviteler yapısı gereği risk barındırır; Alıcı bu riskleri bilerek katılır.",
+                "Sarsıntı, ıslanma, hafif sıyrık ve benzeri olağan durumlar iade gerekçesi oluşturmaz.",
+                "Alıcı, kendisinin ve birlikte katılan yolcuların sağlık durumunun aktiviteye uygun olduğunu beyan eder; hamilelik, kalp, bel ve boyun rahatsızlıklarında katılım kararı ve sonuçları Alıcı'ya aittir.",
+            ],
+        },
+        {
+            "title": "9. Transfer ve ulaşım",
+            "items": [
+                "Havalimanı ve şehir içi transferler anlaşmalı taşıyıcılar tarafından sağlanır.",
+                "Alıcı'nın hatalı uçuş bilgisi, yanlış terminal veya eksik iletişim numarası bildirmesinden doğan aksaklıklar Alıcı'nın sorumluluğundadır.",
+                "Araçta unutulan eşyalar için sorumluluk taşıyıcı firmaya aittir; bulunması hâlinde teslimi koordine ederiz.",
+            ],
+        },
+        {
+            "title": "10. Cayma hakkı istisnası",
+            "items": [
+                "Mesafeli Sözleşmeler Yönetmeliği uyarınca, belirli tarih ve saatte sunulan eğlence/etkinlik hizmetlerinde ve Alıcı'nın onayıyla ifasına hemen başlanan hizmetlerde cayma hakkı kullanılamaz.",
+                "Vize başvurusu resmî sisteme girildiği anda hizmetin ifasına başlanmış kabul edilir.",
+            ],
+        },
+        {
+            "title": "11. Sorumluluğun sınırı",
+            "items": [
+                "Hizmet Sağlayıcı'nın toplam sorumluluğu, her hâlükârda ilgili hizmet için ödenen bedeli aşmaz.",
+                "Uçuş kaçırma, otel kaybı, bağlantılı rezervasyon iptali gibi dolaylı zararlar bu sözleşme kapsamı dışındadır.",
+            ],
+        },
+        {
+            "title": "12. Kişisel veriler ve ticari ileti",
+            "items": [
+                "Kişisel veriler 6698 sayılı Kanun kapsamında, Gizlilik Politikası'nda açıklanan amaçlarla işlenir.",
+                "Kampanya ve fırsat bildirimleri yalnızca Alıcı'nın ayrıca verdiği onayla gönderilir; onay her zaman geri alınabilir.",
+            ],
+        },
+        {
+            "title": "13. Uyuşmazlık",
             "items": [
                 "Taraflar arasındaki uyuşmazlıklarda İstanbul Mahkemeleri ve İcra Daireleri yetkilidir.",
+                "Alıcı, tüketici sıfatıyla yerleşim yerindeki tüketici hakem heyetlerine de başvurabilir.",
+            ],
+        },
+    ],
+}
+
+# Gizlilik Politikasi (veri sorumlusu aydinlatmasi ile birlikte)
+PRIVACY_POLICY = {
+    "updated_at": "2026-06-09",
+    "intro": (
+        "Bu politika, Dubai Vize Online markası altında hizmet veren "
+        f"{COMPANY['legal_name']} tarafından, web sitemizi ziyaret eden ve hizmetlerimizden "
+        "yararlanan kişilerin kişisel verilerinin hangi amaçlarla işlendiğini, kimlerle "
+        "paylaşıldığını ve haklarınızı nasıl kullanabileceğinizi açıklar."
+    ),
+    "sections": [
+        {
+            "title": "1. Amaç ve kapsam",
+            "items": [
+                "Şirketimiz, 6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında veri sorumlusudur ve kişisel verileri hukuka uygun, ölçülü ve yalnızca belirtilen amaçlarla işler.",
+                "Politika; web sitemizi ziyaret edenler, başvuru sahipleri, yolcular, müşteri temsilcileri, tedarikçiler ve çalışan adaylarını kapsar.",
+                "Sitemizden bağlantı verilen üçüncü taraf platformların veri uygulamalarından sorumlu değiliz; ilgili platformların kendi politikalarını incelemenizi öneririz.",
+            ],
+        },
+        {
+            "title": "2. Veri sorumlusunun kimliği",
+            "items": [
+                f"Ticaret unvanı: {COMPANY['legal_name']}",
+                f"Adres: {COMPANY['address']}",
+                f"E-posta: {COMPANY['email']} · Telefon: {COMPANY['phone']}",
+                "Kişisel verilerinize ilişkin tüm talepleriniz için yukarıdaki iletişim kanallarını kullanabilirsiniz.",
+            ],
+        },
+        {
+            "title": "3. İşlenen veri kategorileri",
+            "items": [
+                "Kimlik verileri: ad, soyad, doğum tarihi, uyruk, pasaport bilgileri, vesikalık fotoğraf.",
+                "İletişim verileri: cep telefonu, e-posta adresi, şehir bilgisi.",
+                "Başvuru ve işlem verileri: seyahat tarihleri, vize türü, yüklenen belgeler, başvuru durumu, yazışma kayıtları.",
+                "Finansal veriler: ödeme yöntemi, işlem tutarı ve referansı (kart bilgileri tarafımızda saklanmaz, ödeme kuruluşunda tutulur).",
+                "Teknik veriler: IP adresi, tarayıcı ve cihaz bilgisi, çerez kayıtları, oturum ve giriş kodu kayıtları.",
+            ],
+        },
+        {
+            "title": "4. İşleme amaçları ve hukuki sebepler",
+            "items": [
+                "Vize başvurusunun hazırlanması, kontrolü ve yetkili makamlara iletilmesi — sözleşmenin kurulması ve ifası.",
+                "Sigorta, eSIM, tur ve transfer gibi ek hizmetlerin sağlanması — sözleşmenin ifası.",
+                "Fatura, muhasebe ve saklama yükümlülükleri — kanunlarda öngörülen yükümlülüğün yerine getirilmesi.",
+                "Hesabınıza tek kullanımlık kod ile güvenli giriş, kötüye kullanım ve dolandırıcılık önleme — meşru menfaat.",
+                "Kampanya, fırsat ve tanıtım bildirimleri ile reklam eşleştirmesi — yalnızca açık rızanız.",
+            ],
+        },
+        {
+            "title": "5. Kişisel verilerin aktarılması",
+            "items": [
+                "Vize başvurusunun sonuçlanabilmesi için Birleşik Arap Emirlikleri göçmenlik makamları ve yetkili yerel acente/işlem ortaklarına aktarım yapılır.",
+                "Ek hizmetlerde ilgili sigorta şirketi, eSIM sağlayıcısı, tur veya transfer operatörüne yalnızca hizmetin gerektirdiği veriler iletilir.",
+                "Ödeme kuruluşları, bankalar, e-posta ve bulut altyapı sağlayıcıları, muhasebe ve hukuk danışmanları ile mevzuat gereği yetkili kamu kurumlarına aktarım yapılabilir.",
+                "Her aktarımda gizlilik taahhüdü, veri işleme sözleşmesi ve uygun teknik tedbirler aranır.",
+            ],
+        },
+        {
+            "title": "6. Yurt dışına aktarım",
+            "items": [
+                "Vize işlemlerinin doğası gereği başvuru verileri Birleşik Arap Emirlikleri'ndeki yetkili makam ve işlem ortaklarına aktarılır.",
+                "E-posta gönderimi, bulut depolama, mesajlaşma ve yapay zekâ destekli belge kontrolü gibi hizmetlerde yurt dışında yerleşik sağlayıcılardan yararlanılır.",
+                "Bu aktarımlar Kanun'un 9. maddesindeki şartlara uygun olarak, gerekli taahhüt ve sözleşmeler kurularak gerçekleştirilir.",
+            ],
+        },
+        {
+            "title": "7. Saklama süresi",
+            "items": [
+                "Başvuru ve işlem kayıtları, mali mevzuat ve olası uyuşmazlık süreleri dikkate alınarak 10 yıl boyunca saklanır.",
+                "Pasaport ve fotoğraf gibi belgeler başvuru tamamlandıktan sonra yalnızca yasal saklama süresi kadar tutulur, süre sonunda silinir veya anonim hâle getirilir.",
+                "Pazarlama izniniz, geri almanıza kadar; geri aldığınızda izin kaydı ispat amacıyla sınırlı süre saklanır.",
+            ],
+        },
+        {
+            "title": "8. Veri güvenliği",
+            "items": [
+                "Aktarım güvenliği için TLS/SSL şifreleme, erişim yetkilendirmesi ve kayıt tutma uygulanır.",
+                "Yönetim paneline erişim tek kullanımlık kod ile yapılır; parola saklanmaz.",
+                "Belgeler erişimi sınırlı depolama alanında tutulur, personel gizlilik taahhüdü ile çalışır.",
+            ],
+        },
+        {
+            "title": "9. Haklarınız",
+            "items": [
+                "Kişisel verinizin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme.",
+                "İşleme amacını ve verilerin amaca uygun kullanılıp kullanılmadığını öğrenme; yurt içinde/yurt dışında aktarıldığı üçüncü kişileri bilme.",
+                "Eksik veya yanlış işlenen verilerin düzeltilmesini, koşulları oluştuğunda silinmesini veya yok edilmesini isteme ve bu işlemlerin aktarım yapılan taraflara bildirilmesini talep etme.",
+                "Otomatik sistemlerle yapılan analiz sonucu aleyhinize çıkan sonuca itiraz etme ve hukuka aykırı işleme nedeniyle doğan zararın giderilmesini isteme.",
+                "Talepleriniz, kimliğinizi doğrulayan bilgilerle e-posta veya yazılı başvuru yoluyla iletildiğinde en geç 30 gün içinde yanıtlanır.",
+            ],
+        },
+        {
+            "title": "10. Çerezler ve güncelleme",
+            "items": [
+                "Sitemizde oturumun sürdürülmesi, tercihlerin hatırlanması ve trafik ölçümü için çerez kullanılır; tarayıcı ayarlarınızdan yönetebilirsiniz.",
+                "Bu politika, hizmetlerimiz veya mevzuat değiştiğinde güncellenir; yürürlük tarihi sayfanın başında belirtilir.",
+            ],
+        },
+    ],
+}
+
+# Ticari elektronik ileti (izinli pazarlama) onam metni
+MARKETING_CONSENT = {
+    "updated_at": "2026-06-09",
+    "intro": (
+        "Kampanya, indirim ve seyahat fırsatlarımızı size iletebilmemiz için verdiğiniz "
+        "onayın kapsamı aşağıda açıklanmıştır. Onay vermek tamamen isteğinize bağlıdır; "
+        "başvurunuz onay vermeseniz de aynı şekilde tamamlanır."
+    ),
+    "sections": [
+        {
+            "title": "1. Onayın kapsamı",
+            "items": [
+                f"Onay verdiğinizde {COMPANY['legal_name']} tarafından tarafınıza kampanya, indirim, yeni hizmet ve seyahat fırsatlarına ilişkin bilgilendirmeler gönderilebilir.",
+                "İletiler; e-posta, SMS, WhatsApp, telefon ve site üzerinden bildirim kanallarıyla gönderilebilir.",
+                "Vize başvurunuzla ilgili durum bildirimleri, ödeme ve belge yazışmaları ticari ileti değildir; bunlar hizmetin ifası için onaydan bağımsız olarak gönderilir.",
+            ],
+        },
+        {
+            "title": "2. İşlenen bilgiler",
+            "items": [
+                "Adınız, e-posta adresiniz, cep telefonu numaranız ve hangi hizmetlerle ilgilendiğinize dair tercih bilgileriniz.",
+                "İzin kaydınızın tarihi, saati, kanalı ve IP adresi; mevzuat gereği ispat amacıyla saklanır.",
+            ],
+        },
+        {
+            "title": "3. Reklam eşleştirmesi (ayrı onay)",
+            "items": [
+                "Ayrıca onay verirseniz, size uygun içerikleri sosyal medya ve arama ağlarında gösterebilmek için iletişim bilgileriniz şifrelenmiş (hash) biçimde reklam platformlarına iletilir.",
+                "Bu yöntemle bilgileriniz açık hâlde paylaşılmaz, satılmaz ve yalnızca hedef kitle eşleştirmesi ile ölçümleme için kullanılır.",
+                "Onay vermemeniz hizmet alımınızı hiçbir şekilde etkilemez.",
+            ],
+        },
+        {
+            "title": "4. Onayı geri almak",
+            "items": [
+                "Her e-postanın altındaki bağlantıdan, SMS'e RED yanıtı vererek veya bize yazarak onayınızı dilediğiniz zaman geri alabilirsiniz.",
+                "Onay geri alındığında pazarlama iletileri durdurulur; talebiniz en kısa sürede, en geç üç iş günü içinde uygulanır.",
+                f"Talepleriniz için: {COMPANY['email']}",
+            ],
+        },
+        {
+            "title": "5. Mevzuat",
+            "items": [
+                "Bu onam metni 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun, Ticari İletişim ve Ticari Elektronik İletiler Hakkında Yönetmelik ile 6698 sayılı Kişisel Verilerin Korunması Kanunu hükümleri dikkate alınarak hazırlanmıştır.",
+                "Onay kayıtları İleti Yönetim Sistemi (İYS) mevzuatına uygun şekilde yönetilir.",
             ],
         },
     ],

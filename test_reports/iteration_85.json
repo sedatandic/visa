@@ -1,0 +1,48 @@
+{
+  "summary": "Iteration 85 legal-content + consents verification. All 8 backend pytest cases in /app/backend/tests/test_iteration_85.py pass: /api/content/legal returns exactly {refund_terms, service_terms, privacy_policy, marketing_consent} all with updated_at=2026-06-09; refund_terms contains 'no-show' and 'chargeback' items and a tur/aktivite/transfer section; service_terms sections/items cover aracılık, riskli, cayma, sorumluluk, uyuşmazlık; privacy_policy has 10 sections; marketing_consent has 5 sections. POST /api/applications persists consents into visa_applications collection with accepted_at, and optional fields (marketing_email_optin, ad_personalization_optin) stay False when False is sent and True when True is sent. Frontend verified: /gizlilik-politikasi renders data-testid=privacy-policy-page with 10 h2 sections, /ticari-ileti-onami renders data-testid=marketing-consent-page with 5 h2 sections; on both pages h1.left == first body-paragraph.left (201px, 0px diff). Footer testids (footer-privacy-link, footer-refund-link, footer-service-terms-link, footer-marketing-consent-link) point to correct URLs. /iade-kosullari body contains 'no-show'; /hizmet-sozlesmesi body contains 'aracı', 'riskli', 'cayma', 'uyuşmazlık'. Regression: /esim and /seyahat-sigortasi expose plans-*-apply-button and zero qty-plus/store-submit-button/store-checkout-panel; home scrollHeight=6827px at 1920 wide (<7000). /basvuru wizard loads and consent-block is (correctly) not present on Step 1.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verified_backend": [
+    "GET /api/content/legal returns 4 docs, all updated_at=2026-06-09",
+    "refund_terms sections include 'Tur, aktivite ve transfer rezervasyonları', 'Ödeme itirazı (chargeback)', 'no-show' text",
+    "service_terms mentions aracılık, riskli aktivite, cayma hakkı istisnası, sorumluluk sınırı, uyuşmazlık",
+    "privacy_policy = 10 sections, marketing_consent = 5 sections",
+    "POST /api/applications persists consents (refund_privacy_accepted, service_terms_accepted, marketing_email_optin, ad_personalization_optin, accepted_at) in visa_applications; optional booleans stored as sent (False/True)",
+    "manual_consent_check.py runs green (reference DV-FK044763 example)"
+  ],
+  "verified_frontend": [
+    "/gizlilik-politikasi: privacy-policy-page + 10 h2 sections, h1.left=201 body.left=201 (Δ=0)",
+    "/ticari-ileti-onami: marketing-consent-page + 5 h2 sections, aligned same as above",
+    "Footer 4 legal links: hrefs -> /gizlilik-politikasi, /iade-kosullari, /hizmet-sozlesmesi, /ticari-ileti-onami",
+    "/iade-kosullari contains 'no-show' text; /hizmet-sozlesmesi contains aracı, riskli, cayma, uyuşmazlık",
+    "/esim: 0 qty-plus, 0 store-submit-button, 1 plans-esim-apply-button; /seyahat-sigortasi: 0 qty-plus, 0 store-submit, 1 plans-insurance-apply-button",
+    "Home scrollHeight=6827px (<7000) at 1920px width",
+    "/basvuru wizard-personal-info-form renders; consent-block is not on step 1 (only Payment step, per code)",
+    "Code review of Apply.jsx confirms: data-testid=consent-block wraps 5 checkboxes (kvkk-checkbox, consent-refund-privacy-checkbox, consent-service-terms-checkbox, consent-marketing-checkbox, consent-ads-checkbox), each label wraps a <Link to=... target=_blank> to the correct route (/kvkk, /iade-kosullari + /gizlilik-politikasi, /hizmet-sozlesmesi, /ticari-ileti-onami)",
+    "Code review of submitApplication in Apply.jsx confirms mandatory-checkbox guards emit exact Turkish toasts ('İade ve İptal Koşulları ile Gizlilik Politikası'nı onaylamanız gerekir.' / 'Şartlar ve Mesafeli Hizmet Sözleşmesi'ni onaylamanız gerekir.') and return null before POST /applications, so no application row is created when unchecked",
+    "AdminApplicationDetail.jsx renders data-testid=admin-consents with 6 rows: KVKK aydınlatma, İade + Gizlilik, Şartlar / sözleşme, WhatsApp bildirimi, Ticari ileti (pazarlama), Reklam eşleştirmesi + 'Onay zamanı' timestamp when accepted_at exists"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_85.py",
+    "/app/test_reports/pytest/iter85.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "consent-marketing-checkbox and consent-ads-checkbox are OPTIONAL by design; Apply.jsx correctly does not enforce them. Verified.",
+    "AdminApplicationDetail admin-consents box treats missing a.consents.* as falsy (— row); safe for legacy applications created before the consents field was added.",
+    "Consent link Links use React Router <Link to=... target=_blank>; hrefs are correct routes and open in new tab — behavior matches requirement (href check).",
+    "Full E2E wizard walkthrough (Steps 1-4 fill + payment submission with/without consents) was not automated in this iteration due to wizard complexity; the mandatory-consent guard is validated via source review and manual_consent_check.py verifies happy-path submission with consents=True. Recommend adding an isolated component test if regression coverage becomes critical."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_85.py",
+    "/app/test_reports/pytest/iter85.xml",
+    "/app/test_reports/iteration_85.json"
+  ],
+  "success_rate": {"backend": "100% (8/8 iter85)", "frontend": "100% of iter85 static/regression assertions"},
+  "test_credentials": "Admin: info@dubaivizeonline.com (OTP). Customer OTP: delivered@resend.dev.",
+  "seed_data_creation": "2 /api/applications rows (TEST_iter85 Consent) + 4 dummy 1x1 PNG uploads. No cleanup endpoint.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Mongo collection is 'visa_applications' (NOT 'applications'). Consent payload shape: {refund_privacy_accepted, service_terms_accepted, marketing_email_optin, ad_personalization_optin}; backend adds accepted_at at write time. On /basvuru consent-block appears ONLY on the Payment step (last step); wizard-pay-button is used to submit (payMethod=='transfer' → startBankTransfer). To E2E test the mandatory-consent guard, walk: Step1 fill contact + add-adult-traveler-button + upload passport/photo (traveler-*-passport-upload / photo-upload) → wizard-next-step-button → Step2 pick traveler-{i}-visa-type + travel window + dates-unknown-checkbox → next → Step3 next → Step4 pick payment-method-transfer + click wizard-pay-button without checking mandatory boxes; expect toast + no created-reference-code.",
+  "rca of the issue": "No new bugs found in iter85 scope. All targeted content, routing, footer, regression and consents-persistence assertions pass."
+}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, FileText, ShieldCheck } from "lucide-react";
+import { CalendarDays, FileText, Lock, Mail, ShieldCheck } from "lucide-react";
 import { api } from "../lib/api";
 import { formatDate, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
@@ -12,24 +12,48 @@ const CONFIG = {
         eyebrow: "Yasal Bilgilendirme",
         title: "İade ve İptal Koşulları",
         description:
-            "Vize danışmanlık hizmetimizde iptal, iade ve ret durumlarında uygulanan kuralların tamamı.",
+            "Vize danışmanlığı, tur/aktivite ve transfer hizmetlerinde iptal, iade ve ret durumlarında uygulanan kuralların tamamı.",
         meta: "İade ve İptal Koşulları | Dubai Vize Online",
         metaDesc:
-            "Dubai vize başvurularında iptal, iade, ret (RED) ve süre aşımı durumlarında uygulanan koşullar.",
+            "Dubai vize başvuruları, tur ve aktivite rezervasyonlarında iptal, iade, ret (RED), no-show ve mücbir sebep koşulları.",
         testId: "refund-terms-page",
         icon: ShieldCheck,
     },
     service: {
         key: "service_terms",
         eyebrow: "Yasal Bilgilendirme",
-        title: "Mesafeli Hizmet Sözleşmesi",
+        title: "Şartlar ve Mesafeli Hizmet Sözleşmesi",
         description:
-            "Online başvuru sırasında kurulan hizmet sözleşmesinin tarafları, kapsamı ve yükümlülükleri.",
-        meta: "Mesafeli Hizmet Sözleşmesi | Dubai Vize Online",
+            "Online başvuru sırasında kurulan sözleşmenin tarafları, kapsamı, aracılık statüsü ve karşılıklı yükümlülükler.",
+        meta: "Şartlar ve Mesafeli Hizmet Sözleşmesi | Dubai Vize Online",
         metaDesc:
-            "Dubai Vize Online vize danışmanlık hizmeti mesafeli sözleşme metni: kapsam, yükümlülükler, ödeme ve cayma hakkı.",
+            "Dubai Vize Online hizmet sözleşmesi: kapsam, yükümlülükler, ödeme, aracılık statüsü, riskli aktiviteler, cayma hakkı ve uyuşmazlık.",
         testId: "service-terms-page",
         icon: FileText,
+    },
+    privacy: {
+        key: "privacy_policy",
+        eyebrow: "Yasal Bilgilendirme",
+        title: "Gizlilik Politikası",
+        description:
+            "Kişisel verilerinizi hangi amaçlarla işlediğimiz, kimlerle paylaştığımız, ne kadar sakladığımız ve haklarınız.",
+        meta: "Gizlilik Politikası | Dubai Vize Online",
+        metaDesc:
+            "Dubai Vize Online gizlilik politikası: işlenen veri kategorileri, hukuki sebepler, yurt içi ve yurt dışı aktarım, saklama süreleri ve KVKK haklarınız.",
+        testId: "privacy-policy-page",
+        icon: Lock,
+    },
+    marketing: {
+        key: "marketing_consent",
+        eyebrow: "Yasal Bilgilendirme",
+        title: "Ticari Elektronik İleti Onam Formu",
+        description:
+            "Kampanya ve fırsat bildirimleri için verdiğiniz onayın kapsamı, işlenen bilgiler ve onayı geri alma yolları.",
+        meta: "Ticari Elektronik İleti Onam Formu | Dubai Vize Online",
+        metaDesc:
+            "Kampanya, indirim ve fırsat bildirimleri için ticari elektronik ileti onayının kapsamı, reklam eşleştirmesi ve izni geri alma adımları.",
+        testId: "marketing-consent-page",
+        icon: Mail,
     },
 };
 
