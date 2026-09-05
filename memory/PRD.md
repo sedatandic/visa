@@ -740,3 +740,32 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   Doğrulandı: 390px'te düğme görünüyor, dokununca `intro.mp3` çalıyor, düğme kayboluyor.
 - **WhatsApp**: altyapı hazır (`whatsapp.py`, `/admin/whatsapp`) ve `manual` modda; Meta
   Cloud API veya Twilio anahtarları kullanıcıdan gelince otomatik gönderim açılacak (bekliyor).
+
+## 2026-06-06 · Seslendirme: tek ses, tek ton, hafif hızlı (kullanıcı notu)
+- Kullanıcı yeni senaryo metnini verdi ("Başvurunuzu yapmak için…", "ödemenizi yapmanız
+  yeterlidir", "yaptırmanıza da gerek yok", "sizin adınıza biz takip ediyoruz",
+  "e-mail adresinize ve WhatsApp ile gönderilir") → hem TTS metinleri hem altyazılar
+  (`VisaExplainer.jsx` SCENES.subtitle/note) güncellendi.
+- **"tek kişi konuşsun"**: Eleven v3 + sahne bazlı stability/style + duygu etiketleri
+  aynı seste farklı kişi hissi veriyordu. Çözüm: model `eleven_multilingual_v2`,
+  **tüm sahnelerde tek VOICE_SETTINGS**, tüm `[warm]/[excited]` etiketleri kaldırıldı ve
+  klipler arası süreklilik için **request stitching** (`previous_text`, `next_text`,
+  `previous_request_ids`) eklendi.
+- **"bir tık daha hızlı, doğal, robotik olmasın"**: `speed: 1.07`, `stability: 0.42`
+  (monotonluk azalır), `style: 0.32`. Son süreler (voiceMs): intro 6610, passport 5230,
+  photo 9300, upload 11160, track 10660, extras 12930, cta 15570 (toplam ~71 sn).
+- Ses İlknur Önal (`ELEVENLABS_VOICE_ID=xFsOR54lR471QiCvQ5re`); tek komutla yenilenir:
+  `python /app/scripts/generate_narration_eleven.py`.
+- Doğrulandı: 3 sahnede klipler yeni sürelerle yükleniyor ve çalıyor, altyazılar senkron.
+
+## Güvenlik denetimi (security_audit_agent, 2026-06-06) — HENÜZ DÜZELTİLMEDİ
+- SEC-001 **HIGH**: `routes_account.py:206-219` e-posta + soyad ile müşteri hesabına giriş
+  → hesap devralma; OTP'ye geçilmeli + rate limit.
+- SEC-002 **HIGH**: `routes_zami.py` bookmarklet `box.innerHTML` içine yolcu adı/etiketi
+  kaçışsız yazılıyor → Zami portal oturumunda stored XSS; HTML escape + isim karakter kısıtı.
+- SEC-003 MEDIUM: `/api/files/{file_id}` kimlik doğrulaması yok; Zami handoff token'ı
+  tek kullanımlık değil (45 dk tekrar kullanılabilir).
+- SEC-004 MEDIUM: `/photo/check`, `/passport/read` (LLM maliyeti) ve
+  `/account/request-code` (e-posta bombardımanı) rate limit yok; OTP düz metin saklanıyor.
+- P3: CORS her origin'i yansıtıyor (`server.py:304-310`), e-postalarda kaçışsız kullanıcı
+  girdisi, `JWT_SECRET` fallback `dv-dev-secret`, admin login sabit-zaman karşılaştırma yok.

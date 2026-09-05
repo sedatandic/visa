@@ -1,15 +1,13 @@
-"""Hero anlatimi icin ElevenLabs Eleven v3 Turkce seslendirmesi.
+"""Hero anlatimi icin ElevenLabs Turkce seslendirmesi (tek ses, tek ton).
 
 Kullanim: python /app/scripts/generate_narration_eleven.py
 Cikti: /app/frontend/public/audio/explainer/{key}.mp3
 
-Eleven v3 metin ici ses etiketlerini (audio tags) destekler; kullanicinin verdigi
-yonetmen notlari bu etiketlerle uygulanir:
-  - Ilk %30: [warm][smiling] sicak ve sakin
-  - Orta: [informative] bilgilendirici
-  - "ucak bileti gerekmez": [emphasis] ses hafif yukselir
-  - "2 is gunu": [slowly][reassuring] yavaslar, guven verir
-  - Kapanis: [excited][confident] satis odakli, enerjik
+Kullanici notu: "tek kisi konussun" -> tum sahnelerde AYNI ses ayarlari kullanilir
+(sahne bazli stability/style farki, ayni seste farkli kisi hissi yaratiyordu) ve
+sahne bazli duygu etiketleri kaldirildi. Klipler arasi sureklilik icin ElevenLabs
+request stitching kullanilir: her istek onceki klibin request-id'sini ve komsu
+metinleri (previous_text / next_text) alir, boylece ton ve tempo bozulmaz.
 """
 import os
 import sys
@@ -22,53 +20,60 @@ load_dotenv("/app/backend/.env")
 
 OUT_DIR = Path("/app/frontend/public/audio/explainer")
 VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "xFsOR54lR471QiCvQ5re")  # Ilknur Onal
-MODEL_ID = os.getenv("ELEVENLABS_MODEL_ID", "eleven_v3")
+MODEL_ID = os.getenv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2")
 API = "https://api.elevenlabs.io/v1/text-to-speech"
+
+# "ortalama iki is gunu" cumlesindeki ton referans alindi: sakin, guven veren.
+# Kullanici notu: "bir tik daha hizli, dogal konussun, robotik olmasin" ->
+# tempo 1.07 (hafif hizli), stability dusuruldu (monoton/robotik his azalir),
+# style yukseltildi (dogal tonlama). Tum sahneler bu tek ayarla uretilir.
+VOICE_SETTINGS = {
+    "stability": 0.42,
+    "similarity_boost": 0.85,
+    "style": 0.32,
+    "use_speaker_boost": True,
+    "speed": 1.07,
+}
 
 SCENES = [
     {
         "key": "intro",
-        "text": "[warm][smiling] Dubai vizesi almak artık çok kolay... "
-        "Başvurunuzu tamamlamak için yalnızca iki belgeye ihtiyacınız var.",
-        "settings": {"stability": 0.5, "style": 0.25},
+        "text": "Dubai vizesi almak artık çok kolay. "
+        "Başvurunuzu yapmak için yalnızca iki belgeye ihtiyacınız var.",
     },
     {
         "key": "passport",
-        "text": "[informative] İlk olarak, pasaportunuzun kimlik bilgilerinin yer aldığı sayfanın fotoğrafını yükleyin.",
-        "settings": {"stability": 0.5, "style": 0.2},
+        "text": "İlk olarak, pasaportunuzun kimlik bilgilerinin yer aldığı sayfanın fotoğrafını yükleyin.",
     },
     {
         "key": "photo",
-        "text": "[informative] Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. "
-        "[gently emphasising] Fotoğrafın gözlüksüz ve şapkasız olması gerektiğini lütfen unutmayın.",
-        "settings": {"stability": 0.5, "style": 0.25},
+        "text": "Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. "
+        "Fotoğrafınızın gözlüksüz ve şapkasız olması gerektiğini lütfen unutmayın.",
     },
     {
         "key": "upload",
-        "text": "[reassuring] Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. "
-        "[emphatic] Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza ya da otel rezervasyonu yaptırmanıza gerek yok.",
-        "settings": {"stability": 0.45, "style": 0.4},
+        "text": "Belgelerinizi yükleyip ödemenizi yapmanız yeterlidir. "
+        "Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza "
+        "ya da otel rezervasyonu yaptırmanıza da gerek yok.",
     },
     {
         "key": "track",
-        "text": "[confident] Başvurunuzun tüm aşamalarını sizin adınıza takip ediyoruz. "
-        "[slowly][reassuring] Onaylanan Dubai vizeniz... ortalama iki iş günü içinde e-posta adresinize gönderilir.",
-        "settings": {"stability": 0.6, "style": 0.15},
+        "text": "Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyoruz. "
+        "Onaylanan Dubai vizeniz ortalama iki iş günü içinde "
+        "e-mail adresinize ve WhatsApp ile gönderilir.",
     },
     {
         "key": "extras",
-        "text": "[friendly] Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de başvurunuza ekleyebilirsiniz. "
-        "[excited] Böylece Dubai'ye vardığınız anda internet bağlantınız hazır olur "
+        "text": "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de başvurunuza ekleyebilirsiniz. "
+        "Böylece Dubai'ye vardığınız anda internet bağlantınız hazır olur "
         "ve seyahat sigortanız anında devreye girer.",
-        "settings": {"stability": 0.45, "style": 0.45},
     },
     {
         "key": "cta",
-        "text": "[confident][premium] Dubai vizenizi... Dubai Vize Online güvencesiyle kolayca alın. "
+        "text": "Dubai vizenizi Dubai Vize Online güvencesiyle kolayca alın. "
         "TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle başvurunuzu güvenle tamamlayın. "
-        "[excited] Hemen başvurun ve Dubai yolculuğunuzun ilk adımını bugün atın. "
-        "[smiling] Dubai sizi bekliyor!",
-        "settings": {"stability": 0.4, "style": 0.6},
+        "Hemen başvurun ve Dubai yolculuğunuzun ilk adımını bugün atın. "
+        "Dubai sizi bekliyor!",
     },
 ]
 
@@ -76,27 +81,30 @@ SCENES = [
 def main():
     key = os.environ["ELEVENLABS_API_KEY"]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    for scene in SCENES:
+    request_ids: list[str] = []
+    for idx, scene in enumerate(SCENES):
         payload = {
             "text": scene["text"],
             "model_id": MODEL_ID,
             "output_format": "mp3_44100_128",
-            "voice_settings": {
-                "similarity_boost": 0.8,
-                "use_speaker_boost": True,
-                **scene["settings"],
-            },
+            "voice_settings": VOICE_SETTINGS,
+            "previous_text": SCENES[idx - 1]["text"] if idx else None,
+            "next_text": SCENES[idx + 1]["text"] if idx + 1 < len(SCENES) else None,
+            "previous_request_ids": request_ids[-3:],
         }
         r = requests.post(
             f"{API}/{VOICE_ID}",
             headers={"xi-api-key": key, "Content-Type": "application/json"},
-            json=payload,
+            json={k: v for k, v in payload.items() if v is not None},
             timeout=180,
         )
         r.raise_for_status()
+        rid = r.headers.get("request-id") or r.headers.get("x-request-id")
+        if rid:
+            request_ids.append(rid)
         path = OUT_DIR / f"{scene['key']}.mp3"
         path.write_bytes(r.content)
-        print(scene["key"], round(len(r.content) / 16000, 1), "sn ->", path)
+        print(scene["key"], round(len(r.content) * 8 / 128000, 2), "sn ->", path)
 
 
 if __name__ == "__main__":

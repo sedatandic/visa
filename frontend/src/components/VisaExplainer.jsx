@@ -25,10 +25,10 @@ const SCENES = [
         icon: BadgeCheck,
         title: "Dubai vizesi almak artık çok kolay",
         note: "Başvurunuz için sadece iki belge yeterli",
-        subtitle: "Dubai vizesi almak artık çok kolay. Başvurunuzu tamamlamak için yalnızca iki belgeye ihtiyacınız var.",
+        subtitle: "Dubai vizesi almak artık çok kolay. Başvurunuzu yapmak için yalnızca iki belgeye ihtiyacınız var.",
         alt: "Bavuluyla gülümseyen gezgin çizimi",
         silentMs: 6000,
-        voiceMs: 7000,
+        voiceMs: 6610,
     },
     {
         key: "passport",
@@ -39,7 +39,7 @@ const SCENES = [
         subtitle: "İlk olarak, pasaportunuzun kimlik bilgilerinin yer aldığı sayfanın fotoğrafını yükleyin.",
         alt: "Açık pasaport ve telefonla fotoğraflama çizimi",
         silentMs: 5000,
-        voiceMs: 6700,
+        voiceMs: 5230,
     },
     {
         key: "photo",
@@ -48,10 +48,10 @@ const SCENES = [
         title: "Güncel bir vesikalık fotoğraf",
         note: "Beyaz fon, gözlüksüz ve şapkasız",
         subtitle:
-            "Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. Fotoğrafın gözlüksüz ve şapkasız olması gerektiğini lütfen unutmayın.",
+            "Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. Fotoğrafınızın gözlüksüz ve şapkasız olması gerektiğini lütfen unutmayın.",
         alt: "Vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
         silentMs: 8500,
-        voiceMs: 8600,
+        voiceMs: 9300,
     },
     {
         key: "upload",
@@ -60,22 +60,22 @@ const SCENES = [
         title: "Yükleyin ve ödemeyi tamamlayın",
         note: "Uçak bileti veya otel rezervasyonu gerekmiyor",
         subtitle:
-            "Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza ya da otel rezervasyonu yaptırmanıza gerek yok.",
+            "Belgelerinizi yükleyip ödemenizi yapmanız yeterlidir. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza ya da otel rezervasyonu yaptırmanıza da gerek yok.",
         alt: "Belgelerin bulut simgesine yüklendiği çizim",
         silentMs: 10000,
-        voiceMs: 9700,
+        voiceMs: 11160,
     },
     {
         key: "track",
         step: "Adım 3",
         icon: Headphones,
         title: "Süreci sizin adınıza biz takip ediyoruz",
-        note: "Onaylanan vizeniz ortalama 2 iş gününde e-postanızda",
+        note: "Onaylanan vizeniz ortalama 2 iş gününde e-mail ve WhatsApp'ınızda",
         subtitle:
-            "Başvurunuzun tüm aşamalarını sizin adınıza takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-posta adresinize gönderilir.",
+            "Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-mail adresinize ve WhatsApp ile gönderilir.",
         alt: "Kulaklıklı danışman ve onay listesi çizimi",
         silentMs: 9000,
-        voiceMs: 8900,
+        voiceMs: 10660,
     },
     {
         key: "extras",
@@ -87,7 +87,7 @@ const SCENES = [
             "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de başvurunuza ekleyebilirsiniz. Böylece Dubai'ye vardığınız anda internet bağlantınız hazır olur ve seyahat sigortanız anında devreye girer.",
         alt: "eSIM ve seyahat sigortası simgeleri çizimi",
         silentMs: 11000,
-        voiceMs: 12700,
+        voiceMs: 12930,
     },
     {
         key: "cta",
@@ -99,7 +99,7 @@ const SCENES = [
             "Dubai vizenizi Dubai Vize Online güvencesiyle kolayca alın. TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle başvurunuzu güvenle tamamlayın. Hemen başvurun ve Dubai yolculuğunuzun ilk adımını bugün atın. Dubai sizi bekliyor!",
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
         silentMs: 12000,
-        voiceMs: 16700,
+        voiceMs: 15570,
         cta: true,
     },
 ];
@@ -238,7 +238,7 @@ export const VisaExplainer = () => {
                 )}
                 <div className="max-w-md">
                     <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary sm:text-[11px]">
-                        Dubai vizenizi 1 dakikada nasıl alacağınızı anlatalım
+                        Dubai vizenizi nasıl alacağınızı 1 dakikada anlatalım
                     </span>
                     <p className="mt-3 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
                         Sadece 2 belgeyle Dubai vizesi
