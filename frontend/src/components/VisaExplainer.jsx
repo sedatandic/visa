@@ -198,8 +198,8 @@ export const VisaExplainer = () => {
             {/* METIN KATMANI */}
             <div className="relative flex min-h-[340px] flex-col justify-between gap-6 p-6 sm:min-h-[380px] sm:p-9 lg:min-h-[400px]">
                 <div className="max-w-md">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary sm:text-[11px]">
-                        Çizgi anlatım · 55 saniye
+                    <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary sm:text-[11px]">
+                        Dubai vizenizi 55 saniyede nasıl alacağınızı anlatalım
                     </span>
                     <p className="mt-3 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
                         Sadece 2 belgeyle Dubai vizesi
