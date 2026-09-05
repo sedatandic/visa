@@ -205,12 +205,12 @@ export const VisaExplainer = () => {
 
     return (
         <div
-            className="relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--panel-2))] sm:block"
+            className="relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--panel-2))] sm:grid sm:grid-cols-[minmax(0,46%)_minmax(0,54%)] sm:items-stretch"
             style={{ boxShadow: "var(--shadow-card)" }}
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:absolute sm:inset-y-0 sm:right-0 sm:order-none sm:aspect-auto sm:h-auto sm:w-[68%]">
+            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:order-2 sm:aspect-auto sm:h-full sm:min-h-[340px] sm:w-full sm:p-4">
                 <AnimatePresence initial={false}>
                     <motion.img
                         key={scene.key}
@@ -225,18 +225,14 @@ export const VisaExplainer = () => {
                             x: { duration: 0.7, ease: "easeOut" },
                             scale: { duration: paused ? 0.4 : sceneMs / 1000, ease: "linear" },
                         }}
-                        className="absolute inset-0 h-full w-full object-contain object-center sm:object-cover sm:object-right"
+                        className="absolute inset-0 h-full w-full object-contain object-center"
                         data-testid={`explainer-image-${scene.key}`}
                     />
                 </AnimatePresence>
-                <div
-                    className="absolute inset-0 hidden bg-gradient-to-r from-[hsl(var(--panel-2))] via-[hsl(var(--panel-2)/0.35)] to-transparent sm:block"
-                    aria-hidden="true"
-                />
             </div>
 
             {/* METIN KATMANI */}
-            <div className="relative order-2 flex flex-col justify-between gap-4 p-5 pt-2 sm:order-1 sm:min-h-[320px] sm:w-[50%] sm:gap-4 sm:p-6">
+            <div className="relative order-2 flex flex-col justify-between gap-4 p-5 pt-2 sm:order-1 sm:min-h-[320px] sm:w-full sm:gap-4 sm:p-6">
                 {!playing && (
                     <button
                         type="button"

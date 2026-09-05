@@ -871,3 +871,16 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
 - **Hero flip başlıklarının altına ilerleme çizgileri** (`HeroHeadline.jsx`): anlatım
   panelindekiyle aynı stil, 5 segment, aktif segment 4,2 sn'de doluyor, tıklanınca o
   başlığa atlıyor (`data-testid="hero-progress"`, `hero-progress-dot-{i}`). Doğrulandı.
+
+## 2026-06-06 · Anlatım paneli 2 kolon + görsel kırpma temizliği + Füsun sesi
+- **Yerleşim**: panel `sm:grid-cols-[46%_54%]` — metin solda, görsel sağda kendi
+  kolonunda **ortalanmış** (`object-contain object-center`, `sm:p-4`), mutlak konum ve
+  gradyan kaldırıldı. Ölçüm: altyazı 655'te bitiyor, görsel 663'te başlıyor → çakışma yok.
+  Uçak, uçak bileti, çanta/ayakkabı tamamen görünür.
+- **Görsellerin kendi boşlukları kırpıldı**: `explainer/*.jpg` otomatik trim ile içerik
+  sınırına göre kesildi (ör. intro 1264x848 → 607x721), orijinaller `*.orig.jpg` olarak
+  saklandı. Böylece soldaki/sağdaki ölü boşluk gitti, çizim alanı doldu.
+- **Ses seçimi: #16 Füsun Tuncer** (`cbqdgvVi3C6sgxIWpqIh`, enerjik reklam tonu).
+  Ayarlar: stability 0.4, style 0.15, similarity 0.85, speed 1.0. full.mp3 72.5 sn;
+  sahneler: intro 0-7.02, passport -12.11, photo -21.30, upload -32.12, track -43.26,
+  extras -56.18, cta -72.47. Doğrulandı (25. sn → yükleme sahnesi).

@@ -25,15 +25,16 @@ from dotenv import load_dotenv
 load_dotenv("/app/backend/.env")
 
 OUT_DIR = Path("/app/frontend/public/audio/explainer")
-VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "K03P46eiU2GnWEx7dtcV")  # TBM Confident Narrator (erkek, guven veren)
+VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "cbqdgvVi3C6sgxIWpqIh")  # Fusun Tuncer (kadin, enerjik reklam tonu) - kullanici secimi
 MODEL_ID = os.getenv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2")
 API = "https://api.elevenlabs.io/v1/text-to-speech"
 
 # Guven veren, kendinden emin ton: yuksek stability (kararli, saglam) + style 0.
+# Enerjik reklam tonu (demo #16 ayarlari): stability dusuk = canli tonlama, style 0.15.
 VOICE_SETTINGS = {
-    "stability": 0.6,
-    "similarity_boost": 0.8,
-    "style": 0.0,
+    "stability": 0.4,
+    "similarity_boost": 0.85,
+    "style": 0.15,
     "use_speaker_boost": True,
     "speed": 1.0,
 }
