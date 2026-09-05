@@ -232,7 +232,7 @@ export const VisaExplainer = () => {
             </div>
 
             {/* METIN KATMANI */}
-            <div className="relative order-2 flex flex-col gap-4 p-5 pt-2 sm:order-1 sm:h-[430px] sm:w-[48%] sm:gap-4 sm:p-6">
+            <div className="relative order-2 flex flex-col gap-3 p-5 pt-2 sm:order-1 sm:min-h-[430px] sm:justify-center sm:w-[48%] sm:gap-4 sm:p-6">
                 {!playing && (
                     <button
                         type="button"
@@ -250,7 +250,7 @@ export const VisaExplainer = () => {
                     </span>
                 </div>
 
-                <div className="flex max-w-lg flex-1 flex-col">
+                <div className="max-w-lg">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={scene.key}
@@ -323,7 +323,7 @@ export const VisaExplainer = () => {
                         </div>
                     )}
 
-                    <div className="mt-auto flex flex-wrap items-center gap-2.5 pt-3">
+                    <div className="mt-4 flex flex-wrap items-center gap-2.5">
                         <div className="flex min-w-[140px] flex-1 gap-1.5 sm:max-w-[240px]">
                             {SCENES.map((s, i) => (
                                 <button

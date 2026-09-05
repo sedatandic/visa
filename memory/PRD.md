@@ -906,3 +906,12 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   **Burj Khalifa** ve **Burj Al Arab** (deve ile kadının arkasında), tam görünen palmiyeler,
   bayrak direği kadından uzun — ölçekler gerçekçi (kişi en küçük insan ölçeği).
 - Tüm çizimler şeffaf PNG (arka plan flood-fill ile silinmiş), jpg'ler yedek.
+- **Boşluklar kaldırıldı**: metin kolonu `sm:min-h-[430px] sm:justify-center` — içerik
+  dikeyde ortalanıyor, altyazı ile kontroller arasındaki boşluk gitti; panel yüksekliği
+  tüm sahnelerde 432px (ölçüldü: intro/photo/cta = 432).
+- **Kenar yumuşatma**: tüm `explainer/*.png` kenarlarına %6 alpha feather uygulandı →
+  dikdörtgen köşe izi yok, çizimler krem zemine karışıyor. Masaüstünde `sm:overflow-visible`
+  ve zoom 1.03 → hiçbir ikon kırpılmıyor.
+- **track.png yenilendi** (kullanıcı eski çizimi beğenmedi): kulaklıklı danışman yerine
+  onaylı vize gösteren telefon + solda **zarf (e-mail)** ve sağda **WhatsApp** ikon
+  madalyonları, kesikli teslim yayları, küçük BAE bayrağı. Metinle birebir uyumlu.
