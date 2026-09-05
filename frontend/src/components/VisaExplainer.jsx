@@ -232,7 +232,7 @@ export const VisaExplainer = () => {
             </div>
 
             {/* METIN KATMANI */}
-            <div className="relative order-2 flex flex-col justify-between gap-4 p-5 pt-2 sm:order-1 sm:min-h-[320px] sm:w-[48%] sm:gap-4 sm:p-6">
+            <div className="relative order-2 flex flex-col gap-4 p-5 pt-2 sm:order-1 sm:h-[430px] sm:w-[48%] sm:gap-4 sm:p-6">
                 {!playing && (
                     <button
                         type="button"
@@ -248,12 +248,9 @@ export const VisaExplainer = () => {
                     <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary sm:text-[11px]">
                         Dubai vizenizi nasıl alacağınızı kısaca anlatalım
                     </span>
-                    <p className="mt-2 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
-                        Sadece 2 belgeyle Dubai vizesi
-                    </p>
                 </div>
 
-                <div className="max-w-lg">
+                <div className="flex max-w-lg flex-1 flex-col">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={scene.key}
@@ -283,32 +280,32 @@ export const VisaExplainer = () => {
                             </div>
 
                             {scene.cta && (
-                                <div className="mt-4 flex flex-wrap items-center gap-3">
-                                    <Button asChild size="lg" data-testid="explainer-cta-button">
-                                        <Link to="/basvuru">
-                                            Başvuruya başla <ArrowRight className="ml-1 h-4 w-4" />
-                                        </Link>
-                                    </Button>
+                                <div className="mt-4 flex items-center gap-2.5">
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: 0.35, duration: 0.4 }}
-                                        className="flex items-center gap-2.5 rounded-xl border border-primary/25 bg-white/90 px-3 py-2 shadow-sm"
+                                        className="flex shrink-0 items-center gap-2 rounded-xl border border-primary/25 bg-white/90 px-2.5 py-1.5 shadow-sm"
                                         data-testid="explainer-tursab-seal"
                                     >
                                         <img
                                             src="/brand/tursab.png"
                                             alt="TÜRSAB - Türkiye Seyahat Acentaları Birliği"
-                                            className="h-7 w-auto object-contain"
+                                            className="h-6 w-auto object-contain"
                                             decoding="async"
                                         />
-                                        <span className="border-l border-border pl-2.5 text-[10px] font-bold uppercase leading-3.5 tracking-[0.06em] text-foreground">
+                                        <span className="border-l border-border pl-2 text-[9px] font-bold uppercase leading-3 tracking-[0.04em] text-foreground">
                                             TÜRSAB üyesi
-                                            <span className="mt-0.5 block text-[10px] font-semibold normal-case tracking-normal text-muted-foreground">
+                                            <span className="mt-0.5 block text-[9px] font-semibold normal-case tracking-normal text-muted-foreground">
                                                 A Grubu seyahat acentesi
                                             </span>
                                         </span>
                                     </motion.div>
+                                    <Button asChild size="sm" className="shrink-0" data-testid="explainer-cta-button">
+                                        <Link to="/basvuru">
+                                            Başvuruya başla <ArrowRight className="ml-1 h-4 w-4" />
+                                        </Link>
+                                    </Button>
                                 </div>
                             )}
                         </motion.div>
@@ -326,7 +323,7 @@ export const VisaExplainer = () => {
                         </div>
                     )}
 
-                    <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                    <div className="mt-auto flex flex-wrap items-center gap-2.5 pt-3">
                         <div className="flex min-w-[140px] flex-1 gap-1.5 sm:max-w-[240px]">
                             {SCENES.map((s, i) => (
                                 <button

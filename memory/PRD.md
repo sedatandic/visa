@@ -890,3 +890,19 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   **şeffaf PNG**'ye çevrildi (kenarlardan flood-fill ile arka plan silindi,
   `explainer/{key}.png`), böylece panelin krem zemini her yerde aynı görünüyor.
   Bileşen artık `.png` kullanıyor; `.jpg` ve `*.orig.jpg` yedek olarak duruyor.
+
+## 2026-06-06 · Anlatım paneli son rötuşlar + Dubai sahnesi
+- Panel içindeki "Sadece 2 belgeyle Dubai vizesi" başlığı kaldırıldı (üstte hero başlığı
+  zaten var).
+- Kapanış sahnesinde sıra değişti: **TÜRSAB mührü solda, "Başvuruya başla" düğmesi
+  sağında**, ikisi tek satırda (mühür kompaktlaştırıldı: logo h-6, 9px metin;
+  düğme `size="sm"`).
+- **Tüm sahnelerde aynı boyut**: metin kolonu `sm:h-[430px]` sabit → panel yüksekliği her
+  sahnede 432px, çizim kutusu ~531x346. İçerik üstten hizalı, ilerleme çizgileri+kontroller
+  `mt-auto` ile en alta sabitlendi (sahne değişince yapı kaymıyor).
+- **extras.png**: telefonun altında "DUBAI eSIM", kalkanın altında "SEYAHAT SAĞLIK
+  SİGORTASI" etiketi ve kalkanın sağ üstünde bordo **"30.000 € TEMİNAT"** sticker'ı.
+- **intro.png yeniden çizildi**: deve, çöl safari jeep'i, **Museum of the Future** (torus),
+  **Burj Khalifa** ve **Burj Al Arab** (deve ile kadının arkasında), tam görünen palmiyeler,
+  bayrak direği kadından uzun — ölçekler gerçekçi (kişi en küçük insan ölçeği).
+- Tüm çizimler şeffaf PNG (arka plan flood-fill ile silinmiş), jpg'ler yedek.
