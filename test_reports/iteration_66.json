@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend-only testing of new EligibilityPreCheck and Visa Upgrade Suggestion features. All 6 requested scenarios pass: (1) pre-check happy path renders precheck-result-ok with '30 Günlük Tek Girişli Dubai Vizesi · 5.190 ₺'; (2) passport rejection shows precheck-result-error naming '10 Haziran 2027' and hides continue button; (3) 90-day span shows precheck-result-warning explaining in-country extension with no continue button; (4) carry-over: after clicking precheck-continue-button the panel disappears, success toast 'Bilgiler forma aktarıldı' shows, traveler-0-passport-expiry=01.01.2030, and on step 2 input-arrival-date=01.12.2026, input-departure-date=10.12.2026, traveler-0-visa-type='30 Günlük Tek Girişli Dubai Vizesi – 5.190 ₺'; (5) visa-upgrade banner for 51-day span shows correct text and price 9.880 ₺, clicking visa-upgrade-apply-button switches traveler to 60-day visa, banner disappears, summary-total-price updates to 9.880 ₺; (6) 91-day span shows banner without upgrade button and mentions in-country extension. Backend regression from iter65 skipped per request note (already 9/9).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_65.json (previous)"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "EligibilityPreCheck: stayDays uses Math.round((end-start)/86400000)+1 — inclusive of both endpoints (10 days for 01.12→10.12). Consistent with tripDays elsewhere in Apply.jsx — good.",
+    "applyPreCheck preserves traveler.passport_expiry only if empty (t.passport_expiry || passport_expiry) — correct.",
+    "visaUpgrade useMemo picks suggestion from first short traveler; if travelers have different applicant types (adult+child) upgrade may not correctly cover child cases. Not requested this iteration, but worth noting."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "test_credentials": "n/a",
+  "seed_data_creation": "None; no records created (did not complete full flow to submission).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All new pre-check + visa-upgrade flows verified end-to-end. Full application submission regression (upload passport+photo, reach step 4 pricing/payment) was NOT re-executed since backend rules verified in iter65 and note asked for only brief re-check. DateField accepts page.fill directly with dd.mm.yyyy. Testids: precheck-arrival-date, precheck-departure-date, precheck-passport-expiry, precheck-continue-button, precheck-result-{ok|error|warning}, visa-upgrade-suggestion, visa-upgrade-apply-button, input-arrival-date, input-departure-date, traveler-0-visa-type, traveler-0-passport-expiry, wizard-next-step-button, summary-total-price."
+}

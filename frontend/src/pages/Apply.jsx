@@ -35,6 +35,7 @@ import { formatDate, formatMoney, setMeta } from "../lib/site";
 import { useContact, waLink } from "../lib/contact";
 import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
+import { EligibilityPreCheck } from "../components/EligibilityPreCheck";
 import { DateField, fromISODate } from "../components/DateField";
 import { FxNote } from "../components/FxNote";
 import { BundlePicker } from "../components/BundlePicker";
@@ -193,6 +194,7 @@ export default function Apply() {
     const [draft, setDraft] = useState({ id: null, code: null });
     const [savingDraft, setSavingDraft] = useState(false);
     const [savedTravelers, setSavedTravelers] = useState([]);
+    const [preCheckDone, setPreCheckDone] = useState(false);
 
     // Giris yapmis musterinin kayitli yolcularini getir (aile profili)
     useEffect(() => {
@@ -633,6 +635,66 @@ export default function Apply() {
             type === "child" ? v.category === "child" : v.category !== "child"
         );
 
+    const visaById = (id) => visaTypes.find((v) => v.id === id);
+
+    // Kalisi karsilayan en kisa (ve en ucuz) vizeyi bulur; mevcut giris tipini korumaya calisir.
+    const pickVisaFor = (days, traveler) => {
+        const current = visaById(traveler.visa_type_id);
+        const fitting = visaOptionsFor(traveler.applicant_type).filter(
+            (v) => Number(v.duration_days) >= days
+        );
+        const sameEntry = fitting.filter((v) => v.entry_type === (current?.entry_type || "single"));
+        const pool = (sameEntry.length ? sameEntry : fitting).slice().sort(
+            (a, b) => Number(a.duration_days) - Number(b.duration_days) || Number(a.price) - Number(b.price)
+        );
+        return pool[0] || null;
+    };
+
+    const applyPreCheck = ({ arrival_date, departure_date, passport_expiry, visa }) => {
+        setTravel((t) => ({ ...t, arrival_date, departure_date }));
+        setTravelers((list) =>
+            list.map((t) => {
+                const match = visa
+                    ? pickVisaFor(Number(visa.duration_days) || 0, t) || visa
+                    : null;
+                return {
+                    ...t,
+                    passport_expiry: t.passport_expiry || passport_expiry,
+                    visa_type_id: t.visa_type_id || match?.id || "",
+                };
+            })
+        );
+        setPreCheckDone(true);
+        setErrors({});
+        toast.success("Bilgiler forma aktarıldı. Uygun vize önerisi seçili geldi.");
+    };
+
+    // Secilen vizeler planlanan kalisi kapsamiyorsa onerilecek vize
+    const visaUpgrade = useMemo(() => {
+        if (!tripDays) return null;
+        const short = travelers.filter((t) => {
+            const days = Number(visaById(t.visa_type_id)?.duration_days || 0);
+            return days > 0 && tripDays > days;
+        });
+        if (!short.length) return null;
+        const suggestion = pickVisaFor(tripDays, short[0]);
+        return suggestion ? { suggestion, count: short.length } : { suggestion: null, count: short.length };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tripDays, travelers, visaTypes]);
+
+    const applyVisaUpgrade = () => {
+        setTravelers((list) =>
+            list.map((t) => {
+                const days = Number(visaById(t.visa_type_id)?.duration_days || 0);
+                if (!days || tripDays <= days) return t;
+                const next = pickVisaFor(tripDays, t);
+                return next ? { ...t, visa_type_id: next.id } : t;
+            })
+        );
+        setErrors((p) => ({ ...p, stay_length: undefined }));
+        toast.success("Vize türleri kalış sürenize göre güncellendi.");
+    };
+
     const updateTraveler = (key, patch) => {
         setTravelers((list) => list.map((t) => (t.key === key ? { ...t, ...patch } : t)));
         setErrors((p) => ({ ...p, [key]: undefined }));
@@ -967,8 +1029,6 @@ export default function Apply() {
         }
     };
 
-    const visaById = (id) => visaTypes.find((v) => v.id === id);
-
     const urgentTrip = useMemo(() => {
         if (!travel.arrival_date) return false;
         const diff = new Date(travel.arrival_date).getTime() - Date.now();
@@ -1078,6 +1138,12 @@ export default function Apply() {
                                     <h2 className="font-heading text-xl font-bold">Kişisel bilgiler</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Bilgileri pasaportta yazdığı gibi, Türkçe karakter kullanmadan girin.</p>
+
+                                    {!preCheckDone && (
+                                        <div className="mt-6">
+                                            <EligibilityPreCheck visaTypes={visaTypes} onApply={applyPreCheck} />
+                                        </div>
+                                    )}
 
                                     <div className="mt-6 rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
                                         <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
@@ -1451,6 +1517,33 @@ export default function Apply() {
                                             />
                                         </Field>
                                     </div>
+
+                                    {visaUpgrade && (
+                                        <div
+                                            className="mt-6 flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between"
+                                            data-testid="visa-upgrade-suggestion"
+                                        >
+                                            <p className="text-sm leading-6">
+                                                <strong>Planlanan kalış {tripDays} gün.</strong>{" "}
+                                                {visaUpgrade.suggestion
+                                                    ? `Bu süre için ${visaUpgrade.suggestion.duration_days} günlük vize gerekiyor (${formatMoney(
+                                                          visaUpgrade.suggestion.price,
+                                                          visaUpgrade.suggestion.currency
+                                                      )} / kişi başı).`
+                                                    : "60 günden uzun kalışlarda 60 günlük vize ile giriş yapıp Dubai'deyken uzatma yapılması gerekir; danışmanımız yönlendirir."}
+                                            </p>
+                                            {visaUpgrade.suggestion && (
+                                                <Button
+                                                    type="button"
+                                                    className="h-10 shrink-0"
+                                                    onClick={applyVisaUpgrade}
+                                                    data-testid="visa-upgrade-apply-button"
+                                                >
+                                                    {visaUpgrade.suggestion.duration_days} günlük vizeye geç
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {urgentTrip && (
                                         <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.11)] p-4" data-testid="urgent-trip-warning">

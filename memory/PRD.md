@@ -273,3 +273,22 @@ Kod: `routes_public._validate_travel_rules` (+ PASSPORT_MIN_VALID_DAYS=180) tek 
 e.passport_validity blocking toast olarak sunulur).
 Test: iteration_65 backend 9/9 pytest (`backend/tests/test_travel_rules.py`) + frontend %100
 (üç sihirbaz engeli, tek popüler etiket, yeni uygunluk metni).
+
+## 2026-06-05 · Uygunluk ön kontrolü + vize süresi önerisi
+- **`components/EligibilityPreCheck.jsx` (yeni)**: /basvuru Adım 1'in en üstünde gidiş, dönüş
+  ve pasaport geçerlilik tarihi sorar. Sonuç 3 durumdan biri:
+  `ok` (yeşil: kalış gün sayısı + önerilen vize adı/fiyatı + "Bu bilgilerle devam et"),
+  `error` (pasaport dönüşten itibaren 6 aydan az geçerli → gereken asgari tarih yazılır),
+  `warning` (60 günden uzun kalış → 60 gün + yurt içi uzatma açıklaması, devam butonu yok).
+  "Devam et" tarihleri `travel`e, pasaport tarihini boş olan yolculara, önerilen vizeyi
+  seçili olmayan yolculara yazar (`applyPreCheck`), panel kapanır.
+- **Vize süresi önerisi (upsell)**: Adım 2'de kalış seçilen vizeyi aşarsa
+  `visa-upgrade-suggestion` bandı çıkar: "Planlanan kalış X gün, Y günlük vize gerekiyor
+  (fiyat)" + "Y günlük vizeye geç" butonu (`applyVisaUpgrade`, yolcu bazında
+  `pickVisaFor` ile giriş tipini ve yetişkin/çocuk ayrımını korur). 60 günü aşan kalışta
+  buton yerine uzatma bilgisi gösterilir. Böylece iteration_65'teki engel satış fırsatına
+  dönüştü (müşteri hata alıp çıkmıyor, tek tıkla üst vizeye geçiyor).
+- Test: iteration_66 frontend %100 (6 senaryo: ok/error/warning, forma aktarma, upsell
+  butonu + toplam 9.880₺ güncellemesi, 60 gün üstü uyarı).
+- Bilinen sınır: upgrade bandındaki önerilen vize adı ilk uygun olmayan yolcudan alınır;
+  uygulama adımı yine yolcu bazında doğru vizeyi seçer.
