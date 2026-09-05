@@ -403,3 +403,15 @@ pasaportun nerede kaldığı, randevu/ofis, sonuç süresi, fiyat, başvuru taki
 (`compare-row-{key}`). Altta "Pasaportunuzla başlayın" CTA + hukuki güvenlik notu
 ("her acentenin süreci farklılık gösterebilir" — rakip ismi verilmiyor).
 md altında satırlar kolon başlığı etiketleriyle dikey yığılır. Ekran görüntüsüyle doğrulandı (8/8 satır).
+
+## 2026-06-06 · Hero'da "2 belgeyle vize" animasyonlu anlatımı
+`components/VisaExplainer.jsx` (yeni) — gerçek video değil, Framer Motion ile çizilen 4 sahneli
+(~5 sn/sahne, 20 sn döngü) anlatım paneli: 1) pasaport kimlik sayfası, 2) vesikalık fotoğraf,
+3) yükleme + ödeme (bilet/otel şartı yok), 4) onaylı vize PDF'i e-postaya teslim.
+Sol tarafta sahne başlığı/notu (`explainer-scene-title`), 4 segmentli ilerleme çizgisi
+(`explainer-dot-{key}`, tıklanabilir) ve duraklat/oynat butonu (`explainer-toggle-button`);
+sağ tarafta sahneye özel animasyonlu kart (tik pop, yükleme çubuğu, uçan PDF).
+Hero'daki `HeroSlider` bu panelle değiştirildi; Dubai fotoğrafları sayfada kaybolmasın diye
+slider "Seyahat Paketleri" öncesine ayrı bölüm olarak taşındı (`landing-gallery`).
+Doğrulama: sahne 1→2 otomatik geçiş, segment tıklaması (sahne 3), duraklatınca sahnenin
+sabit kalması ekran görüntüleriyle test edildi.
