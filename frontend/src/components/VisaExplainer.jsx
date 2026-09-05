@@ -198,7 +198,7 @@ export const VisaExplainer = () => {
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:absolute sm:inset-y-0 sm:right-0 sm:order-none sm:aspect-auto sm:h-auto sm:w-[52%] sm:p-5">
+            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:absolute sm:inset-y-0 sm:right-0 sm:order-none sm:aspect-auto sm:h-auto sm:w-[68%]">
                 <AnimatePresence initial={false}>
                     <motion.img
                         key={scene.key}
@@ -213,14 +213,18 @@ export const VisaExplainer = () => {
                             x: { duration: 0.7, ease: "easeOut" },
                             scale: { duration: paused ? 0.4 : sceneMs / 1000, ease: "linear" },
                         }}
-                        className="absolute inset-0 h-full w-full object-contain object-center"
+                        className="absolute inset-0 h-full w-full object-contain object-center sm:object-cover sm:object-right"
                         data-testid={`explainer-image-${scene.key}`}
                     />
                 </AnimatePresence>
+                <div
+                    className="absolute inset-0 hidden bg-gradient-to-r from-[hsl(var(--panel-2))] via-[hsl(var(--panel-2)/0.35)] to-transparent sm:block"
+                    aria-hidden="true"
+                />
             </div>
 
             {/* METIN KATMANI */}
-            <div className="relative order-2 flex flex-col justify-between gap-5 p-6 pt-2 sm:order-1 sm:min-h-[420px] sm:w-[48%] sm:gap-6 sm:p-9">
+            <div className="relative order-2 flex flex-col justify-between gap-5 p-6 pt-2 sm:order-1 sm:min-h-[400px] sm:w-[56%] sm:gap-6 sm:p-9">
                 {!playing && (
                     <button
                         type="button"
