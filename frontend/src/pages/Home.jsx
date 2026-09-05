@@ -193,20 +193,6 @@ export default function Home() {
                                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
                             </div>
                         ))}
-                        <div className="flex flex-col justify-center rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--cloud))] p-6">
-                            <h3 className="font-heading text-base font-semibold">Kimler başvurabilir?</h3>
-                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                Umuma mahsus (bordo) pasaport sahibi Türk vatandaşları için Dubai vizesi
-                                zorunludur ve başvuru online yapılabilir. Hususi (yeşil), hizmet ve
-                                diplomatik pasaport hamilleri yılda 90 güne kadar vizesiz giriş yapar.
-                                Başvurular şu an Türkiye doğumlu yolcular için alınmaktadır.
-                            </p>
-                            <Button asChild variant="secondary" className="mt-4 h-11 border border-border">
-                                <Link to="/iletisim" data-testid="eligibility-ask-button">
-                                    Durumunuzu sorun
-                                </Link>
-                            </Button>
-                        </div>
                     </div>
                 </div>
             </section>

@@ -415,3 +415,34 @@ Hero'daki `HeroSlider` bu panelle değiştirildi; Dubai fotoğrafları sayfada k
 slider "Seyahat Paketleri" öncesine ayrı bölüm olarak taşındı (`landing-gallery`).
 Doğrulama: sahne 1→2 otomatik geçiş, segment tıklaması (sahne 3), duraklatınca sahnenin
 sabit kalması ekran görüntüleriyle test edildi.
+
+## 2026-06-06 · Anlatıma Türkçe seslendirme + "Kimler başvurabilir?" kartı kaldırıldı
+- **Seslendirme**: `scripts/generate_narration.py` (tek seferlik) OpenAI TTS `tts-1-hd`,
+  voice `coral` ile 4 Türkçe anlatım klibi üretip `frontend/public/audio/explainer/*.mp3`
+  altına yazıyor (EMERGENT_LLM_KEY, emergentintegrations `OpenAITextToSpeech`).
+  Klipler ~7.5-9 sn. `VisaExplainer` içine `<audio>` + "Sesli anlat / Ses açık" butonu
+  (`explainer-sound-button`) eklendi: varsayılan KAPALI (tarayıcı autoplay politikası),
+  ses açıkken sahne klip bittiğinde geçer (`onEnded`), sessizken 5 sn'de geçer;
+  duraklat butonu sesi de durduruyor. Segment ilerleme süresi ses açıkken 8.5 sn.
+  SINIR: OpenAI TTS sesleri İngilizce optimize; Türkçe okuyuş hafif aksanlı.
+  Daha doğal Türkçe için ElevenLabs `eleven_multilingual_v2` + Türkçe yerel ses gerekir
+  (kullanıcının ElevenLabs API anahtarı şart).
+- Ana sayfa avantajlar ızgarasındaki **"Kimler başvurabilir?" kartı kullanıcı isteğiyle
+  kaldırıldı** (bilgi /sss ve /vize-tipleri sayfalarında duruyor); ızgara 6 kart 3x2 oldu.
+- Doğrulama: ses butonu → `currentSrc` passport.mp3, `paused:false`, süre 8.9 sn;
+  duraklat → `paused:true`; tekrar kapatma çalışıyor (ekran görüntüsü + JS kontrolü).
+
+## 2026-06-06 · Anlatım "görüntülü" hâle getirildi (Türk pasaportu)
+Kullanıcı: "animasyon yapalım görüntülü" + "türk pasaportu olsun".
+- `VisaExplainer` tamamen yeniden yazıldı: soyut kartlar yerine **gerçek görsellerle video
+  hissi** — her sahne tam ekran fotoğraf + Ken Burns yakınlaşması (scale 1.02→1.12, sahne
+  süresi kadar), çapraz geçiş, üstte koyu gradyan, üzerinde beyaz metinler ve cam (blur)
+  kontroller. Oran: mobil 16/10, sm 16/9, lg 21/9 (hero'yu uzatmasın).
+- Görseller Gemini 3.1 Flash Image ile üretildi ve `frontend/public/explainer/*.jpg`
+  altına indirildi: passport (bordo **Türk pasaportu** telefonla çekiliyor),
+  photo (vesikalık + Türk pasaportu), upload (dizüstünde yükleme), delivered
+  (Burj Khalifa fonunda onaylı vize gösteren gezgin).
+- Sahne süresi ses açıkken 8.5 sn (klip uzunluğu), sessizken 5 sn; ilerleme segmentleri
+  ve Ken Burns süresi bu değere bağlı.
+- Doğrulama: sahne 1 görseli 1264x848 yükleniyor, segment tıklaması sahne 4'e atlıyor,
+  ses açılınca delivered.mp3 çalıyor (ekran görüntüsü + JS kontrolü).
