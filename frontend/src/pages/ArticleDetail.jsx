@@ -114,6 +114,16 @@ export default function ArticleDetail() {
                         {a.title}
                     </h1>
                     <p className="mt-4 text-base leading-7 text-muted-foreground">{a.excerpt}</p>
+                    {a.cover_image && (
+                        <div className="mt-6 overflow-hidden rounded-2xl border border-border">
+                            <img
+                                src={a.cover_image}
+                                alt={a.title}
+                                className="h-[240px] w-full object-cover sm:h-[340px]"
+                                data-testid="article-cover-image"
+                            />
+                        </div>
+                    )}
                 </div>
             </section>
 

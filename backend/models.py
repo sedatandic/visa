@@ -211,14 +211,33 @@ class ArticleIn(BaseModel):
     order: int = 0
 
 
+class VisitIn(BaseModel):
+    path: str = Field(default="/", max_length=300)
+    referrer: str = Field(default="", max_length=300)
+
+
+class BankAccountIn(BaseModel):
+    currency: str = Field(default="TRY", max_length=5)
+    iban: str = Field(..., min_length=10, max_length=40)
+
+
+class BankIn(BaseModel):
+    id: Optional[str] = Field(default="", max_length=40)
+    name: str = Field(..., min_length=2, max_length=120)
+    logo: Optional[str] = Field(default="", max_length=300)
+    accounts: List[BankAccountIn] = Field(default_factory=list)
+
+
 class BankTransferIn(BaseModel):
     enabled: bool = True
     title: str = Field(default="Havale / EFT ile ödeme", max_length=120)
     account_name: str = Field(..., min_length=2, max_length=160)
-    bank_name: str = Field(..., min_length=2, max_length=120)
-    iban: str = Field(..., min_length=10, max_length=40)
+    bank_name: str = Field(default="", max_length=120)
+    iban: str = Field(default="", max_length=40)
     currency: str = Field(default="TRY", max_length=5)
     note: Optional[str] = Field(default="", max_length=600)
+    notes: List[str] = Field(default_factory=list)
+    banks: List[BankIn] = Field(default_factory=list)
     steps: List[str] = Field(default_factory=list)
 
 

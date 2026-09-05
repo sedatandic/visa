@@ -481,6 +481,7 @@ ARTICLES = [
     {        "slug": "dubai-vizesi-hangi-emirliklerde-gecerli",
         "title": "Dubai Vizesi Abu Dabi ve Şarja'da Geçerli mi?",
         "date": "2026-08-25",
+        "cover_image": "https://images.unsplash.com/photo-1688671525781-d9447cf1abd2?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
         "excerpt": "Dubai vizesi aslında bir Birleşik Arap Emirlikleri vizesidir. Aldığınız vize yalnızca Dubai'de değil, yedi emirliğin tamamında geçerlidir.",
         "body": [
             "Aldığınız belge resmî olarak bir Birleşik Arap Emirlikleri vizesidir. Bu nedenle Dubai'nin yanı sıra Abu Dabi, Şarja, Acman, Umm el-Kayveyn, Re's el-Hayma ve Fuceyre'de de geçerlidir.",
@@ -537,9 +538,11 @@ ARTICLES = [
 ]
 
 IMPORTANT_NOTICE = [
-    "Vize onay süreçleri tamamen Birleşik Arap Emirlikleri Göçmenlik Ofisi tarafından yürütülür. Ek evrak talebi gibi durumlarda başvuru süresi değişkenlik gösterebilir.",
-    "Seyahat amacınız oturum, çalışma veya eğitim ise turistik/ticari vize ile ülkeye giriş yapıp oturum işlemi başlatamazsınız. Bu girişim vizenin iptaline ve sınır dışı işlemine yol açar.",
-    "Lütfen başvuracağınız vize türünü seyahat amacınıza uygun seçtiğinizden emin olun.",
+    "Vize kararı yalnızca Birleşik Arap Emirlikleri Göçmenlik İdaresi'nin (GDRFA) yetkisindedir. Biz başvurunuzu hazırlar, kontrol eder ve resmî sisteme iletiriz; onay veya ret kararını idare verir. İdare ek belge talep ederse ya da ilave inceleme yaparsa belirtilen işlem süresi uzayabilir.",
+    "Seçtiğiniz vize türü seyahat amacınızla örtüşmelidir. Amacınız oturum, çalışma veya eğitim ise; turistik, ticari ya da ziyaret vizesiyle ülkeye giriş yapıp resmî oturum işlemlerinizi başlatamazsınız.",
+    "Turistik/ticari/ziyaret vizesiyle giriş yapıp oturum işlemi başlatma girişimi, vizenin anında iptaline ve sınır dışı edilmenize yol açar.",
+    "Oturum, çalışma veya eğitim vizesiyle gelen yolcuların resmî işlemleri havalimanında, giriş anında başlatması zorunludur. Bu yapılmadığında vize geçersiz sayılır ve aynı yaptırım uygulanır.",
+    "Sınır dışı işlemi uygulanan kişilerin Birleşik Arap Emirlikleri'ne yeniden girişi kapatılır. Bu nedenle başvurudan önce vize türünüzün seyahat amacınıza uygun olduğundan emin olun; tereddüt ederseniz başvuruyu göndermeden danışmanımıza yazın.",
 ]
 
 STATUS_LABELS = {
@@ -555,12 +558,14 @@ STATUS_LABELS = {
 COMPANY = {
     "brand": "Dubai Vize Online",
     "legal_name": "Dubai Vize Online Turizm ve Danışmanlık A.Ş.",
-    "phone": "+90 850 000 00 00",
-    "whatsapp": "908500000000",
-    "email": "destek@vizeatlas.com",
+    "parent_company": "XXXX Travel Solutions Turizm Ltd. Şti.",
+    "dubai_company": "XXXX Travel Solutions FZE",
+    "phone": "+90 532 588 26 30",
+    "whatsapp": "905325882630",
+    "email": "info@dubaivizeonline.com",
     "instagram": "https://www.instagram.com/dubaivizeonline/",
     "google_review": "https://www.google.com/search?q=Dubai+Vize+Online+yorumlar",
-    "address": "Levent, İstanbul / Türkiye",
+    "address": "Maltepe Mahallesi, Eski Çırpıcı Yolu Sokak No:8, Parima Plaza Kat:12 Ofis:146, 34010 Zeytinburnu / İstanbul - Türkiye",
     "working_hours": "Hafta içi 09:00 - 19:00, Cumartesi 10:00 - 16:00",
     "tursab_no": "0000",
     "tursab_type": "A Grubu Seyahat Acentesi",
@@ -585,6 +590,18 @@ AGENCY_INFO = {
         {"label": "Kuruluş", "value": COMPANY["founded_year"]},
     ],
 }
+
+
+def affiliation_note(company: dict | None = None) -> str:
+    """Iştirak/satici bilgisi; sirket adlari **kalin** isaretiyle dondurulur."""
+    c = company or COMPANY
+    parent = c.get("parent_company") or COMPANY["parent_company"]
+    dubai = c.get("dubai_company") or COMPANY["dubai_company"]
+    return (
+        f"Dubaivizeonline.com bir **{parent}** iştirakidir; tüm satışlar bu şirket "
+        f"üzerinden yapılmaktadır. Birleşik Arap Emirlikleri'ndeki grup şirketimiz "
+        f"**{dubai}**'dir."
+    )
 
 
 def family_discount_rate(traveler_count: int) -> float:
@@ -681,10 +698,43 @@ BANK_TRANSFER = {
     "enabled": True,
     "title": "Havale / EFT ile ödeme",
     "account_name": "Dubai Vize Online Turizm ve Danışmanlık A.Ş.",
-    "bank_name": "Örnek Bank A.Ş.",
+    "bank_name": "Türkiye İş Bankası A.Ş.",
     "iban": "TR00 0000 0000 0000 0000 0000 00",
     "currency": "TRY",
     "note": "Açıklama kısmına mutlaka başvuru referans kodunuzu yazın. Ödemeniz hesabımıza geçtiğinde başvurunuz işleme alınır ve size e-posta ile bilgi veririz.",
+    "notes": [
+        'Açıklamaya "Dubai Vizesi" ve başvuru referans kodunuz yazılmalıdır.',
+        'TL olarak yapılacak ödemelerde bankanın güncel "USD banka satış kuru" baz alınır.',
+    ],
+    "banks": [
+        {
+            "id": "isbank",
+            "name": "Türkiye İş Bankası A.Ş.",
+            "logo": "/brand/banks/isbank.png",
+            "accounts": [
+                {"currency": "TRY", "iban": "TR00 0000 0000 0000 0000 0000 00"},
+                {"currency": "USD", "iban": "TR00 0000 0000 0000 0000 0000 01"},
+            ],
+        },
+        {
+            "id": "garanti",
+            "name": "Garanti BBVA",
+            "logo": "/brand/banks/garanti.png",
+            "accounts": [
+                {"currency": "TRY", "iban": "TR00 0000 0000 0000 0000 0000 02"},
+                {"currency": "USD", "iban": "TR00 0000 0000 0000 0000 0000 03"},
+            ],
+        },
+        {
+            "id": "ziraat",
+            "name": "T.C. Ziraat Bankası A.Ş.",
+            "logo": "/brand/banks/ziraat.png",
+            "accounts": [
+                {"currency": "TRY", "iban": "TR00 0000 0000 0000 0000 0000 04"},
+                {"currency": "USD", "iban": "TR00 0000 0000 0000 0000 0000 05"},
+            ],
+        },
+    ],
     "steps": [
         "Başvurunuzu tamamlayın ve referans kodunuzu not alın.",
         "Toplam tutarı aşağıdaki hesaba havale/EFT ile gönderin.",

@@ -4,6 +4,7 @@ import { CalendarDays, FileText, Lock, Mail, ShieldCheck } from "lucide-react";
 import { api } from "../lib/api";
 import { formatDate, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
+import { BoldText } from "../components/BoldText";
 import { Button } from "../components/ui/button";
 
 const CONFIG = {
@@ -60,11 +61,15 @@ const CONFIG = {
 export default function LegalTerms({ variant = "refund" }) {
     const cfg = CONFIG[variant];
     const [doc, setDoc] = useState(null);
+    const [affiliation, setAffiliation] = useState("");
 
     useEffect(() => {
         setMeta(cfg.meta, cfg.metaDesc);
         api.get("/content/legal")
-            .then(({ data }) => setDoc(data[cfg.key]))
+            .then(({ data }) => {
+                setDoc(data[cfg.key]);
+                setAffiliation(data.affiliation || "");
+            })
             .catch(() => {});
     }, [cfg.key, cfg.meta, cfg.metaDesc]);
 
@@ -76,15 +81,24 @@ export default function LegalTerms({ variant = "refund" }) {
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
-                    <div className="max-w-3xl px-5 sm:px-8">
-                    {doc?.updated_at && (
-                        <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                            <CalendarDays className="h-3.5 w-3.5" /> Son güncelleme: {formatDate(doc.updated_at)}
-                        </p>
-                    )}
-                    <p className="mt-4 text-sm leading-7 text-muted-foreground">{doc?.intro}</p>
+                    <div className="px-5 sm:px-8">
+                        {doc?.updated_at && (
+                            <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                                <CalendarDays className="h-3.5 w-3.5" /> Son güncelleme: {formatDate(doc.updated_at)}
+                            </p>
+                        )}
+                        <p className="mt-4 max-w-4xl text-sm leading-7 text-muted-foreground">{doc?.intro}</p>
+                        {affiliation && (
+                            <p
+                                className="mt-3 max-w-4xl text-sm leading-7 text-muted-foreground"
+                                data-testid="legal-affiliation-note"
+                            >
+                                <BoldText text={affiliation} />
+                            </p>
+                        )}
+                    </div>
 
-                    <div className="mt-8 space-y-6">
+                    <div className="mt-8 grid gap-6 lg:grid-cols-2">
                         {(doc?.sections || []).map((s, i) => (
                             <div key={s.title} className="card-surface p-6" data-testid={`legal-section-${i}`}>
                                 <h2 className="flex items-start gap-2.5 font-heading text-lg font-bold">
@@ -95,7 +109,7 @@ export default function LegalTerms({ variant = "refund" }) {
                                     {(s.items || []).map((item, j) => (
                                         <li key={j} className="flex items-start gap-2 text-sm leading-7">
                                             <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                                            <span>{item}</span>
+                                            <span><BoldText text={item} /></span>
                                         </li>
                                     ))}
                                 </ul>
@@ -115,7 +129,6 @@ export default function LegalTerms({ variant = "refund" }) {
                                 <Link to="/basvuru">Başvuru Yap</Link>
                             </Button>
                         </div>
-                    </div>
                     </div>
                 </div>
             </section>

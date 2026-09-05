@@ -39,6 +39,7 @@ from db import (
     login_codes_col,
     orders_col,
     products_col,
+    visits_col,
 )
 from content import BANK_TRANSFER, COMPANY
 from doc_reminders import (
@@ -52,6 +53,7 @@ from doc_reminders import (
 from store_catalog import product_list
 from fx import apply_fx_to_list, apply_fx_to_visa, get_fx, update_fx_settings
 from visa_guides import build_guide, guide_index
+from visitors import visit_summary
 from emailer import (
     admin_code_html,
     order_delivered_html,
@@ -679,11 +681,32 @@ async def admin_update_company(payload: CompanyInfoIn, admin: dict = Depends(req
     return {**COMPANY, **value}
 
 
+# ------------------------------------------------------- Ziyaretci istatistikleri
+@router.get("/admin/visits/summary")
+async def admin_visits_summary(days: int = Query(30, ge=1, le=90), admin: dict = Depends(require_admin)):
+    return await visit_summary(days)
+
+
+@router.get("/admin/visits")
+async def admin_visits(
+    limit: int = Query(100, ge=1, le=200),
+    skip: int = Query(0, ge=0),
+    include_bots: bool = False,
+    country: Optional[str] = None,
+    admin: dict = Depends(require_admin),
+):
+    query: dict = {} if include_bots else {"bot": False}
+    if country:
+        query["country"] = country
+    docs = await visits_col.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    return {"items": serialize_doc(docs), "total": await visits_col.count_documents(query)}
+
+
 # ------------------------------------------------------- Banka bilgileri
 @router.get("/admin/bank-transfer")
 async def admin_get_bank_transfer(admin: dict = Depends(require_admin)):
     doc = await settings_col.find_one({"key": "bank_transfer"})
-    return (doc or {}).get("value") or BANK_TRANSFER
+    return {**BANK_TRANSFER, **((doc or {}).get("value") or {})}
 
 
 @router.put("/admin/bank-transfer")

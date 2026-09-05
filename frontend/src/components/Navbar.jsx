@@ -28,6 +28,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { COMPANY } from "../lib/site";
+import { api } from "../lib/api";
 import { BrandMark } from "./BrandMark";
 import { TrFlag, UaeFlag } from "./FlagIcons";
 import { useContact } from "../lib/contact";
@@ -69,7 +70,8 @@ const MENU_GROUPS = [
 ];
 
 const MENU_LINKS = MENU_GROUPS.flatMap((g) => g.items);
-const testId = (to) => `nav-link-${to.replace("/", "")}`;
+const GUIDE_GROUP_LABEL = "Vize Rehberi";
+const testId = (to) => `nav-link-${to.replace(/^\//, "").replaceAll("/", "-")}`;
 
 const navLinkClass = ({ isActive }) =>
     `whitespace-nowrap rounded-lg px-2 py-2 text-lg font-semibold transition-colors duration-150 focus-visible:outline-none ${
@@ -82,9 +84,16 @@ export const Navbar = () => {
     const contact = useContact();
     const [open, setOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [guides, setGuides] = useState([]);
     const location = useLocation();
 
     useEffect(() => setOpen(false), [location.pathname]);
+
+    useEffect(() => {
+        api.get("/visa-guides")
+            .then(({ data }) => setGuides(data.items || []))
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 8);
@@ -93,7 +102,13 @@ export const Navbar = () => {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    const menuActive = MENU_LINKS.some((l) => location.pathname.startsWith(l.to));
+    const guideItems = guides.map((g) => ({ to: g.path, label: g.title, icon: BookOpen }));
+    const groups = guideItems.length
+        ? [MENU_GROUPS[0], { label: GUIDE_GROUP_LABEL, items: guideItems }, ...MENU_GROUPS.slice(1)]
+        : MENU_GROUPS;
+    const menuActive =
+        MENU_LINKS.some((l) => location.pathname.startsWith(l.to)) ||
+        location.pathname.startsWith("/dubai-vizesi");
 
 
     return (
@@ -120,7 +135,7 @@ export const Navbar = () => {
                     </span>
                 </Link>
 
-                <nav className="hidden items-center gap-0.5 -mb-1.5 xl:flex" aria-label="Ana menü">
+                <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Ana menü">
                     {PRIMARY_LINKS.map((l) => (
                         <NavLink key={l.to} to={l.to} data-testid={testId(l.to)} className={navLinkClass}>
                             {l.label}
@@ -147,35 +162,43 @@ export const Navbar = () => {
                             className="w-auto min-w-[12rem] rounded-xl p-1.5"
                             data-testid="navbar-more-menu"
                         >
-                            {MENU_GROUPS.map((group, gi) => (
+                            {groups.map((group, gi) => (
                                 <React.Fragment key={group.label}>
                                     {gi > 0 && <DropdownMenuSeparator />}
                                     <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                                         {group.label}
                                     </DropdownMenuLabel>
-                                    {group.items.map(({ to, label, icon: Icon }) => (
-                                        <DropdownMenuItem key={to} asChild className="rounded-lg">
-                                            <Link
-                                                to={to}
-                                                data-testid={testId(to)}
-                                                className="flex w-full cursor-pointer items-center gap-2.5 py-2 text-sm font-medium"
-                                            >
-                                                <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
-                                                {label}
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    ))}
+                                    <div
+                                        className={
+                                            group.label === GUIDE_GROUP_LABEL
+                                                ? "grid grid-cols-2 gap-0.5"
+                                                : ""
+                                        }
+                                    >
+                                        {group.items.map(({ to, label, icon: Icon }) => (
+                                            <DropdownMenuItem key={to} asChild className="rounded-lg">
+                                                <Link
+                                                    to={to}
+                                                    data-testid={testId(to)}
+                                                    className="flex w-full cursor-pointer items-center gap-2.5 py-2 text-sm font-medium"
+                                                >
+                                                    <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                                                    {label}
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </div>
                                 </React.Fragment>
                             ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </nav>
 
-                <div className="hidden items-center gap-2.5 md:flex">
+                <div className="hidden items-end gap-2.5 md:flex">
                     {contact.phone && (
                     <a
                         href={contact.phoneHref}
-                        className="hidden items-center gap-2 whitespace-nowrap rounded-lg px-2 py-2 text-base font-semibold text-foreground/75 transition-colors duration-150 hover:text-primary 2xl:flex"
+                        className="hidden items-center gap-2 whitespace-nowrap rounded-lg px-2 py-2 text-lg font-semibold text-foreground/75 transition-colors duration-150 hover:text-primary 2xl:flex"
                         data-testid="navbar-phone-link"
                     >
                         <Phone className="h-4 w-4 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
@@ -228,7 +251,7 @@ export const Navbar = () => {
                                     ))}
                                 </div>
 
-                                {MENU_GROUPS.map((group) => (
+                                {groups.map((group) => (
                                     <div key={group.label} className="mt-5">
                                         <p className="px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                                             {group.label}

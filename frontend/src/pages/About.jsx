@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { IMAGES, setMeta } from "../lib/site";
 import { TursabBadge } from "../components/TursabBadge";
 import { PageHeader } from "../components/SiteLayout";
+import { BoldText } from "../components/BoldText";
 import { Button } from "../components/ui/button";
 
 const STATS_META = [
@@ -17,6 +18,7 @@ export default function About() {
     const [agency, setAgency] = useState(null);
     const [company, setCompany] = useState(null);
     const [summary, setSummary] = useState(null);
+    const [affiliation, setAffiliation] = useState("");
 
     useEffect(() => {
         api.get("/content/site")
@@ -24,6 +26,7 @@ export default function About() {
                 setAgency(data.agency_info || null);
                 setCompany(data.company || null);
                 setSummary(data.review_summary || null);
+                setAffiliation(data.affiliation || "");
             })
             .catch(() => {});
     }, []);
@@ -118,6 +121,11 @@ export default function About() {
                             {agency?.description ||
                                 "Tüm başvurularınız acente güvencesiyle yürütülür; ticari bilgilerimiz aşağıda açıkça yer alır."}
                         </p>
+                        {affiliation && (
+                            <p className="mt-3 text-sm leading-7 text-muted-foreground" data-testid="about-affiliation-note">
+                                <BoldText text={affiliation} />
+                            </p>
+                        )}
                         <div className="mt-5">
                             <TursabBadge number={company?.tursab_no} type={company?.tursab_type} />
                         </div>

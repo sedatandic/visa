@@ -7,7 +7,7 @@ import string
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
-from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Request, Response, UploadFile
 
 from content import (
     MARKETING_CONSENT,
@@ -35,6 +35,7 @@ from content import (
     VISA_CATEGORIES,
     VISA_TYPES,
     WHY_US,
+    affiliation_note,
     compute_pricing,
 )
 from db import (
@@ -55,8 +56,9 @@ from emailer import (
     documents_completed_admin_html,
     send_email,
 )
-from models import ApplicationCreate, ContactCreate, DocumentSubmission, QuoteRequest
+from models import ApplicationCreate, ContactCreate, DocumentSubmission, QuoteRequest, VisitIn
 from doc_reminders import missing_documents
+from visitors import client_ip as visitor_client_ip, is_bot, record_visit
 from store_catalog import MAX_QTY, product_list, tour_schedule
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
 import ocr_metrics
@@ -291,7 +293,7 @@ def _agency_info(company: dict) -> dict:
 async def _bank_transfer_info() -> dict:
     """Havale/EFT bilgileri: admin ayari yoksa varsayilan blok kullanilir."""
     doc = await settings_col.find_one({"key": "bank_transfer"})
-    return (doc or {}).get("value") or BANK_TRANSFER
+    return {**BANK_TRANSFER, **((doc or {}).get("value") or {})}
 
 
 @router.get("/content/site")
@@ -325,6 +327,7 @@ async def get_site_content() -> dict:
         "status_labels": STATUS_LABELS,
         "promo": PROMO,
         "agency_info": _agency_info(company),
+        "affiliation": affiliation_note(company),
         "bank_transfer": await _bank_transfer_info(),
     }
 
@@ -336,6 +339,7 @@ async def get_legal_content() -> dict:
         "service_terms": SERVICE_TERMS,
         "privacy_policy": PRIVACY_POLICY,
         "marketing_consent": MARKETING_CONSENT,
+        "affiliation": affiliation_note(await _company_info()),
     }
 
 
@@ -345,6 +349,16 @@ async def list_articles(limit: int = 50):
     if not docs:
         return ARTICLES
     return serialize_doc(docs)
+
+
+@router.post("/track/visit")
+async def track_visit(payload: VisitIn, request: Request, background: BackgroundTasks) -> dict:
+    """Ziyaret kaydi: IP + sehir/ulke cozumlemesi arka planda yapilir."""
+    user_agent = request.headers.get("user-agent", "")
+    if is_bot(user_agent):
+        return {"ok": True, "skipped": "bot"}
+    background.add_task(record_visit, visitor_client_ip(request), payload.path, payload.referrer, user_agent)
+    return {"ok": True}
 
 
 @router.get("/articles/{slug}")

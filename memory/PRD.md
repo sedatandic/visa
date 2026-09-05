@@ -1054,3 +1054,18 @@ Ayrıntılı kayıt: `CHANGELOG.md` (2026-06-09), kalan işler: `ROADMAP.md`.
   "1 yolcu daha ekleyin → %10" / "%10 aktif · X ₺ tasarruf" + yolcu ekle butonu).
 - Fotoğraf uyarısı alan yolcuya 1 doğru + 3 yanlış örnekli rehber
   (`public/photo-guide/*.jpg`, `components/PhotoGuide.jsx`).
+
+---
+
+## 2026-06-10 — Eklenen özellikler (özet; ayrıntı CHANGELOG.md)
+- **Ziyaretçi analitiği**: `/admin/ziyaretciler` — ziyaretçinin IP'si, şehri, ülkesi, gezdiği
+  sayfa ve ISP'si; ülke/şehir/sayfa top listeleri; 1/7/30/90 gün aralıkları. Takip
+  `POST /api/track/visit` + ipwho.is (anahtarsız, `ip_geo` TTL önbellek).
+- **Logolu banka hesapları**: 3 banka (İş Bankası, Garanti BBVA, Ziraat), TL+USD IBAN,
+  kopyala butonu; `/vize-tipleri` ve ödeme adımı. IBAN'lar yer tutucu (P0).
+- **İletişim sayfası**: konu seçimli form, kanal kartları, Google Maps haritası, yol tarifi.
+  Adres: Parima Plaza Kat:12 Ofis:146, Zeytinburnu / İstanbul. Tel/WhatsApp +90 532 588 26 30.
+- **İştirak notu** (yasal sayfalar + footer + Hakkımızda), şirket adları kalın; adlar
+  kullanıcı isteğiyle "XXXX …" yer tutucu.
+- **Menüde Vize Rehberi**: 7 rehber navbar dropdown'ında; nav linkleri telefonla aynı hizada.
+- **/gelismeler** kapak görselli kartlar; **/seyahat-sigortasi** detaylı bilgi sayfası (satın alma yok).

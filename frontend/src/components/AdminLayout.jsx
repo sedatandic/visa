@@ -5,6 +5,7 @@ import {
     Building2,
     FileText,
     Landmark,
+    Globe2,
     LayoutDashboard,
     LogOut,
     Mail,
@@ -51,6 +52,7 @@ const NAV_GROUPS = [
     {
         label: "Ayarlar",
         items: [
+            { to: "/admin/ziyaretciler", label: "Ziyaretçiler", icon: Globe2 },
             { to: "/admin/banka", label: "Banka Bilgileri", icon: Landmark },
             { to: "/admin/acente", label: "Acente Bilgileri", icon: Building2 },
         ],

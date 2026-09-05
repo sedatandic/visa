@@ -16,7 +16,9 @@ export default function AdminBankTransfer() {
 
     useEffect(() => {
         api.get("/admin/bank-transfer")
-            .then(({ data }) => setForm({ ...data, steps: data.steps || [] }))
+            .then(({ data }) =>
+                setForm({ ...data, steps: data.steps || [], notes: data.notes || [], banks: data.banks || [] })
+            )
             .catch((e) => toast.error(apiError(e, "Banka bilgileri yüklenemedi.")))
             .finally(() => setLoading(false));
     }, []);
@@ -28,6 +30,14 @@ export default function AdminBankTransfer() {
             toast.error("Hesap ünvanı, banka adı ve geçerli bir IBAN girin.");
             return;
         }
+        const banks = (form.banks || [])
+            .filter((b) => (b.name || "").trim())
+            .map((b, i) => ({
+                id: b.id || `bank-${i + 1}`,
+                name: b.name.trim(),
+                logo: (b.logo || "").trim(),
+                accounts: (b.accounts || []).filter((a) => (a.iban || "").replace(/\s/g, "").length >= 16),
+            }));
         setSaving(true);
         try {
             await api.put("/admin/bank-transfer", {
@@ -38,6 +48,8 @@ export default function AdminBankTransfer() {
                 iban: form.iban,
                 currency: form.currency || "TRY",
                 note: form.note || "",
+                notes: (form.notes || []).filter((n) => n.trim()),
+                banks,
                 steps: (form.steps || []).filter((s) => s.trim()),
             });
             toast.success("Banka bilgileri güncellendi. Havale ödemeleri bu bilgilerle gösterilecek.");
@@ -47,6 +59,22 @@ export default function AdminBankTransfer() {
             setSaving(false);
         }
     };
+
+    const setBank = (index, key, value) =>
+        set("banks", (form.banks || []).map((b, i) => (i === index ? { ...b, [key]: value } : b)));
+
+    const setAccount = (bankIndex, accIndex, key, value) =>
+        set(
+            "banks",
+            (form.banks || []).map((b, i) =>
+                i === bankIndex
+                    ? {
+                          ...b,
+                          accounts: (b.accounts || []).map((a, j) => (j === accIndex ? { ...a, [key]: value } : a)),
+                      }
+                    : b
+            )
+        );
 
     return (
         <AdminLayout
@@ -153,6 +181,141 @@ export default function AdminBankTransfer() {
                         >
                             <Plus className="mr-2 h-4 w-4" /> Adım ekle
                         </Button>
+                    </div>
+
+                    <div className="mt-8 border-t border-border pt-6">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <h3 className="font-heading text-base font-bold">Yayınlanan banka hesapları</h3>
+                                <p className="text-xs text-muted-foreground">
+                                    Hizmet bedelleri sayfasında ve ödeme adımında logolu kartlar hâlinde gösterilir.
+                                </p>
+                            </div>
+                            <Button
+                                variant="secondary"
+                                className="h-10 shrink-0 border border-border"
+                                onClick={() =>
+                                    set("banks", [
+                                        ...(form.banks || []),
+                                        { id: "", name: "", logo: "", accounts: [{ currency: "TRY", iban: "" }] },
+                                    ])
+                                }
+                                data-testid="bank-add-bank-button"
+                            >
+                                <Plus className="mr-2 h-4 w-4" /> Banka ekle
+                            </Button>
+                        </div>
+
+                        <div className="mt-4 space-y-4">
+                            {(form.banks || []).map((b, i) => (
+                                <div key={i} className="rounded-xl border border-border p-4" data-testid={`admin-bank-block-${i}`}>
+                                    <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_auto]">
+                                        <div>
+                                            <Label>Banka adı</Label>
+                                            <Input
+                                                value={b.name || ""}
+                                                onChange={(e) => setBank(i, "name", e.target.value)}
+                                                placeholder="Örn. Türkiye İş Bankası A.Ş."
+                                                data-testid={`admin-bank-name-input-${i}`}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label>Logo yolu</Label>
+                                            <Input
+                                                value={b.logo || ""}
+                                                onChange={(e) => setBank(i, "logo", e.target.value)}
+                                                placeholder="/brand/banks/isbank.png"
+                                                data-testid={`admin-bank-logo-input-${i}`}
+                                            />
+                                        </div>
+                                        <div className="flex items-end">
+                                            <Button
+                                                variant="destructive"
+                                                className="h-10"
+                                                onClick={() => set("banks", form.banks.filter((_, j) => j !== i))}
+                                                data-testid={`admin-bank-delete-${i}`}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3 space-y-2">
+                                        {(b.accounts || []).map((acc, j) => (
+                                            <div key={j} className="flex gap-2">
+                                                <Input
+                                                    value={acc.currency || ""}
+                                                    onChange={(e) => setAccount(i, j, "currency", e.target.value.toUpperCase())}
+                                                    placeholder="TRY"
+                                                    className="w-24 shrink-0"
+                                                    data-testid={`admin-bank-currency-input-${i}-${j}`}
+                                                />
+                                                <Input
+                                                    value={acc.iban || ""}
+                                                    onChange={(e) => setAccount(i, j, "iban", e.target.value)}
+                                                    placeholder="TR00 0000 0000 0000 0000 0000 00"
+                                                    className="font-mono-code"
+                                                    data-testid={`admin-bank-iban-input-${i}-${j}`}
+                                                />
+                                                <Button
+                                                    variant="destructive"
+                                                    className="h-10 shrink-0"
+                                                    onClick={() =>
+                                                        setBank(i, "accounts", b.accounts.filter((_, k) => k !== j))
+                                                    }
+                                                    data-testid={`admin-bank-account-delete-${i}-${j}`}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        <Button
+                                            variant="secondary"
+                                            className="h-9 border border-border"
+                                            onClick={() =>
+                                                setBank(i, "accounts", [...(b.accounts || []), { currency: "USD", iban: "" }])
+                                            }
+                                            data-testid={`admin-bank-add-account-${i}`}
+                                        >
+                                            <Plus className="mr-2 h-3.5 w-3.5" /> Hesap ekle
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-5">
+                            <Label>Hesap kartlarında görünen uyarı satırları</Label>
+                            <div className="mt-2 space-y-2">
+                                {(form.notes || []).map((n, i) => (
+                                    <div key={i} className="flex gap-2">
+                                        <Input
+                                            value={n}
+                                            onChange={(e) =>
+                                                set("notes", form.notes.map((v, j) => (j === i ? e.target.value : v)))
+                                            }
+                                            data-testid={`bank-note-line-input-${i}`}
+                                        />
+                                        <Button
+                                            variant="destructive"
+                                            className="h-10 shrink-0"
+                                            onClick={() => set("notes", form.notes.filter((_, j) => j !== i))}
+                                            data-testid={`bank-note-line-delete-${i}`}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                            <Button
+                                variant="secondary"
+                                className="mt-3 h-10 border border-border"
+                                onClick={() => set("notes", [...(form.notes || []), ""])}
+                                data-testid="bank-add-note-line-button"
+                            >
+                                <Plus className="mr-2 h-4 w-4" /> Uyarı satırı ekle
+                            </Button>
+                        </div>
                     </div>
 
                     <label className="mt-6 flex items-center gap-2 text-sm font-medium">

@@ -1,13 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "../lib/api";
 import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
+import { BoldText } from "../components/BoldText";
 
 export default function Kvkk() {
+    const [affiliation, setAffiliation] = useState("");
+
     useEffect(() => {
         setMeta(
             "KVKK ve Gizlilik Politikası | Dubai Vize Online",
             "Kişisel verilerinizin işlenmesi, saklanması ve korunmasına ilişkin aydınlatma metni ve gizlilik politikası."
         );
+        api.get("/content/site")
+            .then(({ data }) => setAffiliation(data.affiliation || ""))
+            .catch(() => {});
     }, []);
 
     return (
@@ -19,7 +26,12 @@ export default function Kvkk() {
             />
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
-                    <div className="max-w-3xl space-y-8 px-5 text-sm leading-7 text-muted-foreground sm:px-8">
+                    <div className="max-w-4xl space-y-8 px-5 text-sm leading-7 text-muted-foreground sm:px-8">
+                    {affiliation && (
+                        <p data-testid="kvkk-affiliation-note">
+                            <BoldText text={affiliation} />
+                        </p>
+                    )}
                     <div>
                         <h2 className="font-heading text-lg font-bold text-foreground">1. Hangi verileri topluyoruz?</h2>
                         <p className="mt-2">

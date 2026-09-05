@@ -1,5 +1,6 @@
 import React from "react";
 import { Building2, Landmark } from "lucide-react";
+import { BankAccounts } from "./BankAccounts";
 
 const Row = ({ label, value, mono, testId }) =>
     value ? (
@@ -30,10 +31,20 @@ export const BankTransferInfo = ({ bank, agencyItems = [], amount, amountLabel =
 
             <dl className="mt-3">
                 <Row label="Alıcı / Şirket" value={bank.account_name} testId="bank-account-name" />
-                <Row label="Banka" value={bank.bank_name} testId="bank-name" />
-                <Row label="IBAN" value={bank.iban} mono testId="bank-iban" />
+                {!(bank.banks || []).length && (
+                    <>
+                        <Row label="Banka" value={bank.bank_name} testId="bank-name" />
+                        <Row label="IBAN" value={bank.iban} mono testId="bank-iban" />
+                    </>
+                )}
                 {amount ? <Row label={amountLabel} value={amount} testId="bank-amount" /> : null}
             </dl>
+
+            {(bank.banks || []).length > 0 && (
+                <div className="mt-4">
+                    <BankAccounts bank={bank} />
+                </div>
+            )}
 
             {agencyItems.length > 0 && (
                 <div className="mt-4 rounded-lg border border-border bg-card p-4" data-testid="bank-agency-info">

@@ -7,12 +7,14 @@ import { TrFlag, UaeFlag } from "./FlagIcons";
 import { TursabBadge } from "./TursabBadge";
 import { GdrfaBadge } from "./GdrfaBadge";
 import { BrandMark } from "./BrandMark";
+import { BoldText } from "./BoldText";
 import { useContact } from "../lib/contact";
 
 export const Footer = () => {
     const contact = useContact();
     const [agency, setAgency] = useState(null);
     const [agencyItems, setAgencyItems] = useState([]);
+    const [affiliation, setAffiliation] = useState("");
     const [guides, setGuides] = useState([]);
 
     useEffect(() => {
@@ -26,6 +28,7 @@ export const Footer = () => {
             .then(({ data }) => {
                 setAgency(data.company || null);
                 setAgencyItems(data.agency_info?.items || []);
+                setAffiliation(data.affiliation || "");
             })
             .catch(() => {});
     }, []);
@@ -137,7 +140,7 @@ export const Footer = () => {
             <div className="border-t border-white/10" data-testid="footer-visa-guides">
                 <div className="container-page py-7">
                     <h3 className="font-heading text-sm font-semibold uppercase tracking-wider text-white/50">
-                        Vize Rehberleri
+                        Vize Rehberi
                     </h3>
                     <ul className="mt-4 grid gap-x-8 gap-y-2.5 text-sm text-white/80 sm:grid-cols-2 lg:grid-cols-3">
                         {guides.map((g) => (
@@ -169,6 +172,14 @@ export const Footer = () => {
                             </div>
                         ))}
                     </dl>
+                </div>
+            </div>
+        )}
+
+        {affiliation && (
+            <div className="border-t border-white/10" data-testid="footer-affiliation">
+                <div className="container-page py-5 text-xs leading-6 text-white/60">
+                    <BoldText text={affiliation} strongClassName="font-bold text-white" />
                 </div>
             </div>
         )}

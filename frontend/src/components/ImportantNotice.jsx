@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, BadgeCheck, Plane, ShieldAlert } from "lucide-react";
+import { AlertTriangle, BadgeCheck, Ban, Plane, ShieldAlert } from "lucide-react";
 
 const POINTS = [
     {
@@ -19,6 +19,12 @@ const POINTS = [
         title: "Oturum vizesinde işlem havaalanında başlar",
         detail:
             "Oturum, çalışma veya öğrenim vizesiyle gelen kişilerin resmî işlemlerini giriş anında havaalanında başlatması zorunludur. Başlatılmadığı takdirde vize geçersiz sayılır ve aynı yaptırım uygulanır.",
+    },
+    {
+        icon: Ban,
+        title: "Sınır dışı kararı yeniden girişi kapatır",
+        detail:
+            "Sınır dışı işlemi uygulanan kişilerin Birleşik Arap Emirlikleri'ne tekrar girişine izin verilmez. Bu nedenle vize türü seçimi, sonradan telafi edilemeyen tek adımdır.",
     },
 ];
 

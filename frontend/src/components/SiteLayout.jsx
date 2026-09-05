@@ -1,18 +1,32 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { SocialDock } from "./SocialDock";
 import { AnnouncementTicker } from "./AnnouncementTicker";
+import { api } from "../lib/api";
+import { useLocation } from "react-router-dom";
 
-export const SiteLayout = ({ children }) => (
-    <div className="sky-shell relative flex min-h-screen flex-col">
-        <AnnouncementTicker />
-        <Navbar />
-        <main className="relative flex-1">{children}</main>
-        <Footer />
-        <SocialDock />
-    </div>
-);
+// Ziyaret kaydi: sayfa degistikce IP/sehir/ulke cozumlemesi icin sunucuya haber verir.
+const useVisitTracking = () => {
+    const { pathname } = useLocation();
+    useEffect(() => {
+        if (pathname.startsWith("/admin")) return;
+        api.post("/track/visit", { path: pathname, referrer: document.referrer || "" }).catch(() => {});
+    }, [pathname]);
+};
+
+export const SiteLayout = ({ children }) => {
+    useVisitTracking();
+    return (
+        <div className="sky-shell relative flex min-h-screen flex-col">
+            <AnnouncementTicker />
+            <Navbar />
+            <main className="relative flex-1">{children}</main>
+            <Footer />
+            <SocialDock />
+        </div>
+    );
+};
 
 export const PageHeader = ({ eyebrow, title, description, children }) => (
     <section className="relative overflow-hidden">

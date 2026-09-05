@@ -1,10 +1,13 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowRight, Check, X } from "lucide-react";
+import { api } from "../lib/api";
 import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { PricingTabs } from "../components/PricingTabs";
 import { VisaGuideLinks } from "../components/VisaGuideLinks";
+import { BankAccounts } from "../components/BankAccounts";
+import { ImportantNotice } from "../components/ImportantNotice";
 import { FxNote } from "../components/FxNote";
 import { Button } from "../components/ui/button";
 
@@ -25,11 +28,16 @@ const EXCLUDED = [
 ];
 
 export default function VisaTypes() {
+    const [bank, setBank] = useState(null);
+
     useEffect(() => {
         setMeta(
             "Dubai Vize Hizmet Bedelleri ve Fiyatları | Dubai Vize Online",
             "30 ve 60 günlük tek giriş, çok giriş, çocuk vizesi ve vize uzatma hizmet bedelleri; ekspres vize ve seyahat sigortası ek hizmet fiyatları."
         );
+        api.get("/content/site")
+            .then(({ data }) => setBank(data.bank_transfer || null))
+            .catch(() => {});
     }, []);
 
     return (
@@ -50,8 +58,25 @@ export default function VisaTypes() {
                     </div>
                     <PricingTabs />
 
+                    {bank?.enabled && (bank.banks || []).length > 0 && (
+                        <div className="mt-14" data-testid="visa-types-bank-section">
+                            <span className="eyebrow">Ödeme Bilgileri</span>
+                            <h2 className="mt-3 text-2xl font-bold">Havale / EFT hesaplarımız</h2>
+                            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                                Ödemenizi aşağıdaki kurumsal hesaplarımızdan birine yapabilirsiniz. Banka
+                                başlığına dokunarak TL ve USD IBAN bilgilerini görüntüleyip kopyalayabilirsiniz.
+                            </p>
+                            <div className="mt-6">
+                                <BankAccounts
+                                    bank={bank}
+                                    footNote="Resmî harç, başvurunuz idareye iletildikten sonra iade edilmez; hizmet bedelimizin iadesi İade Politikası'na tabidir."
+                                />
+                            </div>
+                        </div>
+                    )}
+
                     <div className="mt-14" data-testid="visa-guides-index">
-                        <span className="eyebrow">Vize Rehberleri</span>
+                        <span className="eyebrow">Vize Rehberi</span>
                         <h2 className="mt-3 text-2xl font-bold">Her vize tipi için detaylı rehber</h2>
                         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                             Hangi vizenin size uygun olduğundan emin değilseniz, ilgili rehberde şartları,
@@ -94,6 +119,10 @@ export default function VisaTypes() {
                             Başvurunuzu oluşturmadan önce seçtiğiniz vize tiplerinin fiyatları özet ekranında
                             tekrar gösterilir.
                         </p>
+                    </div>
+
+                    <div className="mt-6">
+                        <ImportantNotice compact />
                     </div>
 
                     <div className="mt-10 flex flex-col items-start gap-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-7 sm:flex-row sm:items-center sm:justify-between">

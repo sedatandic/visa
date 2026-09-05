@@ -24,6 +24,7 @@ const emptyArticle = {
     date: new Date().toISOString().slice(0, 10),
     excerpt: "",
     bodyText: "",
+    cover_image: "",
     published: true,
     order: 0,
 };
@@ -60,6 +61,7 @@ export default function AdminArticles() {
             date: (a.date || "").slice(0, 10),
             excerpt: a.excerpt || "",
             bodyText: (a.body || []).join("\n\n"),
+            cover_image: a.cover_image || "",
             published: a.published !== false,
             order: a.order || 0,
         });
@@ -79,6 +81,7 @@ export default function AdminArticles() {
                 date: form.date,
                 excerpt: form.excerpt,
                 body: form.bodyText.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean),
+                cover_image: form.cover_image,
                 published: form.published,
                 order: Number(form.order) || 0,
             };
@@ -178,6 +181,15 @@ export default function AdminArticles() {
                         <div>
                             <Label>Özet (arama sonuçlarında görünür) *</Label>
                             <Textarea rows={2} value={form.excerpt} onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))} data-testid="article-excerpt-input" />
+                        </div>
+                        <div>
+                            <Label>Kapak görseli bağlantısı (kart ve yazı başında görünür)</Label>
+                            <Input
+                                value={form.cover_image}
+                                onChange={(e) => setForm((f) => ({ ...f, cover_image: e.target.value }))}
+                                placeholder="https://…/kapak.jpg"
+                                data-testid="article-cover-input"
+                            />
                         </div>
                         <div>
                             <Label>Yazı metni (paragrafları boş satırla ayırın)</Label>

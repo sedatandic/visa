@@ -35,6 +35,8 @@ orders_col = db["store_orders"]
 zami_logs_col = db["zami_logs"]
 zami_handoffs_col = db["zami_handoffs"]
 insurance_tasks_col = db["insurance_tasks"]
+visits_col = db["visits"]
+ip_geo_col = db["ip_geo"]
 
 
 try:  # bson pymongo ile gelir; yoksa ObjectId kontrolu atlanir
@@ -72,3 +74,7 @@ async def ensure_indexes() -> None:
     await articles_col.create_index("id", unique=True)
     await testimonials_col.create_index("id", unique=True)
     await settings_col.create_index("key", unique=True)
+    await visits_col.create_index("created_at")
+    await visits_col.create_index([("bot", 1), ("created_at", -1)])
+    await ip_geo_col.create_index("ip", unique=True)
+    await ip_geo_col.create_index("expires_at", expireAfterSeconds=0)
