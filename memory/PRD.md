@@ -357,3 +357,22 @@ Test: iteration_70 (safari) backend %100 / frontend 83% → çapraz satış hata
 iteration_71 backend %100 + frontend %100 (sekmeler, 4 kart, auto_suggest koruması,
 çapraz satış düzeltmesi, paket ön seçimi regresyonu).
 Bilinen teknik borç: `Apply.jsx` 2453 satır — adım bileşenlerine bölünmesi öneriliyor.
+
+## 2026-06-06 · Çöl safarisi tarih/saat seçimi + kapak fotoğrafı
+Kullanıcı isteği: safari için tarih/saat seçimi (WhatsApp'tan manuel koordinasyon kalksın)
+ve kartta kapak fotoğrafı. Ajan kararları: hazır saat dilimleri, tarih ZORUNLU.
+- **Ürün**: `TOUR_PRODUCTS.tour_desert_safari` → `image_url` (Unsplash çöl kumulu),
+  `needs_schedule: True`, `time_slots: ["14:00","14:30","15:00","15:30","16:00"]`.
+  DB kaydı (`store_products`) upsert ile güncellendi.
+- **Backend**: `StoreItemIn` + `scheduled_date` / `scheduled_time`;
+  `routes_public._tour_schedule()` → tarih zorunlu (400 "tur tarihi secmelisiniz"),
+  gidiş tarihinden önce / dönüşten sonra reddedilir, listede olmayan saat ilk slota düşer.
+  Satır `pricing.store_items` içinde saklanır; `_application_order_items` ve sipariş notu
+  tur rezervasyon bilgisini taşır; `emailer._store_item_label` e-postada tarih+saat yazar;
+  admin başvuru detayında satır etiketinde görünür.
+- **Frontend** (`Apply.jsx`): `tourSchedule` state (draft'a kaydedilir/geri yüklenir),
+  switch açılınca tarih gidiş tarihiyle ön dolu + ilk saat seçili; kart üstünde kapak
+  fotoğrafı; DateField min=gidiş, max=dönüş; saat pill butonları; tarih boşsa
+  `tour-date-error-*` ve `missingTourDate` gönderimi engelliyor; özet satırında
+  "10 Aralık 2026 · 15:00" gösterimi. Tur bölümündeki "WhatsApp'tan belirliyoruz" metni kaldırıldı.
+- Test: `backend/tests/test_tour_safari.py` 7/7 PASS (pytest 72/72), iteration_72 frontend %100 (8/8).

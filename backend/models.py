@@ -60,6 +60,9 @@ class StoreItemIn(BaseModel):
 
     product_id: str = Field(..., min_length=2, max_length=60)
     quantity: int = Field(1, ge=1, le=10)
+    # Tur urunleri icin secilen tur tarihi / baslangic saati
+    scheduled_date: Optional[str] = Field(None, max_length=10)
+    scheduled_time: Optional[str] = Field(None, max_length=5)
 
 
 class ExtraDocumentsIn(BaseModel):

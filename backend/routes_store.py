@@ -159,6 +159,9 @@ TOUR_PRODUCTS = [
         "name": "Çöl Safarisi · Akşam Turu",
         "summary": "4x4 araçlarla kumul turu, deve gezisi, kum sörfü ve geleneksel Arap kampında açık büfe akşam yemeği.",
         "price_usd": 45.0,
+        "image_url": "https://images.unsplash.com/photo-1763535539149-53eddcfa20dd?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+        "needs_schedule": True,
+        "time_slots": ["14:00", "14:30", "15:00", "15:30", "16:00"],
         "features": [
             "Otelinizden alış ve dönüş dahil",
             "Kum sörfü, deve gezisi ve gün batımı molası",
@@ -488,16 +491,24 @@ def _application_order_items(lines: list) -> list[dict]:
             "validity_days": line.get("validity_days"),
             "starts_on": line.get("starts_on"),
             "ends_on": line.get("ends_on"),
+            "scheduled_date": line.get("scheduled_date"),
+            "scheduled_time": line.get("scheduled_time"),
         }
         for line in lines
     ]
 
 
 def _application_order_note(app_doc: dict, travel: dict) -> str:
+    tours = [
+        f"{line['name']}: {line.get('scheduled_date')} {line.get('scheduled_time') or ''}".strip()
+        for line in ((app_doc.get("pricing") or {}).get("store_items") or [])
+        if line.get("scheduled_date")
+    ]
     return (
         f"Vize basvurusu ile birlikte alindi ({app_doc.get('reference_code')}). "
         f"Seyahat: {travel.get('arrival_date') or '-'} / {travel.get('departure_date') or '-'}. "
         "Urunler giris tarihinde baslatilacak."
+        + (f" Tur rezervasyonu: {'; '.join(tours)}." if tours else "")
     )
 
 

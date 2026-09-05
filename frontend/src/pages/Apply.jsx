@@ -181,6 +181,7 @@ export default function Apply() {
     const [insurancePick, setInsurancePick] = useState(null);
     const [esimQty, setEsimQty] = useState({});
     const [tourQty, setTourQty] = useState({});
+    const [tourSchedule, setTourSchedule] = useState({});
     const [extraDocs, setExtraDocs] = useState({ ticket: null, hotel: null, other: null });
     const [kvkk, setKvkk] = useState(false);
     const [errors, setErrors] = useState({});
@@ -252,7 +253,7 @@ export default function Apply() {
                 step,
                 traveler_count: travelers.length,
                 title: `${travelers.length} yolcu · ${contact.full_name || contact.email}`,
-                data: { contact, travelers, travel, addons, extraDocs, step, insurancePick, esimQty, tourQty },
+                data: { contact, travelers, travel, addons, extraDocs, step, insurancePick, esimQty, tourQty, tourSchedule },
             });
             setDraft({ id: data.draft_id, code: data.resume_code });
             if (!silent) {
@@ -301,6 +302,7 @@ export default function Apply() {
             if (d.insurancePick) setInsurancePick(d.insurancePick);
             if (d.esimQty && typeof d.esimQty === "object") setEsimQty(d.esimQty);
             if (d.tourQty && typeof d.tourQty === "object") setTourQty(d.tourQty);
+            if (d.tourSchedule && typeof d.tourSchedule === "object") setTourSchedule(d.tourSchedule);
             if (d.extraDocs) setExtraDocs((e) => ({ ...e, ...d.extraDocs }));
             if (typeof d.step === "number") setStep(Math.min(d.step, 3));
         };
@@ -601,10 +603,23 @@ export default function Apply() {
             if (qty > 0) items.push({ product_id: pid, quantity: Math.min(qty, 10) });
         });
         Object.entries(tourQty).forEach(([pid, qty]) => {
-            if (qty > 0) items.push({ product_id: pid, quantity: Math.min(qty, 10) });
+            if (qty <= 0) return;
+            const plan = tourSchedule[pid] || {};
+            if (!plan.date) return; // tarih secilmeden fiyat sorgusu/gonderim yapilmaz
+            items.push({
+                product_id: pid,
+                quantity: Math.min(qty, 10),
+                scheduled_date: plan.date,
+                scheduled_time: plan.time || null,
+            });
         });
         return items.slice(0, 8);
-    }, [insurancePick, esimQty, tourQty, travelerCount]);
+    }, [insurancePick, esimQty, tourQty, tourSchedule, travelerCount]);
+
+    const missingTourDate = useMemo(
+        () => Object.entries(tourQty).some(([pid, qty]) => qty > 0 && !(tourSchedule[pid] || {}).date),
+        [tourQty, tourSchedule]
+    );
 
     const toggleEsim = (product) => {
         if (!travelDatesReady) {
@@ -657,7 +672,20 @@ export default function Apply() {
             }
             return { ...prev, [product.id]: Math.min(Math.max(travelerCount, 1), 10) };
         });
+        setTourSchedule((prev) => {
+            if (prev[product.id]) return prev;
+            return {
+                ...prev,
+                [product.id]: {
+                    date: travel.arrival_date || "",
+                    time: (product.time_slots || [])[0] || "",
+                },
+            };
+        });
     };
+
+    const setTourPlan = (productId, patch) =>
+        setTourSchedule((prev) => ({ ...prev, [productId]: { ...(prev[productId] || {}), ...patch } }));
 
     const quoteKey = JSON.stringify([selectedVisaIds, addons, storeItems, travel.arrival_date, travel.departure_date]);
     useEffect(() => {
@@ -997,6 +1025,10 @@ export default function Apply() {
     const submitApplication = async () => {
         if (!kvkk) {
             toast.error("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekir.");
+            return null;
+        }
+        if (missingTourDate) {
+            toast.error("Seçtiğiniz tur için tarih belirlemeniz gerekiyor.");
             return null;
         }
         setSubmitting(true);
@@ -2034,8 +2066,8 @@ export default function Apply() {
                                                 <h3 className="font-heading text-base font-bold">Dubai'de yapacaklarınız</h3>
                                             </div>
                                             <p className="mt-1.5 text-sm text-muted-foreground">
-                                                Yerinizi şimdiden ayırtın; tur tarihini vizeniz onaylandıktan sonra
-                                                WhatsApp'tan birlikte belirliyoruz.
+                                                Yerinizi şimdiden ayırtın: tur tarihinizi ve otelden alış saatinizi
+                                                buradan seçin, rezervasyonunuz bu bilgilerle oluşturulur.
                                             </p>
                                             <div className="mt-4 space-y-4">
                                                 {tourProducts.map((p) => {
@@ -2049,6 +2081,17 @@ export default function Apply() {
                                                             }`}
                                                             data-testid={`tour-option-${p.id}`}
                                                         >
+                                                            {p.image_url && (
+                                                                <div className="mb-4 overflow-hidden rounded-lg">
+                                                                    <img
+                                                                        src={p.image_url}
+                                                                        alt={p.name}
+                                                                        loading="lazy"
+                                                                        className="h-40 w-full object-cover transition-transform duration-500 hover:scale-105 sm:h-48"
+                                                                        data-testid={`tour-image-${p.id}`}
+                                                                    />
+                                                                </div>
+                                                            )}
                                                             <div className="flex flex-wrap items-start gap-4">
                                                                 <Switch
                                                                     checked={selected}
@@ -2106,6 +2149,61 @@ export default function Apply() {
                                                                     </div>
                                                                 )}
                                                             </div>
+
+                                                            {selected && (
+                                                                <div
+                                                                    className="mt-5 grid gap-4 border-t border-border/70 pt-4 sm:grid-cols-2"
+                                                                    data-testid={`tour-schedule-${p.id}`}
+                                                                >
+                                                                    <div className="space-y-2">
+                                                                        <Label htmlFor={`tour-date-${p.id}`}>Tur tarihi</Label>
+                                                                        <DateField
+                                                                            id={`tour-date-${p.id}`}
+                                                                            value={(tourSchedule[p.id] || {}).date || ""}
+                                                                            onChange={(iso) => setTourPlan(p.id, { date: iso })}
+                                                                            minDate={fromISODate(travel.arrival_date) || new Date()}
+                                                                            maxDate={fromISODate(travel.departure_date) || undefined}
+                                                                            fromYear={new Date().getFullYear()}
+                                                                            toYear={new Date().getFullYear() + 2}
+                                                                            data-testid={`tour-date-input-${p.id}`}
+                                                                        />
+                                                                        {!(tourSchedule[p.id] || {}).date && (
+                                                                            <p
+                                                                                className="text-xs font-medium text-destructive"
+                                                                                data-testid={`tour-date-error-${p.id}`}
+                                                                            >
+                                                                                Devam etmek için tur tarihini seçin.
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="space-y-2">
+                                                                        <Label>Otelden alış saati</Label>
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {(p.time_slots || []).map((slot) => {
+                                                                                const active = (tourSchedule[p.id] || {}).time === slot;
+                                                                                return (
+                                                                                    <button
+                                                                                        key={slot}
+                                                                                        type="button"
+                                                                                        onClick={() => setTourPlan(p.id, { time: slot })}
+                                                                                        className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+                                                                                            active
+                                                                                                ? "border-primary bg-primary text-primary-foreground"
+                                                                                                : "border-border bg-background hover:border-primary/60"
+                                                                                        }`}
+                                                                                        data-testid={`tour-time-${p.id}-${slot.replace(":", "")}`}
+                                                                                    >
+                                                                                        {slot}
+                                                                                    </button>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                        <p className="text-xs text-muted-foreground">
+                                                                            Tur yaklaşık 7 saat sürer; dönüş gece 21:30–22:00 civarındadır.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     );
                                                 })}
@@ -2188,7 +2286,9 @@ export default function Apply() {
                                                         <SummaryRow
                                                             key={s.product_id}
                                                             label={`${s.name} x${s.quantity}${
-                                                                s.starts_on
+                                                                s.scheduled_date
+                                                                    ? ` · ${formatDate(s.scheduled_date)}${s.scheduled_time ? ` ${s.scheduled_time}` : ""}`
+                                                                    : s.starts_on
                                                                     ? ` · ${formatDate(s.starts_on)}${s.ends_on ? ` – ${formatDate(s.ends_on)}` : ""}`
                                                                     : ""
                                                             }`}
@@ -2381,11 +2481,18 @@ export default function Apply() {
                                             <div key={s.product_id} className="flex justify-between gap-3" data-testid={`summary-store-line-${s.product_id}`}>
                                                 <span className="text-muted-foreground">
                                                     {s.name} x{s.quantity}
-                                                    {s.starts_on && (
-                                                        <span className="block text-xs">
-                                                            {formatDate(s.starts_on)}
-                                                            {s.ends_on ? ` – ${formatDate(s.ends_on)}` : " itibaren"}
+                                                    {s.scheduled_date ? (
+                                                        <span className="block text-xs" data-testid={`summary-store-schedule-${s.product_id}`}>
+                                                            {formatDate(s.scheduled_date)}
+                                                            {s.scheduled_time ? ` · ${s.scheduled_time}` : ""}
                                                         </span>
+                                                    ) : (
+                                                        s.starts_on && (
+                                                            <span className="block text-xs">
+                                                                {formatDate(s.starts_on)}
+                                                                {s.ends_on ? ` – ${formatDate(s.ends_on)}` : " itibaren"}
+                                                            </span>
+                                                        )
                                                     )}
                                                 </span>
                                                 <span className="font-semibold">{formatMoney(s.total, quote.currency)}</span>

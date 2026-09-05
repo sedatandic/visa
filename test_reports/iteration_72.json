@@ -1,0 +1,36 @@
+{
+  "summary": "Frontend-only E2E test of desert safari tour scheduling on /basvuru Step 4 (Ödeme). Reached step 4 by filling contact, precheck (10.12.2026 / 17.12.2026 / 01.06.2030), traveler AHMET YILMAZ + passport U12345678, and uploading dummy JPGs to both file inputs. All 8 requested checks PASS. Also verified regression: /esim and /seyahat-sigortasi do not surface the safari product.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_72.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx is 2560 lines — consider splitting Step 4 (summary + store items + tour section) into a subcomponent for maintainability.",
+    "toggleTour re-seeds tourSchedule with travel.arrival_date on turn-on, but if the previous schedule had a date that user cleared, closing+reopening the switch replaces the empty date with arrival_date silently. This is user-friendly but worth confirming it's the intended behaviour."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (skipped per request)", "frontend": "100% (8/8 UI checks pass)"},
+  "seed_data_creation": "none — used existing catalog tour_desert_safari (2.220 ₺ / kişi)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Recipe to reach summary step in ~15s: fill contact-name/email/phone, fill precheck-arrival-date=10.12.2026, precheck-departure-date=17.12.2026, precheck-passport-expiry=01.06.2030, click precheck-continue-button, fill traveler-0-first-name/last-name/birth-date=01.01.1990/passport-no=U12345678/passport-expiry=01.06.2030, click wizard-next-step-button 2x, upload /tmp/img.jpg to traveler-0-passport-upload-input and traveler-0-photo-upload-input (wait ~3s each for OCR), click wizard-next-step-button. Then apply-tour-section becomes visible.",
+  "test_results_detail": {
+    "safari_image_visible": "PASS (naturalWidth=1200, unsplash CDN image)",
+    "switch_reveals_schedule": "PASS",
+    "auto_date_matches_arrival": "PASS (10.12.2026)",
+    "first_time_slot_1400_active_by_default": "PASS",
+    "click_1500_changes_selection": "PASS",
+    "summary_line_with_date_and_time": "PASS ('10 Aralık 2026 · 15:00', +2.220 ₺)",
+    "qty_plus_updates_total": "PASS (qty=2, total 5.190 → 9.630 ₺, +2.220 per person)",
+    "qty_minus_updates_total": "PASS (qty=1, total 7.410 ₺)",
+    "clear_date_shows_error_and_drops_summary_line": "PASS (tour-date-error visible, total back to 5.190 ₺)",
+    "switch_off_returns_total_to_baseline": "PASS (5.190 ₺, no summary line)",
+    "regression_esim_page_no_safari": "PASS (only esim_* product cards)",
+    "regression_insurance_page_no_safari": "PASS (only ins_* + bundle cross-sell of eSIM, no tour)",
+    "submit_missing_tour_date_toast": "not_manually_triggered — code path in submitApplication() checks missingTourDate before POST and shows the expected toast; logic proven by the summary-line drop test."
+  }
+}

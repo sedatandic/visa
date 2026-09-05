@@ -388,6 +388,27 @@ def _store_line_validity(start: date | None, validity_days: int, trip_days: int 
     }
 
 
+def _tour_schedule(product: dict, item, start, end) -> dict:
+    """Tur urunleri icin secilen tarih/saati dogrular ve satira ekler."""
+    if not product.get("needs_schedule"):
+        return {}
+    picked = _parse_iso_date(getattr(item, "scheduled_date", None))
+    if not picked:
+        raise HTTPException(400, f"{product['name']} icin tur tarihi secmelisiniz.")
+    if start and picked < start:
+        raise HTTPException(400, "Tur tarihi Dubai'ye giris tarihinizden once olamaz.")
+    if end and picked > end:
+        raise HTTPException(400, "Tur tarihi donus tarihinizden sonra olamaz.")
+    slots = product.get("time_slots") or []
+    time_value = (getattr(item, "scheduled_time", None) or "").strip()
+    if slots and time_value not in slots:
+        time_value = slots[0]
+    return {
+        "scheduled_date": picked.isoformat(),
+        "scheduled_time": time_value or None,
+    }
+
+
 def _store_line(product: dict, quantity: int, validity: dict) -> dict:
     unit_price = float(product["price"])
     return {
@@ -414,6 +435,7 @@ async def resolve_store_lines(items, arrival_date: str | None = None, departure_
 
     catalog = {p["id"]: p for p in await product_list()}
     start = _parse_iso_date(arrival_date)
+    end = _parse_iso_date(departure_date)
     trip_days = trip_day_count(arrival_date, departure_date)
 
     lines = []
@@ -423,7 +445,9 @@ async def resolve_store_lines(items, arrival_date: str | None = None, departure_
             raise HTTPException(400, "Secilen ek urun bulunamadi veya satista degil.")
         quantity = max(1, min(int(item.quantity), MAX_QTY))
         validity = _store_line_validity(start, int(product.get("validity_days") or 0), trip_days)
-        lines.append(_store_line(product, quantity, validity))
+        line = _store_line(product, quantity, validity)
+        line.update(_tour_schedule(product, item, start, end))
+        lines.append(line)
     return lines
 
 

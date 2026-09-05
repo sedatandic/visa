@@ -160,6 +160,10 @@ def _discount_row(title: str, amount: float, rate: float, currency: str) -> str:
 def _store_item_label(item: dict) -> str:
     """Ek urun satirinin etiketi; gecerlilik tarihleri varsa ekler."""
     label = f"{item['name']} x{item['quantity']}"
+    if item.get("scheduled_date"):
+        label += f" ({_tr_date(item['scheduled_date'])}"
+        label += f" {item['scheduled_time']})" if item.get("scheduled_time") else ")"
+        return label
     if not item.get("starts_on"):
         return label
     label += f" ({_tr_date(item['starts_on'])}"

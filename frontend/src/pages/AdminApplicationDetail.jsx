@@ -553,7 +553,9 @@ export default function AdminApplicationDetail() {
                                         <Row
                                             key={s.product_id}
                                             label={`${s.name} x${s.quantity}${s.kind_label ? ` · ${s.kind_label}` : ""}${
-                                                s.starts_on
+                                                s.scheduled_date
+                                                    ? ` · ${formatDate(s.scheduled_date)}${s.scheduled_time ? ` ${s.scheduled_time}` : ""}`
+                                                    : s.starts_on
                                                     ? ` · ${formatDate(s.starts_on)}${s.ends_on ? ` – ${formatDate(s.ends_on)}` : ""}`
                                                     : ""
                                             }`}
