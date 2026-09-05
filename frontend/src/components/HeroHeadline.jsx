@@ -32,7 +32,7 @@ export const HeroHeadline = () => {
     return (
         <>
             <h1
-                className="mt-6 min-h-[2.6em] font-heading text-4xl font-extrabold sm:text-5xl lg:text-[58px]"
+                className="mt-6 min-h-[2.2em] font-heading text-4xl font-extrabold sm:text-5xl lg:text-[58px]"
                 style={{ perspective: "900px" }}
                 data-testid="hero-headline"
             >
@@ -56,7 +56,7 @@ export const HeroHeadline = () => {
                 </AnimatePresence>
             </h1>
 
-            <div className="mx-auto mt-5 min-h-[5.5em] max-w-2xl sm:min-h-[4.5em]">
+            <div className="mx-auto mt-0 min-h-[4.5em] max-w-2xl sm:min-h-[3.4em]">
                 <AnimatePresence mode="wait">
                     <motion.p
                         key={`sub-${index}`}
