@@ -246,6 +246,25 @@ def applicant_received_html(app_doc: dict) -> str:
     return _wrap("Başvurunuz alındı", body)
 
 
+TRAVEL_WINDOW_LABELS = {
+    "this_month": "Bu ay içinde",
+    "1_3_months": "1-3 ay içinde",
+    "3_plus_months": "3 aydan sonra",
+    "undecided": "Henüz karar vermedi",
+}
+
+
+def _travel_date_rows(travel: dict) -> str:
+    """Seyahat tarihleri; tarih belli degilse secilen zaman araligini gosterir."""
+    if travel.get("dates_unknown"):
+        window = TRAVEL_WINDOW_LABELS.get(travel.get("travel_window") or "", "")
+        value = "Henüz belli değil" + (f" · {window}" if window else "")
+        return _row("Seyahat tarihi", value)
+    return _row("Gidiş", _tr_date(travel.get("arrival_date")) or "-") + _row(
+        "Dönüş", _tr_date(travel.get("departure_date")) or "-"
+    )
+
+
 def admin_notify_html(app_doc: dict) -> str:
     t = app_doc.get("travel") or {}
     contact = app_doc.get("contact") or {}
@@ -257,8 +276,7 @@ def admin_notify_html(app_doc: dict) -> str:
       {_row('E-posta', contact.get('email',''))}
       {_row('Telefon', contact.get('phone',''))}
       {_row('Yolcu sayısı', str(len(app_doc.get('travelers') or [])))}
-      {_row('Gidiş', t.get('arrival_date','-'))}
-      {_row('Dönüş', t.get('departure_date','-'))}
+      {_travel_date_rows(t)}
     </table>
     {_travelers_table(app_doc)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -413,24 +431,24 @@ def login_code_html(code: str, ttl_minutes: int, account_url: str = "") -> str:
     """Musteri girisi icin tek kullanimlik kod."""
     link = (
         f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#8A7355;">'
-        f'Giris sayfasi: <a href="{account_url}" style="color:#B3123A;">{account_url}</a></p>'
+        f'Giriş sayfası: <a href="{account_url}" style="color:#B3123A;">{account_url}</a></p>'
         if account_url
         else ""
     )
     body = f"""
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
-      Basvurularinizi goruntulemek ve yarim kalan basvurunuza devam etmek icin giris kodunuz:
+      Başvurularınızı görüntülemek ve yarım kalan başvurunuza devam etmek için giriş kodunuz:
     </p>
     <div style="background-color:#F1F5F9;border:1px solid #E2E8F0;border-radius:10px;padding:18px;text-align:center;">
       <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#3E2A14;">{code}</div>
-      <div style="margin-top:8px;font-size:12px;color:#8A7355;">Kod {ttl_minutes} dakika gecerlidir.</div>
+      <div style="margin-top:8px;font-size:12px;color:#8A7355;">Kod {ttl_minutes} dakika geçerlidir.</div>
     </div>
     {link}
     <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
-      Bu kodu siz talep etmediyseniz bu e-postayi dikkate almayabilirsiniz.
+      Bu kodu siz talep etmediyseniz bu e-postayı dikkate almayabilirsiniz.
     </p>
     """
-    return _wrap("Giris kodunuz", body)
+    return _wrap("Giriş kodunuz", body)
 
 
 def draft_saved_html(draft: dict, resume_url: str = "") -> str:
@@ -440,25 +458,25 @@ def draft_saved_html(draft: dict, resume_url: str = "") -> str:
         button = f"""
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
       <tr><td style="background-color:#B3123A;border-radius:8px;">
-        <a href="{resume_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Basvuruya devam et</a>
+        <a href="{resume_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Başvuruya devam et</a>
       </td></tr>
     </table>
-    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton calismiyorsa: {resume_url}</p>
+    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton çalışmıyorsa: {resume_url}</p>
     """
     body = f"""
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
-      Basvurunuz kaydedildi. Diledigini zaman kaldiginiz yerden devam edebilirsiniz.
+      Başvurunuz kaydedildi. Dilediğiniz zaman kaldığınız yerden devam edebilirsiniz.
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       {_row('Devam kodu', draft.get('resume_code', ''))}
-      {_row('Yolcu sayisi', draft.get('traveler_count', 1))}
+      {_row('Yolcu sayısı', draft.get('traveler_count', 1))}
     </table>
     {button}
     <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
-      Kaydedilen bilgiler 60 gun saklanir. Belgeleriniz yalnizca basvurunuz icin kullanilir.
+      Kaydedilen bilgiler 60 gün saklanır. Belgeleriniz yalnızca başvurunuz için kullanılır.
     </p>
     """
-    return _wrap("Basvurunuz kaydedildi", body)
+    return _wrap("Başvurunuz kaydedildi", body)
 
 
 def draft_reminder_html(draft: dict, resume_url: str = "") -> str:
@@ -468,28 +486,28 @@ def draft_reminder_html(draft: dict, resume_url: str = "") -> str:
         button = f"""
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
       <tr><td style="background-color:#B3123A;border-radius:8px;">
-        <a href="{resume_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Basvuruma devam et</a>
+        <a href="{resume_url}" style="display:inline-block;padding:14px 26px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">Başvuruma devam et</a>
       </td></tr>
     </table>
-    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton calismiyorsa: {resume_url}</p>
+    <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton çalışmıyorsa: {resume_url}</p>
     """
     body = f"""
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Merhaba,</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
-      Dubai vize basvurunuz yarim kalmis gorunuyor. Bilgileriniz kayitli; kaldiginiz yerden
-      devam edip basvurunuzu birkac dakikada tamamlayabilirsiniz.
+      Dubai vize başvurunuz yarım kalmış görünüyor. Bilgileriniz kayıtlı; kaldığınız yerden
+      devam edip başvurunuzu birkaç dakikada tamamlayabilirsiniz.
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       {_row('Devam kodu', draft.get('resume_code', ''))}
-      {_row('Yolcu sayisi', draft.get('traveler_count', 1))}
+      {_row('Yolcu sayısı', draft.get('traveler_count', 1))}
     </table>
     {button}
     <p style="margin:18px 0 0;font-size:13px;line-height:21px;color:#8A7355;">
-      Seyahat tarihiniz yaklastiysa ekspres hizmetimizle basvurunuzu onceliklendirebiliriz.
-      Sorulariniz icin bu e-postayi yanitlayabilirsiniz.
+      Seyahat tarihiniz yaklaştıysa ekspres hizmetimizle başvurunuzu önceliklendirebiliriz.
+      Sorularınız için bu e-postayı yanıtlayabilirsiniz.
     </p>
     """
-    return _wrap("Basvurunuz yarim kaldi", body)
+    return _wrap("Başvurunuz yarım kaldı", body)
 
 
 def _tr_date(value: str | None) -> str:
@@ -508,13 +526,14 @@ def _date_range_note(item: dict) -> str:
     ends = item.get("ends_on")
     if not starts:
         return ""
-    text = f"{_tr_date(starts)} tarihinde baslar"
+    text = f"{_tr_date(starts)} tarihinde başlar"
     if ends:
-        text += f" · {_tr_date(ends)} tarihine kadar gecerli"
+        text += f" · {_tr_date(ends)} tarihine kadar geçerli"
     return f'<div style="font-size:12px;color:#8A7355;margin-top:2px;">{text}</div>'
 
 
 def _order_items_rows(order: dict) -> str:
+    currency = order.get("currency", "TRY")
     rows = []
     for item in order.get("items") or []:
         rows.append(
@@ -522,13 +541,22 @@ def _order_items_rows(order: dict) -> str:
             f' <span style="color:#8A7355;">x{item.get("quantity",1)}</span>'
             f'{_date_range_note(item)}</td>'
             f'<td style="padding:8px 0;font-size:13px;text-align:right;color:#3E2A14;">'
-            f'{item.get("total",0):,.0f} TL</td></tr>'
+            f'{money(item.get("total", 0), currency)}</td></tr>'
         )
     return "".join(rows)
 
 
+def _payment_method_label(order: dict) -> str:
+    method = (order.get("payment") or {}).get("method", "")
+    return {
+        "bank_transfer": "Havale / EFT",
+        "card": "Kredi / Banka Kartı",
+    }.get(method, method or "-")
+
+
 def order_received_html(order: dict, bank: dict | None = None) -> str:
     """eSIM / seyahat sigortasi siparis onayi."""
+    currency = order.get("currency", "TRY")
     bank_html = ""
     if bank:
         bank_html = f"""
@@ -538,52 +566,52 @@ def order_received_html(order: dict, bank: dict | None = None) -> str:
         {_row('Banka', bank.get('bank_name',''))}
         {_row('Hesap sahibi', bank.get('account_name',''))}
         {_row('IBAN', bank.get('iban',''))}
-        {_row('Aciklama', order.get('reference_code',''))}
+        {_row('Açıklama', order.get('reference_code',''))}
       </table>
       <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
-        Aciklama alanina siparis kodunuzu yazmayi unutmayin. Odemeniz onaylandiginda teslimat yapilir.
+        Açıklama alanına sipariş kodunuzu yazmayı unutmayın. Ödemeniz onaylandığında teslimat yapılır.
       </p>
     </div>
     """
     body = f"""
-    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayin {order.get('contact',{}).get('full_name','')},</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {order.get('contact',{}).get('full_name','')},</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
-      Siparisiniz alindi. Odemeniz onaylandiktan sonra eSIM QR kodunuz ve/veya sigorta policeniz
+      Siparişiniz alındı. Ödemeniz onaylandıktan sonra eSIM QR kodunuz ve/veya sigorta poliçeniz
       e-posta ile size iletilecek.
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      {_row('Siparis kodu', order.get('reference_code',''))}
-      {_row('Odeme yontemi', 'Havale/EFT' if (order.get('payment') or {}).get('method') == 'bank_transfer' else 'Kredi/banka karti')}
+      {_row('Sipariş kodu', order.get('reference_code',''))}
+      {_row('Ödeme yöntemi', _payment_method_label(order))}
     </table>
     <div style="margin-top:16px;border-top:1px solid #E2E8F0;padding-top:8px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         {_order_items_rows(order)}
-        {_row('Seyahat paketi indirimi (%10)', '- ' + f"{order.get('bundle_discount',0):,.0f} TL") if order.get('bundle_discount') else ''}
+        {_row('Seyahat paketi indirimi (%10)', '- ' + money(order.get('bundle_discount', 0), currency)) if order.get('bundle_discount') else ''}
         <tr><td style="padding:10px 0 0;font-size:14px;font-weight:bold;border-top:1px solid #E2E8F0;">Toplam</td>
-        <td style="padding:10px 0 0;font-size:14px;font-weight:bold;text-align:right;border-top:1px solid #E2E8F0;">{order.get('price',0):,.0f} TL</td></tr>
+        <td style="padding:10px 0 0;font-size:14px;font-weight:bold;text-align:right;border-top:1px solid #E2E8F0;">{money(order.get('price', 0), currency)}</td></tr>
       </table>
     </div>
     {bank_html}
     """
-    return _wrap("Siparisiniz alindi", body)
+    return _wrap("Siparişiniz alındı", body)
 
 
 def order_admin_html(order: dict) -> str:
     body = f"""
-    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Yeni eSIM / sigorta siparisi olusturuldu.</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Yeni eSIM / sigorta siparişi oluşturuldu.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      {_row('Siparis kodu', order.get('reference_code',''))}
-      {_row('Musteri', order.get('contact',{}).get('full_name',''))}
+      {_row('Sipariş kodu', order.get('reference_code',''))}
+      {_row('Müşteri', order.get('contact',{}).get('full_name',''))}
       {_row('E-posta', order.get('contact',{}).get('email',''))}
       {_row('Telefon', order.get('contact',{}).get('phone',''))}
-      {_row('Tutar', f"{order.get('price',0):,.0f} TL")}
-      {_row('Odeme', (order.get('payment') or {}).get('method',''))}
+      {_row('Tutar', money(order.get('price', 0), order.get('currency', 'TRY')))}
+      {_row('Ödeme', _payment_method_label(order))}
     </table>
     <div style="margin-top:12px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{_order_items_rows(order)}</table>
     </div>
     """
-    return _wrap("Yeni siparis", body)
+    return _wrap("Yeni sipariş", body)
 
 
 def order_delivered_html(order: dict, links: list, message: str = "") -> str:
@@ -598,16 +626,16 @@ def order_delivered_html(order: dict, links: list, message: str = "") -> str:
         else ""
     )
     body = f"""
-    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayin {order.get('contact',{}).get('full_name','')},</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {order.get('contact',{}).get('full_name','')},</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
-      {order.get('reference_code','')} kodlu siparisiniz hazir. Belgelerinizi asagidaki baglantilardan
+      {order.get('reference_code','')} kodlu siparişiniz hazır. Belgelerinizi aşağıdaki bağlantılardan
       indirebilirsiniz.
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{link_html}</table>
     {note}
     <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
-      eSIM kurulumu: Ayarlar > Mobil Veri > eSIM ekle > QR kodu tarat. Kurulum sirasinda internet
-      baglantisi gereklidir.
+      eSIM kurulumu: Ayarlar &gt; Mobil Veri &gt; eSIM ekle &gt; QR kodu tarat. Kurulum sırasında
+      internet bağlantısı gereklidir.
     </p>
     """
-    return _wrap("Siparisiniz hazir", body)
+    return _wrap("Siparişiniz hazır", body)

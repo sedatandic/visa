@@ -306,7 +306,7 @@ async def save_draft(payload: DraftIn, request: Request) -> dict:
     )
     email_result = await send_email(
         email,
-        "Basvurunuz kaydedildi - kaldiginiz yerden devam edin",
+        "Başvurunuz kaydedildi - kaldığınız yerden devam edin",
         draft_saved_html(doc, resume_url),
         kind="draft_saved",
         meta={"draft_id": doc["id"]},

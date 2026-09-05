@@ -209,7 +209,7 @@ async def _notify_status_change(fresh: dict, previous_status: str, payload: Stat
         return None
     res = await send_email(
         to_email,
-        f"Basvuru durumu guncellendi - {fresh['reference_code']}",
+        f"Başvuru durumu güncellendi - {fresh['reference_code']}",
         status_change_html(serialize_doc(fresh), STATUS_LABELS[payload.status], payload.note or ""),
         kind="status_change",
         meta={"reference_code": fresh["reference_code"], "status": payload.status},
@@ -454,7 +454,7 @@ async def admin_send_visa(
 
     res = await send_email(
         to_email,
-        f"Vizeniz hazir - {app_doc['reference_code']}",
+        f"Vizeniz hazır - {app_doc['reference_code']}",
         visa_ready_html(serialize_doc(app_doc), download_url, payload.message or ""),
         kind="visa_delivered",
         meta={"reference_code": app_doc["reference_code"]},
@@ -546,7 +546,7 @@ async def admin_mark_paid(application_id: str, admin: dict = Depends(require_adm
     if to_email:
         result = await send_email(
             to_email,
-            f"Odemeniz alindi - {fresh['reference_code']}",
+            f"Ödemeniz alındı - {fresh['reference_code']}",
             payment_received_html(serialize_doc(fresh)),
             kind="payment_received",
             meta={"reference_code": fresh["reference_code"]},
@@ -623,24 +623,24 @@ def _build_whatsapp_message(app_doc: dict, template: str, origin: str, custom: s
 
     if template == "visa_ready" and visa_file_id:
         return (
-            f"Merhaba {name}, Dubai Vize Online'den yaziyoruz. "
-            f"{ref} numarali basvurunuz ONAYLANDI. Vize belgenizi e-postanizdan veya "
-            f"su adresten indirebilirsiniz: {origin}/api/files/{visa_file_id}?download=1 "
-            f"Iyi yolculuklar dileriz."
+            f"Merhaba {name}, Dubai Vize Online'dan yazıyoruz. "
+            f"{ref} numaralı başvurunuz ONAYLANDI. Vize belgenizi e-postanızdan veya "
+            f"şu adresten indirebilirsiniz: {origin}/api/files/{visa_file_id}?download=1 "
+            f"İyi yolculuklar dileriz."
         )
     if template == "documents_pending":
         return (
-            f"Merhaba {name}, {ref} numarali Dubai vize basvurunuzda eksik belge bulunuyor. "
-            f"Detaylar icin takip sayfaniz: {track_url}"
+            f"Merhaba {name}, {ref} numaralı Dubai vize başvurunuzda eksik belge bulunuyor. "
+            f"Detaylar için takip sayfanız: {track_url}"
         )
     if template == "payment_pending":
         return (
-            f"Merhaba {name}, {ref} numarali basvurunuzun odemesi henuz tamamlanmadi. "
-            f"Odemenizi su adresten tamamlayabilirsiniz: {track_url}"
+            f"Merhaba {name}, {ref} numaralı başvurunuzun ödemesi henüz tamamlanmadı. "
+            f"Ödemenizi şu adresten tamamlayabilirsiniz: {track_url}"
         )
     return (
-        f"Merhaba {name}, {ref} numarali Dubai vize basvurunuz hakkinda bilgi vermek istiyoruz. "
-        f"Takip sayfaniz: {track_url}"
+        f"Merhaba {name}, {ref} numaralı Dubai vize başvurunuz hakkında bilgi vermek istiyoruz. "
+        f"Takip sayfanız: {track_url}"
     )
 
 
@@ -1186,7 +1186,7 @@ async def admin_deliver_order(order_id: str, payload: dict, admin: dict = Depend
     if to_email:
         result = await send_email(
             to_email,
-            f"Siparisiniz hazir - {fresh['reference_code']}",
+            f"Siparişiniz hazır - {fresh['reference_code']}",
             order_delivered_html(serialize_doc(fresh), links, message),
             kind="order_delivered",
             meta={"order_id": order_id, "reference_code": fresh["reference_code"]},

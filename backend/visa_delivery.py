@@ -179,7 +179,7 @@ async def deliver_visa_document(app_doc: dict, origin: str) -> dict:
     now = datetime.now(timezone.utc)
     res = await send_email(
         to_email,
-        f"Vizeniz hazir - {app_doc.get('reference_code', '')}",
+        f"Vizeniz hazır - {app_doc.get('reference_code', '')}",
         visa_ready_html(serialize_doc(app_doc), download_url, ""),
         kind="visa_delivered",
         meta={"reference_code": app_doc.get("reference_code"), "auto": True},

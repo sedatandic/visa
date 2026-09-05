@@ -8,12 +8,12 @@
 import asyncio
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from content import STATUS_LABELS
-from db import applications_col, serialize_doc
+from db import applications_col, serialize_doc, settings_col
 from emailer import send_email, status_change_html
-from zami import get_mapping, log_event
+from zami import SESSION_KEY, get_mapping, log_event
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,12 @@ TRACKABLE_STATUSES = ["submitted", "payment_pending", "documents_pending", "revi
 # Portal oturumu ~15-20 dk hareketsizlikte dusuyor; 10 dakikada bir yokluyoruz
 SESSION_KEEPALIVE_SECONDS = 10 * 60
 FINAL_STATUSES = {"approved", "rejected", "cancelled"}
+# Ayni "oturum dustu" uyarisini en fazla 12 saatte bir gonder (surec restart'larinda
+# bellek icindeki bayrak sifirlaniyordu ve her yeniden baslatmada e-posta gidiyordu).
+SESSION_WARN_COOLDOWN_HOURS = 12
+# Bu nedenler OTP akisina ait: otp_reminders modulu gunde bir net hatirlatma gonderiyor,
+# ayni durum icin ikinci bir e-posta atmiyoruz.
+OTP_FLOW_REASONS = {"otp_required", "otp_required_pending", "no_trusted_device"}
 
 
 async def _notify_status_email(app_id: str, matched: str) -> str:
@@ -239,8 +245,8 @@ async def keepalive_loop():
         await asyncio.sleep(SESSION_KEEPALIVE_SECONDS)
 
 
-async def _keepalive_tick(zami_rpa, warned: bool) -> bool:
-    """Tek yoklama adimi; admin uyarisi yapildi mi bilgisini dondurur."""
+async def _keepalive_tick(zami_rpa, warned: bool = False) -> bool:
+    """Tek yoklama adimi. Uyari tekrari kalici cooldown ile yonetilir (settings)."""
     state = await zami_rpa.session_status()
     if not state.get("has_session"):
         return warned
@@ -254,23 +260,34 @@ async def _keepalive_tick(zami_rpa, warned: bool) -> bool:
     if relogin.get("ok"):
         logger.info("zami session auto-renewed without OTP")
         return False
-    if not warned:
-        await _warn_admin_session_expired(reason=relogin.get("reason") or "")
-        logger.warning("zami session expired (%s) - admin bilgilendirildi", relogin.get("reason"))
+    reason = relogin.get("reason") or ""
+    if await _warn_admin_session_expired(reason=reason):
+        logger.warning("zami session expired (%s) - admin bilgilendirildi", reason)
         return True
+    logger.info("zami session expired (%s) - uyari gonderilmedi", reason)
     return warned
 
 
-async def _warn_admin_session_expired(reason: str = "") -> None:
+async def _warn_admin_session_expired(reason: str = "") -> bool:
+    """Uyari e-postasi gonderildiyse True doner (cagiran taraf ona gore loglar)."""
     admin_email = os.environ.get("ADMIN_EMAIL")
-    if not admin_email:
-        return
+    if not admin_email or reason in OTP_FLOW_REASONS:
+        return False
+    if not await _warn_cooldown_passed():
+        logger.info("zami session warning suppressed (cooldown)")
+        return False
     detail = {
-        "otp_required": "Portal bu kez OTP kodu istedi (normalde ayda bir olur).",
         "captcha_failed": "Otomatik giriş captcha'yı okuyamadı, elle giriş gerekiyor.",
         "no_credentials": "Portal kullanıcı adı/şifresi kayıtlı değil.",
         "browser": "Sunucuda tarayıcı motoru başlatılamadı.",
     }.get(reason, "Otomatik yenileme başarısız oldu.")
+    panel = (os.environ.get("PUBLIC_SITE_URL") or "").strip().rstrip("/")
+    link = (
+        f'<p><a href="{panel}/admin/zami" style="color:#B06A29;font-weight:bold">'
+        "Robot oturumunu aç</a></p>"
+        if panel
+        else ""
+    )
     html = (
         '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">'
         "<p><b>Zami portal oturumu düştü ve otomatik yenilenemedi.</b></p>"
@@ -278,9 +295,10 @@ async def _warn_admin_session_expired(reason: str = "") -> None:
         "<p>Panelden bir kez giriş yapmanız yeterli:</p>"
         "<p>Admin → Zami Aktarım → <b>Robot Oturumu</b> → Oturum Başlat "
         "(captcha otomatik okunur, yalnızca e-postanıza gelen OTP kodunu girin).</p>"
+        f"{link}"
         "<p style=\"color:#555\">Girişte cihaz güveni kaydedildiği için sonraki "
         "düşüşlerde robot OTP'siz kendi kendine giriş yapacak; OTP'yi yaklaşık "
-        "ayda bir girmeniz beklenir.</p>"
+        "ayda bir girmeniz beklenir. Bu uyarı en fazla 12 saatte bir gönderilir.</p>"
         "</div>"
     )
     try:
@@ -290,8 +308,32 @@ async def _warn_admin_session_expired(reason: str = "") -> None:
             html,
             kind="zami_session_expired",
         )
+        await settings_col.update_one(
+            {"key": SESSION_KEY},
+            {"$set": {"value.expired_notified_at": datetime.now(timezone.utc).isoformat()}},
+        )
     except Exception as exc:
         logger.warning("zami session warning email failed: %s", exc)
+
+
+async def _warn_cooldown_passed() -> bool:
+    """Son 12 saatte oturum uyarisi ya da OTP hatirlatmasi gittiyse tekrar gonderme."""
+    doc = await settings_col.find_one({"key": SESSION_KEY})
+    value = (doc or {}).get("value") or {}
+    now = datetime.now(timezone.utc)
+    for field in ("expired_notified_at", "otp_reminder_sent_at"):
+        raw = value.get(field)
+        if not raw:
+            continue
+        try:
+            sent = datetime.fromisoformat(raw)
+        except (TypeError, ValueError):
+            continue
+        if not sent.tzinfo:
+            sent = sent.replace(tzinfo=timezone.utc)
+        if now - sent < timedelta(hours=SESSION_WARN_COOLDOWN_HOURS):
+            return False
+    return True
 
 
 async def status_loop():

@@ -12,7 +12,7 @@ const SHOWCASE = [
     { id: "visa_60_single", image: IMAGES.dubaiNight, tag: "Uzun tatil" },
     { id: "visa_30_multi", image: IMAGES.dubaiHighway, tag: "Çok girişli" },
     { id: "visa_30_child", image: IMAGES.travelFlatlay, tag: "Aile" },
-    { id: "visa_transit_48", image: IMAGES.plane, tag: "Aktarma" },
+    { id: "visa_60_multi", image: IMAGES.plane, tag: "En geniş kapsam" },
     { id: "visa_extension_30", image: IMAGES.passportDocs, tag: "Uzatma" },
 ];
 
@@ -22,7 +22,6 @@ const shortTitle = (visa) => {
         : `${visa.duration_days} gün`;
     if (visa.applicant_type === "child") return `${days} çocuk vizesi`;
     if (visa.id === "visa_extension_30") return `${days} vize uzatma`;
-    if (visa.duration_days <= 2) return `${visa.duration_days * 24} saat transit`;
     return `${days} ${visa.entry_type === "multiple" ? "çok girişli" : "tek girişli"}`;
 };
 

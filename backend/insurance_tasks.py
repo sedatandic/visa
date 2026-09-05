@@ -156,7 +156,7 @@ async def issue_policy(task_id: str, policy_file_id: str, origin: str, message: 
     if to_email:
         email_result = await send_email(
             to_email,
-            f"Sigorta policeniz hazir - {task.get('order_reference','')}",
+            f"Sigorta poliçeniz hazır - {task.get('order_reference','')}",
             _policy_html(order or task, link, message),
             kind="insurance_policy_sent",
             meta={"task_id": task_id, "order_id": task.get("order_id")},

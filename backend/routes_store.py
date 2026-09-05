@@ -30,6 +30,7 @@ ORDER_PREFIX = "SV-"
 
 from store_catalog import (  # noqa: F401
     DEFAULT_PRODUCTS,
+    tour_schedule,
     MAX_QTY,
     ESIM_PRODUCTS,
     INSURANCE_PRODUCTS,
@@ -161,6 +162,8 @@ async def bundle_list(visa_days: Optional[int] = None) -> dict:
 class OrderItemIn(BaseModel):
     product_id: str
     quantity: int = Field(1, ge=1, le=MAX_QTY)
+    scheduled_date: Optional[str] = None  # tur urunleri icin (YYYY-MM-DD)
+    scheduled_time: Optional[str] = None
 
 
 class OrderContactIn(BaseModel):
@@ -200,8 +203,9 @@ def _parse_trip_start(value: Optional[str]) -> Optional[date]:
         return None
 
 
-def _build_order_line(product: dict, quantity: int, trip_start: Optional[date]) -> dict:
-    """Tek bir siparis satirini (fiyat + gecerlilik penceresi) olusturur."""
+def _build_order_line(product: dict, item: "OrderItemIn", trip_start: Optional[date]) -> dict:
+    """Tek bir siparis satirini (fiyat + gecerlilik penceresi + tur tarihi) olusturur."""
+    quantity = item.quantity
     validity_days = int(product.get("validity_days") or 0)
     ends_on = None
     if trip_start and validity_days > 0:
@@ -218,6 +222,7 @@ def _build_order_line(product: dict, quantity: int, trip_start: Optional[date]) 
         "validity_days": validity_days,
         "starts_on": trip_start.isoformat() if trip_start else None,
         "ends_on": ends_on,
+        **tour_schedule(product, item.scheduled_date, item.scheduled_time, start=trip_start),
     }
 
 
@@ -230,7 +235,7 @@ async def _build_order_lines(payload: OrderCreateIn) -> list[dict]:
         product = catalog.get(item.product_id)
         if not product:
             raise HTTPException(400, "Secilen urun bulunamadi veya satista degil.")
-        lines.append(_build_order_line(product, item.quantity, trip_start))
+        lines.append(_build_order_line(product, item, trip_start))
     return lines
 
 
@@ -265,7 +270,7 @@ async def _notify_new_order(doc: dict, view: dict, bank: Optional[dict]) -> None
     """Musteriye ve (tanimliysa) admine siparis bildirimi gonderir."""
     await send_email(
         doc["contact"]["email"],
-        f"Siparisiniz alindi - {doc['reference_code']}",
+        f"Siparişiniz alındı - {doc['reference_code']}",
         order_received_html(view, bank),
         kind="order_received",
         meta={"order_id": doc["id"], "reference_code": doc["reference_code"]},
@@ -275,7 +280,7 @@ async def _notify_new_order(doc: dict, view: dict, bank: Optional[dict]) -> None
         return
     await send_email(
         admin_email,
-        f"Yeni eSIM/sigorta siparisi - {doc['reference_code']}",
+        f"Yeni eSIM/sigorta siparişi - {doc['reference_code']}",
         order_admin_html(view),
         kind="order_admin_notify",
         meta={"order_id": doc["id"]},

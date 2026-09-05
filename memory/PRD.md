@@ -951,3 +951,49 @@ değil `asyncio.create_subprocess_exec` (güvenli); pyflakes ile tanımsız değ
   (test ajanı üretimi, ürün kodu değil).
 - Test: iteration_78 → **17/17 backend regresyon testi PASS**
   (`backend/tests/test_refactor_regression.py`), ayrıca tüm tests/ paketi çalıştırıldı.
+
+## 2026-06-08 · Uygunluk ön kontrolü kaldırıldı + esnek seyahat tarihi + Türkçe e-postalar
+Kullanıcı isteği: "gidis ve gelis tarihlerine gore uygun sigorta ve esim leri bir sonraki
+asamada gosterelim, Uygunluk ön kontrolü yapmayalim; planlanan seyahat tarihi henuz belli
+degil seceneklerin sunalim" + "turkce olsun" (sipariş e-postası ekran görüntüsü).
+
+Kullanıcı seçimleri (ask_human): checkbox + zaman aralığı birlikte; tarih belli değilse
+paketler vize süresine göre listelenip seçilebilsin ("başlangıç tarihi siz bildirince
+ayarlanır"); sağdaki "Ekstraları ekle" paneli tamamen kaldırılsın; listede sadece en uygun
+2-3 paket + "tüm paketleri gör".
+
+Yapılanlar (frontend):
+- `components/EligibilityPreCheck.jsx` ve `components/ExtrasQuickAdd.jsx` **silindi**;
+  Apply.jsx'ten importlar, `preCheckDone`, `applyPreCheck` kaldırıldı.
+- `Apply.jsx` travel state'e `dates_unknown` + `travel_window` eklendi; `TRAVEL_WINDOWS`
+  (this_month / 1_3_months / 3_plus_months / undecided) pill seçenekleri Adım 2'de.
+  Checkbox işaretlenince tarih alanları gizlenir, aralık seçimi zorunlu olur; pasaport
+  6 ay kuralı bugüne göre kontrol edilir (`validateStep`).
+- Sigorta/eSIM listeleri kısa listeye indi: `shortlistFor()` → kapsamı yeten en kısa
+  süreli max 3 paket (`coverDays = tripDays || visaCoverDays`); `show-all-insurance-button`
+  / `show-all-esim-button` ile tüm liste, `hide-all-*` ile geri dönüş.
+- Esnek tarihte `FlexibleDatesNote` + kart altı "başlangıç tarihi siz bildirince ayarlanır"
+  notu; `extrasSelectable = travelDatesReady || datesFlexible` ile seçim açık.
+- Özet adımında tarih yerine "Henüz belli değil · <aralık>" satırı.
+
+Yapılanlar (backend):
+- `models.TravelIn`: `arrival_date` / `departure_date` artık opsiyonel (default ""),
+  `dates_unknown: bool`, `travel_window: str` eklendi.
+- `routes_public._validate_travel_rules`: `dates_unknown` ise tarih kuralları atlanır,
+  yaş ve pasaport kontrolleri bugüne göre yapılır; klasik akış aynen korunur.
+- `emailer.py` tamamen Türkçe karakterli hâle getirildi: sipariş/başvuru/giriş kodu/taslak
+  şablonları, `_payment_method_label` ("card" → "Kredi / Banka Kartı"), tutarlar `money()`
+  ile Türkçe formatta (1.288,50 ₺), `_travel_date_rows` (tarih belli değilse aralık yazar).
+- E-posta konuları ve WhatsApp şablonları Türkçeleştirildi (routes_store, routes_public,
+  routes_admin, routes_payments, routes_account, visa_delivery, insurance_tasks).
+
+Test: iteration_80 → backend 10/10 PASS (`backend/tests/test_iteration_80.py`; esnek tarih
+quote/application, tur programı regresyonu, e-posta Türkçe kontrolü). Frontend: Playwright
+ile uçtan uca doğrulandı (Adım 1 → 4): kısa liste 2 sigorta + 2 eSIM, "Tüm sigorta
+paketlerini gör (4)" çalışıyor, esnek tarih notu ve seçim aktif.
+
+### Kalan / backlog
+- P0: Yönetici paneli OTP-only giriş (sadece e-posta + tek kullanımlık kod, aynı cihazda
+  1 ay hatırlama) — hâlâ yapılmadı.
+- P1: `ImportantNotice.jsx` bileşeni oluşturuldu ama hiçbir sayfaya bağlanmadı.
+- P2: `email_outbox` kaydına gönderilen HTML gövdesi eklenmesi (admin panelde önizleme).

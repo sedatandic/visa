@@ -627,6 +627,18 @@ async def _auto_login_attempt(page, creds: dict) -> str:
     return "ok"
 
 
+def _trust_only_state(device_state: dict) -> dict:
+    """Cihaz guveni cerezlerini alir, oturum (session) cerezlerini atar.
+
+    Kaydedilen `device_state` hem kalici "trusted device" cerezini hem de o anki
+    oturum cerezini icerir. Bayat oturum cerezi ile giris denemek portalin OTP
+    istemesine yol aciyordu; bu yuzden yalnizca son kullanma tarihi olan
+    (kalici) cerezlerle temiz bir oturum aciyoruz.
+    """
+    cookies = [c for c in (device_state.get("cookies") or []) if (c.get("expires") or -1) > 0]
+    return {"cookies": cookies, "origins": device_state.get("origins") or []}
+
+
 async def auto_relogin(actor: str = "auto", force: bool = False) -> dict:
     """Oturum dustugunde OTP olmadan yeniden giris dener.
 
@@ -670,7 +682,7 @@ async def _auto_relogin_locked(actor: str, force: bool = False) -> dict:
 
     try:
         if device_state:
-            pw, browser, context, page = await _launch_with_state(device_state)
+            pw, browser, context, page = await _launch_with_state(_trust_only_state(device_state))
         else:
             pw, browser, context, page = await _launch()
     except Exception as exc:

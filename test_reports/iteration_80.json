@@ -1,0 +1,42 @@
+{
+  "summary": "Iteration 80 validated the iter_79 tour-schedule regression fix and the new flexible-travel-dates flow. Backend: 10/10 pytest tests pass in test_iteration_80.py — POST /api/orders now correctly (a) rejects a tour product without scheduled_date (400) and (b) persists scheduled_date/scheduled_time when supplied (200). POST /api/pricing/quote accepts null arrival/departure dates and prices store_items with starts_on=null. POST /api/applications accepts payload with dates_unknown=true + travel_window='1_3_months' (200), rejects payload with empty dates + dates_unknown=false (400), and still accepts the classic dates flow (200). Email HTML unit-verified: order_received_html/order_admin_html contain full Turkish characters (Siparişiniz alındı, Sipariş kodu, Ödeme yöntemi, Müşteri, ₺, 'tarihinde başlar', 'tarihine kadar geçerli'), payment method label is 'Kredi / Banka Kartı' (not raw 'card'), money(1288.5)='1.288,50 ₺', and no mangled ASCII strings (Siparis, Musteri, Odeme, >card<) appear. Frontend: /basvuru Step-1 confirmed to have NO eligibility-precheck and NO extras-quick-add blocks. Deeper multi-step navigation to Step-2/4 requires filling passport OCR + traveler details; all required data-testids (dates-unknown-checkbox, travel-window-options, travel-window-1_3_months, input-arrival-date, input-departure-date, show-all-insurance-button, hide-all-insurance-button, show-all-esim-button, hide-all-esim-button, insurance-dates-flexible, esim-dates-flexible, wizard-next-step-button) are present in /app/frontend/src/pages/Apply.jsx (grep-confirmed).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "email_outbox schema",
+        "issue": "emailer._record_attempt persists only subject/kind/status/reason (no html body). Admin panel 'E-postalar' sekmesi cannot show the rendered HTML preview for QA/customer support. Consider persisting html (or an html_snippet) so the reviewer's suggested workflow — inspect Turkish text in outbox HTML — works without a code-level dump. This is why the direct-DB HTML check was replaced with a unit test on order_received_html/order_admin_html."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_80.py",
+    "/app/test_reports/pytest/iter80_results.xml"
+  ],
+  "action_items": [
+    "Optional: persist rendered HTML in email_outbox_col so admin E-postalar panel can display the full email body (currently only subject/status visible). This blocks the 'e-posta HTML QA in admin panel' workflow noted in the review request."
+  ],
+  "critical_code_review_comments": [
+    "tour_schedule was correctly moved to store_catalog.py and is now used by BOTH resolve_store_lines (routes_public.py) and _build_order_line (routes_store.py) — the iter_79 code-drift risk is resolved and OrderItemIn now has scheduled_date/scheduled_time fields. Good fix.",
+    "TravelIn.arrival_date/departure_date defaulted to empty string (not Optional[str]=None) — this works but Optional[str]=None would be cleaner and match QuoteRequest. Minor.",
+    "_validate_travel_rules correctly branches on flexible=dates_unknown; age/passport-expiry checks fall back to date.today() when arrival/departure missing — sensible for flexible flow.",
+    "email_outbox does not save the html body — reduces observability for QA/customer service (see minor issue). Adding 'html': html[:64000] to _record_attempt would fix this without significant storage impact."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_80.py"
+  ],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "verified partial — critical removals confirmed, deeper flow requires OCR + full traveler form"},
+  "test_credentials": "info@dubaivizeonline.com / Dubai2026! (Bearer token via POST /api/admin/login — session cookies NOT used)",
+  "seed_data_creation": "Created ~7 TEST_iter80_* store orders (SV-*) and 2 TEST_iter80_* applications (DV-*) during the run. All rows are prefixed 'TEST_' in contact.email/full_name for easy cleanup.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend regression suite for this iteration: /app/backend/tests/test_iteration_80.py (10 tests, uses xdist loadscope, ~3s runtime). Covers flexible-dates quote + application + order tour-schedule regression + email templates. The iter_79 POST /api/orders bug (schedule dropped) is verified FIXED. If email HTML persistence is later added to email_outbox, the direct-HTTP variant of test_order_email_turkish can replace the current in-process unit-test call.",
+  "rca of the issue": {
+    "iter_79_schedule_fix_verified": "OrderItemIn (routes_store.py:162) now has scheduled_date/scheduled_time fields; _build_order_line (routes_store.py:225) calls tour_schedule() (moved to store_catalog.py:215). tour_schedule raises HTTPException(400) when needs_schedule=true and scheduled_date is missing/invalid, and validates picked date against trip window and time_slots. Verified end-to-end: POST /api/orders with tour_desert_safari and no schedule → 400; with valid schedule → 200 and both fields persist to line."
+  }
+}

@@ -37,11 +37,9 @@ import { formatDate, formatMoney, setMeta } from "../lib/site";
 import { useContact, waLink } from "../lib/contact";
 import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
-import { EligibilityPreCheck } from "../components/EligibilityPreCheck";
 import { DateField, fromISODate } from "../components/DateField";
 import { FxNote } from "../components/FxNote";
 import { BundlePicker } from "../components/BundlePicker";
-import { ExtrasQuickAdd } from "../components/ExtrasQuickAdd";
 import { ComboSelector } from "../components/ComboSelector";
 import { BankTransferInfo } from "../components/BankTransferInfo";
 import { Button } from "../components/ui/button";
@@ -56,6 +54,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "../components/ui/select";
+
+// Tarihi netlesmemis basvurular icin yaklasik seyahat zamani secenekleri
+const TRAVEL_WINDOWS = [
+    { id: "this_month", label: "Bu ay içinde" },
+    { id: "1_3_months", label: "1-3 ay içinde" },
+    { id: "3_plus_months", label: "3 aydan sonra" },
+    { id: "undecided", label: "Henüz karar vermedim" },
+];
 
 const STEPS = [
     { key: "people", label: "Bilgiler", icon: Users },
@@ -122,6 +128,7 @@ const ERROR_LABELS = {
     birth_country: "Doğum ülkesi",
     arrival_date: "Gidiş tarihi",
     departure_date: "Dönüş tarihi",
+    travel_window: "Yaklaşık seyahat zamanı",
     passport: "Pasaport fotoğrafı",
     photo: "Vesikalık fotoğraf",
     ticket: "Dönüş uçak bileti",
@@ -168,6 +175,8 @@ export default function Apply() {
     const [travel, setTravel] = useState({
         arrival_date: "",
         departure_date: "",
+        dates_unknown: false,
+        travel_window: "",
         purpose: "tourism",
         birth_country: "TR",
         accommodation: "",
@@ -198,7 +207,8 @@ export default function Apply() {
     const [draft, setDraft] = useState({ id: null, code: null });
     const [savingDraft, setSavingDraft] = useState(false);
     const [savedTravelers, setSavedTravelers] = useState([]);
-    const [preCheckDone, setPreCheckDone] = useState(false);
+    const [showAllInsurance, setShowAllInsurance] = useState(false);
+    const [showAllEsim, setShowAllEsim] = useState(false);
 
     // Giris yapmis musterinin kayitli yolcularini getir (aile profili)
     useEffect(() => {
@@ -404,6 +414,11 @@ export default function Apply() {
 
     // eSIM / sigorta gecerliligi seyahatin giris tarihinde baslar
     const travelDatesReady = Boolean(travel.arrival_date);
+    const datesFlexible = Boolean(travel.dates_unknown);
+    // Tarih belli degilse de ekstralar secilebilir; baslangic tarihi sonra ayarlanir
+    const extrasSelectable = travelDatesReady || datesFlexible;
+    const travelWindowLabel =
+        TRAVEL_WINDOWS.find((w) => w.id === travel.travel_window)?.label || "";
     const tripDays = useMemo(() => {
         if (!travel.arrival_date || !travel.departure_date) return null;
         const start = new Date(travel.arrival_date);
@@ -444,7 +459,20 @@ export default function Apply() {
 
     const DateWindowNote = ({ product, testId }) => {
         const win = productWindow(product);
-        if (!win) return null;
+        if (!win) {
+            if (!datesFlexible) return null;
+            return (
+                <p
+                    className="mt-2 flex items-start gap-1.5 text-xs font-medium text-muted-foreground"
+                    data-testid={testId}
+                >
+                    <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span>
+                        {product.validity_days} gün geçerli · başlangıç tarihi siz bildirince ayarlanır
+                    </span>
+                </p>
+            );
+        }
         return (
             <div className="mt-2 space-y-1" data-testid={testId}>
                 <p className="flex items-start gap-1.5 text-xs font-medium text-muted-foreground">
@@ -463,10 +491,12 @@ export default function Apply() {
         );
     };
 
-    // Akilli oneri: seyahat suresini karsilayan en uygun (en ekonomik) paket
+    // Akilli oneri: seyahat suresini (yoksa vize suresini) karsilayan en uygun paket
+    const coverDays = tripDays || visaCoverDays || null;
+
     const bestFit = (list) => {
-        if (!tripDays || !list.length) return null;
-        const covering = list.filter((p) => Number(p.validity_days) >= tripDays);
+        if (!coverDays || !list.length) return null;
+        const covering = list.filter((p) => Number(p.validity_days) >= coverDays);
         if (covering.length) {
             return covering.reduce((best, p) => (Number(p.price) < Number(best.price) ? p : best)).id;
         }
@@ -475,15 +505,47 @@ export default function Apply() {
         ).id;
     };
 
+    // Tarihlere gore kisa liste: kapsami yeten en kisa sureli 2-3 paket one cikar
+    const shortlistFor = (list) => {
+        if (list.length <= 3) return list;
+        if (!coverDays) return list.slice(0, 3);
+        const covering = list.filter((p) => Number(p.validity_days) >= coverDays);
+        const pool = covering.length ? covering : list;
+        const tightestDays = Math.min(...pool.map((p) => Number(p.validity_days) || 0));
+        const sorted = pool
+            .slice()
+            .sort(
+                (a, b) =>
+                    Number(a.validity_days) - Number(b.validity_days) ||
+                    Number(a.price) - Number(b.price)
+            );
+        const tight = sorted.filter((p) => Number(p.validity_days) === tightestDays);
+        const rest = sorted.filter((p) => Number(p.validity_days) !== tightestDays);
+        return [...tight, ...rest].slice(0, 3);
+    };
+
+    const insuranceShortlist = useMemo(
+        () => shortlistFor(insuranceProducts),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [insuranceProducts, coverDays]
+    );
+    const esimShortlist = useMemo(
+        () => shortlistFor(esimProducts),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [esimProducts, coverDays]
+    );
+    const visibleInsurance = showAllInsurance ? insuranceProducts : insuranceShortlist;
+    const visibleEsim = showAllEsim ? esimProducts : esimShortlist;
+
     const recommendedInsuranceId = useMemo(
         () => bestFit(insuranceProducts),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [insuranceProducts, tripDays]
+        [insuranceProducts, coverDays]
     );
     const recommendedEsimId = useMemo(
         () => bestFit(esimProducts),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [esimProducts, tripDays]
+        [esimProducts, coverDays]
     );
 
     const bundleActive = Boolean(insurancePick) && Object.values(esimQty).some((q) => q > 0);
@@ -544,8 +606,8 @@ export default function Apply() {
         }
     }, [insuranceProducts, insurancePick]);
 
-    const applyRecommended = () => {        if (!travelDatesReady) {
-            toast.error("Önce giriş (gidiş) tarihinizi seçin.");
+    const applyRecommended = () => {        if (!extrasSelectable) {
+            toast.error("Önce gidiş tarihinizi seçin veya \"tarihim henüz belli değil\" seçeneğini işaretleyin.");
             return;
         }
         if (recommendedInsuranceId) setInsurancePick(recommendedInsuranceId);
@@ -594,6 +656,19 @@ export default function Apply() {
         </div>
     );
 
+    const FlexibleDatesNote = ({ testId }) => (
+        <div
+            className="mt-4 flex items-start gap-2.5 rounded-xl border border-dashed border-primary/40 bg-primary/[0.04] p-4"
+            data-testid={testId}
+        >
+            <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <p className="text-sm leading-6 text-muted-foreground">
+                Seyahat tarihiniz henüz belli değil. Paketi şimdi ekleyebilirsiniz;{" "}
+                <strong className="text-foreground">başlangıç tarihi siz bildirince ayarlanır</strong>.
+            </p>
+        </div>
+    );
+
     const storeItems = useMemo(() => {
         const items = [];
         if (insurancePick) {
@@ -622,8 +697,8 @@ export default function Apply() {
     );
 
     const toggleEsim = (product) => {
-        if (!travelDatesReady) {
-            toast.error("Önce giriş (gidiş) tarihinizi seçin; eSIM paketiniz bu tarihte başlatılır.");
+        if (!extrasSelectable) {
+            toast.error("Önce gidiş tarihinizi seçin veya \"tarihim henüz belli değil\" seçeneğini işaretleyin.");
             return;
         }
         setEsimQty((prev) => {
@@ -731,28 +806,22 @@ export default function Apply() {
         return pool[0] || null;
     };
 
-    const applyPreCheck = ({ arrival_date, departure_date, passport_expiry, visa, express }) => {
-        setTravel((t) => ({ ...t, arrival_date, departure_date }));
-        setTravelers((list) =>
-            list.map((t) => {
-                const match = visa
-                    ? pickVisaFor(Number(visa.duration_days) || 0, t) || visa
-                    : null;
-                return {
-                    ...t,
-                    passport_expiry: t.passport_expiry || passport_expiry,
-                    visa_type_id: t.visa_type_id || match?.id || "",
-                };
-            })
-        );
-        setPreCheckDone(true);
-        setErrors({});
-        if (express) setAddons((a) => ({ ...a, express: true }));
-        toast.success(
-            express
-                ? "Bilgiler forma aktarıldı. Ekspres hizmet ve uygun vize seçildi."
-                : "Bilgiler forma aktarıldı. Uygun vize önerisi seçili geldi."
-        );
+    const toggleDatesUnknown = (checked) => {
+        const on = !!checked;
+        setTravel((t) => ({
+            ...t,
+            dates_unknown: on,
+            arrival_date: on ? "" : t.arrival_date,
+            departure_date: on ? "" : t.departure_date,
+            travel_window: on ? t.travel_window : "",
+        }));
+        setErrors((p) => ({
+            ...p,
+            arrival_date: undefined,
+            departure_date: undefined,
+            travel_window: undefined,
+            stay_length: undefined,
+        }));
     };
 
     // Secilen vizeler planlanan kalisi kapsamiyorsa onerilecek vize
@@ -949,35 +1018,51 @@ export default function Apply() {
             });
             if (travel.birth_country !== "TR")
                 e.birth_country = "Üzgünüz, başvuru şu an yalnızca Türkiye doğumlu kişiler için yapılabilmektedir.";
-            if (!travel.arrival_date) e.arrival_date = "Gidiş tarihinizi seçin.";
-            if (!travel.departure_date) e.departure_date = "Dönüş tarihinizi seçin.";
-            if (
-                travel.arrival_date &&
-                travel.departure_date &&
-                new Date(travel.departure_date) < new Date(travel.arrival_date)
-            )
-                e.departure_date = "Dönüş tarihi gidiş tarihinden önce olamaz.";
-            if (travel.arrival_date && travel.departure_date && !e.departure_date) {
-                const stayDays =
-                    Math.round(
-                        (new Date(travel.departure_date) - new Date(travel.arrival_date)) / 86400000
-                    ) + 1;
-                const tooShort = travelers.filter((t) => {
-                    const days = Number(visaTypes.find((v) => v.id === t.visa_type_id)?.duration_days || 0);
-                    return days > 0 && stayDays > days;
-                });
-                if (tooShort.length)
-                    e.stay_length = `Planlanan kalış ${stayDays} gün; seçilen vize bu süreyi kapsamıyor. Daha uzun süreli bir vize seçin veya tarihleri güncelleyin.`;
-
-                const expiryLimit = new Date(travel.departure_date);
-                expiryLimit.setMonth(expiryLimit.getMonth() + 6);
+            if (travel.dates_unknown) {
+                if (!travel.travel_window)
+                    e.travel_window = "Yaklaşık olarak ne zaman gitmeyi planladığınızı seçin.";
+                const limit = new Date();
+                limit.setMonth(limit.getMonth() + 6);
                 const shortPassports = travelers.filter(
-                    (t) => t.passport_expiry && new Date(t.passport_expiry) < expiryLimit
+                    (t) => t.passport_expiry && new Date(t.passport_expiry) < limit
                 );
                 if (shortPassports.length)
-                    e.passport_validity = `Pasaport dönüş tarihinden itibaren en az 6 ay geçerli olmalı: ${shortPassports
+                    e.passport_validity = `Pasaport bugünden itibaren en az 6 ay geçerli olmalı: ${shortPassports
                         .map((t) => `${t.first_name} ${t.last_name}`.trim())
                         .join(", ")}`;
+            } else {
+                if (!travel.arrival_date) e.arrival_date = "Gidiş tarihinizi seçin.";
+                if (!travel.departure_date) e.departure_date = "Dönüş tarihinizi seçin.";
+                if (
+                    travel.arrival_date &&
+                    travel.departure_date &&
+                    new Date(travel.departure_date) < new Date(travel.arrival_date)
+                )
+                    e.departure_date = "Dönüş tarihi gidiş tarihinden önce olamaz.";
+                if (travel.arrival_date && travel.departure_date && !e.departure_date) {
+                    const stayDays =
+                        Math.round(
+                            (new Date(travel.departure_date) - new Date(travel.arrival_date)) / 86400000
+                        ) + 1;
+                    const tooShort = travelers.filter((t) => {
+                        const days = Number(
+                            visaTypes.find((v) => v.id === t.visa_type_id)?.duration_days || 0
+                        );
+                        return days > 0 && stayDays > days;
+                    });
+                    if (tooShort.length)
+                        e.stay_length = `Planlanan kalış ${stayDays} gün; seçilen vize bu süreyi kapsamıyor. Daha uzun süreli bir vize seçin veya tarihleri güncelleyin.`;
+
+                    const expiryLimit = new Date(travel.departure_date);
+                    expiryLimit.setMonth(expiryLimit.getMonth() + 6);
+                    const shortPassports = travelers.filter(
+                        (t) => t.passport_expiry && new Date(t.passport_expiry) < expiryLimit
+                    );
+                    if (shortPassports.length)
+                        e.passport_validity = `Pasaport dönüş tarihinden itibaren en az 6 ay geçerli olmalı: ${shortPassports
+                            .map((t) => `${t.first_name} ${t.last_name}`.trim())
+                            .join(", ")}`;
+                }
             }
         }
         if (step === 2) {
@@ -1228,16 +1313,6 @@ export default function Apply() {
                                     <h2 className="font-heading text-xl font-bold">Kişisel bilgiler</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Bilgileri pasaportta yazdığı gibi, Türkçe karakter kullanmadan girin.</p>
-
-                                    {!preCheckDone && (
-                                        <div className="mt-6">
-                                            <EligibilityPreCheck
-                                                visaTypes={visaTypes}
-                                                expressAddon={addonMeta.find((a) => a.id === "express") || null}
-                                                onApply={applyPreCheck}
-                                            />
-                                        </div>
-                                    )}
 
                                     <div className="mt-6 rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
                                         <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
@@ -1588,29 +1663,112 @@ export default function Apply() {
                                                 </SelectContent>
                                             </Select>
                                         </Field>
-                                        <Field label="Gidiş Tarihi" required error={errors.arrival_date}>
-                                            <DateField
-                                                value={travel.arrival_date}
-                                                onChange={(iso) => setTravel((t) => ({ ...t, arrival_date: iso }))}
-                                                minDate={new Date()}
-                                                fromYear={new Date().getFullYear()}
-                                                toYear={new Date().getFullYear() + 3}
-                                                invalid={!!errors.arrival_date}
-                                                data-testid="input-arrival-date"
-                                            />
-                                        </Field>
-                                        <Field label="Dönüş Tarihi" required error={errors.departure_date}>
-                                            <DateField
-                                                value={travel.departure_date}
-                                                onChange={(iso) => setTravel((t) => ({ ...t, departure_date: iso }))}
-                                                minDate={fromISODate(travel.arrival_date) || new Date()}
-                                                fromYear={new Date().getFullYear()}
-                                                toYear={new Date().getFullYear() + 3}
-                                                invalid={!!errors.departure_date}
-                                                data-testid="input-departure-date"
-                                            />
-                                        </Field>
+                                        {!datesFlexible && (
+                                            <>
+                                                <Field label="Gidiş Tarihi" required error={errors.arrival_date}>
+                                                    <DateField
+                                                        value={travel.arrival_date}
+                                                        onChange={(iso) => setTravel((t) => ({ ...t, arrival_date: iso }))}
+                                                        minDate={new Date()}
+                                                        fromYear={new Date().getFullYear()}
+                                                        toYear={new Date().getFullYear() + 3}
+                                                        invalid={!!errors.arrival_date}
+                                                        data-testid="input-arrival-date"
+                                                    />
+                                                </Field>
+                                                <Field label="Dönüş Tarihi" required error={errors.departure_date}>
+                                                    <DateField
+                                                        value={travel.departure_date}
+                                                        onChange={(iso) => setTravel((t) => ({ ...t, departure_date: iso }))}
+                                                        minDate={fromISODate(travel.arrival_date) || new Date()}
+                                                        fromYear={new Date().getFullYear()}
+                                                        toYear={new Date().getFullYear() + 3}
+                                                        invalid={!!errors.departure_date}
+                                                        data-testid="input-departure-date"
+                                                    />
+                                                </Field>
+                                            </>
+                                        )}
                                     </div>
+
+                                    <label
+                                        className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 text-sm transition-colors duration-200 hover:border-primary/50"
+                                        data-testid="dates-unknown-row"
+                                    >
+                                        <Checkbox
+                                            checked={datesFlexible}
+                                            onCheckedChange={toggleDatesUnknown}
+                                            className="mt-0.5"
+                                            data-testid="dates-unknown-checkbox"
+                                        />
+                                        <span className="leading-6 text-muted-foreground">
+                                            <strong className="text-foreground">
+                                                Seyahat tarihim henüz belli değil.
+                                            </strong>{" "}
+                                            Başvurunuza şimdi başlayın; sigorta ve eSIM'in başlangıç tarihini
+                                            siz bildirdiğinizde biz ayarlarız.
+                                        </span>
+                                    </label>
+
+                                    {datesFlexible && (
+                                        <div
+                                            className="mt-4 rounded-xl border border-primary/25 bg-primary/[0.04] p-5"
+                                            data-invalid={errors.travel_window ? "true" : undefined}
+                                            data-testid="travel-window-options"
+                                        >
+                                            <p className="font-heading text-sm font-bold">
+                                                Yaklaşık olarak ne zaman gitmeyi planlıyorsunuz?
+                                            </p>
+                                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                                Bu bilgi vize başlangıcını ve paket sürelerini planlamamıza yardımcı olur.
+                                            </p>
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                                {TRAVEL_WINDOWS.map((w) => {
+                                                    const active = travel.travel_window === w.id;
+                                                    return (
+                                                        <button
+                                                            key={w.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setTravel((t) => ({ ...t, travel_window: w.id }));
+                                                                setErrors((p) => ({ ...p, travel_window: undefined }));
+                                                            }}
+                                                            className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors duration-200 ${
+                                                                active
+                                                                    ? "border-primary bg-primary text-primary-foreground"
+                                                                    : "border-border bg-background hover:border-primary/60"
+                                                            }`}
+                                                            data-testid={`travel-window-${w.id}`}
+                                                        >
+                                                            {w.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            {errors.travel_window && (
+                                                <p
+                                                    className="mt-3 flex items-start gap-1.5 text-xs font-medium text-destructive"
+                                                    role="alert"
+                                                >
+                                                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                                    {errors.travel_window}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {!datesFlexible && !travelDatesReady && (
+                                        <p
+                                            className="mt-4 flex items-start gap-2 text-sm leading-6 text-muted-foreground"
+                                            data-testid="extras-next-step-hint"
+                                        >
+                                            <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                                            <span>
+                                                Gidiş ve dönüş tarihinize uygun seyahat sigortası ve eSIM paketlerini
+                                                bir sonraki adımlarda göstereceğiz.
+                                            </span>
+                                        </p>
+                                    )}
 
                                     {visaUpgrade && (
                                         <div
@@ -1894,6 +2052,11 @@ export default function Apply() {
                                                             Seyahatiniz <strong className="text-foreground">{tripDays} gün</strong> — size uygun paketleri işaretledik.
                                                         </p>
                                                     )}
+                                                    {!tripDays && datesFlexible && (
+                                                        <p className="mt-2 text-sm text-muted-foreground" data-testid="bundle-flexible-note">
+                                                            Tarihiniz henüz belli değil — <strong className="text-foreground">vize sürenize</strong> uygun paketleri listeledik.
+                                                        </p>
+                                                    )}
                                                     {quote?.bundle_discount > 0 && (
                                                         <p
                                                             className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--brand-green))]"
@@ -1909,7 +2072,7 @@ export default function Apply() {
                                                     variant="secondary"
                                                     className="h-10 border border-border"
                                                     onClick={applyRecommended}
-                                                    disabled={!travelDatesReady || bundleActive}
+                                                    disabled={!extrasSelectable || bundleActive}
                                                     data-testid="apply-recommended-bundle-button"
                                                 >
                                                     <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -1936,16 +2099,21 @@ export default function Apply() {
                                             </div>
                                             <p className="mt-1.5 text-sm text-muted-foreground">
                                                 Poliçe yolcu başına hesaplanır ve <strong className="text-foreground">gidiş tarihinizde</strong> başlar; PDF olarak e-postanıza gelir.</p>
-                                            {!travelDatesReady && <TravelDatesRequiredNote testId="insurance-dates-required" />}
+                                            {!travelDatesReady &&
+                                                (datesFlexible ? (
+                                                    <FlexibleDatesNote testId="insurance-dates-flexible" />
+                                                ) : (
+                                                    <TravelDatesRequiredNote testId="insurance-dates-required" />
+                                                ))}
                                             <div className="mt-4 grid gap-4 md:grid-cols-2">
-                                                {insuranceProducts.map((p) => {
+                                                {visibleInsurance.map((p) => {
                                                     const selected = insurancePick === p.id;
                                                     return (
                                                         <button
                                                             type="button"
                                                             key={p.id}
                                                             aria-pressed={selected}
-                                                            disabled={!travelDatesReady}
+                                                            disabled={!extrasSelectable}
                                                             onClick={() => setInsurancePick(selected ? null : p.id)}
                                                             className={`rounded-xl border p-5 text-left transition-colors duration-200 hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${
                                                                 selected ? "border-primary bg-primary/5" : "border-border bg-card"
@@ -1979,11 +2147,35 @@ export default function Apply() {
                                                     );
                                                 })}
                                             </div>
+                                            {insuranceProducts.length > visibleInsurance.length && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowAllInsurance(true)}
+                                                    className="mt-4 text-sm font-semibold text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-200 hover:decoration-primary"
+                                                    data-testid="show-all-insurance-button"
+                                                >
+                                                    Tüm sigorta paketlerini gör ({insuranceProducts.length})
+                                                </button>
+                                            )}
+                                            {showAllInsurance && insuranceProducts.length > insuranceShortlist.length && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowAllInsurance(false)}
+                                                    className="mt-4 text-sm font-semibold text-muted-foreground underline underline-offset-4 transition-colors duration-200 hover:text-primary"
+                                                    data-testid="hide-all-insurance-button"
+                                                >
+                                                    Sadece önerilenleri göster
+                                                </button>
+                                            )}
                                             {insurancePick && (
                                                 <p className="mt-3 text-sm text-muted-foreground" data-testid="insurance-selected-note">
                                                     {travelerCount} yolcu için poliçe eklendi
-                                                    {travel.arrival_date ? ` · ${formatDate(travel.arrival_date)} tarihinde başlar` : ""}.
-                                                    Toplam sepetinizde otomatik hesaplanır.
+                                                    {travel.arrival_date
+                                                        ? ` · ${formatDate(travel.arrival_date)} tarihinde başlar`
+                                                        : datesFlexible
+                                                          ? " · başlangıç tarihi siz bildirince ayarlanır"
+                                                          : ""}
+                                                    . Toplam sepetinizde otomatik hesaplanır.
                                                 </p>
                                             )}
                                         </div>
@@ -1998,9 +2190,14 @@ export default function Apply() {
                                             </div>
                                             <p className="mt-1.5 text-sm text-muted-foreground">
                                                 Paketiniz <strong className="text-foreground">gidiş tarihinizde</strong> başlar; QR kodunuz e-postanıza gelir.</p>
-                                            {!travelDatesReady && <TravelDatesRequiredNote testId="esim-dates-required" />}
+                                            {!travelDatesReady &&
+                                                (datesFlexible ? (
+                                                    <FlexibleDatesNote testId="esim-dates-flexible" />
+                                                ) : (
+                                                    <TravelDatesRequiredNote testId="esim-dates-required" />
+                                                ))}
                                             <div className="mt-4 space-y-4">
-                                                {esimProducts.map((p) => {
+                                                {visibleEsim.map((p) => {
                                                     const qty = esimQty[p.id] || 0;
                                                     const selected = qty > 0;
                                                     return (
@@ -2014,7 +2211,7 @@ export default function Apply() {
                                                             <div className="flex flex-wrap items-start gap-4">
                                                                 <Switch
                                                                     checked={selected}
-                                                                    disabled={!travelDatesReady}
+                                                                    disabled={!extrasSelectable}
                                                                     onCheckedChange={() => toggleEsim(p)}
                                                                     className="mt-1"
                                                                     data-testid={`esim-switch-${p.id}`}
@@ -2072,6 +2269,26 @@ export default function Apply() {
                                                     );
                                                 })}
                                             </div>
+                                            {esimProducts.length > visibleEsim.length && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowAllEsim(true)}
+                                                    className="mt-4 text-sm font-semibold text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-200 hover:decoration-primary"
+                                                    data-testid="show-all-esim-button"
+                                                >
+                                                    Tüm eSIM paketlerini gör ({esimProducts.length})
+                                                </button>
+                                            )}
+                                            {showAllEsim && esimProducts.length > esimShortlist.length && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowAllEsim(false)}
+                                                    className="mt-4 text-sm font-semibold text-muted-foreground underline underline-offset-4 transition-colors duration-200 hover:text-primary"
+                                                    data-testid="hide-all-esim-button"
+                                                >
+                                                    Sadece önerilenleri göster
+                                                </button>
+                                            )}
                                         </div>
                                     )}
 
@@ -2280,8 +2497,17 @@ export default function Apply() {
                                         <div className="rounded-xl border border-border p-5">
                                             <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">Seyahat</h3>
                                             <div className="mt-3">
-                                                <SummaryRow label="Gidiş" value={formatDate(travel.arrival_date)} />
-                                                <SummaryRow label="Dönüş" value={formatDate(travel.departure_date)} />
+                                                {travel.dates_unknown ? (
+                                                    <SummaryRow
+                                                        label="Seyahat tarihi"
+                                                        value={`Henüz belli değil${travelWindowLabel ? ` · ${travelWindowLabel}` : ""}`}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <SummaryRow label="Gidiş" value={formatDate(travel.arrival_date)} />
+                                                        <SummaryRow label="Dönüş" value={formatDate(travel.departure_date)} />
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
 
@@ -2537,15 +2763,6 @@ export default function Apply() {
                                     </p>
                                 )}
                             </div>
-
-                            <ExtrasQuickAdd
-                                insuranceProducts={insuranceProducts}
-                                esimProducts={esimProducts}
-                                insurancePick={insurancePick}
-                                onPickInsurance={setInsurancePick}
-                                esimQty={esimQty}
-                                onChangeEsimQty={changeEsimQty}
-                            />
 
                             <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
                                 <div className="flex items-center gap-2">

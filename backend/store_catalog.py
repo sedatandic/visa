@@ -5,7 +5,10 @@ birbirini import ediyordu (dairesel bagimlilik). Katalog burada tek yerde durur;
 modul de buradan import eder.
 """
 
+from datetime import date
 from typing import Optional
+
+from fastapi import HTTPException
 
 from db import products_col, serialize_doc
 from fx import get_fx, try_price
@@ -157,6 +160,25 @@ TOUR_PRODUCTS = [
         "order": 1,
         "popular": True,
     },
+    {
+        "id": "tour_desert_safari_vip",
+        "kind": "tour",
+        "name": "Çöl Safarisi · VIP Akşam Turu",
+        "summary": "Özel araçta kumul turu, quad bike denemesi, VIP kamp masası ve ateş başında canlı gösteriler.",
+        "price_usd": 55.0,
+        "image_url": "https://images.unsplash.com/photo-1451337516015-6b6e9a44a8a3?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+        "needs_schedule": True,
+        "time_slots": ["14:00", "14:30", "15:00", "15:30", "16:00"],
+        "features": [
+            "Otelinizden özel araçla alış ve dönüş",
+            "Quad bike denemesi ve kum sörfü dahil",
+            "VIP kamp masası, sınırsız içecek ikramı",
+            "Ateş gösterisi, tanura ve canlı müzik",
+            "Türkçe konuşan rehber · yaklaşık 7 saat",
+        ],
+        "order": 2,
+        "popular": False,
+    },
 ]
 
 DEFAULT_PRODUCTS = ESIM_PRODUCTS + INSURANCE_PRODUCTS + TOUR_PRODUCTS
@@ -189,3 +211,27 @@ async def product_list(kind: Optional[str] = None, include_inactive: bool = Fals
         item["kind_label"] = KIND_LABELS.get(item.get("kind"), "")
         items.append(item)
     return items
+
+def tour_schedule(product: dict, scheduled_date, scheduled_time, start=None, end=None) -> dict:
+    """Tur urunleri icin secilen tarih/saati dogrular ve satira eklenecek alanlari dondurur.
+
+    Hem `/api/applications` hem `/api/orders` akisi buradan gecer; kural tek yerde durur.
+    """
+    if not product.get("needs_schedule"):
+        return {}
+    picked = None
+    try:
+        picked = date.fromisoformat((scheduled_date or "").strip()[:10])
+    except ValueError:
+        picked = None
+    if not picked:
+        raise HTTPException(400, f"{product['name']} için tur tarihi seçmelisiniz.")
+    if start and picked < start:
+        raise HTTPException(400, "Tur tarihi Dubai'ye giriş tarihinizden önce olamaz.")
+    if end and picked > end:
+        raise HTTPException(400, "Tur tarihi dönüş tarihinizden sonra olamaz.")
+    slots = product.get("time_slots") or []
+    time_value = (scheduled_time or "").strip()
+    if slots and time_value not in slots:
+        raise HTTPException(400, f"{product['name']} için geçerli bir saat seçmelisiniz.")
+    return {"scheduled_date": picked.isoformat(), "scheduled_time": time_value or None}

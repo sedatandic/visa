@@ -289,44 +289,6 @@ GUIDES = {
             },
         ],
     },
-    "transit-vize": {
-        "h1": "48 Saatlik Dubai Transit Vizesi",
-        "seo_title": "Dubai Transit Vizesi 48 Saat | Aktarmada Şehre Çıkış İzni",
-        "seo_description": "Dubai transit vizesi ile aktarma sırasında 48 saat şehre çıkın. Kimler için uygun, gerekli belgeler, fiyat ve 1-2 iş gününde sonuç.",
-        "keywords": ["dubai transit vize", "48 saat transit vize", "dubai aktarma vize"],
-        "intro": [
-            "Dubai transit vizesi, Birleşik Arap Emirlikleri üzerinden başka bir ülkeye aktarma yapan yolcuların 48 saat boyunca havalimanı dışına çıkmasına izin veren kısa süreli vize tipidir. Uzun bekleme süresi olan aktarmalı uçuşlarda şehri gezmek için idealdir.",
-            "Transit vize yalnızca aktarma amaçlı seyahatlerde kullanılır. Doğrudan Dubai'yi hedefleyen tatil planları için 30 veya 60 günlük turistik vize seçenekleri uygundur.",
-        ],
-        "who_for": [
-            "BAE üzerinden üçüncü bir ülkeye aktarmalı uçuşu olan yolcular",
-            "Aktarma süresi 8 saatten uzun olup şehre çıkmak isteyenler",
-            "Kısa bir Dubai molası planlayan gezginler",
-        ],
-        "highlights": [
-            "48 saate kadar şehre çıkış izni",
-            "1-2 iş günü içinde hızlı sonuç",
-            "Turistik vizeye göre daha ekonomik",
-        ],
-        "tips": [
-            "Devam eden uçuşunuzun bileti (onward ticket) başvurunun temel dayanağıdır; hazır bulundurun.",
-            "48 saati aşan aktarmalarda transit vize yetersiz kalır; turistik vize almanız gerekir.",
-        ],
-        "faqs": [
-            {
-                "q": "Transit vize ile havalimanından çıkabilir miyim?",
-                "a": "Evet. Transit vizenin amacı, aktarma sırasında 48 saate kadar şehre çıkmanıza izin vermektir.",
-            },
-            {
-                "q": "Transit vize için hangi belgeler gerekir?",
-                "a": "Pasaport kimlik sayfası, vesikalık fotoğraf ve devam eden uçuşunuzu gösteren bilet/rezervasyon belgesi gerekir.",
-            },
-            {
-                "q": "Aktarmam 48 saatten uzun, ne yapmalıyım?",
-                "a": "Bu durumda transit vize uygun olmaz; 30 günlük turistik vizeye başvurmanız gerekir.",
-            },
-        ],
-    },
 }
 
 
@@ -386,15 +348,6 @@ def _documents_for(visa: dict) -> list:
                 "title": "Veli İzin Belgesi (gerekirse)",
                 "detail": "Çocuk tek ebeveynle veya refakatçiyle seyahat ediyorsa noter onaylı veli izin belgesi talep edilebilir.",
                 "required": False,
-            }
-        )
-    if slug == "transit-vize":
-        docs.append(
-            {
-                "key": "onward",
-                "title": "Devam Eden Uçuş Bileti",
-                "detail": "Aktarma sonrası üçüncü ülkeye devam eden uçuşunuzun bileti veya rezervasyon belgesi.",
-                "required": True,
             }
         )
     if slug == "30-gun-vize-uzatma":

@@ -56,7 +56,7 @@ from emailer import (
 )
 from models import ApplicationCreate, ContactCreate, DocumentSubmission, QuoteRequest
 from doc_reminders import missing_documents
-from store_catalog import MAX_QTY, product_list
+from store_catalog import MAX_QTY, product_list, tour_schedule
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
 import ocr_metrics
 from passport_ai import check_photo, read_passport
@@ -389,27 +389,6 @@ def _store_line_validity(start: date | None, validity_days: int, trip_days: int 
     }
 
 
-def _tour_schedule(product: dict, item, start, end) -> dict:
-    """Tur urunleri icin secilen tarih/saati dogrular ve satira ekler."""
-    if not product.get("needs_schedule"):
-        return {}
-    picked = _parse_iso_date(getattr(item, "scheduled_date", None))
-    if not picked:
-        raise HTTPException(400, f"{product['name']} icin tur tarihi secmelisiniz.")
-    if start and picked < start:
-        raise HTTPException(400, "Tur tarihi Dubai'ye giris tarihinizden once olamaz.")
-    if end and picked > end:
-        raise HTTPException(400, "Tur tarihi donus tarihinizden sonra olamaz.")
-    slots = product.get("time_slots") or []
-    time_value = (getattr(item, "scheduled_time", None) or "").strip()
-    if slots and time_value not in slots:
-        time_value = slots[0]
-    return {
-        "scheduled_date": picked.isoformat(),
-        "scheduled_time": time_value or None,
-    }
-
-
 def _store_line(product: dict, quantity: int, validity: dict) -> dict:
     unit_price = float(product["price"])
     return {
@@ -446,7 +425,15 @@ async def resolve_store_lines(items, arrival_date: str | None = None, departure_
         quantity = max(1, min(int(item.quantity), MAX_QTY))
         validity = _store_line_validity(start, int(product.get("validity_days") or 0), trip_days)
         line = _store_line(product, quantity, validity)
-        line.update(_tour_schedule(product, item, start, end))
+        line.update(
+            tour_schedule(
+                product,
+                getattr(item, "scheduled_date", None),
+                getattr(item, "scheduled_time", None),
+                start=start,
+                end=end,
+            )
+        )
         lines.append(line)
     return lines
 
@@ -771,20 +758,28 @@ def _validate_travel_rules(travel, travelers: list) -> None:
     """Vize suresi, yas ve pasaport gecerliligi kurallarini sunucu tarafinda dogrular."""
     arrival = _parse_iso_date(travel.arrival_date)
     departure = _parse_iso_date(travel.departure_date)
-    if not arrival or not departure:
-        raise HTTPException(400, "Gidis ve donus tarihlerini gecerli bir formatta gonderin.")
-    if departure < arrival:
-        raise HTTPException(400, "Donus tarihi gidis tarihinden once olamaz.")
-    if arrival < date.today():
-        raise HTTPException(400, "Gidis tarihi bugunden once olamaz.")
+    flexible = bool(getattr(travel, "dates_unknown", False))
 
-    stay_days = (departure - arrival).days + 1
+    if flexible:
+        stay_days = None
+    else:
+        if not arrival or not departure:
+            raise HTTPException(400, "Gidis ve donus tarihlerini gecerli bir formatta gonderin.")
+        if departure < arrival:
+            raise HTTPException(400, "Donus tarihi gidis tarihinden once olamaz.")
+        if arrival < date.today():
+            raise HTTPException(400, "Gidis tarihi bugunden once olamaz.")
+        stay_days = (departure - arrival).days + 1
+
+    # Tarih belli degilse yas ve pasaport kontrolleri bugunun tarihine gore yapilir
+    age_reference = arrival or date.today()
+    expiry_reference = departure or date.today()
     has_adult = any(t.get("applicant_type") != "child" for t in travelers)
 
     for traveler in travelers:
         name = f"{traveler.get('first_name', '')} {traveler.get('last_name', '')}".strip()
         birth = _parse_iso_date(traveler.get("birth_date"))
-        age = _age_on(birth, arrival)
+        age = _age_on(birth, age_reference)
 
         if traveler.get("applicant_type") == "child":
             if age is not None and age >= 18:
@@ -798,7 +793,7 @@ def _validate_travel_rules(travel, travelers: list) -> None:
                 )
 
         duration = int(traveler.get("visa_duration_days") or 0)
-        if duration and stay_days > duration:
+        if duration and stay_days and stay_days > duration:
             raise HTTPException(
                 400,
                 f"{name}: secilen vize {duration} gun kalis hakki veriyor; planlanan kalis {stay_days} gun. "
@@ -806,10 +801,11 @@ def _validate_travel_rules(travel, travelers: list) -> None:
             )
 
         expiry = _parse_iso_date(traveler.get("passport_expiry"))
-        if expiry and (expiry - departure).days < PASSPORT_MIN_VALID_DAYS:
+        if expiry and (expiry - expiry_reference).days < PASSPORT_MIN_VALID_DAYS:
+            basis = "donus tarihinden" if departure else "bugunden"
             raise HTTPException(
                 400,
-                f"{name}: pasaportunuz donus tarihinden itibaren en az 6 ay gecerli olmalidir.",
+                f"{name}: pasaportunuz {basis} itibaren en az 6 ay gecerli olmalidir.",
             )
 
 
@@ -924,7 +920,7 @@ async def _send_application_emails(doc: dict, traveler_count: int) -> dict:
     view = serialize_doc(doc)
     email_result = await send_email(
         doc["contact"]["email"],
-        f"Dubai vize basvurunuz alindi - {reference_code}",
+        f"Dubai vize başvurunuz alındı - {reference_code}",
         applicant_received_html(view),
         kind="application_received",
         meta={"reference_code": reference_code},
@@ -933,7 +929,7 @@ async def _send_application_emails(doc: dict, traveler_count: int) -> dict:
     if admin_email:
         await send_email(
             admin_email,
-            f"Yeni basvuru: {reference_code} ({traveler_count} yolcu)",
+            f"Yeni başvuru: {reference_code} ({traveler_count} yolcu)",
             admin_notify_html(view),
             kind="admin_new_application",
             meta={"reference_code": reference_code},
@@ -1071,7 +1067,7 @@ async def _notify_documents_uploaded(fresh: dict, uploaded_keys: list[str]) -> N
         return
     await send_email(
         admin_email,
-        f"Musteri belge yukledi - {fresh.get('reference_code', '')}",
+        f"Müşteri belge yükledi - {fresh.get('reference_code', '')}",
         documents_completed_admin_html(fresh, uploaded_keys),
         kind="documents_uploaded",
         meta={"application_id": fresh.get("id")},
@@ -1129,9 +1125,9 @@ async def create_contact(payload: ContactCreate) -> dict:
     if admin_email:
         await send_email(
             admin_email,
-            f"Yeni iletisim mesaji: {msg.get('subject') or msg['name']}",
+            f"Yeni iletişim mesajı: {msg.get('subject') or msg['name']}",
             contact_admin_html(msg),
             kind="contact_message",
         )
-    return {"ok": True, "message": "Mesajiniz alindi. En kisa surede size donus yapacagiz."}
+    return {"ok": True, "message": "Mesajınız alındı. En kısa sürede size dönüş yapacağız."}
 

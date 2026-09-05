@@ -52,7 +52,7 @@ async def _mark_order_paid(session_id: str, tx: dict):
     if to_email:
         await send_email(
             to_email,
-            f"Odemeniz alindi - {fresh['reference_code']}",
+            f"Ödemeniz alındı - {fresh['reference_code']}",
             order_received_html(serialize_doc(fresh)),
             kind="order_payment_received",
             meta={"reference_code": fresh["reference_code"]},
@@ -121,7 +121,7 @@ async def _notify_application_payment(application_id: str) -> None:
         return
     await send_email(
         to_email,
-        f"Odemeniz alindi - {fresh['reference_code']}",
+        f"Ödemeniz alındı - {fresh['reference_code']}",
         payment_received_html(serialize_doc(fresh)),
         kind="payment_received",
         meta={"reference_code": fresh["reference_code"]},

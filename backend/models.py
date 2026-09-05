@@ -60,8 +60,11 @@ class TravelerIn(BaseModel):
 
 
 class TravelIn(BaseModel):
-    arrival_date: str = Field(..., min_length=4, max_length=20)
-    departure_date: str = Field(..., min_length=4, max_length=20)
+    # Tarihi henuz belli olmayan basvurularda tarihler bos gelir, aralik secimi alinir
+    arrival_date: str = Field(default="", max_length=20)
+    departure_date: str = Field(default="", max_length=20)
+    dates_unknown: bool = False
+    travel_window: Optional[str] = Field(default="", max_length=30)
     purpose: str = Field(default="tourism", max_length=30)
     birth_country: Optional[str] = Field(default="TR", max_length=40)
     accommodation: Optional[str] = Field(default="", max_length=200)

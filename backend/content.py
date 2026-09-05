@@ -180,32 +180,6 @@ VISA_TYPES = [
             "Dijital vize teslimi",
         ],
     },
-    {
-        "id": "visa_transit_48",
-        "slug": "transit-vize",
-        "name": "48 Saatlik Transit Vize",
-        "short_name": "Transit Vize",
-        "category": "single",
-        "duration_days": 2,
-        "entry_type": "single",
-        "entry_label": "Transit",
-        "applicant_type": "adult",
-        "price": 3460.0,
-        "price_usd": 70.0,
-        "currency": "TRY",
-        "processing_days": "1-2 iş günü",
-        "popular": False,
-        "order": 8,
-        "auto_suggest": False,
-        "description": "BAE üzerinden başka bir ülkeye aktarma yapacaksanız ve 48 saat şehre çıkmak istiyorsanız bu vize uygundur.",
-        "features": [
-            "48 saat kalış hakkı",
-            "Tek giriş · aktarmada şehre çıkış",
-            "Online başvuru",
-            "Uzman danışman desteği",
-            "Dijital vize teslimi",
-        ],
-    },
 ]
 
 VISA_CATEGORIES = [
