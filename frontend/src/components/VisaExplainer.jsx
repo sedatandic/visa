@@ -137,7 +137,7 @@ export const VisaExplainer = () => {
                         20 saniyede süreç
                     </span>
                     <p className="mt-3 font-heading text-xl font-extrabold text-white drop-shadow sm:text-3xl">
-                        2 belgeyle Dubai vizesi
+                        Sadece 2 belgeyle Dubai vizesi
                     </p>
                 </div>
                 <span className="hidden items-center gap-2 rounded-full bg-[hsl(var(--brand-green))] px-3.5 py-1.5 text-xs font-bold text-white sm:inline-flex">
