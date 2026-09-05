@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, CheckCircle2, IdCard, MailCheck, Pause, Play, UploadCloud, Volume2, VolumeX } from "lucide-react";
+import { Camera, Captions, CheckCircle2, IdCard, MailCheck, Pause, Play, UploadCloud, Volume2, VolumeX } from "lucide-react";
 
 const SILENT_MS = 5000;
 const VOICE_MS = 8500;
@@ -12,6 +12,8 @@ const SCENES = [
         icon: IdCard,
         title: "Pasaportunuzun kimlik sayfası",
         note: "Telefonunuzla çektiğiniz net bir fotoğraf yeterli",
+        subtitle:
+            "Dubai vizesi için sadece iki belge yeterli. Birincisi, pasaportunuzun kimlik sayfasının fotoğrafı.",
         alt: "Telefonla pasaportun kimlik sayfası fotoğraflanıyor",
     },
     {
@@ -20,6 +22,8 @@ const SCENES = [
         icon: Camera,
         title: "Bir vesikalık fotoğraf",
         note: "Beyaz fon, son 6 ay içinde çekilmiş, gözlüksüz",
+        subtitle:
+            "İkincisi, beyaz fonda çekilmiş bir vesikalık fotoğraf. Gözlüksüz ve şapkasız olması gerekiyor.",
         alt: "Beyaz fonlu biyometrik vesikalık fotoğraf ve pasaport",
     },
     {
@@ -28,6 +32,8 @@ const SCENES = [
         icon: UploadCloud,
         title: "Yükleyin ve ödemeyi yapın",
         note: "Uçak bileti ve otel rezervasyonu şartı yok",
+        subtitle:
+            "Belgeleri yükleyip ödemenizi yapın. Vizeniz çıkmadan uçak bileti ya da otel rezervasyonu gerekmiyor.",
         alt: "Belgeler bilgisayardan yükleniyor",
     },
     {
@@ -36,14 +42,40 @@ const SCENES = [
         icon: MailCheck,
         title: "Vizeniz e-postanıza gelir",
         note: "Ortalama 2 iş günü · ekspreste ~8 mesai saati",
+        subtitle:
+            "Başvurunuzu biz takip ediyoruz. Onaylanan vizeniz ortalama iki iş gününde e-postanıza geliyor.",
         alt: "Onaylı Dubai vizesini telefonunda gösteren gezgin",
     },
 ];
+
+const Subtitle = ({ text, durationMs, paused, sceneKey }) => {
+    const words = text.split(" ");
+    const step = Math.max(0.12, durationMs / 1000 / (words.length + 2));
+    return (
+        <p
+            className="mx-auto max-w-2xl rounded-xl bg-black/45 px-4 py-2.5 text-center text-xs font-medium leading-5 text-white backdrop-blur-sm sm:text-sm sm:leading-6"
+            data-testid="explainer-subtitle"
+        >
+            {words.map((word, i) => (
+                <motion.span
+                    key={`${sceneKey}-${i}`}
+                    initial={{ opacity: 0.28 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: paused ? 0 : i * step, duration: 0.25 }}
+                    className="mr-1 inline-block"
+                >
+                    {word}
+                </motion.span>
+            ))}
+        </p>
+    );
+};
 
 export const VisaExplainer = () => {
     const [index, setIndex] = useState(0);
     const [paused, setPaused] = useState(false);
     const [soundOn, setSoundOn] = useState(false);
+    const [captions, setCaptions] = useState(true);
     const audioRef = useRef(null);
     const scene = SCENES[index];
     const SceneIcon = scene.icon;
@@ -139,6 +171,17 @@ export const VisaExplainer = () => {
                     </motion.div>
                 </AnimatePresence>
 
+                {captions && (
+                    <div className="mt-4">
+                        <Subtitle
+                            text={scene.subtitle}
+                            durationMs={sceneMs}
+                            paused={paused}
+                            sceneKey={scene.key}
+                        />
+                    </div>
+                )}
+
                 <div className="mt-5 flex items-center gap-3">
                     <div className="flex flex-1 gap-1.5 sm:max-w-[300px]">
                         {SCENES.map((s, i) => (
@@ -176,6 +219,20 @@ export const VisaExplainer = () => {
                     >
                         {soundOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
                         {soundOn ? "Ses açık" : "Sesli anlat"}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setCaptions((c) => !c)}
+                        aria-label={captions ? "Altyazıyı kapat" : "Altyazıyı aç"}
+                        title={captions ? "Altyazıyı kapat" : "Altyazıyı aç"}
+                        className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-bold backdrop-blur-md transition-colors duration-200 ${
+                            captions
+                                ? "border-white bg-white text-foreground"
+                                : "border-white/30 bg-white/12 text-white hover:bg-white/20"
+                        }`}
+                        data-testid="explainer-captions-button"
+                    >
+                        <Captions className="h-3.5 w-3.5" /> CC
                     </button>
                     <button
                         type="button"

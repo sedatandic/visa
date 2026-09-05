@@ -446,3 +446,17 @@ Kullanıcı: "animasyon yapalım görüntülü" + "türk pasaportu olsun".
   ve Ken Burns süresi bu değere bağlı.
 - Doğrulama: sahne 1 görseli 1264x848 yükleniyor, segment tıklaması sahne 4'e atlıyor,
   ses açılınca delivered.mp3 çalıyor (ekran görüntüsü + JS kontrolü).
+
+## 2026-06-06 · Animasyonlu altyazı (CC) + ElevenLabs beklemede
+- `VisaExplainer`: her sahneye `subtitle` metni eklendi; `Subtitle` bileşeni kelimeleri
+  sahne süresine yayarak tek tek belirginleştiriyor (opacity 0.28→1, kelime başına
+  sahne süresi / kelime sayısı gecikme). Koyu yarı saydam pill üzerinde beyaz metin.
+  Varsayılan AÇIK; `explainer-captions-button` (CC) ile kapatılabilir.
+  Doğrulama: altyazı metni okunuyor, CC kapatınca DOM'dan kalkıyor (ekran görüntüsü).
+- **ElevenLabs bekliyor**: kullanıcı ses tercihini seçti (kadın, sıcak/samimi) ama API
+  anahtarını bulamadı. Anahtar alındığında: `backend/.env` → `ELEVENLABS_API_KEY`,
+  `pip install elevenlabs`, `scripts/generate_narration.py` benzeri bir script ile
+  `client.text_to_speech.convert(text=..., voice_id=..., model_id="eleven_multilingual_v2")`
+  ve Türkçe yerel bir ses (voice listesi `client.voices.get_all()` ile alınır) kullanılarak
+  4 klip yeniden üretilecek. Mevcut OpenAI tts-1-hd/coral klipleri çalışmaya devam ediyor
+  (hafif İngilizce aksanlı).
