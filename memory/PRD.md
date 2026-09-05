@@ -852,3 +852,13 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   (`K03P46eiU2GnWEx7dtcV`) varsayılan yapıldı; full.mp3 bu sesle yenilendi (68.6 sn).
   Sahneler: intro 0-6.41, passport -11.37, photo -20.52, upload -31.02, track -41.20,
   extras -53.20, cta -68.60. Doğrulandı (35. sn → takip sahnesi).
+- **Kadın sesler de eklendi**: Selin (kendinden emin), Dilek (profesyonel), Sibel (olgun),
+  Aslı (sıcak), Başak (sakin) kütüphaneye eklendi; İlknur/Filiz/Pelin ile birlikte
+  8 kadın + 4 erkek = **12 demo** `public/audio/demo/*.mp3` ve dinleme sayfası
+  `audio/demo/index.html` (numaralı, "şu an yayında" işaretli). Kullanıcı seçim yapacak;
+  seçilen ses `scripts/generate_narration_eleven.py` içindeki VOICE_ID ile tek komutta
+  tüm anlatıma uygulanır. Ses ID'leri: tbm K03P46eiU2GnWEx7dtcV, mert GkfwuvVxiSskQtPHXcbw,
+  faruk 0j8BpPEUtfp9x9RLrMVB, goksel FrXe0VVv2EHm9zvR8Jra, selin 9nu9B4zyoRSUNfwDafvh,
+  dilek ggNaO6NobK7mzVacuMYD, sibel qLdPxFtPuffoxx5gieBJ, asli HZh2tWL1clJO95e2qMt2,
+  basak 75LJWFYTuXJDmBjAFvfE, ilknur xFsOR54lR471QiCvQ5re, filiz 151qoe2jIbiWHaD2lbXE,
+  pelin FvxJI7vwUDkTkEOO7nd7.
