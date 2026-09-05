@@ -187,12 +187,13 @@ export const VisaExplainer = () => {
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="relative order-2 h-44 w-full sm:absolute sm:inset-y-0 sm:right-0 sm:order-none sm:h-auto sm:w-[68%]">
+            <div className="relative order-1 aspect-[3/2] w-full sm:absolute sm:inset-y-0 sm:right-0 sm:order-none sm:aspect-auto sm:h-auto sm:w-[68%]">
                 <AnimatePresence initial={false}>
                     <motion.img
                         key={scene.key}
                         src={`/explainer/${scene.key}.jpg`}
                         alt={scene.alt}
+                        decoding="async"
                         initial={{ opacity: 0, scale: 1.04, x: 30 }}
                         animate={{ opacity: 1, scale: paused ? 1.01 : 1.06, x: 0 }}
                         exit={{ opacity: 0, x: -24 }}
@@ -201,7 +202,7 @@ export const VisaExplainer = () => {
                             x: { duration: 0.7, ease: "easeOut" },
                             scale: { duration: paused ? 0.4 : sceneMs / 1000, ease: "linear" },
                         }}
-                        className="absolute inset-0 h-full w-full object-cover object-center sm:object-right"
+                        className="absolute inset-0 h-full w-full object-contain object-center sm:object-cover sm:object-right"
                         data-testid={`explainer-image-${scene.key}`}
                     />
                 </AnimatePresence>
@@ -212,7 +213,7 @@ export const VisaExplainer = () => {
             </div>
 
             {/* METIN KATMANI */}
-            <div className="relative order-1 flex flex-col justify-between gap-5 p-6 sm:order-none sm:min-h-[400px] sm:gap-6 sm:p-9">
+            <div className="relative order-2 flex flex-col justify-between gap-5 p-6 pt-2 sm:order-none sm:min-h-[400px] sm:gap-6 sm:p-9">
                 <div className="max-w-md">
                     <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary sm:text-[11px]">
                         Dubai vizenizi 1 dakikada nasıl alacağınızı anlatalım

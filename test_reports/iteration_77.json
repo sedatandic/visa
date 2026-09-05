@@ -1,0 +1,25 @@
+{
+  "summary": "Frontend-only test of (a) Hero Visa Explainer images across scenes on desktop 1920x1080 and mobile 390x844, and (b) Admin login 'Beni hatırla' UX. All 6 review items PASS. Explainer images render (naturalWidth=1264, opacity=1, no 4xx) for all 6 scenes intro/passport/photo/upload/track/extras. On mobile the illustration is rendered ABOVE the scene title (image y=-184 vs title y=199 after the dot is scrolled into view; layout confirmed by DOM order). Controls (sound, captions, play/pause, dots) all toggle correctly. Admin login 'admin-remember-checkbox' is visible/toggleable; login with remember=true succeeds, sets localStorage.dv_admin_token and dv_admin_remember_email, and after reload the email is prefilled and the checkbox is pre-checked. Login with remember=false succeeds and dv_admin_remember_email is NOT set (null).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "AdminLogin", "issues": ["Static checkbox label 'Beni hatırla (30 gün açık kal)' does not itself change on toggle; the dynamic descriptor '...30 gün açık kalır...' actually appears in a separate helper block below the submit button (AdminLogin.jsx line 115). Behavior matches spec but the review-request wording implied the label text itself changes. Non-blocking."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VisaExplainer image stack renders ALL scene <img> elements simultaneously with opacity crossfade (each 1264px). On slow mobile networks this preloads ~6-7 large jpgs. Consider lazy-loading non-active scenes or using loading='lazy'/decoding='async' and smaller responsive sources.",
+    "AdminLogin stores JWT in localStorage; with remember=true the 30-day token in localStorage is XSS-exposed. Consider httpOnly cookie for long-lived sessions."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100%"},
+  "test_credentials": "info@dubaivizeonline.com / Dubai2026! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Explainer dots work reliably as scene navigator (data-testid=explainer-dot-<key>). Playwright can verify scene image via [data-testid^=explainer-image-] + naturalWidth/opacity. Mobile viewport 390x844 renders illustration above text; scrolling dot into view puts the image slightly above the viewport top which is expected. Admin remember-me flow: localStorage keys dv_admin_token & dv_admin_remember_email.",
+  "rca of the issue": "N/A - all fixes verified working"
+}

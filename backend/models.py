@@ -122,6 +122,7 @@ class ContactCreate(BaseModel):
 class AdminLogin(BaseModel):
     email: str
     password: str
+    remember: bool = False
 
 
 class StatusUpdate(BaseModel):

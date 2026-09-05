@@ -83,11 +83,11 @@ ADMIN_LOGIN_PASSWORD = os.environ.get("ADMIN_LOGIN_PASSWORD") or ""
 ADMIN_LOGIN_NAME = os.environ.get("ADMIN_LOGIN_NAME") or "Yonetici"
 
 
-def create_token(email: str) -> str:
+def create_token(email: str, remember: bool = False) -> str:
     payload = {
         "sub": email,
         "role": "admin",
-        "exp": datetime.now(timezone.utc) + timedelta(hours=12),
+        "exp": datetime.now(timezone.utc) + timedelta(days=30 if remember else 0, hours=0 if remember else 12),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
 
@@ -114,7 +114,10 @@ async def admin_login(payload: AdminLogin) -> dict:
         raise HTTPException(500, "Yonetici sifresi tanimli degil. ADMIN_LOGIN_PASSWORD ayarlanmali.")
     if email != ADMIN_LOGIN_EMAIL or payload.password != ADMIN_LOGIN_PASSWORD:
         raise HTTPException(401, "E-posta veya sifre hatali.")
-    return {"token": create_token(email), "user": {"email": email, "name": ADMIN_LOGIN_NAME}}
+    return {
+        "token": create_token(email, payload.remember),
+        "user": {"email": email, "name": ADMIN_LOGIN_NAME},
+    }
 
 
 @router.get("/admin/me")

@@ -695,3 +695,20 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   hatası veriyor ve sonraki seed'leri engelliyordu → `doc.pop("price_usd", None)`.
   Artık açılışta "store products seeded (11)" ve hata yok.
 - Test: iteration_76 → frontend %100, backend %95 (tek minör bulgu yukarıda düzeltildi).
+
+## 2026-06-06 · Anlatım görselleri mobilde görünür + "Beni hatırla" (iteration_77)
+- **BUG "anlatirken resimler gosterilmiyor"**: Kök neden mobil düzendi — illüstrasyon metnin
+  ALTINDA (`order-2`, sabit `h-44`, `object-cover`) kaldığı için anlatım oynarken ekranda
+  görünmüyor ve kırpılıyordu. Düzeltme (`VisaExplainer.jsx`): görsel katmanı mobilde
+  `order-1 aspect-[3/2] w-full` ile **en üste** alındı ve `object-contain` yapıldı
+  (kırpma yok); metin katmanı `order-2 p-6 pt-2`. Masaüstü düzeni (`sm:absolute … w-[68%]`,
+  `sm:object-cover sm:object-right`) aynı kaldı. `decoding="async"` eklendi.
+- **"Beni hatırla" (yeni)**: `AdminLogin.jsx` içine `Checkbox` (data-testid
+  `admin-remember-checkbox`) — işaretliyse token **30 gün**, değilse 12 saat; e-posta
+  `localStorage.dv_admin_remember_email` ile hatırlanıyor ve sayfa açılışında ön dolduruluyor,
+  kutu ön işaretli geliyor. Backend: `models.AdminLogin.remember: bool = False`,
+  `routes_admin.create_token(email, remember)`.
+- Test: iteration_77 → frontend **%100** (6/6 madde); token süresi curl ile doğrulandı
+  (30 gün / 12 saat).
+- Bekleyen: Zami bookmarklet "Submit" yakalama (P2, 3. tekrar);
+  `insurance_tasks.queue_policy_tasks` ve `emailer.send_email` karmaşıklık refaktörü (P2).

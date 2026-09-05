@@ -7,12 +7,15 @@ import { setMeta } from "../lib/site";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Checkbox } from "../components/ui/checkbox";
 import { BrandMark } from "../components/BrandMark";
 
 export default function AdminLogin() {
     const navigate = useNavigate();
-    const [email, setEmail] = useState("");
+    const rememberedEmail = localStorage.getItem("dv_admin_remember_email") || "";
+    const [email, setEmail] = useState(rememberedEmail);
     const [password, setPassword] = useState("");
+    const [remember, setRemember] = useState(Boolean(rememberedEmail));
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -25,9 +28,11 @@ export default function AdminLogin() {
         setError("");
         setLoading(true);
         try {
-            const { data } = await api.post("/admin/login", { email, password });
+            const { data } = await api.post("/admin/login", { email, password, remember });
             localStorage.setItem("dv_admin_token", data.token);
             localStorage.setItem("dv_admin_email", data.user.email);
+            if (remember) localStorage.setItem("dv_admin_remember_email", data.user.email);
+            else localStorage.removeItem("dv_admin_remember_email");
             toast.success("Giriş başarılı.");
             navigate("/admin");
         } catch (err) {
@@ -75,6 +80,18 @@ export default function AdminLogin() {
                                 data-testid="admin-password-input"
                             />
                         </div>
+                        <label
+                            htmlFor="a-remember"
+                            className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-foreground"
+                        >
+                            <Checkbox
+                                id="a-remember"
+                                checked={remember}
+                                onCheckedChange={(v) => setRemember(v === true)}
+                                data-testid="admin-remember-checkbox"
+                            />
+                            Beni hatırla (30 gün açık kal)
+                        </label>
                     </div>
 
                     {error && (
@@ -95,7 +112,10 @@ export default function AdminLogin() {
 
                     <p className="mt-5 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
                         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                        Oturumunuz 12 saat sonra otomatik olarak sona erer. Başvuru sahiplerinin
+                        {remember
+                            ? "Oturumunuz 30 gün açık kalır, her seferinde şifre girmeniz gerekmez. "
+                            : "Oturumunuz 12 saat sonra otomatik olarak sona erer. "}
+                        Başvuru sahiplerinin
                         belgeleri yalnızca yönetici oturumuyla görüntülenebilir.
                     </p>
                 </form>
