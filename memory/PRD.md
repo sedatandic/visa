@@ -884,3 +884,9 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   Ayarlar: stability 0.4, style 0.15, similarity 0.85, speed 1.0. full.mp3 72.5 sn;
   sahneler: intro 0-7.02, passport -12.11, photo -21.30, upload -32.12, track -43.26,
   extras -56.18, cta -72.47. Doğrulandı (25. sn → yükleme sahnesi).
+- **2 kolon kaldırıldı, tek zemin**: kullanıcı isteğiyle grid kalktı; panel tekrar tek
+  parça (`sm:block`), görsel sağda mutlak (`sm:w-[52%] sm:p-5`), metin `sm:w-[48%]`.
+  Zemin farkını yaratan şey çizimlerin kendi krem arka planıydı → tüm çizimler
+  **şeffaf PNG**'ye çevrildi (kenarlardan flood-fill ile arka plan silindi,
+  `explainer/{key}.png`), böylece panelin krem zemini her yerde aynı görünüyor.
+  Bileşen artık `.png` kullanıyor; `.jpg` ve `*.orig.jpg` yedek olarak duruyor.

@@ -205,16 +205,16 @@ export const VisaExplainer = () => {
 
     return (
         <div
-            className="relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--panel-2))] sm:grid sm:grid-cols-[minmax(0,46%)_minmax(0,54%)] sm:items-stretch"
+            className="relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--panel-2))] sm:block"
             style={{ boxShadow: "var(--shadow-card)" }}
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:order-2 sm:aspect-auto sm:h-full sm:min-h-[340px] sm:w-full sm:p-4">
+            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:absolute sm:inset-y-0 sm:right-0 sm:order-none sm:aspect-auto sm:h-auto sm:w-[52%] sm:p-5">
                 <AnimatePresence initial={false}>
                     <motion.img
                         key={scene.key}
-                        src={`/explainer/${scene.key}.jpg`}
+                        src={`/explainer/${scene.key}.png`}
                         alt={scene.alt}
                         decoding="async"
                         initial={{ opacity: 0, scale: 1.04, x: 30 }}
@@ -232,7 +232,7 @@ export const VisaExplainer = () => {
             </div>
 
             {/* METIN KATMANI */}
-            <div className="relative order-2 flex flex-col justify-between gap-4 p-5 pt-2 sm:order-1 sm:min-h-[320px] sm:w-full sm:gap-4 sm:p-6">
+            <div className="relative order-2 flex flex-col justify-between gap-4 p-5 pt-2 sm:order-1 sm:min-h-[320px] sm:w-[48%] sm:gap-4 sm:p-6">
                 {!playing && (
                     <button
                         type="button"
