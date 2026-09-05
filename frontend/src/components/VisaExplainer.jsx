@@ -210,15 +210,15 @@ export const VisaExplainer = () => {
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:absolute sm:bottom-6 sm:right-6 sm:top-6 sm:order-none sm:aspect-auto sm:h-auto sm:w-[50%]">
+            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:overflow-visible sm:absolute sm:bottom-6 sm:right-6 sm:top-6 sm:order-none sm:aspect-auto sm:h-auto sm:w-[50%]">
                 <AnimatePresence initial={false}>
                     <motion.img
                         key={scene.key}
                         src={`/explainer/${scene.key}.png`}
                         alt={scene.alt}
                         decoding="async"
-                        initial={{ opacity: 0, scale: 1.04, x: 30 }}
-                        animate={{ opacity: 1, scale: paused ? 1.01 : 1.06, x: 0 }}
+                        initial={{ opacity: 0, scale: 1.0, x: 30 }}
+                        animate={{ opacity: 1, scale: paused ? 1.0 : 1.03, x: 0 }}
                         exit={{ opacity: 0, x: -24 }}
                         transition={{
                             opacity: { duration: 0.6 },
