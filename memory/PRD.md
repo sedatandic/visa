@@ -531,3 +531,8 @@ Kullanıcı: "resimler çok koyu, açık renk olsun zemin", "yazılar okunmuyor"
 - "Sola doğru kayan yazılar (dubaivizeal.com gibi)": `HeroHeadline` geçişi 3D flip'ten
   **slider kaydırmasına** çevrildi — başlık x:120→0, çıkışta x:-120; alt metin x:90→0
   (80 ms gecikmeli), kaplar `overflow-hidden`. Doğrulama: 4.4 sn'de slogan 1→2 geçişi.
+- "Ana promoya bilet ve otel şartı yok ekleyelim": `HeroHeadline` SLOGANS'a **ilk sırada**
+  yeni promo eklendi — "Bilet ve otel şartı yok / sadece pasaport ve fotoğraf", alt yazısı
+  "Vizeniz çıkmadan uçak bileti ve otel rezervasyonu yapmanıza gerek yok...".
+  3. slogan alt metni de aynı mesajla güncellendi (4 slogan döngüde).
+- Anlatım paneli etiketi: "Dubai vizenizi 55 saniyede nasıl alacağınızı anlatalım".
