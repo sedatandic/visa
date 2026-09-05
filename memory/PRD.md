@@ -808,3 +808,14 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   işaretli, altında **"GEREK YOK"** yazısı; yanda onaylı belge kartı.
 - **Vesikalık sahnesinde çakışma bitti**: metin kolonu `sm:w-[50%]` + altyazı `max-w-md`;
   ölçüm: altyazı 682'de bitiyor, portreler 720'de başlıyor.
+
+## 2026-06-06 · Seslendirme telaffuz/tempo + pasaport görseli (son tur)
+- **"Dubai" uzun a ile**: TTS metinlerinde `Dubai` → **`Dubaai`** (yalnızca seslendirme
+  metni; altyazılarda doğru yazım "Dubai" kalıyor).
+- **Tempo**: kullanıcı önce %30 hızlandırma istedi → `speed: 1.2` (toplam 49 sn, fazla
+  hızlı bulundu) → ardından %30 yavaşlatma → **`speed: 1.0`** (doğal tempo, toplam ~78 sn).
+  voiceMs: 7210 / 6610 / 9770 / 11160 / 11310 / 14060 / 18420. Panel etiketi "kısaca
+  anlatalım", mobil düğme "Anlatımı dinle · 1,5 dakika".
+- **passport.jpg** son hâli: bordo kapakta **TÜRKİYE CUMHURİYETİ**, altında
+  **REPUBLIC OF TÜRKİYE**, hilal-yıldız, **PASAPORT** ve altta **biyometrik çip simgesi**;
+  sağda kimlik sayfası + telefon.

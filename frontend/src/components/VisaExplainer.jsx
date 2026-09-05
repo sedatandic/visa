@@ -28,7 +28,7 @@ const SCENES = [
         subtitle: "Dubai vizesi almak artık çok kolay. Başvurunuzu yapmak için yalnızca iki belgeye ihtiyacınız var.",
         alt: "Bavuluyla gülümseyen gezgin çizimi",
         silentMs: 6000,
-        voiceMs: 6610,
+        voiceMs: 7210,
     },
     {
         key: "passport",
@@ -39,7 +39,7 @@ const SCENES = [
         subtitle: "İlk olarak, pasaportunuzun kimlik bilgilerinin yer aldığı sayfanın fotoğrafını yükleyin.",
         alt: "Türk pasaportu, kimlik sayfası ve telefonla fotoğraflama çizimi",
         silentMs: 5000,
-        voiceMs: 5230,
+        voiceMs: 6610,
     },
     {
         key: "photo",
@@ -51,7 +51,7 @@ const SCENES = [
             "Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. Fotoğrafınızın gözlüksüz ve şapkasız olması gerektiğini lütfen unutmayın.",
         alt: "Yan yana iki vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
         silentMs: 8500,
-        voiceMs: 9300,
+        voiceMs: 9770,
     },
     {
         key: "upload",
@@ -75,7 +75,7 @@ const SCENES = [
             "Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-mail adresinize ve WhatsApp ile gönderilir.",
         alt: "Kulaklıklı danışman ve onay listesi çizimi",
         silentMs: 9000,
-        voiceMs: 10660,
+        voiceMs: 11310,
     },
     {
         key: "extras",
@@ -87,7 +87,7 @@ const SCENES = [
             "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de başvurunuza ekleyebilirsiniz. Böylece Dubai'ye vardığınız anda internet bağlantınız hazır olur ve seyahat sigortanız anında devreye girer.",
         alt: "eSIM ve seyahat sigortası simgeleri çizimi",
         silentMs: 11000,
-        voiceMs: 12930,
+        voiceMs: 14060,
     },
     {
         key: "cta",
@@ -99,7 +99,7 @@ const SCENES = [
             "Dubai vizenizi Dubai Vize Online güvencesiyle kolayca alın. TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle başvurunuzu güvenle tamamlayın. Hemen başvurun ve Dubai yolculuğunuzun ilk adımını bugün atın. Dubai sizi bekliyor!",
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
         silentMs: 12000,
-        voiceMs: 15570,
+        voiceMs: 18420,
         cta: true,
     },
 ];
@@ -233,12 +233,12 @@ export const VisaExplainer = () => {
                         data-testid="explainer-listen-button"
                     >
                         <Headphones className="h-4.5 w-4.5" aria-hidden="true" />
-                        Anlatımı dinle · 1 dakika
+                        Anlatımı dinle · 1,5 dakika
                     </button>
                 )}
                 <div className="max-w-md">
                     <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary sm:text-[11px]">
-                        Dubai vizenizi nasıl alacağınızı 1 dakikada anlatalım
+                        Dubai vizenizi nasıl alacağınızı kısaca anlatalım
                     </span>
                     <p className="mt-2 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
                         Sadece 2 belgeyle Dubai vizesi

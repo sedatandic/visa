@@ -25,20 +25,20 @@ API = "https://api.elevenlabs.io/v1/text-to-speech"
 
 # "ortalama iki is gunu" cumlesindeki ton referans alindi: sakin, guven veren.
 # Kullanici notu: "bir tik daha hizli, dogal konussun, robotik olmasin" ->
-# tempo 1.07 (hafif hizli), stability dusuruldu (monoton/robotik his azalir),
+# tempo 1.0 (dogal): 1.2 fazla hizli geldi, kullanici %30 yavaslatma istedi, stability dusuruldu (monoton/robotik his azalir),
 # style yukseltildi (dogal tonlama). Tum sahneler bu tek ayarla uretilir.
 VOICE_SETTINGS = {
     "stability": 0.42,
     "similarity_boost": 0.85,
     "style": 0.32,
     "use_speaker_boost": True,
-    "speed": 1.07,
+    "speed": 1.0,
 }
 
 SCENES = [
     {
         "key": "intro",
-        "text": "Dubai vizesi almak artık çok kolay. "
+        "text": "Dubaai vizesi almak artık çok kolay. "
         "Başvurunuzu yapmak için yalnızca iki belgeye ihtiyacınız var.",
     },
     {
@@ -59,21 +59,21 @@ SCENES = [
     {
         "key": "track",
         "text": "Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyoruz. "
-        "Onaylanan Dubai vizeniz ortalama iki iş günü içinde "
+        "Onaylanan Dubaai vizeniz ortalama iki iş günü içinde "
         "e-mail adresinize ve WhatsApp ile gönderilir.",
     },
     {
         "key": "extras",
-        "text": "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de başvurunuza ekleyebilirsiniz. "
-        "Böylece Dubai'ye vardığınız anda internet bağlantınız hazır olur "
+        "text": "Dilerseniz seyahat sigortanızı ve Dubaai eSIM'inizi de başvurunuza ekleyebilirsiniz. "
+        "Böylece Dubaai'ye vardığınız anda internet bağlantınız hazır olur "
         "ve seyahat sigortanız anında devreye girer.",
     },
     {
         "key": "cta",
-        "text": "Dubai vizenizi Dubai Vize Online güvencesiyle kolayca alın. "
+        "text": "Dubaai vizenizi Dubaai Vize Online güvencesiyle kolayca alın. "
         "TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle başvurunuzu güvenle tamamlayın. "
-        "Hemen başvurun ve Dubai yolculuğunuzun ilk adımını bugün atın. "
-        "Dubai sizi bekliyor!",
+        "Hemen başvurun ve Dubaai yolculuğunuzun ilk adımını bugün atın. "
+        "Dubaai sizi bekliyor!",
     },
 ]
 
