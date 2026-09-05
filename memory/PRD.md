@@ -845,3 +845,10 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   upload -33.38, track -43.07, extras -56.56, cta -73.62.
 - Doğrulandı: full.mp3 çalıyor, 15. saniyede vesikalık sahnesi, cta noktası 57.7 sn'ye
   atlıyor.
+- **Ses denemeleri**: 4 Türk erkek sesi kütüphaneye eklendi ve aynı metinle ~10 sn'lik
+  demolar üretildi → `public/audio/demo/{mert,tbm,faruk,goksel}.mp3` +
+  `audio/demo/index.html` (dinleme sayfası, noindex). Kullanıcı seçim yapmadı, "en
+  güvenilir olanı seç" talimatı gereği **TBM - Confident Narrator**
+  (`K03P46eiU2GnWEx7dtcV`) varsayılan yapıldı; full.mp3 bu sesle yenilendi (68.6 sn).
+  Sahneler: intro 0-6.41, passport -11.37, photo -20.52, upload -31.02, track -41.20,
+  extras -53.20, cta -68.60. Doğrulandı (35. sn → takip sahnesi).

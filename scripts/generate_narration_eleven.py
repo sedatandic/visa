@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 load_dotenv("/app/backend/.env")
 
 OUT_DIR = Path("/app/frontend/public/audio/explainer")
-VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "GkfwuvVxiSskQtPHXcbw")  # Mert - Turkish Baritone (erkek)
+VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "K03P46eiU2GnWEx7dtcV")  # TBM Confident Narrator (erkek, guven veren)
 MODEL_ID = os.getenv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2")
 API = "https://api.elevenlabs.io/v1/text-to-speech"
 
