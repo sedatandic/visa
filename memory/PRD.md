@@ -482,3 +482,18 @@ ve 4. sahnede telefonda "DIGITAL VISA APPROVED" yazısı vardı.
   yükleme sahnesinde altın ilerleme halkası + belge ikonları, teslim sahnesinde telefonda
   yalnız yeşil onay tiki (Burj Khalifa fonunda Türk gezgin).
 - Seslendirme `coral` → **`shimmer`**, hız 0.85 → **0.92** (kullanıcı: "daha sıcak ses tonu").
+
+### ElevenLabs Türkçe seslendirme devrede (2026-06-06)
+Kullanıcı ElevenLabs anahtarını paylaştı → `backend/.env` → `ELEVENLABS_API_KEY`.
+- Anahtar ilk başta izinsiz oluşturulmuştu (`missing permission text_to_speech`);
+  kullanıcı "Has access to all" yaptı. `voices_read` hâlâ kapalı, ses listesi API'den
+  alınamıyor — voice ID'ler sabit kullanılıyor.
+- Ücretsiz plan **library (topluluk) seslerini API'den kullanamıyor** (402
+  `paid_plan_required`): Aria, Rachel, Charlotte çalışmıyor. Çalışan varsayılan kadın
+  sesleri: Sarah, Laura, Alice, Lily, Jessica, **Matilda**.
+- `scripts/generate_narration_eleven.py` (yeni): Matilda (`XrExE9yKIg1WjnnlVkGX`,
+  sıcak/samimi), `eleven_multilingual_v2`, stability 0.5 / similarity 0.85 / style 0.2 /
+  speed 0.95, mp3_44100_128. 4 klip `frontend/public/audio/explainer/*.mp3` üzerine yazıldı
+  (~6.5 sn). `VOICE_MS` 6800 yapıldı. OpenAI TTS scripti (`generate_narration.py`) yedek
+  olarak duruyor.
+- Doğrulama: ses butonu → passport.mp3 6.5 sn çalıyor (JS kontrolü + ekran görüntüsü).

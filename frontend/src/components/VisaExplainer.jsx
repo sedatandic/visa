@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Captions, CheckCircle2, IdCard, MailCheck, Pause, Play, UploadCloud, Volume2, VolumeX } from "lucide-react";
 
 const SILENT_MS = 5000;
-const VOICE_MS = 8000;
+const VOICE_MS = 6800;
 
 const SCENES = [
     {
