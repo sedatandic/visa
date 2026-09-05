@@ -226,6 +226,16 @@ ADDONS = {
         'description': 'Acil seyahatler için öncelikli işlem. Başvurunuz sıraya girmeden işleme alınır, sonuç yaklaşık 8 mesai saatinde çıkar.',
         'features': ['Yaklaşık 8 mesai saatinde sonuç', 'Öncelikli işlem sırası', 'Anlık bilgilendirme'],
     },
+    "instant_express": {
+        'id': 'instant_express',
+        'name': 'Anında Ekspres Vize',
+        'price': 7410.0,
+        'price_usd': 150.0,
+        'currency': 'TRY',
+        'per_person': True,
+        'description': 'Uçuşu bugün olan yolcular için en hızlı kademe. Başvurunuz anında işleme alınır, sonuç aynı gün içinde iletilir.',
+        'features': ['Aynı gün içinde sonuç', 'Başvuru anında işleme alınır', 'WhatsApp ile birebir takip'],
+    },
 }
 
 # Geriye uyumluluk: eski basvurularda saklanan ek hizmet adlari
@@ -324,6 +334,7 @@ SERVICES = [
     {"key": "family", "title": "Aile Başvurusu", "detail": "Tek formda tüm aileyi ekleyin; aile ve çocuk indirimleri otomatik hesaplansın."},
     {"key": "documents", "title": "Evrak Kontrolü", "detail": "Pasaport, vesikalık ve ek belgeleriniz başvuru gönderilmeden önce ücretsiz kontrol edilir."},
     {"key": "express", "title": "Ekspres Vize", "detail": "Acil seyahatlerde başvurunuz öncelikli sıraya alınır, sonuç yaklaşık 8 mesai saatinde gelir."},
+    {"key": "instant_express", "title": "Anında Ekspres Vize", "detail": "Uçuşu bugün olan yolcular için en hızlı kademe: başvurunuz anında işleme alınır, sonuç aynı gün içinde iletilir."},
     {"key": "extension", "title": "Vize Uzatma", "detail": "Ülkeden çıkmadan kalış sürenizi uzatma işlemlerinizi sizin adınıza yürütüyoruz."},
     {"key": "support", "title": "Başvuru Takibi ve Destek", "detail": "Takip kodunuzla süreci anlık izleyin; danışmanınız her aşamada ulaşılabilir olsun."},
 ]
@@ -629,6 +640,9 @@ def bundle_discount_amount(store_lines) -> float:
 def _addon_lines(addons: dict, count: int, addon_prices: dict | None) -> tuple[list, float]:
     """Secili ek hizmetleri fatura satirlarina cevirir; (satirlar, toplam) doner."""
     lines = []
+    # Aninda ekspres secildiyse standart ekspres tekrar ucretlendirilmez.
+    if addons.get("instant_express"):
+        addons = {**addons, "express": False}
     for key, meta in ADDONS.items():
         if not addons.get(key):
             continue

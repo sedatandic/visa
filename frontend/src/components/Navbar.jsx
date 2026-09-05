@@ -101,7 +101,7 @@ export const Navbar = () => {
             }`}
             data-testid="site-navbar"
         >
-            <div className="flag-strip" aria-hidden="true" />
+            <div className="h-px w-full bg-border" aria-hidden="true" />
             <div className="container-page flex h-[108px] items-end justify-between gap-4 pb-3.5">
                 <Link
                     to="/"
@@ -109,7 +109,7 @@ export const Navbar = () => {
                     data-testid="navbar-logo-link"
                 >
                     <BrandMark />
-                    <span className="ml-1.5 hidden items-end gap-1 sm:flex" data-testid="brand-flag-pair">
+                    <span className="ml-7 hidden items-end gap-1 sm:flex" data-testid="brand-flag-pair">
                         <TrFlag className="h-7 w-14" />
                         <ArrowRight className="mb-1 h-3.5 w-3.5 text-primary" aria-hidden="true" />
                         <UaeFlag className="h-7 w-14" />

@@ -560,3 +560,19 @@ Kullanıcı: "resimler çok koyu, açık renk olsun zemin", "yazılar okunmuyor"
 - **GERİ ALINDI**: kullanıcı "resim koyma, eskisi gibi sadece flipping yazılar olsun" dedi →
   `HeroBannerSlider` ana sayfadan kaldırıldı (dosya duruyor, istenirse tek satırla geri gelir).
   Hero yine sadece flip'li başlıklardan oluşuyor. Duyuru şeridi kalmaya devam ediyor.
+
+## 2026-06-06 · Anında Ekspres Vize kademesi + navbar/şerit rötuşları
+- **Yeni ek hizmet `instant_express`**: "Anında Ekspres Vize", **150 USD/kişi (7.420 ₺)**,
+  "aynı gün içinde sonuç" (kullanıcı onayı). `content.py ADDONS` + EXTRA_SERVICES listesi,
+  `models.py AddonsIn.instant_express`, `routes_public.processing_days` →
+  "aynı gün içinde". `content._addon_lines()` içinde **iki ekspres kademesi birlikte
+  ücretlendirilmiyor** (instant seçiliyse express düşürülür).
+  `Apply.jsx` ek hizmet kartlarında karşılıklı kapanma + "En hızlı" etiketi + vurgulu çerçeve.
+  Sihirbaz 2. adımda, /vize-tipleri ve /hizmetler sayfalarında otomatik listeleniyor.
+- Seslendirme son sahnesi: "**Vizenizi Dubai Vize Online güvencesiyle alın.** TÜRSAB üyesi
+  A grubu seyahat acentesiyiz..." (kullanıcı isteği: site adı geçsin) — klip yenilendi (11.5 sn).
+- Navbar: **mavi flag-strip kaldırıldı** (yerine 1px border), logonun negatif margin'i geri
+  alındı → logo sol kenarı kart/kapsayıcı hizasında; bayrak çifti `ml-7` ile logodan uzaklaştırıldı.
+- Duyuru şeridi zemini koyu kahveden **açık kreme** (`--panel-2`) çevrildi, metin `--charcoal`.
+- Test: iteration_73 frontend %100 (ek hizmet karşılıklı kapanma, özet tutarları 5.190→12.610,
+  7 sahne, şerit, flip başlıklar, /vize-tipleri + /hizmetler regresyonu).

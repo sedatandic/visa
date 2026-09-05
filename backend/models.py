@@ -50,6 +50,7 @@ class TravelIn(BaseModel):
 
 class AddonsIn(BaseModel):
     express: bool = False
+    instant_express: bool = False
     insurance: bool = False
     insurance_plus: bool = False
     esim: bool = False

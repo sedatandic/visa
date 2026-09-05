@@ -93,13 +93,13 @@ const SCENES = [
         key: "cta",
         step: "Son adım",
         icon: Plane,
-        title: "TÜRSAB onaylı acente güvencesiyle başvurun",
-        note: "A grubu seyahat acentesi · yolculuğunuz bugün başlasın",
+        title: "Dubai Vize Online güvencesiyle başvurun",
+        note: "TÜRSAB üyesi A grubu seyahat acentesi · yolculuğunuz bugün başlasın",
         subtitle:
-            "Başvurunuzu TÜRSAB üyesi, A grubu seyahat acentesi güvencesiyle yapın. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
+            "Vizenizi Dubai Vize Online güvencesiyle alın. TÜRSAB üyesi A grubu seyahat acentesiyiz. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
-        silentMs: 8000,
-        voiceMs: 10400,
+        silentMs: 9000,
+        voiceMs: 11500,
         cta: true,
     },
 ];

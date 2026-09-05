@@ -23,7 +23,7 @@ const Row = ({ ariaHidden }) => (
 
 export const AnnouncementTicker = () => (
     <div
-        className="relative overflow-hidden bg-[hsl(var(--charcoal))] text-white"
+        className="relative overflow-hidden border-b border-border bg-[hsl(var(--panel-2))] text-[hsl(var(--charcoal))]"
         data-testid="announcement-ticker"
     >
         <div className="ticker-track flex w-max items-center py-2">

@@ -1654,16 +1654,31 @@ export default function Apply() {
                                         <p className="mt-1.5 text-sm text-muted-foreground">Yolcu başına eklenir.</p>
                                         <div className="mt-4 space-y-4">
                                             {addonMeta.map((a) => (
-                                                <label key={a.id} className="flex cursor-pointer items-start gap-4 rounded-xl border border-border bg-card p-5" data-testid={`addon-toggle-row-${a.id}`}>
+                                                <label key={a.id} className={`flex cursor-pointer items-start gap-4 rounded-xl border bg-card p-5 ${a.id === "instant_express" ? "border-primary/50" : "border-border"}`} data-testid={`addon-toggle-row-${a.id}`}>
                                                     <Switch
                                                         checked={!!addons[a.id]}
-                                                        onCheckedChange={(c) => setAddons((s) => ({ ...s, [a.id]: !!c }))}
+                                                        onCheckedChange={(c) =>
+                                                            setAddons((s) => {
+                                                                const next = { ...s, [a.id]: !!c };
+                                                                // Iki ekspres kademesi ayni anda secilemez
+                                                                if (c && a.id === "instant_express") next.express = false;
+                                                                if (c && a.id === "express") next.instant_express = false;
+                                                                return next;
+                                                            })
+                                                        }
                                                         className="mt-1"
                                                         data-testid={`addon-switch-${a.id}`}
                                                     />
                                                     <div className="flex-1">
                                                         <div className="flex flex-wrap items-center justify-between gap-2">
-                                                            <p className="font-heading text-sm font-bold">{a.name}</p>
+                                                            <p className="font-heading text-sm font-bold">
+                                                                {a.name}
+                                                                {a.id === "instant_express" && (
+                                                                    <span className="ml-2 rounded-full bg-primary/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                                                                        En hızlı
+                                                                    </span>
+                                                                )}
+                                                            </p>
                                                             <span className="font-heading text-sm font-bold text-primary">
                                                                 + {formatMoney(a.price, a.currency)} / kişi
                                                             </span>
