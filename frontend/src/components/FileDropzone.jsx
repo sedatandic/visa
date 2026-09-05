@@ -87,7 +87,7 @@ export const FileDropzone = ({
                         />
                     ) : isImage ? (
                         <img
-                            src={fileUrl(value.file_id)}
+                            src={fileUrl(value.url)}
                             alt={value.original_filename}
                             className="h-16 w-16 rounded-lg border border-border object-cover"
                         />

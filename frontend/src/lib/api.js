@@ -36,7 +36,14 @@ export const customerAuth = {
     },
 };
 
-export const fileUrl = (fileId) => `${API}/files/${fileId}`;
+// Backend imzali dosya yollari uretir (/api/files/{id}?t=...). Burada yalniz tam
+// adrese cevrilir; imzasiz istekler 403 doner.
+export const fileUrl = (signedPath, download = false) => {
+    if (!signedPath) return "";
+    const url = signedPath.startsWith("http") ? signedPath : `${BACKEND_URL}${signedPath}`;
+    if (!download) return url;
+    return url.includes("download=1") ? url : `${url}${url.includes("?") ? "&" : "?"}download=1`;
+};
 
 export function apiError(err, fallback = "Bir hata oluştu. Lütfen tekrar deneyin.") {
     const detail = err?.response?.data?.detail;

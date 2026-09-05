@@ -11,7 +11,7 @@ import {
     Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, apiError, API } from "../lib/api";
+import { api, apiError, fileUrl } from "../lib/api";
 import { formatDate, formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { Button } from "../components/ui/button";
@@ -240,10 +240,10 @@ export default function OrderStatus() {
                                         <p className="mt-3 text-sm leading-6">{order.delivery.message}</p>
                                     )}
                                     <div className="mt-4 flex flex-wrap gap-3">
-                                        {order.delivery.esim_file_id && (
+                                        {order.delivery.esim_url && (
                                             <Button asChild className="h-11" data-testid="download-esim-button">
                                                 <a
-                                                    href={`${API}/files/${order.delivery.esim_file_id}?download=1`}
+                                                    href={fileUrl(order.delivery.esim_url, true)}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                 >
@@ -251,10 +251,10 @@ export default function OrderStatus() {
                                                 </a>
                                             </Button>
                                         )}
-                                        {order.delivery.policy_file_id && (
+                                        {order.delivery.policy_url && (
                                             <Button asChild className="h-11" data-testid="download-policy-button">
                                                 <a
-                                                    href={`${API}/files/${order.delivery.policy_file_id}?download=1`}
+                                                    href={fileUrl(order.delivery.policy_url, true)}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                 >

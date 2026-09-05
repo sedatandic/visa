@@ -1034,8 +1034,8 @@ export default function Apply() {
         }
     };
 
-    // Vesikalik fotografi yapay zeka ile denetler. Sonuc sadece uyari amaclidir,
-    // kullanici uygun olmayan fotografla da basvuruya devam edebilir.
+    // Vesikalik fotografi yapay zeka ile denetler. Kontrol "uygun degil" derse
+    // basvuru bir sonraki adima gecemez; kullanici yeni fotograf yuklemelidir.
     const checkPhotoWithAI = async (key, fileInfo) => {
         if (!fileInfo?.file_id) {
             setPhotoCheck((s) => ({ ...s, [key]: undefined }));
@@ -1170,17 +1170,32 @@ export default function Apply() {
             }
         }
         if (step === 2) {
+            const photoPending = [];
+            const photoRejected = [];
             travelers.forEach((t) => {
                 const te = {};
                 if (!t.passportFile) te.passport = "Pasaport fotoğrafı zorunlu.";
                 if (!t.photoFile) te.photo = "Vesikalık fotoğraf zorunlu.";
+                const check = photoCheck[t.key];
+                const name = `${t.first_name} ${t.last_name}`.trim() || `${travelers.indexOf(t) + 1}. Yolcu`;
+                if (t.photoFile && (!check || check.status === "loading")) {
+                    photoPending.push(name);
+                    if (!check) checkPhotoWithAI(t.key, t.photoFile);
+                } else if (check?.status === "warn") {
+                    photoRejected.push(name);
+                    te.photo = "Fotoğraf vize standartlarına uygun değil. Lütfen yeni bir vesikalık yükleyin.";
+                }
                 if (Object.keys(te).length) e[t.key] = { ...(e[t.key] || {}), ...te };
             });
+            if (photoRejected.length)
+                e.photo_quality = `Vesikalık fotoğraf vize standartlarına uygun olmadan devam edemezsiniz (${photoRejected.join(", ")}). Lütfen uygun bir fotoğraf yükleyin.`;
+            else if (photoPending.length)
+                e.photo_quality = `Vesikalık fotoğraf kontrolü sürüyor (${photoPending.join(", ")}). Lütfen birkaç saniye bekleyin.`;
         }
         setErrors(e);
         if (Object.keys(e).length) {
             const labels = collectErrorLabels(e, travelers);
-            const blocking = e.travelers_adult || e.stay_length || e.passport_validity;
+            const blocking = e.travelers_adult || e.stay_length || e.passport_validity || e.photo_quality;
             toast.error(
                 blocking ||
                     (labels.length
@@ -1199,7 +1214,7 @@ export default function Apply() {
             return false;
         }
         return true;
-    }, [step, contact, travelers, travel, extraDocs, visaTypes]);
+    }, [step, contact, travelers, travel, extraDocs, visaTypes, photoCheck]);
 
     const next = () => {
         if (!validateStep()) return;
@@ -2178,6 +2193,18 @@ export default function Apply() {
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Pasaport ve vesikalık zorunlu. Belgeleriniz şifreli saklanır.</p>
 
+                                    {errors.photo_quality && (
+                                        <div
+                                            className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-4"
+                                            data-testid="photo-quality-block-warning"
+                                        >
+                                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                                            <p className="text-sm font-semibold leading-6 text-destructive">
+                                                {errors.photo_quality}
+                                            </p>
+                                        </div>
+                                    )}
+
                                     <div className="mt-6 space-y-7">
                                         {travelers.map((t, idx) => {
                                             const te = errors[t.key] || {};
@@ -2291,8 +2318,9 @@ export default function Apply() {
                                                                             {photoCheck[t.key].advice}
                                                                         </p>
                                                                     )}
-                                                                    <p className="mt-2 text-xs text-muted-foreground">
-                                                                        Yine de bu fotoğrafla devam edebilirsiniz.
+                                                                    <p className="mt-2 text-xs font-semibold text-destructive">
+                                                                        Bu fotoğrafla başvuruya devam edilemez. Lütfen
+                                                                        uygun bir vesikalık yükleyip tekrar deneyin.
                                                                     </p>
                                                                     <button
                                                                         type="button"

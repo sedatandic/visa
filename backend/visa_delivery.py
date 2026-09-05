@@ -16,6 +16,7 @@ import uuid
 from datetime import datetime, timezone
 
 from db import applications_col, serialize_doc, uploads_col
+import file_access
 from emailer import send_email, visa_ready_html
 from storage import APP_NAME, put_object
 
@@ -175,7 +176,9 @@ async def deliver_visa_document(app_doc: dict, origin: str) -> dict:
     if not to_email:
         return {"ok": False, "reason": "no_email"}
 
-    download_url = f"{origin.rstrip('/')}/api/files/{visa_result['file_id']}?download=1"
+    download_url = file_access.file_url(
+        origin, visa_result["file_id"], file_access.TTL_EMAIL, download=True
+    )
     now = datetime.now(timezone.utc)
     res = await send_email(
         to_email,

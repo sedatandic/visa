@@ -226,3 +226,43 @@ FamilyDiscountMeter'ın 2 yolcuda %10 / 5 yolcuda %15 göstermesi.
 - Havale kartlarındaki hesap sahibi adı "VizeAtlas…" → "Dubai Vize Online Turizm ve Danışmanlık A.Ş.".
 - Sihirbazın havale onay ekranı artık tek eski IBAN yerine 3 bankalı kopyalanabilir akordiyonu
   gösteriyor; başvuru gönderiminde çift tıklama kilidi (`submitLock`) eklendi.
+
+## 2026-06-09 · İmzalı dosya erişimi (SEC-003 kapatıldı) + vesikalık engelleme kuralı
+
+### Güvenlik: `/api/files/{id}` artık açık değil
+- Yeni `backend/file_access.py`: JWT_SECRET ile **HMAC-SHA256 imzalı, süreli** dosya jetonu
+  (`?t=<exp>.<imza>`). Fonksiyonlar: `make_token`, `token_valid`, `admin_token_valid`,
+  `file_path` (site içi görece yol), `file_url` (e-posta için tam adres),
+  `add_file_urls` (bir sözlükteki her `*_file_id` yanına imzalı `*_url` ekler).
+  TTL: görünüm 12 saat · yükleme önizlemesi 7 gün · Zami aktarımı 6 saat · e-posta 180 gün.
+- `routes_public.get_file`: geçerli `?t=` jetonu **veya** yönetici Bearer jetonu yoksa **403**.
+- `db._serialize_mapping` (serialize_doc): dosya kimliklerinin yanına imzalı bağlantı ekler →
+  yönetici paneli, `/takip`, `/hesabim` ve sipariş sayfaları tek noktadan imzalı URL alıyor
+  (erişim, belgeyi görebilme yetkisini takip eder).
+- E-posta/WhatsApp bağlantıları imzalandı: `routes_admin` send-visa · WhatsApp metni ·
+  `admin_deliver_order` (eSIM/poliçe), `insurance_tasks.issue_policy`, `visa_delivery`,
+  `zami.build_payload` (RPA/bookmarklet indirmeleri).
+- Frontend: `lib/api.js → fileUrl(signedPath, download)` artık dosya kimliği değil imzalı yol
+  alıyor; `FileDropzone` (önizleme), `AdminApplicationDetail.DocumentViewer({url})`,
+  `Track.jsx` (`visa_result.file_url`), `OrderStatus.jsx` (`delivery.esim_url/policy_url`).
+- Ek sıkılaştırmalar: `JWT_SECRET` için `dv-dev-secret` yedeği kaldırıldı (routes_admin,
+  routes_account, admin_test_token); CORS artık her origin'i yansıtmıyor
+  (env `CORS_ORIGINS`/`PUBLIC_SITE_URL` + `dubaivizeonline.com|emergentagent.com|emergent.host`
+  regex'i; kötü origin'e `access-control-allow-origin` verilmiyor — NOT: platform ingress'i
+  dışarıda hâlâ `*` ekliyor, uygulama Bearer jetonu kullandığı için etki yok);
+  Zami handoff jetonu artık en fazla 10 kez kullanılabiliyor (`HANDOFF_MAX_USES`).
+- Doğrulama: curl (jetonsuz 403 · imzalı 200 · kurcalanmış 403 · çapraz dosya 403 ·
+  admin Bearer 200) + iteration_91 (backend 10/10, yönetici panelinde belge küçük resimleri
+  imzalı URL ile yükleniyor, `/takip` sorgulaması çalışıyor).
+
+### Vesikalık uygun olmadan başvuru devam etmiyor (kullanıcı isteği)
+- `Apply.jsx validateStep` (step 2/Evraklar): fotoğraf kontrolü `warn` dönerse
+  `e.photo_quality` ile ileri geçiş **engellenir**; kontrol sürüyorsa/hiç yapılmadıysa
+  (taslak geri yükleme) bekletilir ve kontrol otomatik başlatılır. `skipped` (AI kotası/servis
+  yok) durumunda engelleme uygulanmaz.
+- Kırmızı bant `data-testid="photo-quality-block-warning"` (adım başında) + toast; uyarı
+  kutusundaki "Yine de bu fotoğrafla devam edebilirsiniz" metni
+  "Bu fotoğrafla başvuruya devam edilemez…" olarak değişti.
+- Doğrulama (Playwright, gerçek AI çağrısı): manzara görseli → uyarı + `photo-quality-block-warning`
+  + adım 3'te kalındı; üretilmiş uygun vesikalık → `traveler-0-photo-check-ok` ve adım 4'e geçiş.
+  Endpoint kontrolü: manzara `ok:false, score 0.08` · portre `ok:true, score 0.95`.

@@ -1,0 +1,67 @@
+{
+  "summary": "Iteration 91: verified signed file-access changes end-to-end. Backend pytest (test_iteration_91.py) 10/10 non-skipped tests PASS: signed upload URLs, no-token 403, tampered token 403, cross-file token 403, admin Bearer bypass 200, valid signed 200, admin request-code+verify-code OTP flow, admin application detail returns signed passport_url/photo_url (200 when fetched), public /content/site, /products, /bundles regression OK. Frontend: admin application detail (/admin/basvuru/{id}) renders document-thumbnail-Pasaport 1 and document-thumbnail-Vesikalık 1 with signed ?t= URLs; all 4 open-document-* links carry signed URLs. /takip page loads and lookup works with reference DV-SH083439 + YILMAZ (no visa doc yet, so no tracking-download-visa-button — expected). Photo-blocking (Apply.jsx step 3) NEW rule verified via code review: photo-quality-block-warning banner (line 2199), traveler-{idx}-photo-check-warning (line 2299), traveler-{idx}-photo-check-ok (line 2290), and 'Bu fotoğrafla başvuruya devam edilemez' text (line 2322) present; validateStep step===2 blocks when photoCheck[key].status==='warn' via e.photo_quality (lines 1184-1194). Full wizard E2E for photo blocking was NOT driven due to Gemini rate-limit risk (40 req/hour/IP) and the 'skipped' branch that intentionally bypasses blocking.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_behaviors": {
+    "file_access_security": {
+      "upload_returns_signed_url": true,
+      "no_token_returns_403": true,
+      "signed_token_returns_200": true,
+      "tampered_token_returns_403": true,
+      "cross_file_token_returns_403": true,
+      "admin_bearer_bypass_returns_200": true
+    },
+    "admin_application_detail": {
+      "endpoint": "/api/admin/applications/{id}",
+      "response_wraps": "{ application, transactions }",
+      "documents_have_signed_urls": true,
+      "urls_fetch_200": true
+    },
+    "admin_ui_thumbnails": {
+      "target_id": "cdb43bcd-ce2c-4c62-9576-b39efccee4f4",
+      "passport_thumb_signed": true,
+      "photo_thumb_signed": true,
+      "open_document_links_signed": true,
+      "note": "One transient 502 was seen for the passport url during initial paint, but direct curl with the same signed URL returns 200 (332 bytes JPEG). Files are tiny placeholder JPEGs from earlier tests so image icons look blank/gray in the screenshot — that is not related to the signing change."
+    },
+    "tracking_page": {
+      "lookup_ok": true,
+      "signed_download_link_present": "N/A (this application has no uploaded visa document)"
+    },
+    "photo_blocking_rule_code_review": {
+      "photo-quality-block-warning_selector": "Apply.jsx:2199",
+      "traveler-idx-photo-check-warning_selector": "Apply.jsx:2299",
+      "traveler-idx-photo-check-ok_selector": "Apply.jsx:2290",
+      "blocking_message_present": "'Bu fotoğrafla başvuruya devam edilemez' at Apply.jsx:2322",
+      "gate_logic": "validateStep step===2 sets e.photo_quality when photoCheck[key].status==='warn' (Apply.jsx:1184-1194) — Next-step transition blocked and toast fires when errors present (Apply.jsx:1196-1204)",
+      "loading_state": "Pending photos are also blocked with 'kontrolü sürüyor' message; check auto-started if not yet run (line 1181-1183)",
+      "skipped_bypass": "Per spec, when AI returns 'skipped' (rate limit / quota), blocking is intentionally NOT applied — this is by design"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_91.py",
+    "/app/test_reports/pytest/iteration_91.xml"
+  ],
+  "action_items": [
+    "Optional: main agent may drive a full wizard E2E with an intentionally unsuitable photo (e.g., a landscape image) to visually confirm the block, but only after checking Gemini quota status. Backend logs show the check endpoint uses EMERGENT_LLM_KEY; if quota is depleted the check returns 'skipped' and blocking is bypassed (expected)."
+  ],
+  "critical_code_review_comments": [
+    "file_access.py is clean, HMAC(sha256) with URL-safe base64, no padding — correct. Uses JWT_SECRET as HMAC key.",
+    "add_file_urls mutates the incoming dict; serialize_doc calls it at every level — no recursion needed, good.",
+    "Note: The admin bearer bypass path (admin_token_valid) decodes JWT with the same JWT_SECRET and requires role=='admin'. Acceptable.",
+    "Non-blocking: file previews on the admin detail page render with naturalWidth==0 for the placeholder JPEGs used in the DB (they are only 332 bytes — likely produced during earlier test uploads). Real user uploads render correctly. Not a signing regression."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_91.py (created)"
+  ],
+  "success_rate": {"backend": "100% (10/10 executed)", "frontend": "100% on executed checks; photo-blocking rule verified by code review only"},
+  "test_credentials": "Admin token via /app/backend/admin_test_token.py (used programmatically). OTP flow tested against MongoDB admin_login_codes.code_plain.",
+  "seed_data_creation": "Test writes and cleans up a TEST_APP_* document in visa_applications to verify signed-URL serialization when no existing app has documents. Also uploads two small JPEGs via /api/uploads.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The signed-URL security fix is fully validated on backend + admin UI + track page. If UI verification of the NEW photo-blocking rule is required, drive the wizard at /basvuru: pick 30-day tourist visa, fill contact (name, email delivered@resend.dev, phone +905325882630), add 1 adult traveler with valid passport data, set travel_dates start/end, then at step 3 upload any passport JPEG for the passport field and a landscape/pattern image (NOT a portrait) for the photo field, wait ~5s for the AI check, then click the Next button. Expect traveler-0-photo-check-warning to appear with 'Bu fotoğrafla başvuruya devam edilemez' and photo-quality-block-warning banner to render; step index should stay at 2 (step===2). If backend returns status='skipped' for the photo check, the block is intentionally bypassed by design — verify by inspecting the response of POST /api/uploads/photo-check (or similar) in the network tab."
+}

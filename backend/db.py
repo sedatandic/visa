@@ -6,6 +6,8 @@ from typing import Any
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from file_access import add_file_urls
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
@@ -46,8 +48,13 @@ except Exception:  # pragma: no cover
 
 
 def _serialize_mapping(doc: dict) -> dict:
-    """Mongo'nun `_id` alanini atarak sozlugu ozyinelemeli serilestirir."""
-    return {key: serialize_doc(value) for key, value in doc.items() if key != "_id"}
+    """Mongo'nun `_id` alanini atarak sozlugu ozyinelemeli serilestirir.
+
+    Dosya kimliklerinin yanina imzali erisim baglantisi eklenir; boylece belgeyi
+    gorebilen (yonetici, takip kodu sahibi, hesap sahibi) dosyayi da acabilir.
+    """
+    out = {key: serialize_doc(value) for key, value in doc.items() if key != "_id"}
+    return add_file_urls(out)
 
 
 def serialize_doc(doc: Any) -> Any:

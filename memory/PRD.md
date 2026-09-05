@@ -758,7 +758,9 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   `python /app/scripts/generate_narration_eleven.py`.
 - Doğrulandı: 3 sahnede klipler yeni sürelerle yükleniyor ve çalıyor, altyazılar senkron.
 
-## Güvenlik denetimi (security_audit_agent, 2026-06-06) — HENÜZ DÜZELTİLMEDİ
+## Güvenlik denetimi (security_audit_agent, 2026-06-06) — SEC-001/002/003/004 DÜZELTİLDİ
+(2026-06-09: SEC-003 dosya erişimi imzalı/süreli jetona geçti, JWT_SECRET yedeği kaldırıldı,
+CORS allowlist'e alındı, Zami handoff jetonu 10 kullanımla sınırlandı — bkz. CHANGELOG 2026-06-09)
 - SEC-001 **HIGH**: `routes_account.py:206-219` e-posta + soyad ile müşteri hesabına giriş
   → hesap devralma; OTP'ye geçilmeli + rate limit.
 - SEC-002 **HIGH**: `routes_zami.py` bookmarklet `box.innerHTML` içine yolcu adı/etiketi

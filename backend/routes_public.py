@@ -7,7 +7,18 @@ import string
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Request, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from content import (
     MARKETING_CONSENT,
@@ -64,11 +75,13 @@ from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_v
 import ocr_metrics
 from passport_ai import apply_background_report, background_report, check_photo, read_passport
 from rate_limit import check as rate_check, client_ip
+import file_access
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
 from visa_guides import build_guide, guide_index
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+file_bearer = HTTPBearer(auto_error=False)
 
 MAX_FILE_BYTES = 10 * 1024 * 1024
 ALLOWED_EXT = {"jpg", "jpeg", "png", "webp", "pdf"}
@@ -539,7 +552,7 @@ async def upload_document(file: UploadFile = File(...), doc_type: str = Form("pa
         "original_filename": filename,
         "content_type": content_type,
         "size": record["size"],
-        "url": f"/api/files/{file_id}",
+        "url": file_access.file_path(file_id, file_access.TTL_UPLOAD),
     }
 
 
@@ -713,7 +726,18 @@ async def read_passport_document(request: Request, file_id: str = Form(...)) -> 
 
 
 @router.get("/files/{file_id}")
-async def get_file(file_id: str, download: int = 0):
+async def get_file(
+    file_id: str,
+    download: int = 0,
+    t: str = "",
+    creds: HTTPAuthorizationCredentials | None = Depends(file_bearer),
+):
+    """Dosyalar yalnizca imzali baglanti (?t=) veya yonetici jetonu ile acilir."""
+    token = creds.credentials if creds else ""
+    if not file_access.token_valid(file_id, t) and not file_access.admin_token_valid(token):
+        raise HTTPException(
+            403, "Bu belgeye erisim izniniz yok veya baglantinin suresi doldu."
+        )
     record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
     if not record:
         raise HTTPException(404, "Dosya bulunamadi.")

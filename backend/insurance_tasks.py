@@ -15,6 +15,7 @@ from typing import Optional
 from urllib.parse import urlencode
 
 from db import insurance_tasks_col, notifications_col, orders_col, serialize_doc
+import file_access
 from store_catalog import product_list
 from emailer import send_email
 
@@ -149,7 +150,7 @@ async def issue_policy(task_id: str, policy_file_id: str, origin: str, message: 
         return {"ok": False, "reason": "not_found"}
 
     order = await orders_col.find_one({"id": task.get("order_id")}) or {}
-    link = f"{origin}/api/files/{policy_file_id}"
+    link = file_access.file_url(origin, policy_file_id, file_access.TTL_EMAIL)
     now = datetime.now(timezone.utc)
     email_result = {"status": "skipped"}
     to_email = (task.get("customer") or {}).get("email")

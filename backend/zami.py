@@ -25,6 +25,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from db import settings_col, zami_handoffs_col, zami_logs_col
+import file_access
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ SESSION_KEY = "zami_session"
 
 DEFAULT_PORTAL_URL = "https://visa.zamitours.ae"
 HANDOFF_TTL_MINUTES = 45
+HANDOFF_MAX_USES = 10
 
 GENDER_LABELS = {"male": "Male", "female": "Female"}
 APPLICANT_LABELS = {"adult": "Adult", "child": "Child"}
@@ -328,7 +330,9 @@ def build_payload(app_doc: dict, file_base_url: str = "") -> dict:
     def file_url(file_id):
         if not file_id:
             return None
-        return f"{file_base_url}/api/files/{file_id}?download=1"
+        return file_access.file_url(
+            file_base_url, file_id, file_access.TTL_TRANSFER, download=True
+        )
 
     return {
         "application_id": app_doc.get("id"),
@@ -790,6 +794,8 @@ async def consume_handoff(token: str) -> dict | None:
             expires = expires.replace(tzinfo=timezone.utc)
         if expires < datetime.now(timezone.utc):
             return None
+    if int(doc.get("used_count") or 0) >= HANDOFF_MAX_USES:
+        return None
     await zami_handoffs_col.update_one({"token": token}, {"$inc": {"used_count": 1}})
     return doc
 

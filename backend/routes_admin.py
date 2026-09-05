@@ -63,6 +63,7 @@ from emailer import (
     visa_ready_html,
 )
 from rate_limit import code_request_window
+import file_access
 from models import (
     AdminCodeRequest,
     AdminCodeVerify,
@@ -81,7 +82,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "dv-dev-secret")
+JWT_SECRET = os.environ["JWT_SECRET"]
 JWT_ALGO = "HS256"
 
 # Yonetici girisi: sifre yok, e-postaya gonderilen tek kullanimlik kod ile yapilir.
@@ -537,7 +538,9 @@ async def admin_send_visa(
     app_doc, visa_result, to_email = await _load_sendable_visa(application_id)
 
     origin = _resolve_origin(payload.origin_url, request)
-    download_url = f"{origin}/api/files/{visa_result['file_id']}?download=1"
+    download_url = file_access.file_url(
+        origin, visa_result["file_id"], file_access.TTL_EMAIL, download=True
+    )
 
     now = datetime.now(timezone.utc)
     update = _visa_send_update(app_doc, to_email, now, payload)
@@ -749,7 +752,8 @@ def _build_whatsapp_message(app_doc: dict, template: str, origin: str, custom: s
         return (
             f"Merhaba {name}, Dubai Vize Online'dan yazıyoruz. "
             f"{ref} numaralı başvurunuz ONAYLANDI. Vize belgenizi e-postanızdan veya "
-            f"şu adresten indirebilirsiniz: {origin}/api/files/{visa_file_id}?download=1 "
+            "şu adresten indirebilirsiniz: "
+            f"{file_access.file_url(origin, visa_file_id, file_access.TTL_EMAIL, download=True)} "
             f"İyi yolculuklar dileriz."
         )
     if template == "documents_pending":
@@ -1284,9 +1288,19 @@ async def admin_deliver_order(order_id: str, payload: dict, admin: dict = Depend
     origin = _resolve_origin(payload.get("origin_url"), None)
     links = []
     if esim_file_id:
-        links.append({"label": "eSIM QR kodunuz", "url": f"{origin}/api/files/{esim_file_id}"})
+        links.append(
+            {
+                "label": "eSIM QR kodunuz",
+                "url": file_access.file_url(origin, esim_file_id, file_access.TTL_EMAIL),
+            }
+        )
     if policy_file_id:
-        links.append({"label": "Sigorta policeniz (PDF)", "url": f"{origin}/api/files/{policy_file_id}"})
+        links.append(
+            {
+                "label": "Sigorta policeniz (PDF)",
+                "url": file_access.file_url(origin, policy_file_id, file_access.TTL_EMAIL),
+            }
+        )
 
     now = datetime.now(timezone.utc)
     await orders_col.update_one(

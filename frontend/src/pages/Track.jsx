@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock, CreditCard, Download, FileCheck2, Loader2, Search, UploadCloud, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { api, apiError, API, customerAuth } from "../lib/api";
+import { api, apiError, fileUrl, customerAuth } from "../lib/api";
 import { STATUS_META, formatDate, formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { PaymentBadge, StatusBadge } from "../components/StatusBadge";
@@ -317,7 +317,7 @@ export default function Track() {    const [searchParams] = useSearchParams();
                                     </div>
                                 </div>
 
-                                {visaFile?.file_id && (
+                                {visaFile?.file_url && (
                                     <div className="mt-6 flex flex-col gap-3 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.08)] p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="visa-download-box">
                                         <div className="flex items-start gap-2.5">
                                             <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--brand-green))]" />
@@ -327,7 +327,7 @@ export default function Track() {    const [searchParams] = useSearchParams();
                                             </div>
                                         </div>
                                         <Button asChild className="h-11 shrink-0" data-testid="tracking-download-visa-button">
-                                            <a href={`${API}/files/${visaFile.file_id}?download=1`} target="_blank" rel="noreferrer">
+                                            <a href={fileUrl(visaFile.file_url, true)} target="_blank" rel="noreferrer">
                                                 <Download className="mr-2 h-4 w-4" /> Vizeyi indir
                                             </a>
                                         </Button>

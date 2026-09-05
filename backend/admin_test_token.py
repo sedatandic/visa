@@ -21,7 +21,7 @@ def admin_token(hours: int = 12) -> str:
         "role": "admin",
         "exp": datetime.now(timezone.utc) + timedelta(hours=hours),
     }
-    return jwt.encode(payload, os.environ.get("JWT_SECRET", "dv-dev-secret"), algorithm="HS256")
+    return jwt.encode(payload, os.environ["JWT_SECRET"], algorithm="HS256")
 
 
 if __name__ == "__main__":

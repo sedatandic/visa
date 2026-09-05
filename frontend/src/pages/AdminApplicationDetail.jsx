@@ -19,7 +19,7 @@ import {
     User,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, apiError, fileUrl, API } from "../lib/api";
+import { api, apiError, fileUrl } from "../lib/api";
 import {
     STATUS_META,
     STATUS_OPTIONS,
@@ -65,15 +65,15 @@ const Row = ({ label, value }) => (
     </div>
 );
 
-const DocumentViewer = ({ fileId, title }) => {
-    if (!fileId) {
+const DocumentViewer = ({ url: signedPath, title }) => {
+    if (!signedPath) {
         return (
             <div className="rounded-xl border border-dashed border-border p-5 text-center text-xs text-muted-foreground">
                 {title}: yüklenmemiş
             </div>
         );
     }
-    const url = fileUrl(fileId);
+    const url = fileUrl(signedPath);
     return (
         <div className="rounded-xl border border-border bg-card p-3">
             <div className="flex items-center justify-between gap-2">
@@ -93,7 +93,7 @@ const DocumentViewer = ({ fileId, title }) => {
                         <DialogTitle>{title}</DialogTitle>
                     </DialogHeader>
                     <img src={url} alt={title} className="max-h-[70vh] w-full object-contain" />
-                    <a href={`${url}?download=1`} className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+                    <a href={fileUrl(signedPath, true)} className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
                         <Download className="h-4 w-4" /> İndir
                     </a>
                 </DialogContent>
@@ -527,8 +527,8 @@ export default function AdminApplicationDetail() {
                                             {t.father_name ? <p>Baba adı: <strong className="text-foreground">{t.father_name}</strong></p> : null}
                                         </div>
                                         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                            <DocumentViewer fileId={t.documents?.passport_file_id || t.passport_file_id} title={`Pasaport ${i + 1}`} />
-                                            <DocumentViewer fileId={t.documents?.photo_file_id || t.photo_file_id} title={`Vesikalık ${i + 1}`} />
+                                            <DocumentViewer url={t.documents?.passport_url || t.passport_url} title={`Pasaport ${i + 1}`} />
+                                            <DocumentViewer url={t.documents?.photo_url || t.photo_url} title={`Vesikalık ${i + 1}`} />
                                         </div>
                                     </div>
                                 ))}
@@ -550,10 +550,10 @@ export default function AdminApplicationDetail() {
                                 <div className="mt-5 border-t border-border pt-4">
                                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ek belgeler</p>
                                     <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                                        {extra.ticket_file_id && <DocumentViewer fileId={extra.ticket_file_id} title="Uçak Bileti" />}
-                                        {extra.hotel_file_id && <DocumentViewer fileId={extra.hotel_file_id} title="Otel Rezervasyonu" />}
-                                        {(extra.other_file_ids || []).map((fid, i) => (
-                                            <DocumentViewer key={fid} fileId={fid} title={`Diğer ${i + 1}`} />
+                                        {extra.ticket_file_id && <DocumentViewer url={extra.ticket_url} title="Uçak Bileti" />}
+                                        {extra.hotel_file_id && <DocumentViewer url={extra.hotel_url} title="Otel Rezervasyonu" />}
+                                        {(extra.other_file_urls || []).map((fid, i) => (
+                                            <DocumentViewer key={fid} url={fid} title={`Diğer ${i + 1}`} />
                                         ))}
                                     </div>
                                 </div>
@@ -963,7 +963,7 @@ export default function AdminApplicationDetail() {
                                     )}
                                     <div className="mt-4 flex flex-wrap gap-2">
                                         <Button asChild variant="secondary" className="h-10 border border-border">
-                                            <a href={`${API}/files/${visa.file_id}`} target="_blank" rel="noreferrer">
+                                            <a href={fileUrl(visa.file_url)} target="_blank" rel="noreferrer">
                                                 <ExternalLink className="mr-2 h-4 w-4" /> Önizle
                                             </a>
                                         </Button>

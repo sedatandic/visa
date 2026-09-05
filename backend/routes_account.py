@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "dv-dev-secret")
+JWT_SECRET = os.environ["JWT_SECRET"]
 JWT_ALGO = "HS256"
 CODE_TTL_MINUTES = 15
 MAX_CODE_ATTEMPTS = 5

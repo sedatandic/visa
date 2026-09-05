@@ -16,7 +16,8 @@
       şartı, yeşil/gri/diplomatik pasaportta 90 gün vizesiz giriş, uzatmanın en fazla 2 kez
       yapılabilmesi, vize iptal ücreti kalemi, "kendiniz mi acenteyle mi başvurmalısınız"
       karşılaştırması. Ekspres ücreti (50$) ve standart süre (2 iş günü) teyit edilmeli.
-- [ ] `/api/files/{file_id}` kimlik doğrulaması yok (SEC-003) → imzalı/süreli token.
+- [x] ~~`/api/files/{file_id}` kimlik doğrulaması yok (SEC-003)~~ → 2026-06-09'da imzalı/süreli
+      jeton (`file_access.py`) ile kapatıldı; jetonsuz erişim 403.
 - [ ] `email_outbox` eski kayıtlarında HTML gövdesi yok → yalnız 2026-06-08 sonrası önizlenebilir.
 - [ ] Tarihi belli olmayan başvurular için "tarihim belli oldu" hatırlatma e-postası.
 - [ ] Grup/aile başvurusunda yolcu bazlı evrak eksikliği özeti.

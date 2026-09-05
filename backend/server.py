@@ -301,10 +301,25 @@ api_router.include_router(routes_zami.router, tags=["zami"])
 
 app.include_router(api_router)
 
+# CORS: her origin'i yansitmak yerine kendi alan adlarimiz + env'de tanimli adresler.
+CORS_ORIGINS = [
+    o.strip()
+    for o in (os.environ.get("CORS_ORIGINS") or "").split(",")
+    if o.strip() and o.strip() != "*"
+]
+for extra in (os.environ.get("PUBLIC_SITE_URL"), os.environ.get("PUBLIC_BASE_URL")):
+    if extra and extra.strip().rstrip("/") not in CORS_ORIGINS:
+        CORS_ORIGINS.append(extra.strip().rstrip("/"))
+CORS_ORIGIN_REGEX = os.environ.get("CORS_ORIGIN_REGEX") or (
+    r"^(https://([a-z0-9-]+\.)*(dubaivizeonline\.com|emergentagent\.com|emergent\.host)"
+    r"|http://localhost:3000)$"
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origin_regex=".*",
+    allow_origins=CORS_ORIGINS,
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_methods=["*"],
     allow_headers=["*"],
 )
