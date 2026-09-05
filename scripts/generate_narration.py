@@ -15,11 +15,12 @@ from emergentintegrations.llm.openai import OpenAITextToSpeech  # noqa: E402
 
 OUT_DIR = Path("/app/frontend/public/audio/explainer")
 
+# Turkce karakterler korunur: aksan ve telaffuz belirgin sekilde duzeliyor.
 LINES = {
-    "passport": "Dubai vizesi icin sadece iki belge yeterli. Birincisi, pasaportunuzun kimlik sayfasinin fotografi. Telefonunuzla cektiginiz net bir kare yeterli.",
-    "photo": "Ikincisi, beyaz fonda cekilmis bir vesikalik fotograf. Son alti ay icinde cekilmis, gozluksuz ve sapkasiz olmasi gerekiyor.",
-    "upload": "Belgeleri yukleyip odemenizi yapin. Vizeniz cikmadan ucak bileti almaniza ya da otel rezervasyonu yapmaniza gerek yok.",
-    "delivered": "Basvurunuzu biz takip ediyoruz. Onaylanan vizeniz ortalama iki is gununde, ekspres hizmette yaklasik sekiz mesai saatinde e-postaniza geliyor.",
+    "passport": "Dubai vizesi için sadece iki belge yeterli. Birincisi, pasaportunuzun kimlik sayfasının fotoğrafı.",
+    "photo": "İkincisi, beyaz fonda çekilmiş bir vesikalık fotoğraf. Gözlüksüz ve şapkasız olması gerekiyor.",
+    "upload": "Belgeleri yükleyip ödemenizi yapın. Vizeniz çıkmadan uçak bileti ya da otel rezervasyonu gerekmiyor.",
+    "delivered": "Başvurunuzu biz takip ediyoruz. Onaylanan vizeniz, ortalama iki iş gününde e-postanıza geliyor.",
 }
 
 
@@ -28,7 +29,7 @@ async def main():
     tts = OpenAITextToSpeech(api_key=key)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for name, text in LINES.items():
-        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice="coral", speed=1.0)
+        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice="coral", speed=0.85)
         path = OUT_DIR / f"{name}.mp3"
         path.write_bytes(audio)
         print(name, len(audio), "bytes ->", path)

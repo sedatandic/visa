@@ -460,3 +460,17 @@ Kullanıcı: "animasyon yapalım görüntülü" + "türk pasaportu olsun".
   ve Türkçe yerel bir ses (voice listesi `client.voices.get_all()` ile alınır) kullanılarak
   4 klip yeniden üretilecek. Mevcut OpenAI tts-1-hd/coral klipleri çalışmaya devam ediyor
   (hafif İngilizce aksanlı).
+
+## 2026-06-06 · Ses düzeltmeleri (kullanıcı geri bildirimi)
+Kullanıcı: "sesli anlatım bir defa olsun, durmadan tekrar ediyor; kadın çok hızlı konuşuyor
+ve Türkçe aksanı çok kötü".
+1. **Tek seferlik oynatma**: `onEnded` son sahnede `setSoundOn(false)` yapıyor; ses bir tur
+   çalıp kapanıyor, görsel döngü sessiz devam ediyor (döngüsel tekrar bitti).
+2. **Hız**: TTS `speed=1.0` → **0.85**.
+3. **Aksan/telaffuz kök nedeni**: ilk üretimde anlatım metinleri ASCII yazılmıştı
+   ("basvurunuzu", "gozluksuz") — model bunları yanlış okuyordu. Metinler **tam Türkçe
+   karakterlerle** yeniden yazıldı (ç, ğ, ı, İ, ö, ş, ü) ve cümleler kısaltıldı; klipler
+   yeniden üretildi (7.3-7.8 sn). VOICE_MS 8000.
+   Kalan aksan OpenAI TTS'in yapısal sınırı — tam doğal Türkçe için ElevenLabs gerekiyor.
+Doğrulama: delivered.mp3 7.3 sn çalıp bitiyor, buton "Sesli anlat"a dönüyor, 6 sn sonra
+tekrar başlamıyor (JS kontrolü).

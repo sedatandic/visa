@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Captions, CheckCircle2, IdCard, MailCheck, Pause, Play, UploadCloud, Volume2, VolumeX } from "lucide-react";
 
 const SILENT_MS = 5000;
-const VOICE_MS = 8500;
+const VOICE_MS = 8000;
 
 const SCENES = [
     {
@@ -249,7 +249,14 @@ export const VisaExplainer = () => {
             <audio
                 ref={audioRef}
                 preload="none"
-                onEnded={() => setIndex((i) => (i + 1) % SCENES.length)}
+                onEnded={() => {
+                    // Sesli anlatim bir kez calisir: son sahnede ses kapanir, gorsel dongu devam eder.
+                    if (index === SCENES.length - 1) {
+                        setSoundOn(false);
+                        return;
+                    }
+                    setIndex((i) => i + 1);
+                }}
                 data-testid="explainer-audio"
             />
         </div>
