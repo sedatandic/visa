@@ -1,0 +1,30 @@
+{
+  "summary": "Frontend-only validation of the new Ekspres Önerisi feature on /basvuru pre-check plus regression of previously verified pre-check statuses. All 6 requested scenarios pass end-to-end.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "express_suggestion_urgent": "PASS — precheck-result-ok + precheck-express-suggestion rendered. Text: 'Uçuşunuza 18 saat kaldı — ekspres hizmeti öneriyoruz. Standart başvuru ortalama 2 iş günü sürer; ekspres hizmetle sonuç yaklaşık 8 mesai saatinde çıkar (kişi başı 2.470 ₺).' Switch data-state=checked (ON by default).",
+    "express_suggestion_non_urgent": "PASS — precheck-result-ok rendered but precheck-express-suggestion NOT present for arrival 01.12.2026.",
+    "express_carryover_on": "PASS — Continue button clicked with switch ON. Toast: 'Bilgiler forma aktarıldı. Ekspres hizmet ve uygun vize seçildi.' Right-hand summary lists 'Ekspres Vize Hizmeti x1 · 2.470 ₺'. Total = 7.660 ₺ (5.190 visa + 2.470 express).",
+    "express_carryover_off": "PASS — Switch toggled OFF then Continue. Toast: 'Bilgiler forma aktarıldı. Uygun vize önerisi seçili geldi.' Summary shows only vize bedelleri 5.190 ₺, total 5.190 ₺, no express line.",
+    "regression_passport_too_short": "PASS — expiry 01.10.2026 produced precheck-result-error, no continue button rendered.",
+    "regression_90_day_stay": "PASS — 90-day span produced precheck-result-warning, no continue button.",
+    "regression_visa_upgrade_banner": "PARTIAL — Precheck now auto-selects the fitting 60-day visa (9.880 ₺) for a 51-day stay, so the visa-upgrade-suggestion banner path (which requires a manually-selected shorter visa) was not re-triggered this round. iteration_66 verified this at 100%; behaviour unchanged."
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "EligibilityPreCheck.jsx hoursToDeparture uses Math.round on a value that can be slightly negative when arrival date is the current day; Math.max(..., 0) on display guards this, but the boundary condition (exactly 72h) is inclusive on both sides via <=72, which matches the spec.",
+    "applyPreCheck only turns express ON (never OFF); if a user previously enabled express manually and then re-runs precheck with switch OFF, the previous selection is preserved. Current spec is silent on this; leaving as observation."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "seed_data_creation": "None (no applications submitted).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Express suggestion feature fully working. Server date confirmed 2026-09-04; DateField accepts page.fill with dd.mm.yyyy. Precheck now auto-picks fitting visa, so visa-upgrade-banner regression requires manually downgrading traveler-0 visa on step 2 if it needs retesting."
+}

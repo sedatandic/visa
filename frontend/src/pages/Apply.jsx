@@ -650,7 +650,7 @@ export default function Apply() {
         return pool[0] || null;
     };
 
-    const applyPreCheck = ({ arrival_date, departure_date, passport_expiry, visa }) => {
+    const applyPreCheck = ({ arrival_date, departure_date, passport_expiry, visa, express }) => {
         setTravel((t) => ({ ...t, arrival_date, departure_date }));
         setTravelers((list) =>
             list.map((t) => {
@@ -666,7 +666,12 @@ export default function Apply() {
         );
         setPreCheckDone(true);
         setErrors({});
-        toast.success("Bilgiler forma aktarıldı. Uygun vize önerisi seçili geldi.");
+        if (express) setAddons((a) => ({ ...a, express: true }));
+        toast.success(
+            express
+                ? "Bilgiler forma aktarıldı. Ekspres hizmet ve uygun vize seçildi."
+                : "Bilgiler forma aktarıldı. Uygun vize önerisi seçili geldi."
+        );
     };
 
     // Secilen vizeler planlanan kalisi kapsamiyorsa onerilecek vize
@@ -1141,7 +1146,11 @@ export default function Apply() {
 
                                     {!preCheckDone && (
                                         <div className="mt-6">
-                                            <EligibilityPreCheck visaTypes={visaTypes} onApply={applyPreCheck} />
+                                            <EligibilityPreCheck
+                                                visaTypes={visaTypes}
+                                                expressAddon={addonMeta.find((a) => a.id === "express") || null}
+                                                onApply={applyPreCheck}
+                                            />
                                         </div>
                                     )}
 

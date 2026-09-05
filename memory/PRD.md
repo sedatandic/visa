@@ -292,3 +292,13 @@ Test: iteration_65 backend 9/9 pytest (`backend/tests/test_travel_rules.py`) + f
   butonu + toplam 9.880₺ güncellemesi, 60 gün üstü uyarı).
 - Bilinen sınır: upgrade bandındaki önerilen vize adı ilk uygun olmayan yolcudan alınır;
   uygulama adımı yine yolcu bazında doğru vizeyi seçer.
+
+## 2026-06-05 · Ekspres önerisi (ön kontrolde)
+Ön kontrolde gidiş tarihine 72 saatten az kalmışsa `precheck-express-suggestion` bloğu çıkar:
+kalan saat + "standart ortalama 2 iş günü, ekspres yaklaşık 8 mesai saati" + kişi başı ekspres
+ücreti (addonMeta'dan, 2.470₺). Switch varsayılan AÇIK; "Bu bilgilerle devam et" tıklanınca
+`applyPreCheck` ekspres ek hizmetini otomatik seçer (setAddons express:true) ve özet toplamına
+yansır (5.190 + 2.470 = 7.660₺). Switch kapatılırsa ekspres seçilmez.
+Test: iteration_67 frontend %100 (acil/acil değil, ekspres açık/kapalı taşıma, error/warning
+regresyonu). Not: ön kontrol artık uygun vizeyi otomatik seçtiği için upgrade bandı yalnız
+kullanıcı elle kısa süreli vize seçtiğinde görünür (iteration_66'da %100 doğrulanmıştı).

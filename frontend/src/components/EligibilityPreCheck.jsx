@@ -3,6 +3,7 @@ import { AlertTriangle, CalendarClock, CheckCircle2, ShieldCheck } from "lucide-
 import { DateField, fromISODate } from "./DateField";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
+import { Switch } from "./ui/switch";
 import { formatDate, formatMoney } from "../lib/site";
 
 const MIN_PASSPORT_MONTHS = 6;
@@ -17,10 +18,11 @@ const addMonths = (date, months) => {
  * Basvurunun en basinda calisan uygunluk on kontrolu: tarihler + pasaport gecerliligi.
  * Uygunsa onerilen vizeyi bildirir ve bilgileri forma tasir.
  */
-export const EligibilityPreCheck = ({ visaTypes = [], onApply }) => {
+export const EligibilityPreCheck = ({ visaTypes = [], expressAddon = null, onApply }) => {
     const [arrival, setArrival] = useState("");
     const [departure, setDeparture] = useState("");
     const [expiry, setExpiry] = useState("");
+    const [express, setExpress] = useState(true);
 
     const result = useMemo(() => {
         const start = fromISODate(arrival);
@@ -70,6 +72,7 @@ export const EligibilityPreCheck = ({ visaTypes = [], onApply }) => {
             )} (kişi başı).`,
             stayDays,
             visa,
+            hoursToDeparture: Math.round((start - new Date()) / 3600000),
         };
     }, [arrival, departure, expiry, visaTypes]);
 
@@ -146,21 +149,48 @@ export const EligibilityPreCheck = ({ visaTypes = [], onApply }) => {
                             <p className="mt-1 text-sm leading-6 text-muted-foreground">{result.detail}</p>
                         )}
                         {result.status === "ok" && (
-                            <Button
-                                type="button"
-                                className="mt-3 h-10"
-                                onClick={() =>
-                                    onApply({
-                                        arrival_date: arrival,
-                                        departure_date: departure,
-                                        passport_expiry: expiry,
-                                        visa: result.visa,
-                                    })
-                                }
-                                data-testid="precheck-continue-button"
-                            >
-                                <CalendarClock className="mr-2 h-4 w-4" /> Bu bilgilerle devam et
-                            </Button>
+                            <>
+                                {result.hoursToDeparture <= 72 && (
+                                    <label
+                                        className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-[hsl(var(--status-warning)/0.4)] bg-[hsl(var(--status-warning)/0.1)] p-4 text-sm"
+                                        data-testid="precheck-express-suggestion"
+                                    >
+                                        <Switch
+                                            checked={express}
+                                            onCheckedChange={(c) => setExpress(!!c)}
+                                            data-testid="precheck-express-switch"
+                                        />
+                                        <span className="leading-6">
+                                            <strong className="block">
+                                                Uçuşunuza {Math.max(result.hoursToDeparture, 0)} saat kaldı —
+                                                ekspres hizmeti öneriyoruz.
+                                            </strong>
+                                            Standart başvuru ortalama 2 iş günü sürer; ekspres hizmetle sonuç
+                                            yaklaşık 8 mesai saatinde çıkar
+                                            {expressAddon
+                                                ? ` (kişi başı ${formatMoney(expressAddon.price, expressAddon.currency)})`
+                                                : ""}
+                                            . Devam ettiğinizde ekspres hizmet otomatik seçilir.
+                                        </span>
+                                    </label>
+                                )}
+                                <Button
+                                    type="button"
+                                    className="mt-3 h-10"
+                                    onClick={() =>
+                                        onApply({
+                                            arrival_date: arrival,
+                                            departure_date: departure,
+                                            passport_expiry: expiry,
+                                            visa: result.visa,
+                                            express: result.hoursToDeparture <= 72 && express,
+                                        })
+                                    }
+                                    data-testid="precheck-continue-button"
+                                >
+                                    <CalendarClock className="mr-2 h-4 w-4" /> Bu bilgilerle devam et
+                                </Button>
+                            </>
                         )}
                     </div>
                 </div>
