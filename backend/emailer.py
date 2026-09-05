@@ -67,42 +67,37 @@ def _row(label: str, value: str) -> str:
     )
 
 
-async def send_email(to: str, subject: str, html: str, kind: str = "generic", meta: Optional[dict] = None) -> dict:
-    """Never raises. Always records the attempt in email_outbox."""
-    api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
-    sender_email = (os.environ.get("SENDER_EMAIL") or "onboarding@resend.dev").strip()
-    reply_to = (os.environ.get("REPLY_TO_EMAIL") or os.environ.get("ADMIN_EMAIL") or "").strip()
-    sender = f"{BRAND} <{sender_email}>"
-    result = {"status": "skipped", "reason": "RESEND_API_KEY tanimli degil"}
-    if sender_email.endswith("@resend.dev"):
-        # Paylasimli test alan adi: SPF/DKIM markayla hizalanmadigi icin postalar spam'e duser.
-        logger.warning(
-            "SENDER_EMAIL paylasimli resend.dev alan adinda; dogrulanmis alan adi kullanin."
-        )
-    if api_key and not api_key.startswith("re_placeholder"):
-        try:
-            import resend
-
-            resend.api_key = api_key
-            params = {
-                "from": sender,
-                "to": [to],
-                "subject": subject,
-                "html": html,
-                "text": _html_to_text(html),
+def _resend_params(to: str, subject: str, html: str, kind: str, sender: str, reply_to: str) -> dict:
+    params = {
+        "from": sender,
+        "to": [to],
+        "subject": subject,
+        "html": html,
+        "text": _html_to_text(html),
+    }
+    if reply_to:
+        params["reply_to"] = reply_to
+        if kind in MARKETING_KINDS:
+            params["headers"] = {
+                "List-Unsubscribe": f"<mailto:{reply_to}?subject=Listeden%20cikar>",
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
             }
-            if reply_to:
-                params["reply_to"] = reply_to
-                if kind in MARKETING_KINDS:
-                    params["headers"] = {
-                        "List-Unsubscribe": f"<mailto:{reply_to}?subject=Listeden%20cikar>",
-                        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-                    }
-            res = await asyncio.to_thread(resend.Emails.send, params)
-            result = {"status": "sent", "provider_id": (res or {}).get("id")}
-        except Exception as exc:  # pragma: no cover
-            logger.error("Resend send failed: %s", exc)
-            result = {"status": "error", "reason": str(exc)[:400]}
+    return params
+
+
+async def _send_via_resend(api_key: str, params: dict) -> dict:
+    try:
+        import resend
+
+        resend.api_key = api_key
+        res = await asyncio.to_thread(resend.Emails.send, params)
+        return {"status": "sent", "provider_id": (res or {}).get("id")}
+    except Exception as exc:  # pragma: no cover
+        logger.error("Resend send failed: %s", exc)
+        return {"status": "error", "reason": str(exc)[:400]}
+
+
+async def _record_attempt(to: str, subject: str, kind: str, meta: Optional[dict], result: dict) -> None:
     try:
         await email_outbox_col.insert_one(
             {
@@ -117,6 +112,24 @@ async def send_email(to: str, subject: str, html: str, kind: str = "generic", me
         )
     except Exception as exc:  # pragma: no cover
         logger.error("email_outbox insert failed: %s", exc)
+
+
+async def send_email(to: str, subject: str, html: str, kind: str = "generic", meta: Optional[dict] = None) -> dict:
+    """Never raises. Always records the attempt in email_outbox."""
+    api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
+    sender_email = (os.environ.get("SENDER_EMAIL") or "onboarding@resend.dev").strip()
+    reply_to = (os.environ.get("REPLY_TO_EMAIL") or os.environ.get("ADMIN_EMAIL") or "").strip()
+    if sender_email.endswith("@resend.dev"):
+        # Paylasimli test alan adi: SPF/DKIM markayla hizalanmadigi icin postalar spam'e duser.
+        logger.warning(
+            "SENDER_EMAIL paylasimli resend.dev alan adinda; dogrulanmis alan adi kullanin."
+        )
+    if api_key and not api_key.startswith("re_placeholder"):
+        params = _resend_params(to, subject, html, kind, f"{BRAND} <{sender_email}>", reply_to)
+        result = await _send_via_resend(api_key, params)
+    else:
+        result = {"status": "skipped", "reason": "RESEND_API_KEY tanimli degil"}
+    await _record_attempt(to, subject, kind, meta, result)
     return result
 
 

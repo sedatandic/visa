@@ -56,6 +56,7 @@ from emailer import (
 )
 from models import ApplicationCreate, ContactCreate, DocumentSubmission, QuoteRequest
 from doc_reminders import missing_documents
+from store_catalog import MAX_QTY, product_list
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
 import ocr_metrics
 from passport_ai import check_photo, read_passport
@@ -431,7 +432,6 @@ async def resolve_store_lines(items, arrival_date: str | None = None, departure_
     """
     if not items:
         return []
-    from routes_store import MAX_QTY, product_list
 
     catalog = {p["id"]: p for p in await product_list()}
     start = _parse_iso_date(arrival_date)
@@ -759,13 +759,6 @@ async def _build_travelers(traveler_inputs, travel=None) -> tuple[list, list]:
 
 # Basvuru kabul kurallari (BAE gocmenlik idaresi sartlari)
 PASSPORT_MIN_VALID_DAYS = 180
-
-
-def _parse_iso_date(value: str):
-    try:
-        return date.fromisoformat((value or "")[:10])
-    except ValueError:
-        return None
 
 
 def _age_on(birth_date, reference) -> float | None:

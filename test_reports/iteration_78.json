@@ -1,0 +1,23 @@
+{
+  "summary": "Backend-only regression after refactor (store_catalog extraction, emailer helpers, insurance_tasks split, _parse_iso_date de-duplication). Wrote /app/backend/tests/test_refactor_regression.py with 17 targeted tests. All 17 PASS. Coverage: (1) GET /api/products returns exactly 11 items (4 esim + 6 insurance + 1 tour) each with price>0, currency=TRY, fx_rate>0, kind_label populated ('eSIM'/'Seyahat sigortası'/'Dubai turu'); kind=insurance and kind=esim filters return 6 and 4 respectively; invalid kind -> 400. (2) GET /api/bundles returns items with list_total>0, discount>0 and price==list_total-discount, both insurance and esim populated. (3) POST /api/orders (esim_3gb + ins_15d, card) returns 200 with reference SV-XXXXXXXX, items_total & bundle-discounted price consistent, payment.status=pending, and follow-up GET /api/orders/{ref}?email=... returns 200; unknown product_id -> 400. (4) Admin endpoints /api/admin/insurance-tasks, /api/admin/insurance-report and /api/admin/profit-monthly?months=12 all 200 with expected shape (12 monthly rows, no leaked mongo _id in response body). (5) POST /api/applications: valid traveler (passport expiry +400d) -> 200 with DV- reference and status=submitted; passport expiring in 30 days -> 400 rejected with Turkish 'pasaport ... gecerli' message; malformed passport_expiry='not-a-date' -> non-500 (parse returns None, rule skipped); malformed arrival_date='garbage' -> 400 non-500 (validated via _parse_iso_date). (6) GET /api/visa-types 200 with priced items; POST /api/pricing/quote 200 with total>0 and correct trip_days=6. (7) POST /api/contact 200 and email_outbox entries retrievable via /api/admin/emails; entries carry status field (sent/skipped/error) and no _id leakage. No regressions found.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_refactor_regression.py",
+    "/app/test_reports/pytest/iter78_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_public.resolve_store_lines does a lazy `from routes_store import MAX_QTY` inside the function; MAX_QTY is a small constant and could be moved to store_catalog (or a shared constants module) to remove the last runtime dependency on routes_store from routes_public.",
+    "GET /api/orders/{reference} requires ?email= for authorization but treats missing/mismatched email as 404 (same status as 'not found'). This is defensive but hides validation errors from clients; consider a distinct 400 when `email` is empty.",
+    "TravelerIn.passport_expiry has min_length=4 which lets 'not-a-date' pass Pydantic; server behaves safely (parse returns None, rule skipped, application accepted). If business intent is strict rejection, tighten model validator with regex/pydantic date parsing at model layer."
+  ],
+  "updated_files": ["/app/backend/tests/test_refactor_regression.py"],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "n/a (skipped per request)"},
+  "test_credentials": "info@dubaivizeonline.com / Dubai2026! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created a store order (SV-...) with TEST_ prefix contact, an application with reference DV-... (TEST_APPLICANT), two dummy uploads (JPEG stub) and one contact message. All prefixed with 'TEST_' where possible for easy cleanup.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Regression suite lives at /app/backend/tests/test_refactor_regression.py; loads REACT_APP_BACKEND_URL from env or /app/frontend/.env fallback. All 17 tests green. If iterating on store_catalog / insurance profit / application date validation, re-run this file first as a smoke test.",
+  "rca of the issue": "N/A - refactor verified non-breaking."
+}

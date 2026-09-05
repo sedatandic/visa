@@ -1,6 +1,7 @@
+from datetime import date
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class ContactIn(BaseModel):
@@ -9,6 +10,16 @@ class ContactIn(BaseModel):
     phone: str = Field(..., min_length=7, max_length=25)
     address_city: Optional[str] = Field(default="", max_length=60)
     whatsapp_optin: bool = False
+
+
+def _iso_date_or_error(value: str, label: str) -> str:
+    """ISO (YYYY-MM-DD) tarih dogrulamasi: bozuk deger sessizce gecmesin."""
+    text = (value or "").strip()[:10]
+    try:
+        date.fromisoformat(text)
+    except ValueError:
+        raise ValueError(f"{label} GG.AA.YYYY olarak eksiksiz girilmelidir")
+    return text
 
 
 class TravelerIn(BaseModel):
@@ -36,6 +47,16 @@ class TravelerIn(BaseModel):
     visa_type_id: str = Field(..., min_length=3)
     passport_file_id: str = Field(..., min_length=8)
     photo_file_id: str = Field(..., min_length=8)
+
+    @field_validator("birth_date")
+    @classmethod
+    def _check_birth_date(cls, value: str) -> str:
+        return _iso_date_or_error(value, "Doğum tarihi")
+
+    @field_validator("passport_expiry")
+    @classmethod
+    def _check_passport_expiry(cls, value: str) -> str:
+        return _iso_date_or_error(value, "Pasaport geçerlilik tarihi")
 
 
 class TravelIn(BaseModel):

@@ -15,6 +15,7 @@ from typing import Optional
 from urllib.parse import urlencode
 
 from db import insurance_tasks_col, notifications_col, orders_col, serialize_doc
+from store_catalog import product_list
 from emailer import send_email
 
 logger = logging.getLogger(__name__)
@@ -69,47 +70,36 @@ def _insurance_lines(order: dict) -> list:
     return [line for line in (order.get("items") or []) if line.get("kind") == "insurance"]
 
 
-async def queue_policy_tasks(order: dict) -> list:
-    """Odemesi alinan siparis icin police kesim gorevlerini olusturur (idempotent)."""
-    lines = _insurance_lines(order)
-    if not lines:
-        return []
-    if await insurance_tasks_col.find_one({"order_id": order.get("id")}):
-        return []
+def _build_policy_task(order: dict, line: dict, contact: dict, now: datetime) -> dict:
+    return {
+        "id": str(uuid.uuid4()),
+        "order_id": order.get("id"),
+        "order_reference": order.get("reference_code", ""),
+        "application_id": order.get("application_id"),
+        "product_id": line.get("product_id"),
+        "plan_name": line.get("name"),
+        "validity_days": line.get("validity_days"),
+        "quantity": int(line.get("quantity") or 1),
+        "unit_price": float(line.get("unit_price") or 0),
+        "unit_cost": float(line.get("unit_cost") or 0),
+        "starts_on": line.get("starts_on"),
+        "ends_on": line.get("ends_on"),
+        "customer": {
+            "full_name": contact.get("full_name", ""),
+            "email": contact.get("email", ""),
+            "phone": contact.get("phone", ""),
+        },
+        "note": order.get("note", ""),
+        "provider": PROVIDER_NAME,
+        "provider_link": provider_link(line, order),
+        "status": "pending",
+        "policy_file_id": None,
+        "issued_at": None,
+        "created_at": now,
+    }
 
-    now = datetime.now(timezone.utc)
-    contact = order.get("contact") or {}
-    created = []
-    for line in lines:
-        task = {
-            "id": str(uuid.uuid4()),
-            "order_id": order.get("id"),
-            "order_reference": order.get("reference_code", ""),
-            "application_id": order.get("application_id"),
-            "product_id": line.get("product_id"),
-            "plan_name": line.get("name"),
-            "validity_days": line.get("validity_days"),
-            "quantity": int(line.get("quantity") or 1),
-            "unit_price": float(line.get("unit_price") or 0),
-            "unit_cost": float(line.get("unit_cost") or 0),
-            "starts_on": line.get("starts_on"),
-            "ends_on": line.get("ends_on"),
-            "customer": {
-                "full_name": contact.get("full_name", ""),
-                "email": contact.get("email", ""),
-                "phone": contact.get("phone", ""),
-            },
-            "note": order.get("note", ""),
-            "provider": PROVIDER_NAME,
-            "provider_link": provider_link(line, order),
-            "status": "pending",
-            "policy_file_id": None,
-            "issued_at": None,
-            "created_at": now,
-        }
-        await insurance_tasks_col.insert_one(dict(task))
-        created.append(task)
 
+async def _notify_policy_pending(order: dict, lines: list, contact: dict, now: datetime) -> None:
     await notifications_col.insert_one(
         {
             "id": str(uuid.uuid4()),
@@ -129,6 +119,25 @@ async def queue_policy_tasks(order: dict) -> list:
             kind="insurance_pending",
             meta={"order_id": order.get("id")},
         )
+
+
+async def queue_policy_tasks(order: dict) -> list:
+    """Odemesi alinan siparis icin police kesim gorevlerini olusturur (idempotent)."""
+    lines = _insurance_lines(order)
+    if not lines:
+        return []
+    if await insurance_tasks_col.find_one({"order_id": order.get("id")}):
+        return []
+
+    now = datetime.now(timezone.utc)
+    contact = order.get("contact") or {}
+    created = []
+    for line in lines:
+        task = _build_policy_task(order, line, contact, now)
+        await insurance_tasks_col.insert_one(dict(task))
+        created.append(task)
+
+    await _notify_policy_pending(order, lines, contact, now)
     logger.info("insurance tasks queued: %s (%s)", order.get("reference_code"), len(created))
     return created
 
@@ -229,8 +238,6 @@ def _month_row(key: str, bucket: Optional[dict]) -> dict:
 
 async def monthly_profit(months: int = 12) -> dict:
     """Son N ay icin sigorta + eSIM ciro/maliyet/kar dagilimi."""
-    from routes_store import product_list
-
     products = {p["id"]: p for p in await product_list(include_inactive=True)}
     buckets: dict = {}
     async for order in orders_col.find({"payment.status": "paid"}):
@@ -254,8 +261,6 @@ async def monthly_profit(months: int = 12) -> dict:
 
 async def profit_report() -> dict:
     """Poliçe basina maliyet / satis / kar tablosu."""
-    from routes_store import product_list
-
     products = [p for p in await product_list(include_inactive=True) if p.get("kind") == "insurance"]
     sold: dict = {}
     async for order in orders_col.find({"payment.status": "paid"}):

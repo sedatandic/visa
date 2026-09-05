@@ -67,7 +67,7 @@ async def seed_visa_types() -> None:
 
 async def seed_products() -> None:
     """eSIM ve sigorta urunlerini bir kez olusturur; fiyatlar admin tarafindan yonetilir."""
-    from routes_store import DEFAULT_PRODUCTS
+    from store_catalog import DEFAULT_PRODUCTS
 
     for product in DEFAULT_PRODUCTS:
         doc = dict(product)

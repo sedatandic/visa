@@ -45,7 +45,7 @@ from doc_reminders import (
     run_reminder_sweep,
     send_document_reminder,
 )
-from routes_store import product_list
+from store_catalog import product_list
 from fx import apply_fx_to_list, apply_fx_to_visa, get_fx, update_fx_settings
 from visa_guides import build_guide, guide_index
 from emailer import (

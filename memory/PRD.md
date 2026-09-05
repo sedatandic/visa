@@ -928,3 +928,26 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   telefon 503x825 olduğu gibi, e-posta/WhatsApp madalyonları %55 küçültülerek telefonun
   iki yanına yerleştirildi, kenar feather). Görsel işlem adımları PIL ile yapıldı;
   gerekirse `explainer/track.jpg` kaynağından tekrar üretilebilir.
+
+## 2026-06-06 · Kod kalite raporu düzeltmeleri (backend)
+Raporun 3 "kritik" bulgusu **doğrulanınca yanlış alarm çıktı**: `zami_rpa.py:90` `exec()`
+değil `asyncio.create_subprocess_exec` (güvenli); pyflakes ile tanımsız değişken YOK;
+`is` ile literal karşılaştırması (51 iddia) hiç yok. Gerçek olan ve düzeltilenler:
+- **Dairesel bağımlılık çözüldü**: yeni `backend/store_catalog.py` — ürün katalogu
+  (ESIM/INSURANCE/TOUR_PRODUCTS, DEFAULT_PRODUCTS, KIND_LABELS, MAX_QTY, `product_list()`)
+  routes_store'dan çıkarıldı. `insurance_tasks`, `routes_admin`, `routes_public`, `server`
+  artık katalogdan import ediyor; `insurance_tasks` içindeki 2 lazy import ve
+  `routes_public` içindeki lazy `MAX_QTY` importu kaldırıldı. routes_store geriye dönük
+  uyumluluk için re-export ediyor.
+- **routes_public.py**: yinelenen `_parse_iso_date` tanımı (satır 764) silindi.
+- **emailer.send_email** 3 yardımcıya bölündü: `_resend_params`, `_send_via_resend`,
+  `_record_attempt` (davranış aynı: hata fırlatmaz, her denemeyi email_outbox'a yazar).
+- **insurance_tasks.queue_policy_tasks** bölündü: `_build_policy_task`,
+  `_notify_policy_pending` (idempotent davranış korundu).
+- **Ek sertleştirme** (test ajanının bulgusu): `models.TravelerIn` içine `field_validator`
+  eklendi — `birth_date` ve `passport_expiry` ISO tarih değilse 422 ile reddediliyor
+  (önce "not-a-date" sessizce geçiyordu).
+- `backend_test.py` gibi test dosyalarının karmaşıklığı bilinçli olarak elden geçirilmedi
+  (test ajanı üretimi, ürün kodu değil).
+- Test: iteration_78 → **17/17 backend regresyon testi PASS**
+  (`backend/tests/test_refactor_regression.py`), ayrıca tüm tests/ paketi çalıştırıldı.
