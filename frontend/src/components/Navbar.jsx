@@ -131,14 +131,14 @@ export const Navbar = () => {
                 </Link>
 
                 <div
-                    className="hidden flex-1 items-end justify-center pb-2 sm:flex"
+                    className="hidden flex-1 items-end justify-center pb-[2px] sm:flex"
                     data-testid="brand-flag-pair"
                     aria-hidden="true"
                 >
-                    <span className="flex items-center gap-1.5">
-                        <TrFlag className="h-7 w-14" />
-                        <ArrowRight className="h-3.5 w-3.5 text-primary" />
-                        <UaeFlag className="h-7 w-14" />
+                    <span className="flex items-center gap-2">
+                        <TrFlag className="h-[46px] w-[92px]" />
+                        <ArrowRight className="h-4 w-4 text-primary" />
+                        <UaeFlag className="h-[46px] w-[92px]" />
                     </span>
                 </div>
 
