@@ -1,0 +1,58 @@
+{
+  "summary": "Iteration 83: tested photo/check background analyser (dark vs white), Apply page Step 1 UI (Bireysel/Grup cards, group note, WhatsApp phone mask, Adınız Soyadınız / E-mail Adresi labels, Başvuru Türü dropdown, child notice), and regression on /api/contact, /api/uploads, /api/applications with new +90 phone, admin OTP, customer OTP. 6/7 backend tests pass. 1 real product bug found: for the reference white-background vesikalık, background analyser correctly returns ok=true (background.ok=true), but the /api/photo/check response still keeps 'background_ok' inside failed[] because apply_background_report() only edits failed[] when report.ok is False — it never strips the AI-produced 'background_ok' when the deterministic analyser confirms the background is fine. Frontend Step 1 flows verified end-to-end via Playwright. Step 2 extra-service switches, Step 3 document cards and traveler-i-photo-check-warning are wired in code (grepped) but not exercised end-to-end because Step 1→Step 2 transition auto-saved a draft during the run (unrelated to Iter83 scope).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/photo/check",
+        "issue": "For the reference white-background photo (qcg2gulz_IMG_0655.webp) the deterministic background_report returns ok=true (white_ratio=0.979, mean_lum=247.7, uniformity=20.4) and body.background.ok is true, but body.failed still contains 'background_ok' because the LLM reported it. apply_background_report() must also strip 'background_ok' from failed[] and drop the 'background' issue text when the deterministic analyser confirms background.ok=true. Reference dark-background image is correctly rejected."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_backend_flows": [
+    "POST /api/photo/check with dark-bg image -> ok=false, 'background_ok' in failed, message contains 'beyaz', background.ok=false",
+    "POST /api/photo/check with white-bg image -> body.background.ok=true (deterministic) — BUT failed still contains 'background_ok' (see minor issue above)",
+    "POST /api/contact 200 with new +90 phone",
+    "POST /api/uploads 200 with PNG",
+    "POST /api/applications 200 with contact.phone='+90 532 588 26 30' and dates_unknown=true; reference_code starts with DV-",
+    "Admin OTP: /api/admin/request-code 200 -> /api/admin/verify-code 200 (token issued)",
+    "Customer OTP: /api/account/request-code 200 -> code parsed from email_outbox HTML -> /api/account/verify-code 200 (token issued)"
+  ],
+  "verified_frontend_flows": [
+    "/basvuru wizard loads",
+    "data-testid=application-type-individual and application-type-group both present",
+    "Selecting 'Grup / Aile' shows data-testid=group-application-note AND raises traveler count from 1 to 2",
+    "Returning to 'Bireysel' hides group-application-note and drops back to 1 traveler",
+    "Labels present in DOM: 'Adınız Soyadınız', 'E-mail Adresi', 'Başvurunuzla ilgili dönüş bu numaraya WhatsApp üzerinden yapılacaktır.', 'Cep Telefonu (WhatsApp)' visible in screenshot",
+    "input-contact-phone initial value is '+90 5'; typing 5325882630 yields '+90 532 588 26 30' (formatPhoneTR)",
+    "select-applicant-type default 'Yetişkin'; picking applicant-option-child makes data-testid=child-application-notice visible"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_83.py",
+    "/app/test_reports/pytest/iter83_results.xml"
+  ],
+  "action_items": [
+    "Fix apply_background_report() in /app/backend/passport_ai.py: when report.get('checked') and report.get('ok'), also remove 'background_ok' from result['failed'] and drop any 'arka plan' issue string that the LLM may have added, so that a valid white-background vesikalık never appears with background_ok among failed[] items."
+  ],
+  "critical_code_review_comments": [
+    "apply_background_report only modifies output when deterministic report says background is bad; it does not counter-correct the LLM when the LLM incorrectly flags background_ok despite a clean white background. This leaves users with a red 'Arka plan' issue on genuinely valid photos.",
+    "The reference webp portrait is also being classified by the LLM as is_photo=false (single_person, face_clear, no_obstruction all failed) — worth verifying whether the emergentintegrations vision model reliably ingests webp; if not, convert webp to jpeg server-side before check_photo() to reduce false negatives.",
+    "Apply.jsx contact.phone default '+90 5' pairs with formatPhoneTR — good UX. However ContactIn.phone in models.py only enforces min_length=7/max=25 so backend does not reject a phone that isn't a valid Turkish mobile; consider validating at the server too."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_83.py",
+    "/app/test_reports/iteration_83.json"
+  ],
+  "success_rate": {"backend": "86% (6/7)", "frontend": "100% of Step 1 selectors and mask flow"},
+  "test_credentials": "Admin: info@dubaivizeonline.com (OTP). Customer OTP test email: delivered@resend.dev (code from db.email_outbox HTML).",
+  "seed_data_creation": "Inserted 1 real /api/applications row (reference_code DV-...), 1 contact_messages row, ~4 uploads rows, a couple of admin_login_codes and login_codes rows. No cleanup endpoint; all rows are prefixed with 'TEST_' where possible.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run test_iteration_83.py serially (`-o addopts=` bypasses xdist). The photo/check white-bg test currently fails; once apply_background_report() strips 'background_ok' from failed[] when report.ok is True, it will pass. The rest of the tests (dark bg, contact, uploads, applications, admin OTP, customer OTP) are green. Frontend Step 1 selectors are all present with correct data-testid values; Step 2 extra-switch-insurance/esim and Step 3 FileDropzone required/optional badges are wired but not yet exercised e2e — the draft-save auto-toast fires when clicking 'Devam Et' with an incomplete traveler card, so future scripts should first upload dummy passport+photo (via ticket-upload-input pattern) before attempting to reach Step 2/3.",
+  "rca of the issue": "background_ok stays in failed[]: apply_background_report(result, report) returns early with `return out` when report.get('ok') is True (line 344-345 in /app/backend/passport_ai.py), leaving `out['failed']` and `out['issues']` untouched. If the LLM produced failed=['background_ok', ...] the caller sees a contradictory response: body.background.ok=true but 'background_ok' is still flagged. Fix: in the success branch, also filter out 'background_ok' from out['failed'] and drop any issue containing 'arka plan' — mirroring the cleanup already performed in the failure branch."
+}

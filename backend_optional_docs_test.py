@@ -9,7 +9,7 @@ import sys
 import time
 from datetime import datetime
 
-BASE_URL = "https://insurance-checkout-3.preview.emergentagent.com/api"
+BASE_URL = "https://otp-admin-flow.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@vizeatlas.com"
 ADMIN_PASSWORD = "Dubai2026!"
 

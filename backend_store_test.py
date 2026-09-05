@@ -9,7 +9,7 @@ import sys
 import time
 from datetime import datetime
 
-BASE_URL = "https://insurance-checkout-3.preview.emergentagent.com/api"
+BASE_URL = "https://otp-admin-flow.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@vizeatlas.com"
 ADMIN_PASSWORD = "Dubai2026!"
 
@@ -340,7 +340,7 @@ class StoreAPITester:
                 "POST",
                 f"/orders/{order_id}/checkout",
                 200,
-                data={"origin_url": "https://insurance-checkout-3.preview.emergentagent.com"}
+                data={"origin_url": "https://otp-admin-flow.preview.emergentagent.com"}
             )
             
             if success:
@@ -373,7 +373,7 @@ class StoreAPITester:
                     "POST",
                     f"/orders/{order_id}/checkout",
                     400,
-                    data={"origin_url": "https://insurance-checkout-3.preview.emergentagent.com"}
+                    data={"origin_url": "https://otp-admin-flow.preview.emergentagent.com"}
                 )
 
     def test_get_order(self):

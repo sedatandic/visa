@@ -1,0 +1,48 @@
+{
+  "summary": "Independent verification of iteration 82: passwordless account OTP (removed login-lastname, code_plain not stored, reuse rejected), rate limits (60s cooldown + IP hourly cap for /account/request-code and /contact), Zami bookmarklet/capture XSS-safe helper (function dvoEsc), Apply page contact section (WhatsApp phone mask, initial '0', paste normalisation, validation message, visa-type dropdown with price and family total sync), and admin OTP + applications regression. All 9 backend tests pass (test_iteration_82.py) and all frontend flows in scope verified via Playwright.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verified_backend_flows": [
+    "POST /api/account/login-lastname -> 404 (endpoint removed)",
+    "POST /api/account/request-code (200) -> code read from email_outbox HTML -> wrong code 400 -> correct code 200 (token) -> GET /api/account/me 200 -> code reuse 400; db.login_codes doc has no 'code_plain' field",
+    "Second /api/account/request-code within 60s for same email -> 429 with message containing '1 dakika bekleyin'",
+    "16th /api/account/request-code from same IP within an hour (distinct emails) -> 429 with 'Cok fazla kod talebi ... bir saat sonra'",
+    "POST /api/contact 200 for first message; 9th within an hour -> 429 with 'Cok fazla mesaj'",
+    "GET /api/zami/bookmarklet.js and /api/zami/capture.js -> 200 and both bodies contain 'function dvoEsc' plus dvoEsc(...) invocations on reference_code / doc labels / submitLabel",
+    "Admin OTP regression: /api/admin/request-code 200, code_plain readable in admin_login_codes, /api/admin/verify-code 200 -> token -> GET /api/admin/emails 200",
+    "POST /api/applications 200 with new phone format '0532 588 26 30'; reference_code starts with DV-"
+  ],
+  "verified_frontend_flows": [
+    "/basvuru step 1: input-contact-phone initial value is '0'",
+    "Typing 5325882630 -> input becomes '0532 588 26 30' (formatPhoneTR)",
+    "Pasting '905325882630' -> input becomes '0532 588 26 30' (90 prefix stripped)",
+    "Pasting '+90 532 588 26 30' -> input becomes '0532 588 26 30'",
+    "Phone label reads 'Cep Telefonu (WhatsApp)' with green WhatsApp icon; note 'Basvurunuzla ilgili donus bu numaraya WhatsApp uzerinden yapilacaktir.' visible",
+    "Submitting Devam with <11 digit phone shows 'Cep telefonunuzu 0 ile baslayarak 11 hane girin (0532 588 26 30)' in error toast",
+    "select-contact-visa-type dropdown lists options in format 'Vize adi – <price> ₺' (5 adult options including '30 Gunluk Tek Girisli Dubai Vizesi – 5.190 ₺')",
+    "Selecting visa_30_single from contact dropdown updates the top-right summary Toplam to 5.190 ₺ for a single adult",
+    "With 1 adult + 1 child, selecting visa_30_single via contact dropdown auto-applies child tariff (Vize bedelleri 7.660 ₺ = 5.190 adult + 2.470 child, Aile indirimi -766 ₺, Toplam 6.894 ₺). Child mapping confirmed via total; traveler-1-visa-type element is only rendered when the child card is expanded / at step 2 (not asserted in DOM here, but pricing proves the mapping)",
+    "/hesabim and /takip: account-login-card present; account-lastname-input and account-tab-lastname DO NOT exist; only account-email-input + account-request-code-button visible at email stage",
+    "After requesting code (delivered@resend.dev), UI transitions to account-code-form with account-code-input, account-verify-code-button, account-change-email-button and account-resend-code-button; resend button shows 60s countdown 'Yeni kod (58 sn)' and toast 'Kod delivered@resend.dev adresine gonderildi. 15 dakika gecerli.'"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_82.py",
+    "/app/test_reports/pytest/iter82_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "rate_limit.py counters live in the uvicorn process memory only. Any supervisor restart or multi-replica deployment resets/desyncs them. For production, back this with Redis (INCR + EXPIRE) so that /account/request-code, /contact and AI endpoints are actually protected across pods and restarts.",
+    "routes_public.py rate_check on POST /api/contact keys by client IP only; a proxy fronting the app must set X-Forwarded-For or a single upstream IP will silently share the 8/hour bucket across all users (currently client_ip picks the first XFF value which is fine on preview, worth documenting).",
+    "routes_admin.py still stores admin_login_codes.code_plain (documented as intentional). The customer OTP flow correctly hashes and unsets code_plain — worth aligning admin flow eventually or gating code_plain behind a TEST_MODE flag.",
+    "Apply.jsx formatPhoneTR only strips 90/0090 prefixes when digit length > 11. Pasting '5325882630' (10 digits without leading 0) gets a leading '0' added — good. But pasting '05325882630 5325' (14 digits) would keep the first 11 including 0053... corner case, non-critical since paste sources typically don't have this shape.",
+    "AccountLoginCard.jsx: rate-limit error from backend is surfaced verbatim; that's ideal. No client-side leak of code_plain (there is none anyway)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration_82.py", "/app/test_reports/iteration_82.json"],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "100% (all in-scope selectors + flows)"},
+  "test_credentials": "Admin: info@dubaivizeonline.com (OTP; code_plain in db.admin_login_codes). Customer OTP: delivered@resend.dev (code parsed from db.email_outbox HTML). /app/memory/test_credentials.md up to date.",
+  "seed_data_creation": "Test run inserted: several login_codes rows for delivered@resend.dev and TEST_iter82_ratelimit_*@example.com (cleaned up by test), 1 contact_messages row and a few 429-rejected retries (cleaned up), 1 real applications row with reference_code DV-... (kept — no cleanup endpoint). Also 1 admin_login_codes row (auto-consumed).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "test_iteration_82.py MUST be run serially (`-n 0`) because it restarts backend inside two tests to reset in-memory rate-limit counters. Running under the default xdist LoadScope will fail with 502s and cross-test 429 contamination. Each POST /api/account/request-code and /api/admin/request-code sends a real Resend email — do not loop these gratuitously (Resend accepts delivered@resend.dev cleanly). To read the customer OTP: db.email_outbox.find_one({'to': email, 'kind':'login_code'}, sort=[('created_at',-1)])['html'] -> regex `>\\s*(\\d{6})\\s*<`. traveler-1-visa-type element is only rendered when the traveler card is expanded on step 0 / at step 2; child-tariff correctness can be inferred from the summary total (5190 adult + 2470 child before family discount).",
+  "rca of the issue": "N/A - no defects found."
+}

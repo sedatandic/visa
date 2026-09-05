@@ -13,6 +13,7 @@ Covers:
 
 import io
 import os
+import sys
 import time
 from datetime import date, timedelta
 
@@ -35,7 +36,6 @@ def _load_backend_url() -> str:
 BASE_URL = _load_backend_url()
 API = f"{BASE_URL}/api"
 ADMIN_EMAIL = "info@dubaivizeonline.com"
-ADMIN_PASSWORD = "Dubai2026!"
 
 
 # ------------------------------------------------------------------ fixtures
@@ -48,15 +48,11 @@ def session():
 
 @pytest.fixture(scope="session")
 def admin_token(session):
-    r = session.post(
-        f"{API}/admin/login",
-        json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD, "remember": False},
-        timeout=15,
-    )
-    assert r.status_code == 200, f"admin login failed: {r.status_code} {r.text}"
-    tok = r.json().get("token")
-    assert tok
-    return tok
+    # Yonetici girisi yalnizca OTP ile yapilir; testler jetonu dogrudan uretir.
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from admin_test_token import admin_token as make_token
+
+    return make_token()
 
 
 @pytest.fixture(scope="session")

@@ -8,6 +8,8 @@ Covers:
 - Admin company GET/PUT for instagram + google_review + whatsapp persistence
 """
 import os
+import sys
+
 import pytest
 import requests
 from dotenv import load_dotenv
@@ -17,8 +19,6 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".en
 
 BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
-ADMIN_PASSWORD = os.environ["ADMIN_LOGIN_PASSWORD"]
-OLD_ADMIN_EMAIL = "admin@vizeatlas.com"
 
 EXPECTED_USD = {
     "visa_30_single": 105,
@@ -50,14 +50,11 @@ def fx_rate(api):
 def admin_session(api):
     s = requests.Session()
     s.headers.update({"Content-Type": "application/json"})
-    r = s.post(
-        f"{BASE_URL}/api/admin/login",
-        json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-        timeout=15,
-    )
-    assert r.status_code == 200, f"Admin login failed: {r.status_code} {r.text}"
-    token = r.json().get("token")
-    assert token, "No token in login response"
+    # Sifreli giris kaldirildi; jeton JWT_SECRET ile uretilir.
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from admin_test_token import admin_token as make_token
+
+    token = make_token()
     s.headers.update({"Authorization": f"Bearer {token}"})
     return s
 
@@ -130,30 +127,18 @@ class TestQuote:
         assert abs(q["total"] - expected) < 0.5
 
 
-# --------------- Admin auth ---------------
+# --------------- Admin auth (sifresiz OTP) ---------------
 class TestAdminAuth:
-    def test_login_success(self, api):
+    def test_password_login_endpoint_removed(self, api):
         r = api.post(
             f"{BASE_URL}/api/admin/login",
-            json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
+            json={"email": ADMIN_EMAIL, "password": "x"},
             timeout=15,
         )
-        assert r.status_code == 200
+        assert r.status_code == 404
 
-    def test_old_admin_email_rejected(self, api):
-        r = api.post(
-            f"{BASE_URL}/api/admin/login",
-            json={"email": OLD_ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-            timeout=15,
-        )
-        assert r.status_code == 401
-
-    def test_wrong_password_rejected(self, api):
-        r = api.post(
-            f"{BASE_URL}/api/admin/login",
-            json={"email": ADMIN_EMAIL, "password": "wrong"},
-            timeout=15,
-        )
+    def test_protected_endpoint_requires_token(self, api):
+        r = api.get(f"{BASE_URL}/api/admin/company", timeout=15)
         assert r.status_code == 401
 
 

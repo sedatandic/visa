@@ -7,7 +7,7 @@ import string
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
-from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
 
 from content import (
     AGENCY_INFO,
@@ -59,7 +59,8 @@ from doc_reminders import missing_documents
 from store_catalog import MAX_QTY, product_list, tour_schedule
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
 import ocr_metrics
-from passport_ai import check_photo, read_passport
+from passport_ai import apply_background_report, background_report, check_photo, read_passport
+from rate_limit import check as rate_check, client_ip
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
 from visa_guides import build_guide, guide_index
 
@@ -68,6 +69,9 @@ router = APIRouter()
 
 MAX_FILE_BYTES = 10 * 1024 * 1024
 ALLOWED_EXT = {"jpg", "jpeg", "png", "webp", "pdf"}
+# Kotuye kullanim korumasi: AI cagrilari (OCR/fotograf) ve iletisim formu IP basina sinirli.
+AI_MAX_PER_IP_HOUR = 40
+CONTACT_MAX_PER_IP_HOUR = 8
 
 
 def generate_reference_code() -> str:
@@ -523,6 +527,8 @@ def _photo_check_message(result: dict) -> str:
     """AI sonucuna gore kullaniciya gosterilecek ozet mesaji secer."""
     if not result.get("is_photo"):
         return "Bu goruntu vesikalik fotograf gibi gorunmuyor. Lutfen yuzunuzun net gorundugu bir portre yukleyin."
+    if "background_ok" in (result.get("failed") or []):
+        return "Arka plan beyaz degil. Vize icin duz beyaz zeminde cekilmis vesikalik gerekir."
     if result.get("ok"):
         return "Fotograf vize standartlarina uygun gorunuyor."
     return "Fotografta duzeltilmesi onerilen noktalar var."
@@ -546,8 +552,14 @@ async def _store_photo_check(file_id: str, result: dict) -> None:
 
 
 @router.post("/photo/check")
-async def check_photo_document(file_id: str = Form(...)) -> dict:
+async def check_photo_document(request: Request, file_id: str = Form(...)) -> dict:
     """Yuklenen vesikalik fotografi yapay zeka ile denetler (uyari amacli, engellemez)."""
+    rate_check(
+        f"photo-check-ip:{client_ip(request)}",
+        AI_MAX_PER_IP_HOUR,
+        3600,
+        "Cok fazla fotograf kontrolu. Lutfen bir sure sonra tekrar deneyin.",
+    )
     record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
     if not record:
         raise HTTPException(404, "Dosya bulunamadi.")
@@ -565,10 +577,32 @@ async def check_photo_document(file_id: str = Form(...)) -> dict:
         logger.error("photo fetch failed: %s", exc)
         raise HTTPException(502, "Dosya okunamadi.") from exc
 
+    background = background_report(data)
     try:
         result = await check_photo(data, content_type or ct)
     except Exception as exc:
         logger.error("photo ai failed: %s", exc)
+        if background.get("checked") and not background.get("ok"):
+            # AI cevap vermese bile beyaz zemin sarti kontrol edilir.
+            fallback = apply_background_report(
+                {
+                    "ok": True,
+                    "is_photo": True,
+                    "checks": {},
+                    "failed": [],
+                    "issues": [],
+                    "advice": "",
+                    "score": 0.5,
+                },
+                background,
+            )
+            await _store_photo_check(file_id, fallback)
+            return {
+                "checked": True,
+                "reason": "background_only",
+                "message": _photo_check_message(fallback),
+                **fallback,
+            }
         return {
             "ok": True,
             "checked": False,
@@ -576,17 +610,24 @@ async def check_photo_document(file_id: str = Form(...)) -> dict:
             "message": "Fotograf otomatik kontrol edilemedi; basvurunuza devam edebilirsiniz.",
         }
 
+    result = apply_background_report(result, background)
     await _store_photo_check(file_id, result)
     return {"checked": True, "message": _photo_check_message(result), **result}
 
 
 @router.post("/passport/read")
-async def read_passport_document(file_id: str = Form(...)) -> dict:
+async def read_passport_document(request: Request, file_id: str = Form(...)) -> dict:
     """Yuklenen pasaport goruntusunu yapay zeka ile okuyup form alanlarini doldurur.
 
     Her deneme sure + alan kapsamiyla olculur (`ocr_metrics`), boylece "form ne
     kadar hizli doluyor, hangi alanlar okunamiyor" raporlanabilir.
     """
+    rate_check(
+        f"passport-read-ip:{client_ip(request)}",
+        AI_MAX_PER_IP_HOUR,
+        3600,
+        "Cok fazla pasaport okuma denemesi. Lutfen bir sure sonra tekrar deneyin.",
+    )
     record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
     if not record:
         raise HTTPException(404, "Dosya bulunamadi.")
@@ -1111,7 +1152,13 @@ async def submit_missing_documents(code: str, payload: DocumentSubmission) -> di
 
 # ---------------------------------------------------------------- contact
 @router.post("/contact")
-async def create_contact(payload: ContactCreate) -> dict:
+async def create_contact(payload: ContactCreate, request: Request) -> dict:
+    rate_check(
+        f"contact-ip:{client_ip(request)}",
+        CONTACT_MAX_PER_IP_HOUR,
+        3600,
+        "Cok fazla mesaj gonderdiniz. Lutfen bir sure sonra tekrar deneyin.",
+    )
     msg = payload.model_dump()
     msg.update(
         {

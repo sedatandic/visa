@@ -8,6 +8,7 @@ Uses the request/response envelope discovered in iter_78: products endpoint retu
 """
 import io
 import os
+import sys
 import uuid
 from datetime import date, timedelta
 
@@ -22,7 +23,6 @@ load_dotenv(os.path.join(HERE, "..", "..", "frontend", ".env"))
 BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 API = f"{BASE_URL}/api"
 ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
-ADMIN_PASS = os.environ["ADMIN_LOGIN_PASSWORD"]
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +230,11 @@ class TestRegression:
         assert isinstance(items, list) and items
 
     def test_admin_login(self, api):
-        r = api.post(f"{API}/admin/login",
-                     json={"email": ADMIN_EMAIL, "password": ADMIN_PASS})
-        assert r.status_code == 200
-        assert r.json().get("token")
+        # Sifreli giris kaldirildi: endpoint 404, jeton OTP ile alinir.
+        r = api.post(f"{API}/admin/login", json={"email": ADMIN_EMAIL, "password": "x"})
+        assert r.status_code == 404
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from admin_test_token import admin_token as make_token
+
+        me = api.get(f"{API}/admin/emails", headers={"Authorization": f"Bearer {make_token()}"})
+        assert me.status_code == 200

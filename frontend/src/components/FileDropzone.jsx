@@ -10,6 +10,9 @@ export const FileDropzone = ({
     value,
     onChange,
     testId,
+    icon: Icon,
+    badge,
+    description,
     accept = "image/jpeg,image/png,image/webp,application/pdf",
 }) => {
     const inputRef = useRef(null);
@@ -52,9 +55,24 @@ export const FileDropzone = ({
     return (
         <div className="space-y-2">
             <div className="flex items-baseline justify-between gap-3">
-                <span className="text-sm font-semibold">{label}</span>
+                <span className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                    {label}
+                    {badge === "required" && (
+                        <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                            Zorunlu
+                        </span>
+                    )}
+                    {badge === "optional" && (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            Opsiyonel
+                        </span>
+                    )}
+                </span>
                 {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
             </div>
+            {description ? (
+                <p className="text-xs leading-5 text-muted-foreground">{description}</p>
+            ) : null}
 
             {value ? (
                 <div
@@ -124,10 +142,18 @@ export const FileDropzone = ({
                     ) : (
                         <>
                             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
-                                <UploadCloud className="h-5 w-5 text-primary" />
+                                {Icon ? (
+                                    <Icon className="h-5 w-5 text-primary" />
+                                ) : (
+                                    <UploadCloud className="h-5 w-5 text-primary" />
+                                )}
                             </span>
-                            <span className="text-sm font-semibold">Dosya seçin veya buraya sürükleyin</span>
-                            <span className="text-xs text-muted-foreground">JPG / PNG / PDF · Maks. 10 MB</span>
+                            <span className="rounded-full bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary">
+                                Dosya Seç
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                                Sürükleyip bırakabilirsiniz · JPG / PNG / PDF · Maks. 10 MB
+                            </span>
                         </>
                     )}
                 </button>

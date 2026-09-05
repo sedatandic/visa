@@ -294,6 +294,11 @@ SUBMIT_FINDER_JS = r"""
     var t = (el.innerText || el.value || el.getAttribute("title") || el.getAttribute("aria-label") || "");
     return String(t).replace(/\s+/g, " ").trim().slice(0, 60);
   }
+  function dvoEsc(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
   function dvoVisible(el) {
     if (!el || !el.offsetParent) return false;
     var r = el.getBoundingClientRect();
@@ -1012,9 +1017,9 @@ __SUBMIT_FINDER__
         .map(function (d) {
           return (
             '<li style="margin:4px 0"><a target="_blank" style="color:#7CD5A6" href="' +
-            d.url +
+            dvoEsc(d.url) +
             '">' +
-            d.label +
+            dvoEsc(d.label) +
             "</a></li>"
           );
         })
@@ -1033,7 +1038,7 @@ __SUBMIT_FINDER__
       var submitLabel = submitTarget ? dvoText(submitTarget) || "Gönder" : "";
       box.innerHTML =
         "<b>Dubai Vize Online · " +
-        (data.reference_code || "") +
+        dvoEsc(data.reference_code || "") +
         "</b><br>" +
         ok +
         " alan dolduruldu" +
@@ -1043,7 +1048,7 @@ __SUBMIT_FINDER__
         "</ul>" +
         (submitTarget
           ? '<div style="margin-top:10px;font-size:12px;opacity:.85">Gönder butonu bulundu: <b>' +
-            submitLabel +
+            dvoEsc(submitLabel) +
             "</b></div>"
           : '<div style="margin-top:10px;font-size:12px;color:#FFC48A">Gönder butonu bulunamadı, formu elle gönderin.</div>') +
         '<div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">' +

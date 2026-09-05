@@ -1,5 +1,6 @@
 """Regression + fix verification for zami OTP-loop bug (iteration_54)."""
 import os
+import sys
 import time
 import requests
 from dotenv import load_dotenv
@@ -9,18 +10,15 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".en
 
 BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
-ADMIN_PASSWORD = os.environ["ADMIN_LOGIN_PASSWORD"]
 
 
 def _admin_session():
     s = requests.Session()
-    r = s.post(f"{BASE_URL}/api/admin/login",
-               json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-               timeout=15)
-    assert r.status_code == 200, r.text
-    token = r.json().get("token")
-    assert token
-    s.headers.update({"Authorization": f"Bearer {token}"})
+    # Yonetici girisi OTP'ye tasindi; testler jetonu dogrudan uretir.
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from admin_test_token import admin_token as make_token
+
+    s.headers.update({"Authorization": f"Bearer {make_token()}"})
     return s
 
 

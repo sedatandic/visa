@@ -5,7 +5,7 @@ from datetime import date, timedelta
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://insurance-checkout-3.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://otp-admin-flow.preview.emergentagent.com").rstrip("/")
 
 ARRIVAL = (date.today() + timedelta(days=30)).isoformat()
 DEPARTURE = (date.today() + timedelta(days=35)).isoformat()

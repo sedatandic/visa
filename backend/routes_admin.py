@@ -60,6 +60,7 @@ from emailer import (
     status_change_html,
     visa_ready_html,
 )
+from rate_limit import code_request_window
 from models import (
     AdminCodeRequest,
     AdminCodeVerify,
@@ -131,16 +132,7 @@ def _as_utc(value) -> Optional[datetime]:
 
 def _check_code_rate_limit(doc: Optional[dict], now: datetime) -> tuple[datetime, int]:
     """Kod talebi hiz siniri: 60 sn bekleme + saatte en fazla 5 talep."""
-    last_sent = _as_utc((doc or {}).get("created_at"))
-    if last_sent and (now - last_sent).total_seconds() < CODE_COOLDOWN_SECONDS:
-        raise HTTPException(429, "Yeni kod icin lutfen 1 dakika bekleyin.")
-    window_start = _as_utc((doc or {}).get("window_start")) or now
-    count = int((doc or {}).get("request_count") or 0)
-    if (now - window_start).total_seconds() >= 3600:
-        return now, 0
-    if count >= CODE_MAX_PER_HOUR:
-        raise HTTPException(429, "Cok fazla kod talebi. Lutfen bir saat sonra tekrar deneyin.")
-    return window_start, count
+    return code_request_window(doc, now, CODE_COOLDOWN_SECONDS, CODE_MAX_PER_HOUR)
 
 
 @router.post("/admin/request-code")
@@ -1113,14 +1105,14 @@ async def admin_update_fx(payload: dict, admin: dict = Depends(require_admin)):
 
 @router.get("/admin/login-codes")
 async def admin_login_codes(email: Optional[str] = None, admin: dict = Depends(require_admin)) -> dict:
-    """E-posta gonderimi yapilandirilmadan once destek amacli giris kodu goruntuleme."""
+    """Musteri giris kodu talepleri (kodun kendisi hash'li saklanir, gosterilmez)."""
     query = {"email": email.strip().lower()} if email else {}
     docs = await login_codes_col.find(query).sort("created_at", -1).limit(20).to_list(20)
     return {
         "items": [
             {
                 "email": d.get("email"),
-                "code": d.get("code_plain"),
+                "requested_at": serialize_doc(d.get("created_at")),
                 "expires_at": serialize_doc(d.get("expires_at")),
                 "attempts": d.get("attempts", 0),
             }

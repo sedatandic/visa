@@ -6,17 +6,22 @@ import {
     ArrowLeft,
     ArrowRight,
     Baby,
+    BookUser,
+    Building2,
     CalendarDays,
+    Camera,
     Check,
     CheckCircle2,
     CreditCard,
     FileText,
+    FileUp,
     Info,
     Loader2,
     Pencil,
     Landmark,
     Lock,
     Minus,
+    Plane,
     Plus,
     Save,
     ShieldCheck,
@@ -42,6 +47,7 @@ import { FxNote } from "../components/FxNote";
 import { BundlePicker } from "../components/BundlePicker";
 import { ComboSelector } from "../components/ComboSelector";
 import { ImportantNotice } from "../components/ImportantNotice";
+import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { BankTransferInfo } from "../components/BankTransferInfo";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -97,8 +103,20 @@ const newTraveler = (type = "adult") => ({
     photoFile: null,
 });
 
-const Field = ({ label, children, error, required, htmlFor }) => (
-    <div className="space-y-2" data-invalid={error ? "true" : undefined}>
+// Cep telefonu maskesi: her zaman +90 ile baslar, "+90 532 588 26 30" duzeninde gosterilir.
+const formatPhoneTR = (value) => {
+    let digits = (value || "").replace(/\D/g, "");
+    if (digits.startsWith("0090")) digits = digits.slice(4);
+    if (digits.startsWith("90")) digits = digits.slice(2);
+    if (digits.startsWith("0")) digits = digits.slice(1);
+    digits = digits.slice(0, 10);
+    const groups = [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 8), digits.slice(8, 10)].filter(
+        Boolean
+    );
+    return groups.length ? `+90 ${groups.join(" ")}` : "+90 ";
+};
+
+const Field = ({ label, children, error, required, htmlFor }) => (    <div className="space-y-2" data-invalid={error ? "true" : undefined}>
         <Label htmlFor={htmlFor}>
             {label} {required && <span className="text-destructive">*</span>}
         </Label>
@@ -115,7 +133,7 @@ const Field = ({ label, children, error, required, htmlFor }) => (
 const ERROR_LABELS = {
     full_name: "Adınız Soyadınız",
     email: "E-posta adresi",
-    phone: "Telefon numarası",
+    phone: "Cep telefonu numarası",
     first_name: "Ad",
     last_name: "Soyad",
     birth_date: "Doğum Tarihi",
@@ -169,7 +187,7 @@ export default function Apply() {
     const [addonMeta, setAddonMeta] = useState([]);
     const [maxTravelers, setMaxTravelers] = useState(10);
     const [step, setStep] = useState(0);
-    const [contact, setContact] = useState({ full_name: "", email: "", phone: "", address_city: "", whatsapp_optin: false });
+    const [contact, setContact] = useState({ full_name: "", email: "", phone: "+90 5", address_city: "", whatsapp_optin: false });
     const [travelers, setTravelers] = useState([newTraveler()]);
     const [openNationalId, setOpenNationalId] = useState({});
     const [fieldsOpen, setFieldsOpen] = useState({});
@@ -635,6 +653,61 @@ export default function Apply() {
         toast.success(`${option.label} seçildi.`);
     };
 
+    // Ek hizmet onay kutulari (vize adimi): sigorta ve eSIM icin en uygun paketi otomatik secer.
+    const insuranceWanted = Boolean(insurancePick);
+    const esimWanted = Object.values(esimQty).some((q) => q > 0);
+
+    const toggleInsuranceWanted = (on) => {
+        if (!on) {
+            setInsurancePick(null);
+            return;
+        }
+        if (!extrasSelectable) {
+            toast.error('Önce gidiş tarihinizi seçin veya "tarihim henüz belli değil" seçeneğini işaretleyin.');
+            return;
+        }
+        const pick = recommendedInsuranceId || insuranceProducts[0]?.id;
+        if (!pick) {
+            toast.error("Seyahat sürenize uygun poliçe bulunamadı.");
+            return;
+        }
+        setInsurancePick(pick);
+        toast.success("Seyahat sağlık sigortası eklendi. Paketi Özet adımında değiştirebilirsiniz.");
+    };
+
+    const toggleEsimWanted = (on) => {
+        if (!on) {
+            setEsimQty({});
+            return;
+        }
+        const pick = recommendedEsimId || esimProducts[0]?.id;
+        if (!pick) {
+            toast.error("Uygun eSIM paketi bulunamadı.");
+            return;
+        }
+        setEsimQty({ [pick]: Math.min(Math.max(travelerCount, 1), 10) });
+        toast.success("Dubai eSIM eklendi. Paketi Özet adımında değiştirebilirsiniz.");
+    };
+
+    // Basvuru tipi: tek yolcu = bireysel, birden fazla yolcu = grup/aile
+    const applicationType = travelers.length > 1 ? "group" : "individual";
+
+    const recommendedInsuranceProduct =
+        insuranceProducts.find((p) => p.id === (insurancePick || recommendedInsuranceId)) || null;
+    const recommendedEsimProduct =
+        esimProducts.find((p) => p.id === (Object.keys(esimQty)[0] || recommendedEsimId)) || null;
+
+    const setApplicationType = (type) => {
+        if (type === applicationType) return;
+        if (type === "group") {
+            addTraveler("adult");
+            return;
+        }
+        setTravelers((list) => list.slice(0, 1));
+        setErrors({});
+        toast.success("Bireysel başvuruya geçildi; yalnızca ilk yolcu kaldı.");
+    };
+
     const RecommendedBadge = ({ testId }) => (
         <span
             className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--brand-green)/0.12)] px-2 py-0.5 text-[11px] font-semibold text-[hsl(var(--brand-green))]"
@@ -807,8 +880,21 @@ export default function Apply() {
         return pool[0] || null;
     };
 
-    const toggleDatesUnknown = (checked) => {
-        const on = !!checked;
+    // Iletisim bolumundeki basvuru turu: ilk yolcunun yetiskin/cocuk secimini yonetir.
+    const primaryApplicantType = travelers[0]?.applicant_type === "child" ? "child" : "adult";
+    const hasChildApplicant = travelers.some((t) => t.applicant_type === "child");
+
+    const setPrimaryApplicantType = (value) => {
+        const first = travelers[0];
+        if (!first) return;
+        updateTraveler(first.key, {
+            applicant_type: value,
+            visa_type_id: "",
+            ...(value === "child" ? { marital_status: "single", profession: "Student" } : {}),
+        });
+    };
+
+    const toggleDatesUnknown = (checked) => {        const on = !!checked;
         setTravel((t) => ({
             ...t,
             dates_unknown: on,
@@ -991,7 +1077,9 @@ export default function Apply() {
         if (step === 0) {
             if (contact.full_name.trim().length < 3) e.full_name = "Adınızı ve soyadınızı yazın.";
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) e.email = "Geçerli bir e-posta adresi girin.";
-            if (contact.phone.replace(/\D/g, "").length < 10) e.phone = "Telefon numaranızı alan koduyla girin.";
+            const phoneDigits = contact.phone.replace(/\D/g, "").replace(/^90/, "");
+            if (phoneDigits.length !== 10 || !phoneDigits.startsWith("5"))
+                e.phone = "Cep telefonunuzu +90 5XX XXX XX XX biçiminde girin.";
             travelers.forEach((t) => {
                 const te = {};
                 if (t.first_name.trim().length < 2) te.first_name = "Ad zorunlu (en az 2 karakter).";
@@ -1315,21 +1403,139 @@ export default function Apply() {
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Bilgileri pasaportta yazdığı gibi, Türkçe karakter kullanmadan girin.</p>
 
+                                    <div className="mt-6 grid gap-4 sm:grid-cols-2" data-testid="application-type-picker">
+                                        {[
+                                            {
+                                                id: "individual",
+                                                title: "Bireysel",
+                                                note: "Yalnızca kendi adınıza başvuruyorsunuz.",
+                                            },
+                                            {
+                                                id: "group",
+                                                title: "Grup / Aile",
+                                                note: "Birden fazla yolcu, tek başvuru ve tek ödeme.",
+                                            },
+                                        ].map((opt) => (
+                                            <button
+                                                key={opt.id}
+                                                type="button"
+                                                aria-pressed={applicationType === opt.id}
+                                                onClick={() => setApplicationType(opt.id)}
+                                                className={`rounded-xl border p-5 text-left transition-colors duration-200 hover:border-primary/60 ${
+                                                    applicationType === opt.id
+                                                        ? "border-primary bg-primary/[0.06]"
+                                                        : "border-border bg-card"
+                                                }`}
+                                                data-testid={`application-type-${opt.id}`}
+                                            >
+                                                <p className="flex items-center gap-2 font-heading text-base font-bold">
+                                                    {opt.id === "group" ? (
+                                                        <Users className="h-4.5 w-4.5 text-primary" />
+                                                    ) : (
+                                                        <User className="h-4.5 w-4.5 text-primary" />
+                                                    )}
+                                                    {opt.title}
+                                                </p>
+                                                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{opt.note}</p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {applicationType === "group" && (
+                                        <div
+                                            className="mt-4 rounded-xl border border-primary/30 bg-primary/[0.05] p-4 text-sm leading-6 text-muted-foreground"
+                                            data-testid="group-application-note"
+                                        >
+                                            Bildirimlerin tamamı aşağıdaki telefon ve e-posta adresine gider, ödeme tek
+                                            seferde alınır ve seyahat tarihleri grubun tümü için geçerlidir.{" "}
+                                            <strong className="text-foreground">
+                                                Listedeki ilk yolcu grup sorumlusu olarak kaydedilir.
+                                            </strong>{" "}
+                                            Aile indirimi yolcu sayısına göre otomatik hesaplanır.
+                                        </div>
+                                    )}
+
                                     <div className="mt-6 rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
                                         <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
                                             İletişim bilgileri
                                         </h3>
                                         <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                                            <Field label="Ad Soyad" required htmlFor="c-name" error={errors.full_name}>
+                                            <Field label="Adınız Soyadınız" required htmlFor="c-name" error={errors.full_name}>
                                                 <Input id="c-name" value={contact.full_name} onChange={setC("full_name")} placeholder="AHMET YILMAZ" data-testid="input-contact-name" />
                                             </Field>
-                                            <Field label="E-posta" required htmlFor="c-email" error={errors.email}>
+                                            <Field label="E-mail Adresi" required htmlFor="c-email" error={errors.email}>
                                                 <Input id="c-email" type="email" value={contact.email} onChange={setC("email")} placeholder="ornek@eposta.com" data-testid="input-contact-email" />
                                             </Field>
-                                            <Field label="Telefon" required htmlFor="c-phone" error={errors.phone}>
-                                                <Input id="c-phone" value={contact.phone} onChange={setC("phone")} placeholder="0555 111 22 33" data-testid="input-contact-phone" />
+                                            <Field
+                                                label={
+                                                    <span className="inline-flex items-center gap-1.5">
+                                                        Cep Telefonu
+                                                        <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />
+                                                        <span className="text-[#128C4B]">(WhatsApp)</span>
+                                                    </span>
+                                                }
+                                                required
+                                                htmlFor="c-phone"
+                                                error={errors.phone}
+                                            >
+                                                <Input
+                                                    id="c-phone"
+                                                    type="tel"
+                                                    inputMode="numeric"
+                                                    autoComplete="tel"
+                                                    value={contact.phone}
+                                                    onChange={(ev) =>
+                                                        setContact((s) => ({ ...s, phone: formatPhoneTR(ev.target.value) }))
+                                                    }
+                                                    onFocus={() =>
+                                                        setContact((s) =>
+                                                            s.phone.replace(/\D/g, "").length > 2 ? s : { ...s, phone: "+90 5" }
+                                                        )
+                                                    }
+                                                    placeholder="+90 5XX XXX XX XX"
+                                                    maxLength={17}
+                                                    data-testid="input-contact-phone"
+                                                />
+                                                <p className="mt-1.5 text-xs text-muted-foreground">
+                                                    Başvurunuzla ilgili dönüş bu numaraya WhatsApp üzerinden yapılacaktır.
+                                                </p>
+                                            </Field>
+                                            <Field label="Başvuru Türü" required htmlFor="c-applicant-type">
+                                                <Select value={primaryApplicantType} onValueChange={setPrimaryApplicantType}>
+                                                    <SelectTrigger id="c-applicant-type" data-testid="select-applicant-type">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="adult" data-testid="applicant-option-adult">
+                                                            Yetişkin
+                                                        </SelectItem>
+                                                        <SelectItem value="child" data-testid="applicant-option-child">
+                                                            Çocuk (18 yaş altı)
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </Field>
                                         </div>
+                                        {hasChildApplicant && (
+                                            <div
+                                                className="mt-4 flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/[0.06] p-4"
+                                                data-testid="child-application-notice"
+                                            >
+                                                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-destructive/15">
+                                                    <AlertCircle className="h-4 w-4 text-destructive" />
+                                                </span>
+                                                <div>
+                                                    <p className="font-heading text-sm font-bold text-destructive">
+                                                        Çocuk başvurusunda dikkat edilmesi gerekenler
+                                                    </p>
+                                                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                        18 yaşını doldurmamış yolcular kendi adına tek başına başvuru
+                                                        gönderemez. Çocuğunuzun vizesi için aynı formda önce ebeveyn
+                                                        bilgilerini tamamlayın, ardından çocuğu yolcu olarak ekleyip
+                                                        başvurunuzu aile başvurusu şeklinde iletin.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
                                         <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 text-sm transition-colors duration-200 hover:border-primary/50">
                                             <Switch
                                                 checked={!!contact.whatsapp_optin}
@@ -1851,6 +2057,72 @@ export default function Apply() {
                                                     </div>
                                                 </label>
                                             ))}
+                                            <label
+                                                className={`flex cursor-pointer items-start gap-4 rounded-xl border bg-card p-5 ${
+                                                    insuranceWanted ? "border-primary/50" : "border-border"
+                                                }`}
+                                                data-testid="extra-toggle-insurance"
+                                            >
+                                                <Switch
+                                                    checked={insuranceWanted}
+                                                    onCheckedChange={toggleInsuranceWanted}
+                                                    className="mt-1"
+                                                    data-testid="extra-switch-insurance"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                        <p className="flex items-center gap-2 font-heading text-sm font-bold">
+                                                            <ShieldCheck className="h-4 w-4 text-primary" />
+                                                            Seyahat Sağlık Sigortası
+                                                        </p>
+                                                        {recommendedInsuranceProduct && (
+                                                            <span className="font-heading text-sm font-bold text-primary">
+                                                                + {formatMoney(recommendedInsuranceProduct.price, recommendedInsuranceProduct.currency)} / kişi
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                                                        Seyahat sürenize uygun poliçeyi ekleriz; paketi Özet adımında
+                                                        değiştirebilirsiniz.
+                                                    </p>
+                                                    {!extrasSelectable && (
+                                                        <p className="mt-2 text-xs font-medium text-primary" data-testid="extra-insurance-dates-hint">
+                                                            Poliçe süresi tarihinize göre hesaplanır: önce gidiş tarihini seçin
+                                                            veya "tarihim henüz belli değil" seçeneğini işaretleyin.
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </label>
+                                            <label
+                                                className={`flex cursor-pointer items-start gap-4 rounded-xl border bg-card p-5 ${
+                                                    esimWanted ? "border-primary/50" : "border-border"
+                                                }`}
+                                                data-testid="extra-toggle-esim"
+                                            >
+                                                <Switch
+                                                    checked={esimWanted}
+                                                    onCheckedChange={toggleEsimWanted}
+                                                    className="mt-1"
+                                                    data-testid="extra-switch-esim"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                        <p className="flex items-center gap-2 font-heading text-sm font-bold">
+                                                            <Wifi className="h-4 w-4 text-primary" />
+                                                            Dubai eSIM
+                                                        </p>
+                                                        {recommendedEsimProduct && (
+                                                            <span className="font-heading text-sm font-bold text-primary">
+                                                                + {formatMoney(recommendedEsimProduct.price, recommendedEsimProduct.currency)} / kişi
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                                                        Uçaktan iner inmez internet: QR kod ile kurulur, Türkiye
+                                                        numaranız açık kalır.
+                                                    </p>
+                                                </div>
+                                            </label>
                                         </div>
                                     </div>
 
@@ -1879,7 +2151,10 @@ export default function Apply() {
                                                         <div>
                                                             <FileDropzone
                                                                 label="Pasaport Fotoğrafı"
-                                                                hint="Zorunlu · Bilgiler otomatik dolar"
+                                                                hint="Bilgiler otomatik dolar"
+                                                                badge="required"
+                                                                icon={BookUser}
+                                                                description="Pasaportunuzun kimlik bilgilerinin olduğu sayfası net şekilde yükleyin."
                                                                 docType="passport"
                                                                 value={t.passportFile}
                                                                 onChange={(f) => {
@@ -1919,7 +2194,10 @@ export default function Apply() {
                                                         <div>
                                                             <FileDropzone
                                                                 label="Vesikalık Fotoğraf"
-                                                                hint="Zorunlu · Otomatik kontrol edilir"
+                                                                hint="Otomatik kontrol edilir"
+                                                                badge="required"
+                                                                icon={Camera}
+                                                                description="Beyaz veya beyaza yakın düz zeminde, son 6 ay içinde çekilmiş biyometrik fotoğraf."
                                                                 docType="photo"
                                                                 value={t.photoFile}
                                                                 onChange={(f) => {
@@ -1988,15 +2266,18 @@ export default function Apply() {
                                         })}
 
                                         <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
-                                            <p className="font-heading text-sm font-bold">Seyahat belgeleri (opsiyonel)</p>
+                                            <p className="flex items-center gap-2 font-heading text-sm font-bold">
+                                                <FileUp className="h-4 w-4 text-primary" />
+                                                Seyahat evrakları
+                                            </p>
                                             <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
                                                 Bu alanlar zorunlu değil: vizeniz çıkmadan uçak bileti veya otel
                                                 rezervasyonu yapmanıza gerek yok. Elinizde varsa yükleyin, yoksa
                                                 boş bırakıp devam edin.
                                             </p>
-                                            <div className="mt-5 grid gap-6 md:grid-cols-3">
+                                            <div className="mt-5 grid gap-6 md:grid-cols-2">
                                                 <div>
-                                                    <FileDropzone label="Dönüş Uçak Bileti" hint="Opsiyonel" docType="ticket" value={extraDocs.ticket} onChange={(f) => setExtraDocs((s) => ({ ...s, ticket: f }))} testId="ticket-upload-input" />
+                                                    <FileDropzone label="Uçak Bileti" hint="Varsa" badge="optional" icon={Plane} description="Dönüş biletiniz varsa ekleyin; zorunlu değildir." docType="ticket" value={extraDocs.ticket} onChange={(f) => setExtraDocs((s) => ({ ...s, ticket: f }))} testId="ticket-upload-input" />
                                                     {errors.ticket && (
                                                         <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive" data-testid="ticket-upload-error">
                                                             <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {errors.ticket}
@@ -2004,14 +2285,16 @@ export default function Apply() {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <FileDropzone label="Otel Rezervasyonu" hint="Opsiyonel" docType="hotel" value={extraDocs.hotel} onChange={(f) => setExtraDocs((s) => ({ ...s, hotel: f }))} testId="hotel-upload-input" />
+                                                    <FileDropzone label="Otel Rezervasyonu" hint="Varsa" badge="optional" icon={Building2} description="Konaklama rezervasyonunuz varsa yükleyebilirsiniz." docType="hotel" value={extraDocs.hotel} onChange={(f) => setExtraDocs((s) => ({ ...s, hotel: f }))} testId="hotel-upload-input" />
                                                     {errors.hotel && (
                                                         <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive" data-testid="hotel-upload-error">
                                                             <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {errors.hotel}
                                                         </p>
                                                     )}
                                                 </div>
-                                                <FileDropzone label="Diğer Evrak" hint="Opsiyonel" docType="other" value={extraDocs.other} onChange={(f) => setExtraDocs((s) => ({ ...s, other: f }))} testId="other-upload-input" />
+                                                <div className="md:col-span-2">
+                                                    <FileDropzone label="Diğer Evraklar" hint="Varsa" badge="optional" icon={FileUp} description="Davet mektubu, öğrenci belgesi gibi destekleyici evraklar." docType="other" value={extraDocs.other} onChange={(f) => setExtraDocs((s) => ({ ...s, other: f }))} testId="other-upload-input" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -2469,7 +2752,7 @@ export default function Apply() {
                                             <div className="mt-3">
                                                 <SummaryRow label="Ad Soyad" value={contact.full_name} />
                                                 <SummaryRow label="E-posta" value={contact.email} />
-                                                <SummaryRow label="Telefon" value={contact.phone} />
+                                                <SummaryRow label="Cep Telefonu (WhatsApp)" value={contact.phone} />
                                             </div>
                                         </div>
 

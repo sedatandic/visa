@@ -1034,3 +1034,17 @@ kullanım, /admin/login 404, 30 gün exp) ve süresi dolmuş jeton temizliğini 
 - P1: `email_outbox` eski kayıtlarında gövde yok (yalnızca bu güncellemeden sonrası önizlenebilir).
 - P2: `code_plain` alanı destek/test için saklanıyor; sıkı tehdit modelinde kaldırılabilir.
 - P2: Tarihi belli olmayan başvurular için "tarihim belli oldu" hatırlatma e-postası.
+
+## 2026-06-09 · Güvenlik sıkılaştırma + Başvuru formu UX (Adım 1-3) + Fotoğraf zemin denetimi
+Ayrıntılı kayıt: `CHANGELOG.md` (2026-06-09), kalan işler: `ROADMAP.md`.
+
+Özet:
+- Müşteri girişi **yalnızca e-posta OTP**; `POST /api/account/login-lastname` kaldırıldı (404).
+  Kod düz metin saklanmıyor; IP + e-posta bazlı hız sınırları eklendi (`backend/rate_limit.py`).
+- Zami bookmarklet'inde HTML kaçışı (`dvoEsc`) → XSS kapatıldı. `/photo/check`, `/passport/read`,
+  `/contact` uçlarına IP başına saatlik sınır.
+- Başvuru Adım 1: Bireysel / Grup-Aile kartları, "Başvuru Türü" (Yetişkin/Çocuk + çocuk uyarısı),
+  "Cep Telefonu (WhatsApp)" maskesi `+90 5XX XXX XX XX`, "Adınız Soyadınız" / "E-mail Adresi".
+- Adım 2 Ek hizmetler: Seyahat Sağlık Sigortası + Dubai eSIM anahtarları (en uygun paketi seçer).
+- Adım 3 Evraklar: ikon + ZORUNLU/OPSİYONEL etiketli, "Dosya Seç" butonlu kartlar.
+- Vesikalık fotoğrafta arka plan artık deterministik ölçülüyor (beyaz/beyaza yakın zorunlu).

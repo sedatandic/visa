@@ -1,9 +1,11 @@
 """Musteri hesabi: e-posta ile giris, onceki basvurular ve taslak yonetimi.
 
 Giris yollari:
-1) E-postaya gonderilen 6 haneli kod (Resend yapilandirildiginda calisir)
-2) E-posta + soyad dogrulamasi (mevcut basvurusu olanlar icin, her zaman calisir)
-3) Taslak devam kodu (kaydedilen yarim basvuruya donmek icin)
+1) E-postaya gonderilen 6 haneli tek kullanimlik kod (tek gecerli giris yolu)
+2) Taslak devam kodu (kaydedilen yarim basvuruya donmek icin)
+
+Guvenlik notu: e-posta + soyad ile giris kaldirildi (soyad tahmin edilebilir
+oldugu icin hesap devralmaya aciktir). Kod yalnizca hash'lenmis saklanir.
 """
 
 import hashlib
@@ -28,6 +30,7 @@ from db import (
 )
 from doc_reminders import missing_documents
 from emailer import draft_saved_html, login_code_html, send_email
+from rate_limit import check as rate_check, client_ip, code_request_window
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -37,6 +40,10 @@ JWT_SECRET = os.environ.get("JWT_SECRET", "dv-dev-secret")
 JWT_ALGO = "HS256"
 CODE_TTL_MINUTES = 15
 MAX_CODE_ATTEMPTS = 5
+CODE_COOLDOWN_SECONDS = 60
+CODE_MAX_PER_HOUR = 5
+CODE_MAX_PER_IP_HOUR = 15
+VERIFY_MAX_PER_IP_HOUR = 30
 SESSION_DAYS = 30
 RESUME_CODE_LENGTH = 8
 
@@ -129,11 +136,6 @@ class CodeVerifyIn(BaseModel):
     code: str = Field(..., min_length=4, max_length=8)
 
 
-class LastNameLoginIn(BaseModel):
-    email: EmailStr
-    last_name: str = Field(..., min_length=2, max_length=80)
-
-
 class DraftIn(BaseModel):
     email: EmailStr
     data: dict
@@ -149,21 +151,34 @@ class DraftIn(BaseModel):
 async def request_login_code(payload: EmailIn, request: Request) -> dict:
     """E-postaya 6 haneli giris kodu gonderir."""
     email = _norm_email(payload.email)
-    code = f"{secrets.randbelow(900000) + 100000}"
+    ip = client_ip(request)
+    rate_check(
+        f"account-code-ip:{ip}",
+        CODE_MAX_PER_IP_HOUR,
+        3600,
+        "Cok fazla kod talebi. Lutfen bir saat sonra tekrar deneyin.",
+    )
     now = datetime.now(timezone.utc)
+    existing = await login_codes_col.find_one({"email": email})
+    window_start, count = code_request_window(
+        existing, now, CODE_COOLDOWN_SECONDS, CODE_MAX_PER_HOUR
+    )
+    code = f"{secrets.randbelow(900000) + 100000}"
     await login_codes_col.update_one(
         {"email": email},
         {
             "$set": {
                 "email": email,
+                # Kod yalnizca hash olarak saklanir (duz metin saklanmaz).
                 "code_hash": _hash(code),
-                # Resend yapilandirilmadan once destek ekibinin kodu iletebilmesi
-                # icin admin panelinde gorunur (yalnizca admin erisebilir).
-                "code_plain": code,
                 "expires_at": now + timedelta(minutes=CODE_TTL_MINUTES),
                 "attempts": 0,
                 "created_at": now,
-            }
+                "window_start": window_start,
+                "request_count": count + 1,
+                "ip": ip,
+            },
+            "$unset": {"code_plain": ""},
         },
         upsert=True,
     )
@@ -179,12 +194,19 @@ async def request_login_code(payload: EmailIn, request: Request) -> dict:
         "sent": result.get("status") == "sent",
         "email_status": result.get("status"),
         "expires_in_minutes": CODE_TTL_MINUTES,
+        "cooldown_seconds": CODE_COOLDOWN_SECONDS,
     }
 
 
 @router.post("/account/verify-code")
-async def verify_login_code(payload: CodeVerifyIn) -> dict:
+async def verify_login_code(payload: CodeVerifyIn, request: Request) -> dict:
     email = _norm_email(payload.email)
+    rate_check(
+        f"account-verify-ip:{client_ip(request)}",
+        VERIFY_MAX_PER_IP_HOUR,
+        3600,
+        "Cok fazla deneme. Lutfen bir saat sonra tekrar deneyin.",
+    )
     doc = await login_codes_col.find_one({"email": email})
     if not doc:
         raise HTTPException(400, "Once giris kodu talep etmelisiniz.")
@@ -201,22 +223,6 @@ async def verify_login_code(payload: CodeVerifyIn) -> dict:
 
     await login_codes_col.delete_one({"email": email})
     return {"token": _create_session_token(email), "email": email}
-
-
-@router.post("/account/login-lastname")
-async def login_with_last_name(payload: LastNameLoginIn) -> dict:
-    """Mevcut basvurusu olan musteriler icin e-posta + soyad dogrulamasi."""
-    email = _norm_email(payload.email)
-    last_name = payload.last_name.strip().lower()
-    cursor = applications_col.find({"contact.email": {"$regex": f"^{email}$", "$options": "i"}})
-    async for doc in cursor:
-        names = {(t.get("last_name") or "").strip().lower() for t in doc.get("travelers") or []}
-        contact_name = (doc.get("contact") or {}).get("full_name") or ""
-        if contact_name.strip():
-            names.add(contact_name.strip().split()[-1].lower())
-        if last_name in names:
-            return {"token": _create_session_token(email), "email": email}
-    raise HTTPException(404, "Bu e-posta ve soyad ile kayitli bir basvuru bulunamadi.")
 
 
 # ------------------------------------------------------------- hesap ozetleri

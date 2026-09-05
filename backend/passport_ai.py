@@ -270,6 +270,104 @@ async def check_photo(data: bytes, content_type: str) -> dict:
     return normalize_photo_result(parsed)
 
 
+# --------------------------------------------- arka plan (deterministik olcum)
+# Vize fotografinda zemin beyaz/kirik beyaz olmali. LLM'e guvenmek yerine kenar
+# pikselleri olculur: parlaklik, beyaza yakinlik orani ve desen (std sapma).
+BG_NEAR_WHITE_CH = 200
+BG_MIN_WHITE_RATIO = 0.55
+BG_MIN_MEAN_LUM = 185
+BG_MAX_STD = 42
+
+
+def background_report(data: bytes) -> dict:
+    """Kenar piksellerinden arka planin beyaza yakinligini ve duzlugunu olcer."""
+    try:
+        from PIL import Image
+
+        img = Image.open(io.BytesIO(data)).convert("RGB")
+    except Exception as exc:
+        logger.warning("background analysis failed: %s", exc)
+        return {"checked": False}
+
+    img.thumbnail((360, 360))
+    width, height = img.size
+    if width < 40 or height < 40:
+        return {"checked": False}
+
+    px = img.load()
+    band = max(3, int(min(width, height) * 0.09))
+    upper_limit = int(height * 0.65)  # alt kisim omuz/kiyafet oldugu icin haric
+    samples = []
+    for x in range(0, width, 2):
+        for y in range(0, band):
+            samples.append(px[x, y])
+    for y in range(0, upper_limit, 2):
+        for x in range(0, band):
+            samples.append(px[x, y])
+        for x in range(width - band, width):
+            samples.append(px[x, y])
+    if not samples:
+        return {"checked": False}
+
+    lums = [0.299 * r + 0.587 * g + 0.114 * b for r, g, b in samples]
+    mean_lum = sum(lums) / len(lums)
+    std = (sum((v - mean_lum) ** 2 for v in lums) / len(lums)) ** 0.5
+    white_ratio = sum(1 for r, g, b in samples if min(r, g, b) >= BG_NEAR_WHITE_CH) / len(samples)
+    ok = (
+        white_ratio >= BG_MIN_WHITE_RATIO
+        and mean_lum >= BG_MIN_MEAN_LUM
+        and std <= BG_MAX_STD
+    )
+    return {
+        "checked": True,
+        "ok": ok,
+        "white_ratio": round(white_ratio, 3),
+        "mean_luminance": round(mean_lum, 1),
+        "uniformity": round(std, 1),
+    }
+
+
+def _background_issue(report: dict) -> str:
+    if report.get("mean_luminance", 255) < BG_MIN_MEAN_LUM:
+        return "Arka plan koyu. Vesikaligi beyaz veya kirik beyaz bir duvarin onunde cektirin."
+    if report.get("uniformity", 0) > BG_MAX_STD:
+        return "Arka planda desen, esya veya baska kisiler var. Duz beyaz bir zemin gerekir."
+    return "Arka plan beyaza yakin degil. Duz beyaz veya cok acik gri zemin kullanin."
+
+
+def apply_background_report(result: dict, report: dict) -> dict:
+    """Olculen arka plan uygun degilse sonucu uyariya cevirir (LLM'i ezer)."""
+    if not report.get("checked"):
+        return result
+    out = dict(result)
+    out["background"] = report
+    if report.get("ok"):
+        # Olcum beyaz zemini dogruladiysa LLM'in arka plan itirazi dusurulur.
+        checks = dict(out.get("checks") or {})
+        if checks.get("background_ok") is False:
+            checks["background_ok"] = True
+            out["checks"] = checks
+        failed = [k for k in (out.get("failed") or []) if k != "background_ok"]
+        out["failed"] = failed
+        out["issues"] = [i for i in (out.get("issues") or []) if "arka plan" not in i.lower()]
+        out["ok"] = bool(out.get("is_photo", True)) and not failed
+        return out
+    checks = dict(out.get("checks") or {})
+    checks["background_ok"] = False
+    out["checks"] = checks
+    out["failed"] = ["background_ok"] + [k for k in (out.get("failed") or []) if k != "background_ok"]
+    issues = [i for i in (out.get("issues") or []) if "arka plan" not in i.lower()]
+    out["issues"] = [_background_issue(report)] + issues
+    out["ok"] = False
+    out["advice"] = (
+        out.get("advice")
+        or "Beyaz duvar onunde, golgesiz ve yalnizca kendinizin gorundugu yeni bir vesikalik cekin."
+    )
+    score = out.get("score")
+    out["score"] = min(float(score) if isinstance(score, (int, float)) else 0.5, 0.45)
+    return out
+
+
 async def read_passport(data: bytes, content_type: str) -> dict:
     """Pasaport goruntusunu LLM ile okur. Basarisiz olursa hata firlatir."""
     api_key = (os.environ.get("EMERGENT_LLM_KEY") or "").strip()
