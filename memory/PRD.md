@@ -585,3 +585,15 @@ Kullanıcı: "resimler çok koyu, açık renk olsun zemin", "yazılar okunmuyor"
   bilgilendirme**; altına kapanış cümlesi (`hero-closing-line`): "Siz sadece belgelerinizi
   yükleyin, vize sürecinizi biz yöneteceğiz."
 - 4. slogan alt metni de bu mesajla güncellendi.
+
+## 2026-06-06 · ElevenLabs Türk seslendirmeci DEVREDE
+Kullanıcı Starter planına geçti → kütüphane sesleri API'den kullanılabiliyor (402 bitti).
+- `scripts/generate_narration_eleven.py`: LINES 7 sahneye güncellendi (intro, passport, photo,
+  upload, track, extras, cta — cta'da "Dubai Vize Online güvencesiyle" + TÜRSAB cümlesi),
+  ses **Pelin Yıldız (`FvxJI7vwUDkTkEOO7nd7`, Türk, sıcak-samimi)**,
+  `eleven_multilingual_v2`, stability 0.5 / similarity 0.85 / style 0.2 / **speed 0.92**.
+- 7 klip `frontend/public/audio/explainer/*.mp3` üzerine yazıldı: intro 6.3 / passport 5.3 /
+  photo 10.7 / upload 13.1 / track 14.3 / extras 14.0 / cta 13.2 sn.
+  `VisaExplainer` içindeki `voiceMs` değerleri bu sürelere göre güncellendi.
+- Not: anahtarda `user_read` izni yok (abonelik bilgisi API'den okunamıyor) ama TTS çalışıyor.
+- Doğrulama: ses açıldığında intro.mp3 (6.3 sn) çalıyor, altyazı sesle senkron ilerliyor (3/12 kelime @1.9 sn).

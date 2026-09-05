@@ -28,7 +28,7 @@ const SCENES = [
         subtitle: "Dubai vizesi almak artık çok kolay. Başvurunuz için sadece iki belge yeterli.",
         alt: "Bavuluyla gülümseyen gezgin çizimi",
         silentMs: 5000,
-        voiceMs: 5600,
+        voiceMs: 6300,
     },
     {
         key: "passport",
@@ -39,7 +39,7 @@ const SCENES = [
         subtitle: "Birincisi, pasaportunuzun kimlik bilgilerinin bulunduğu sayfa.",
         alt: "Açık pasaport ve telefonla fotoğraflama çizimi",
         silentMs: 4500,
-        voiceMs: 4400,
+        voiceMs: 5300,
     },
     {
         key: "photo",
@@ -51,7 +51,7 @@ const SCENES = [
             "İkincisi ise beyaz fonda çekilmiş güncel bir vesikalık fotoğraf. Fotoğrafın gözlüksüz ve şapkasız olması gerektiğini unutmayın.",
         alt: "Vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
         silentMs: 8000,
-        voiceMs: 10100,
+        voiceMs: 10700,
     },
     {
         key: "upload",
@@ -63,7 +63,7 @@ const SCENES = [
             "Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza veya otel rezervasyonu yaptırmanıza gerek yok.",
         alt: "Belgelerin bulut simgesine yüklendiği çizim",
         silentMs: 9500,
-        voiceMs: 12100,
+        voiceMs: 13100,
     },
     {
         key: "track",
@@ -75,7 +75,7 @@ const SCENES = [
             "Başvurunuzun tüm sürecini sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-posta adresinize gönderiliyor.",
         alt: "Kulaklıklı danışman ve onay listesi çizimi",
         silentMs: 9000,
-        voiceMs: 10800,
+        voiceMs: 14300,
     },
     {
         key: "extras",
@@ -87,7 +87,7 @@ const SCENES = [
             "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de aynı başvuruya ekleyin. Böylece uçaktan indiğiniz anda internetiniz hazır, sigortanız devrede olur.",
         alt: "eSIM ve seyahat sigortası simgeleri çizimi",
         silentMs: 9000,
-        voiceMs: 11400,
+        voiceMs: 14000,
     },
     {
         key: "cta",
@@ -99,7 +99,7 @@ const SCENES = [
             "Vizenizi Dubai Vize Online güvencesiyle alın. TÜRSAB üyesi A grubu seyahat acentesiyiz. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
         silentMs: 9000,
-        voiceMs: 11500,
+        voiceMs: 13200,
         cta: true,
     },
 ];

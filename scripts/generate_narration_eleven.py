@@ -16,16 +16,19 @@ OUT_DIR = Path("/app/frontend/public/audio/explainer")
 VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "FvxJI7vwUDkTkEOO7nd7")  # Pelin Yildiz: Turk seslendirmeci, sicak ve samimi
 
 LINES = {
-    "passport": "Dubai vizesi için sadece iki belge yeterli. Birincisi, pasaportunuzun kimlik sayfasının fotoğrafı.",
-    "photo": "İkincisi, beyaz fonda çekilmiş bir vesikalık fotoğraf. Gözlüksüz ve şapkasız olması gerekiyor.",
-    "upload": "Belgeleri yükleyip ödemenizi yapın. Vizeniz çıkmadan uçak bileti ya da otel rezervasyonu gerekmiyor.",
-    "delivered": "Başvurunuzu biz takip ediyoruz. Onaylanan vizeniz, ortalama iki iş gününde e-postanıza geliyor.",
+    "intro": "Dubai vizesi almak artık çok kolay. Başvurunuz için sadece iki belge yeterli.",
+    "passport": "Birincisi, pasaportunuzun kimlik bilgilerinin bulunduğu sayfa.",
+    "photo": "İkincisi ise beyaz fonda çekilmiş güncel bir vesikalık fotoğraf. Fotoğrafın gözlüksüz ve şapkasız olması gerektiğini unutmayın.",
+    "upload": "Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza veya otel rezervasyonu yaptırmanıza gerek yok.",
+    "track": "Başvurunuzun tüm sürecini sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-posta adresinize gönderiliyor.",
+    "extras": "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de aynı başvuruya ekleyin. Böylece uçaktan indiğiniz anda internetiniz hazır, sigortanız devrede olur.",
+    "cta": "Vizenizi Dubai Vize Online güvencesiyle alın. TÜRSAB üyesi A grubu seyahat acentesiyiz. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
 }
 
 
 def main():
     client = ElevenLabs(api_key=os.environ["ELEVENLABS_API_KEY"])
-    settings = VoiceSettings(stability=0.5, similarity_boost=0.85, style=0.2, use_speaker_boost=True, speed=0.88)
+    settings = VoiceSettings(stability=0.5, similarity_boost=0.85, style=0.2, use_speaker_boost=True, speed=0.92)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for name, text in LINES.items():
         stream = client.text_to_speech.convert(
