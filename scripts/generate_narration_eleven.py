@@ -80,6 +80,11 @@ SCENES = [
         "Hemen başvurun ve Dubaai yolculuğunuzun ilk adımını bugün atın. "
         "Dubaai sizi bekliyor!",
     },
+    {
+        "key": "specimen",
+        "text": "İşte, onaylanan Dubaai vizeniz tam olarak böyle görünür. "
+        "Vizenizi PDF olarak saklayın, seyahatinizde yanınızda bulundurun.",
+    },
 ]
 
 

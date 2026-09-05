@@ -6,6 +6,7 @@ import {
     BadgeCheck,
     Camera,
     Captions,
+    FileCheck2,
     Headphones,
     IdCard,
     Pause,
@@ -100,6 +101,19 @@ const SCENES = [
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
         silentMs: 12000,
         voiceMs: 18420,
+        cta: true,
+    },
+    {
+        key: "specimen",
+        step: "Örnek",
+        icon: FileCheck2,
+        title: "Onaylanan vizeniz böyle görünür",
+        note: "e-Vize örneği · PDF olarak e-mail ve WhatsApp'ınıza gelir",
+        subtitle:
+            "İşte, onaylanan Dubai vizeniz tam olarak böyle görünür. Vizenizi PDF olarak saklayın, seyahatinizde yanınızda bulundurun.",
+        alt: "Örnek Dubai e-vize belgesi",
+        silentMs: 9000,
+        voiceMs: 9500,
         cta: true,
     },
 ];

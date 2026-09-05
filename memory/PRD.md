@@ -915,3 +915,12 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
 - **track.png yenilendi** (kullanıcı eski çizimi beğenmedi): kulaklıklı danışman yerine
   onaylı vize gösteren telefon + solda **zarf (e-mail)** ve sağda **WhatsApp** ikon
   madalyonları, kesikli teslim yayları, küçük BAE bayrağı. Metinle birebir uyumlu.
+- **Yeni son sahne "specimen"**: `VisaExplainer.jsx` SCENES sonuna eklendi — başlık
+  "Onaylanan vizeniz böyle görünür", not "e-Vize örneği · PDF olarak e-mail ve
+  WhatsApp'ınıza gelir", `cta: true` (TÜRSAB mührü + Başvuruya başla düğmesi görünür).
+  Görsel: `public/ornek-vize.jpg` → yuvarlak köşeli `explainer/specimen.png`.
+  Seslendirmeye de yeni cümle eklendi ("İşte, onaylanan Dubaai vizeniz tam olarak böyle
+  görünür..."); full.mp3 85.1 sn, specimen penceresi 75.88-85.14.
+- **track.png v3**: e-posta ve WhatsApp madalyonları küçültüldü, telefon büyütüldü ve
+  ekranında **vize örneği** (portre foto, BAE amblemi, metin satırları, barkod, yeşil onay
+  tiki, specimen şeridi) görünüyor.
