@@ -13,7 +13,7 @@ load_dotenv("/app/backend/.env")
 from elevenlabs import ElevenLabs, VoiceSettings  # noqa: E402
 
 OUT_DIR = Path("/app/frontend/public/audio/explainer")
-VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "XrExE9yKIg1WjnnlVkGX")  # Matilda: sicak, samimi
+VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "FvxJI7vwUDkTkEOO7nd7")  # Pelin Yildiz: Turk seslendirmeci, sicak ve samimi
 
 LINES = {
     "passport": "Dubai vizesi için sadece iki belge yeterli. Birincisi, pasaportunuzun kimlik sayfasının fotoğrafı.",
@@ -25,7 +25,7 @@ LINES = {
 
 def main():
     client = ElevenLabs(api_key=os.environ["ELEVENLABS_API_KEY"])
-    settings = VoiceSettings(stability=0.5, similarity_boost=0.85, style=0.2, use_speaker_boost=True, speed=0.95)
+    settings = VoiceSettings(stability=0.5, similarity_boost=0.85, style=0.2, use_speaker_boost=True, speed=0.88)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for name, text in LINES.items():
         stream = client.text_to_speech.convert(

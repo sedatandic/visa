@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Captions, CheckCircle2, IdCard, MailCheck, Pause, Play, UploadCloud, Volume2, VolumeX } from "lucide-react";
 
 const SILENT_MS = 5000;
-const VOICE_MS = 6800;
+const VOICE_MS = 7800;
 
 const SCENES = [
     {
@@ -48,9 +48,10 @@ const SCENES = [
     },
 ];
 
-const Subtitle = ({ text, durationMs, paused, sceneKey }) => {
+const Subtitle = ({ text, durationMs, paused, sceneKey, progress }) => {
     const words = text.split(" ");
     const step = Math.max(0.12, durationMs / 1000 / (words.length + 2));
+    const spoken = progress === null ? -1 : Math.round(progress * words.length);
     return (
         <p
             className="mx-auto max-w-2xl rounded-xl bg-black/45 px-4 py-2.5 text-center text-xs font-medium leading-5 text-white backdrop-blur-sm sm:text-sm sm:leading-6"
@@ -60,8 +61,12 @@ const Subtitle = ({ text, durationMs, paused, sceneKey }) => {
                 <motion.span
                     key={`${sceneKey}-${i}`}
                     initial={{ opacity: 0.28 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: paused ? 0 : i * step, duration: 0.25 }}
+                    animate={{ opacity: progress === null ? 1 : i < spoken ? 1 : 0.32 }}
+                    transition={
+                        progress === null
+                            ? { delay: paused ? 0 : i * step, duration: 0.25 }
+                            : { duration: 0.18 }
+                    }
                     className="mr-1 inline-block"
                 >
                     {word}
@@ -76,6 +81,7 @@ export const VisaExplainer = () => {
     const [paused, setPaused] = useState(false);
     const [soundOn, setSoundOn] = useState(false);
     const [captions, setCaptions] = useState(true);
+    const [audioProgress, setAudioProgress] = useState(0);
     const audioRef = useRef(null);
     const scene = SCENES[index];
     const SceneIcon = scene.icon;
@@ -101,6 +107,7 @@ export const VisaExplainer = () => {
             return;
         }
         audio.currentTime = 0;
+        setAudioProgress(0);
         audio.play().catch(() => setSoundOn(false));
     }, [scene.key, soundOn, paused]);
 
@@ -178,6 +185,7 @@ export const VisaExplainer = () => {
                             durationMs={sceneMs}
                             paused={paused}
                             sceneKey={scene.key}
+                            progress={soundOn ? audioProgress : null}
                         />
                     </div>
                 )}
@@ -249,6 +257,10 @@ export const VisaExplainer = () => {
             <audio
                 ref={audioRef}
                 preload="none"
+                onTimeUpdate={(e) => {
+                    const el = e.currentTarget;
+                    if (el.duration) setAudioProgress(el.currentTime / el.duration);
+                }}
                 onEnded={() => {
                     // Sesli anlatim bir kez calisir: son sahnede ses kapanir, gorsel dongu devam eder.
                     if (index === SCENES.length - 1) {
