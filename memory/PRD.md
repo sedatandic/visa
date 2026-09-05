@@ -823,3 +823,25 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   başla" düğmesinin yanında **TÜRSAB güven mührü** (`/brand/tursab.png` + "TÜRSAB üyesi /
   A Grubu seyahat acentesi", `data-testid="explainer-tursab-seal"`) 0.35 sn gecikmeli
   yumuşak giriş animasyonuyla görünüyor. Masaüstü + mobilde doğrulandı.
+
+## 2026-06-06 · Seslendirme: TEK PARÇA kayıt + erkek baritone ses (duraksama fixi)
+- **Kök neden**: Anlatım 7 ayrı ElevenLabs isteğiyle üretiliyordu; her klip kendi
+  tonlamasını sıfırdan kuruyor, klip başı/sonu sessizlikleri ve sahne geçişleri
+  duraksama + robotik his yaratıyordu.
+- **Çözüm**: `scripts/generate_narration_eleven.py` yeniden yazıldı — tüm senaryo
+  **tek istekte** üretiliyor (`/with-timestamps`), çıktı `public/audio/explainer/full.mp3`
+  + `full.json` (karakter zaman damgalarından hesaplanan sahne pencereleri).
+  7 ayrı mp3 silindi.
+- **Frontend (`VisaExplainer.jsx`)**: tek `<audio src="/audio/explainer/full.mp3">`;
+  `full.json` mount'ta çekiliyor, sahne indeksi `onTimeUpdate` ile pencerelere göre
+  belirleniyor, altyazı ilerlemesi sahne içi orana göre; noktalara tıklayınca
+  `audio.currentTime = scene.start` ile o saniyeye atlıyor; bitince ses kapanıp görsel
+  döngü devam ediyor. `audioMs` state'i kaldırıldı.
+- **Ses değişti**: kullanıcı erkek + güven veren ton istedi → ElevenLabs kütüphanesine
+  **"Mert - Turkish Baritone Man"** (`GkfwuvVxiSskQtPHXcbw`, professional/istanbul)
+  eklendi ve varsayılan ses yapıldı. Ayarlar: `stability 0.6`, `style 0.0`
+  (dokümana göre style yükseldikçe ses kararsızlaşır), `similarity 0.8`, `speed 1.0`.
+- Süre: 73.6 sn. Sahne pencereleri: intro 0-7.66, passport -12.91, photo -22.51,
+  upload -33.38, track -43.07, extras -56.56, cta -73.62.
+- Doğrulandı: full.mp3 çalıyor, 15. saniyede vesikalık sahnesi, cta noktası 57.7 sn'ye
+  atlıyor.

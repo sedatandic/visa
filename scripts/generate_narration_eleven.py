@@ -1,14 +1,20 @@
-"""Hero anlatimi icin ElevenLabs Turkce seslendirmesi (tek ses, tek ton).
+"""Hero anlatimi: TEK PARCA ElevenLabs seslendirmesi + sahne zaman damgalari.
 
 Kullanim: python /app/scripts/generate_narration_eleven.py
-Cikti: /app/frontend/public/audio/explainer/{key}.mp3
+Cikti:
+  /app/frontend/public/audio/explainer/full.mp3
+  /app/frontend/public/audio/explainer/full.json  ({"scenes": [{key, start, end}], "duration"})
 
-Kullanici notu: "tek kisi konussun" -> tum sahnelerde AYNI ses ayarlari kullanilir
-(sahne bazli stability/style farki, ayni seste farkli kisi hissi yaratiyordu) ve
-sahne bazli duygu etiketleri kaldirildi. Klipler arasi sureklilik icin ElevenLabs
-request stitching kullanilir: her istek onceki klibin request-id'sini ve komsu
-metinleri (previous_text / next_text) alir, boylece ton ve tempo bozulmaz.
+Neden tek parca? Metin 7 ayri istekte uretilince her klip bastan baslayan bir tonlama
+kuruyordu; klip gecislerinde duraksama ve "robotik" his olusuyordu. Simdi tum senaryo
+tek istekte, kesintisiz prozodiyle uretiliyor; sahne gecisleri karakter bazli zaman
+damgalarindan (with-timestamps) hesaplaniyor.
+
+Ayarlar: style=0 (ElevenLabs dokumani: style yukseldikce ses kararsizlasir),
+stability=0.5 (dengeli), speed=1.0 (dogal tempo).
 """
+import base64
+import json
 import os
 import sys
 from pathlib import Path
@@ -19,22 +25,20 @@ from dotenv import load_dotenv
 load_dotenv("/app/backend/.env")
 
 OUT_DIR = Path("/app/frontend/public/audio/explainer")
-VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "xFsOR54lR471QiCvQ5re")  # Ilknur Onal
+VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "GkfwuvVxiSskQtPHXcbw")  # Mert - Turkish Baritone (erkek)
 MODEL_ID = os.getenv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2")
 API = "https://api.elevenlabs.io/v1/text-to-speech"
 
-# "ortalama iki is gunu" cumlesindeki ton referans alindi: sakin, guven veren.
-# Kullanici notu: "bir tik daha hizli, dogal konussun, robotik olmasin" ->
-# tempo 1.0 (dogal): 1.2 fazla hizli geldi, kullanici %30 yavaslatma istedi, stability dusuruldu (monoton/robotik his azalir),
-# style yukseltildi (dogal tonlama). Tum sahneler bu tek ayarla uretilir.
+# Guven veren, kendinden emin ton: yuksek stability (kararli, saglam) + style 0.
 VOICE_SETTINGS = {
-    "stability": 0.42,
-    "similarity_boost": 0.85,
-    "style": 0.32,
+    "stability": 0.6,
+    "similarity_boost": 0.8,
+    "style": 0.0,
     "use_speaker_boost": True,
     "speed": 1.0,
 }
 
+# "Dubai" uzun a ile okunsun diye seslendirme metninde "Dubaai" yazilir (altyazilar dogru yazimda).
 SCENES = [
     {
         "key": "intro",
@@ -78,33 +82,58 @@ SCENES = [
 ]
 
 
-def main():
+def scene_windows(alignment: dict, offsets: list[tuple[int, int]], total: float) -> list[dict]:
+    """Karakter zaman damgalarindan sahne baslangic/bitis saniyelerini cikarir."""
+    starts = alignment["character_start_times_seconds"]
+    ends = alignment["character_end_times_seconds"]
+    windows = []
+    for (scene, (begin, finish)) in zip(SCENES, offsets):
+        begin = min(begin, len(starts) - 1)
+        finish = min(finish, len(ends)) - 1
+        windows.append({"key": scene["key"], "start": round(starts[begin], 3), "end": round(ends[finish], 3)})
+    for i in range(len(windows) - 1):
+        windows[i]["end"] = windows[i + 1]["start"]
+    windows[-1]["end"] = round(total, 3)
+    return windows
+
+
+def main() -> None:
     key = os.environ["ELEVENLABS_API_KEY"]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    request_ids: list[str] = []
-    for idx, scene in enumerate(SCENES):
-        payload = {
-            "text": scene["text"],
+
+    full_text = ""
+    offsets = []
+    for scene in SCENES:
+        begin = len(full_text)
+        full_text += scene["text"]
+        offsets.append((begin, len(full_text)))
+        full_text += " "
+    full_text = full_text.strip()
+
+    res = requests.post(
+        f"{API}/{VOICE_ID}/with-timestamps",
+        headers={"xi-api-key": key, "Content-Type": "application/json"},
+        json={
+            "text": full_text,
             "model_id": MODEL_ID,
             "output_format": "mp3_44100_128",
             "voice_settings": VOICE_SETTINGS,
-            "previous_text": SCENES[idx - 1]["text"] if idx else None,
-            "next_text": SCENES[idx + 1]["text"] if idx + 1 < len(SCENES) else None,
-            "previous_request_ids": request_ids[-3:],
-        }
-        r = requests.post(
-            f"{API}/{VOICE_ID}",
-            headers={"xi-api-key": key, "Content-Type": "application/json"},
-            json={k: v for k, v in payload.items() if v is not None},
-            timeout=180,
-        )
-        r.raise_for_status()
-        rid = r.headers.get("request-id") or r.headers.get("x-request-id")
-        if rid:
-            request_ids.append(rid)
-        path = OUT_DIR / f"{scene['key']}.mp3"
-        path.write_bytes(r.content)
-        print(scene["key"], round(len(r.content) * 8 / 128000, 2), "sn ->", path)
+        },
+        timeout=300,
+    )
+    res.raise_for_status()
+    data = res.json()
+    audio = base64.b64decode(data["audio_base64"])
+    (OUT_DIR / "full.mp3").write_bytes(audio)
+
+    duration = len(audio) * 8 / 128000
+    windows = scene_windows(data["alignment"], offsets, duration)
+    (OUT_DIR / "full.json").write_text(
+        json.dumps({"duration": round(duration, 3), "scenes": windows}, ensure_ascii=False, indent=1)
+    )
+    print(f"full.mp3 {duration:.1f} sn")
+    for w in windows:
+        print(f"  {w['key']:9s} {w['start']:6.2f} -> {w['end']:6.2f}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,40 @@
+{
+ "duration": 73.616,
+ "scenes": [
+  {
+   "key": "intro",
+   "start": 0.0,
+   "end": 7.663
+  },
+  {
+   "key": "passport",
+   "start": 7.663,
+   "end": 12.91
+  },
+  {
+   "key": "photo",
+   "start": 12.91,
+   "end": 22.512
+  },
+  {
+   "key": "upload",
+   "start": 22.512,
+   "end": 33.378
+  },
+  {
+   "key": "track",
+   "start": 33.378,
+   "end": 43.073
+  },
+  {
+   "key": "extras",
+   "start": 43.073,
+   "end": 56.564
+  },
+  {
+   "key": "cta",
+   "start": 56.564,
+   "end": 73.616
+  }
+ ]
+}

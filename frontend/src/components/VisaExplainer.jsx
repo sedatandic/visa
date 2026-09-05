@@ -136,14 +136,26 @@ export const VisaExplainer = () => {
     const [soundOn, setSoundOn] = useState(true);
     const [captions, setCaptions] = useState(true);
     const [audioProgress, setAudioProgress] = useState(0);
-    const [audioMs, setAudioMs] = useState(0);
+    const [timeline, setTimeline] = useState(null);
     const [playing, setPlaying] = useState(false);
     const audioRef = useRef(null);
     const scene = SCENES[index];
     const SceneIcon = scene.icon;
-    // Ses acikken tum zamanlama gercek klip suresinden gelir: konusma, altyazi,
-    // ilerleme cubugu ve gorsel yakinlasma ayni anda biter.
-    const sceneMs = soundOn ? audioMs || scene.voiceMs : scene.silentMs;
+    // Anlatim TEK parca mp3: sahne pencereleri full.json'dan gelir (klip gecisi yok,
+    // duraksama olmaz). Ses acikken zamanlama bu pencerelerden hesaplanir.
+    const window_ = timeline?.[index];
+    const sceneMs = soundOn
+        ? window_
+            ? Math.round((window_.end - window_.start) * 1000)
+            : scene.voiceMs
+        : scene.silentMs;
+
+    useEffect(() => {
+        fetch("/audio/explainer/full.json")
+            .then((r) => r.json())
+            .then((d) => setTimeline(d.scenes))
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
         if (paused || soundOn) return;
@@ -154,21 +166,13 @@ export const VisaExplainer = () => {
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
-        if (!soundOn) {
+        if (!soundOn || paused) {
             audio.pause();
             return;
         }
-        audio.src = `/audio/explainer/${scene.key}.mp3`;
-        if (paused) {
-            audio.pause();
-            return;
-        }
-        audio.currentTime = 0;
-        setAudioProgress(0);
-        setAudioMs(0);
         // Tarayici otomatik sesi engellerse ses acik kalir, ilk etkilesimde baslar.
         audio.play().catch(() => {});
-    }, [scene.key, soundOn, paused]);
+    }, [soundOn, paused]);
 
     // Tarayicilar sesli otomatik oynatmayi engeller: ilk kullanici etkilesiminde baslat.
     useEffect(() => {
@@ -181,13 +185,21 @@ export const VisaExplainer = () => {
         return () => events.forEach((e) => window.removeEventListener(e, start));
     }, [soundOn, paused]);
 
-    // Mobilde tek dokunusla anlatimi baslatir (tarayici autoplay engelini asar).
+    // Sahneye atlar; ses acikken tek parca kaydin ilgili saniyesine konumlanir.
+    const goToScene = (i) => {
+        setIndex(i);
+        const audio = audioRef.current;
+        if (audio && timeline?.[i]) audio.currentTime = timeline[i].start;
+    };
+
+    // Mobilde tek dokunusla anlatimi bastan baslatir (autoplay engelini asar).
     const startNarration = () => {
         const audio = audioRef.current;
         setSoundOn(true);
         setPaused(false);
+        setIndex(0);
         if (!audio) return;
-        if (!audio.src.includes(`${scene.key}.mp3`)) audio.src = `/audio/explainer/${scene.key}.mp3`;
+        audio.currentTime = 0;
         audio.play().catch(() => {});
     };
 
@@ -324,7 +336,7 @@ export const VisaExplainer = () => {
                                 <button
                                     key={s.key}
                                     type="button"
-                                    onClick={() => setIndex(i)}
+                                    onClick={() => goToScene(i)}
                                     aria-label={`${s.step}: ${s.title}`}
                                     className="h-1.5 flex-1 overflow-hidden rounded-full bg-foreground/15"
                                     data-testid={`explainer-dot-${s.key}`}
@@ -384,24 +396,21 @@ export const VisaExplainer = () => {
 
             <audio
                 ref={audioRef}
-                preload="none"
-                onLoadedMetadata={(e) => {
-                    const d = e.currentTarget.duration;
-                    if (d && Number.isFinite(d)) setAudioMs(Math.round(d * 1000));
-                }}
+                src="/audio/explainer/full.mp3"
+                preload="auto"
                 onTimeUpdate={(e) => {
-                    const el = e.currentTarget;
-                    if (el.duration) setAudioProgress(el.currentTime / el.duration);
+                    const t = e.currentTarget.currentTime;
+                    if (!timeline) return;
+                    const i = timeline.findIndex((w) => t >= w.start && t < w.end);
+                    if (i >= 0 && i !== index) setIndex(i);
+                    const w = timeline[i >= 0 ? i : index];
+                    if (w) setAudioProgress(Math.min(1, Math.max(0, (t - w.start) / (w.end - w.start))));
                 }}
                 onPlay={() => setPlaying(true)}
                 onPause={() => setPlaying(false)}
                 onEnded={() => {
-                    // Sesli anlatim bir kez calisir: son sahnede ses kapanir, gorsel dongu devam eder.
-                    if (index === SCENES.length - 1) {
-                        setSoundOn(false);
-                        return;
-                    }
-                    setIndex((i) => i + 1);
+                    // Sesli anlatim bir kez calisir: bitince ses kapanir, gorsel dongu devam eder.
+                    setSoundOn(false);
                 }}
                 data-testid="explainer-audio"
             />
