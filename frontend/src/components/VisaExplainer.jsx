@@ -37,7 +37,7 @@ const SCENES = [
         title: "Pasaportunuzun kimlik sayfası",
         note: "Kimlik bilgilerinizin bulunduğu sayfanın fotoğrafı",
         subtitle: "İlk olarak, pasaportunuzun kimlik bilgilerinin yer aldığı sayfanın fotoğrafını yükleyin.",
-        alt: "Açık pasaport ve telefonla fotoğraflama çizimi",
+        alt: "Türk pasaportu, kimlik sayfası ve telefonla fotoğraflama çizimi",
         silentMs: 5000,
         voiceMs: 5230,
     },
@@ -49,7 +49,7 @@ const SCENES = [
         note: "Beyaz fon, gözlüksüz ve şapkasız",
         subtitle:
             "Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. Fotoğrafınızın gözlüksüz ve şapkasız olması gerektiğini lütfen unutmayın.",
-        alt: "Vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
+        alt: "Yan yana iki vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
         silentMs: 8500,
         voiceMs: 9300,
     },

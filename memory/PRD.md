@@ -769,3 +769,9 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   `/account/request-code` (e-posta bombardımanı) rate limit yok; OTP düz metin saklanıyor.
 - P3: CORS her origin'i yansıtıyor (`server.py:304-310`), e-postalarda kaçışsız kullanıcı
   girdisi, `JWT_SECRET` fallback `dv-dev-secret`, admin login sabit-zaman karşılaştırma yok.
+
+## 2026-06-06 · Anlatım görselleri: Türk pasaportu + yan yana vesikalıklar
+- `public/explainer/passport.jpg`: bordo **Türk pasaportu** (altın hilal-yıldız amblemi),
+  kimlik sayfası ve telefonla fotoğraflama; `photo.jpg`: iki vesikalık **yan yana, aynı
+  hizada** (çapraz/eğik değil) + onay tikleri ve üstü çizili gözlük/şapka ikonları.
+  Önceki dosyalar `*.prev.jpg` olarak yedekte. Alt metinler güncellendi.
