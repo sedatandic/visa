@@ -1,0 +1,32 @@
+{
+  "summary": "Frontend-only test of VisaExplainer audio/subtitle/scene synchronization after ElevenLabs regeneration (İlknur Önal, speed=1.0) and audioMs-driven scene duration. All 8 requested scenarios PASS.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_details": {
+    "audio_load": "intro.mp3 played successfully after clicking explainer-sound-button; duration=5.20s (spec ~5.3s) OK",
+    "sync_subtitle": "intro has 12 words. At audio ct=1.38s (26.5%) -> 3 spoken (25%). At ct=2.68s (51.5%) -> 5 spoken (42%). At ct=4.00s (76.9%) -> 9 spoken (75%). All within ±2 word tolerance.",
+    "scene_transitions": "intro -> passport transition happened while passport.mp3 (dur=4.27s) started at currentTime≈0; passport -> photo transition -> photo.mp3 (dur=9.10s) started at currentTime≈0. Confirms audio-driven, not fixed 5s timer.",
+    "pause_resume": "Toggle button paused audio (paused=true) and resumed (paused=false) correctly.",
+    "cc_toggle": "Captions button hides/re-adds explainer-subtitle element correctly.",
+    "one_shot_end": "After reaching cta scene and audio ended: audio.paused=true, currentTime=10.96 (≈duration 11s), button text reverted to 'Sesli anlat'. No re-loop observed.",
+    "cta_navigation": "explainer-cta-button navigates to /basvuru successfully.",
+    "regression_dots": "7 scene dots reachable (traversed intro→passport→photo→upload→track→extras→cta via audio playback)."
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VisaExplainer.jsx line 145: sceneMs falls back to scene.voiceMs before audioMs loads; brief mismatch on very first frame before onLoadedMetadata fires — imperceptible in practice.",
+    "onEnded increments index but the scene-driven useEffect for silent mode is fine since soundOn is true; consider guarding against double-advance if audio 'ended' fires while user just toggled sound off (edge case)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Explainer audio sync verified end-to-end on preview URL. Audio durations match spec. Subtitle word-highlight tracks audio.currentTime/duration proportionally. One-shot playback confirmed (no loop). CTA nav OK.",
+  "rca of the issue": "N/A — all fixes verified working."
+}

@@ -25,7 +25,7 @@ const SLOGANS = [
     {
         top: "Pasaportunuzu yükleyin",
         bottom: "gerisini biz yönetelim",
-        sub: "Siz sadece belgelerinizi yükleyin, vize sürecinizi biz yöneteceğiz. Uçak bileti veya otel rezervasyonu istemiyoruz; resmî başvuruyu yetkili merciler nezdinde biz yaparız.",
+        sub: "Siz sadece belgelerinizi yükleyin, vize sürecinizi biz yönetelim. Uçak bileti veya otel rezervasyonu istemiyoruz; resmî başvuruyu yetkili merciler nezdinde biz yaparız.",
     },
 ];
 

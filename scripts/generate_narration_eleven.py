@@ -13,7 +13,7 @@ load_dotenv("/app/backend/.env")
 from elevenlabs import ElevenLabs, VoiceSettings  # noqa: E402
 
 OUT_DIR = Path("/app/frontend/public/audio/explainer")
-VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "FvxJI7vwUDkTkEOO7nd7")  # Pelin Yildiz: Turk seslendirmeci, sicak ve samimi
+VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "xFsOR54lR471QiCvQ5re")  # Ilknur Onal: Turk seslendirmeci, berrak-sicak
 
 LINES = {
     "intro": "Dubai vizesi almak artık çok kolay. Başvurunuz için sadece iki belge yeterli.",
@@ -28,7 +28,8 @@ LINES = {
 
 def main():
     client = ElevenLabs(api_key=os.environ["ELEVENLABS_API_KEY"])
-    settings = VoiceSettings(stability=0.5, similarity_boost=0.85, style=0.2, use_speaker_boost=True, speed=0.92)
+    # speed parametresi konusmayi yapay sekilde uzatip duraksamalara yol aciyor -> 1.0 birakildi.
+    settings = VoiceSettings(stability=0.65, similarity_boost=0.78, style=0.0, use_speaker_boost=True, speed=1.0)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for name, text in LINES.items():
         stream = client.text_to_speech.convert(

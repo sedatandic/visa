@@ -597,3 +597,24 @@ Kullanıcı Starter planına geçti → kütüphane sesleri API'den kullanılabi
   `VisaExplainer` içindeki `voiceMs` değerleri bu sürelere göre güncellendi.
 - Not: anahtarda `user_read` izni yok (abonelik bilgisi API'den okunamıyor) ama TTS çalışıyor.
 - Doğrulama: ses açıldığında intro.mp3 (6.3 sn) çalıyor, altyazı sesle senkron ilerliyor (3/12 kelime @1.9 sn).
+
+## 2026-06-06 · Ses akıcılığı + tam senkron (BUG FIX, iteration_74 %100)
+Kullanıcı: "ses tonlaması çok kötü, akıcı değil, duraksamalar var" + "konuşma, yazılar ve
+animasyon ekranı aynı sırada ilerlemeli".
+- **Kök neden (ses)**: ElevenLabs `VoiceSettings.speed` (0.85-0.92) konuşmayı yapay şekilde
+  uzatıp kelime aralarında duraksama üretiyordu. → `speed=1.0`, `stability=0.65`,
+  `similarity_boost=0.78`, `style=0.0` ile yeniden üretildi.
+- Ses **Pelin Yıldız → İlknur Önal** (`xFsOR54lR471QiCvQ5re`) olarak değişti
+  (kullanıcı Pelin'e "hayır" dedi). Karşılaştırma örnekleri
+  `frontend/public/audio/samples/{pelin,ilknur,filiz}.mp3` altında duruyor.
+- **Senkron**: `VisaExplainer` artık sahne süresini gerçek klip süresinden alıyor
+  (`onLoadedMetadata` → `audioMs`; `sceneMs = soundOn ? audioMs || voiceMs : silentMs`).
+  İlerleme segmenti motion key'ine `sceneMs` eklendi. Böylece konuşma + altyazı kelimeleri +
+  ilerleme çubuğu + Ken Burns aynı anda bitiyor. Klipler: intro 5.3 / passport 4.3 /
+  photo 9.2 / upload 11.5 / track 10.0 / extras 12.8 / cta 11.0 sn.
+- **Test (testing_agent iteration_74, frontend %100)**: altyazı ilerlemesi %26→3/12,
+  %51→5/12, %77→9/12 (±2 tolerans); sahne geçişleri klip bitimiyle örtüşüyor; tek seferlik
+  oynatma (döngü yok); duraklat/CC/CTA çalışıyor.
+- Ayrıca: `.section` dikey boşluğu `py-14 sm:py-20` → **`py-10 sm:py-14`** (kullanıcı
+  "boşlukları azalt"), kapanış cümlesi "...vize sürecinizi biz **yönetelim**." olarak
+  düzeltildi (hero alt metni + ana sayfa).

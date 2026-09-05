@@ -28,7 +28,7 @@ const SCENES = [
         subtitle: "Dubai vizesi almak artık çok kolay. Başvurunuz için sadece iki belge yeterli.",
         alt: "Bavuluyla gülümseyen gezgin çizimi",
         silentMs: 5000,
-        voiceMs: 6300,
+        voiceMs: 5300,
     },
     {
         key: "passport",
@@ -39,7 +39,7 @@ const SCENES = [
         subtitle: "Birincisi, pasaportunuzun kimlik bilgilerinin bulunduğu sayfa.",
         alt: "Açık pasaport ve telefonla fotoğraflama çizimi",
         silentMs: 4500,
-        voiceMs: 5300,
+        voiceMs: 4300,
     },
     {
         key: "photo",
@@ -51,7 +51,7 @@ const SCENES = [
             "İkincisi ise beyaz fonda çekilmiş güncel bir vesikalık fotoğraf. Fotoğrafın gözlüksüz ve şapkasız olması gerektiğini unutmayın.",
         alt: "Vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
         silentMs: 8000,
-        voiceMs: 10700,
+        voiceMs: 9200,
     },
     {
         key: "upload",
@@ -63,7 +63,7 @@ const SCENES = [
             "Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza veya otel rezervasyonu yaptırmanıza gerek yok.",
         alt: "Belgelerin bulut simgesine yüklendiği çizim",
         silentMs: 9500,
-        voiceMs: 13100,
+        voiceMs: 11500,
     },
     {
         key: "track",
@@ -75,7 +75,7 @@ const SCENES = [
             "Başvurunuzun tüm sürecini sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-posta adresinize gönderiliyor.",
         alt: "Kulaklıklı danışman ve onay listesi çizimi",
         silentMs: 9000,
-        voiceMs: 14300,
+        voiceMs: 10000,
     },
     {
         key: "extras",
@@ -87,7 +87,7 @@ const SCENES = [
             "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de aynı başvuruya ekleyin. Böylece uçaktan indiğiniz anda internetiniz hazır, sigortanız devrede olur.",
         alt: "eSIM ve seyahat sigortası simgeleri çizimi",
         silentMs: 9000,
-        voiceMs: 14000,
+        voiceMs: 12800,
     },
     {
         key: "cta",
@@ -99,7 +99,7 @@ const SCENES = [
             "Vizenizi Dubai Vize Online güvencesiyle alın. TÜRSAB üyesi A grubu seyahat acentesiyiz. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
         silentMs: 9000,
-        voiceMs: 13200,
+        voiceMs: 11000,
         cta: true,
     },
 ];
@@ -136,10 +136,13 @@ export const VisaExplainer = () => {
     const [soundOn, setSoundOn] = useState(false);
     const [captions, setCaptions] = useState(true);
     const [audioProgress, setAudioProgress] = useState(0);
+    const [audioMs, setAudioMs] = useState(0);
     const audioRef = useRef(null);
     const scene = SCENES[index];
     const SceneIcon = scene.icon;
-    const sceneMs = soundOn ? scene.voiceMs : scene.silentMs;
+    // Ses acikken tum zamanlama gercek klip suresinden gelir: konusma, altyazi,
+    // ilerleme cubugu ve gorsel yakinlasma ayni anda biter.
+    const sceneMs = soundOn ? audioMs || scene.voiceMs : scene.silentMs;
 
     useEffect(() => {
         if (paused || soundOn) return;
@@ -161,6 +164,7 @@ export const VisaExplainer = () => {
         }
         audio.currentTime = 0;
         setAudioProgress(0);
+        setAudioMs(0);
         audio.play().catch(() => setSoundOn(false));
     }, [scene.key, soundOn, paused]);
 
@@ -269,7 +273,7 @@ export const VisaExplainer = () => {
                                     data-testid={`explainer-dot-${s.key}`}
                                 >
                                     <motion.span
-                                        key={`${s.key}-${index}-${paused}-${soundOn}`}
+                                        key={`${s.key}-${index}-${paused}-${soundOn}-${sceneMs}`}
                                         initial={{ width: i < index ? "100%" : "0%" }}
                                         animate={{ width: i <= index ? "100%" : "0%" }}
                                         transition={{
@@ -324,6 +328,10 @@ export const VisaExplainer = () => {
             <audio
                 ref={audioRef}
                 preload="none"
+                onLoadedMetadata={(e) => {
+                    const d = e.currentTarget.duration;
+                    if (d && Number.isFinite(d)) setAudioMs(Math.round(d * 1000));
+                }}
                 onTimeUpdate={(e) => {
                     const el = e.currentTarget;
                     if (el.duration) setAudioProgress(el.currentTime / el.duration);
