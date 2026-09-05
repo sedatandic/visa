@@ -3,6 +3,11 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const SLOGANS = [
     {
+        top: "2 belgeyle",
+        bottom: "Dubai vizeniz hazır",
+        sub: "Başvurunuz için yalnızca pasaportunuzun kimlik sayfası ve vesikalık fotoğrafınız yeterlidir. Belgelerinizi yükledikten sonra sürecin tamamını uzman ekibimiz sizin adınıza yönetir.",
+    },
+    {
         top: "Bilet ve otel şartı yok",
         bottom: "sadece pasaport ve fotoğraf",
         sub: "Vizeniz çıkmadan uçak bileti ve otel rezervasyonu yapmanıza gerek yok. Pasaportunuzun kimlik sayfası ve bir vesikalık fotoğrafla başvurunuzu tamamlıyoruz.",
@@ -19,8 +24,8 @@ const SLOGANS = [
     },
     {
         top: "Pasaportunuzu yükleyin",
-        bottom: "gerisini biz halledelim",
-        sub: "Pasaportunuzun fotoğrafını ve vesikalığınızı yükleyin; uçak bileti veya otel rezervasyonu istemiyoruz. Resmî başvuruyu yetkili merciler nezdinde biz yaparız.",
+        bottom: "gerisini biz yönetelim",
+        sub: "Siz sadece belgelerinizi yükleyin, vize sürecinizi biz yöneteceğiz. Uçak bileti veya otel rezervasyonu istemiyoruz; resmî başvuruyu yetkili merciler nezdinde biz yaparız.",
     },
 ];
 

@@ -130,9 +130,9 @@ export default function Home() {
                                 data-testid="hero-simplicity-strip"
                             >
                                 {[
-                                    "Sadece pasaport ve fotoğrafınızla vizenizi alıyoruz",
-                                    "Vizeniz çıkmadan uçak bileti almanıza gerek yok",
-                                    "Otel rezervasyonunu sonra yapabilirsiniz",
+                                    "Evrak kontrolü",
+                                    "Resmî başvuru işlemleri",
+                                    "Süreç takibi ve bilgilendirme",
                                 ].map((text) => (
                                     <li
                                         key={text}
@@ -143,6 +143,10 @@ export default function Home() {
                                     </li>
                                 ))}
                             </ul>
+
+                            <p className="mt-5 text-sm font-semibold text-primary" data-testid="hero-closing-line">
+                                Siz sadece belgelerinizi yükleyin, vize sürecinizi biz yöneteceğiz.
+                            </p>
 
                             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                                 <Button asChild size="lg" data-testid="hero-apply-now-button">

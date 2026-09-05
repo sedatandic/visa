@@ -576,3 +576,12 @@ Kullanıcı: "resimler çok koyu, açık renk olsun zemin", "yazılar okunmuyor"
 - Duyuru şeridi zemini koyu kahveden **açık kreme** (`--panel-2`) çevrildi, metin `--charcoal`.
 - Test: iteration_73 frontend %100 (ek hizmet karşılıklı kapanma, özet tutarları 5.190→12.610,
   7 sahne, şerit, flip başlıklar, /vize-tipleri + /hizmetler regresyonu).
+
+### Hero metni kullanıcı kopyasıyla güncellendi (2026-06-06)
+- İlk flip slogan: "2 belgeyle / Dubai vizeniz hazır" (kullanıcı "Pasaportunuzu ve
+  Fotoğrafınızı Yükleyin" satırının kaldırılmasını istedi), alt metin: "Başvurunuz için
+  yalnızca pasaportunuzun kimlik sayfası ve vesikalık fotoğrafınız yeterlidir...".
+- Hero yeşil pil şeridi → **Evrak kontrolü · Resmî başvuru işlemleri · Süreç takibi ve
+  bilgilendirme**; altına kapanış cümlesi (`hero-closing-line`): "Siz sadece belgelerinizi
+  yükleyin, vize sürecinizi biz yöneteceğiz."
+- 4. slogan alt metni de bu mesajla güncellendi.
