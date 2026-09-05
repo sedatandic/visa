@@ -1,11 +1,10 @@
 import React from "react";
-import { BadgeCheck, Clock, FileText, PlaneTakeoff, ShieldCheck, Wifi } from "lucide-react";
+import { BadgeCheck, Clock, FileText, ShieldCheck, Wifi } from "lucide-react";
 
 const ITEMS = [
     { icon: BadgeCheck, text: "TÜRSAB üyesi A grubu seyahat acentesi" },
-    { icon: Clock, text: "Ekspres başvuruda ~8 mesai saatinde sonuç" },
-    { icon: FileText, text: "Sadece pasaport ve fotoğrafınızla başvurun" },
-    { icon: PlaneTakeoff, text: "Uçak bileti ve otel rezervasyonu şartı yok" },
+    { icon: FileText, text: "Sadece pasaport ve fotoğrafınız yeterli, bilet ve otel şartı yok" },
+    { icon: Clock, text: "Ekspreste ~8 mesai saati, anında ekspreste aynı gün sonuç" },
     { icon: Wifi, text: "eSIM ve seyahat sigortası aynı sepette" },
     { icon: ShieldCheck, text: "Pasaportunuz sizde kalır, kargoya vermezsiniz" },
 ];

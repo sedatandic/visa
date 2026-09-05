@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const SLOGANS = [
     {
-        top: "2 belgeyle",
+        top: "Sadece 2 belgeyle",
         bottom: "Dubai vizeniz hazır",
         sub: "Başvurunuz için yalnızca pasaportunuzun kimlik sayfası ve vesikalık fotoğrafınız yeterlidir. Belgelerinizi yükledikten sonra sürecin tamamını uzman ekibimiz sizin adınıza yönetir.",
     },
