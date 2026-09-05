@@ -618,3 +618,18 @@ animasyon ekranı aynı sırada ilerlemeli".
 - Ayrıca: `.section` dikey boşluğu `py-14 sm:py-20` → **`py-10 sm:py-14`** (kullanıcı
   "boşlukları azalt"), kapanış cümlesi "...vize sürecinizi biz **yönetelim**." olarak
   düzeltildi (hero alt metni + ana sayfa).
+
+### Ek rötuşlar (2026-06-06)
+- "TÜRSAB üyesi A grubu seyahat acentesi" → **"TÜRSAB üyesi A grubu seyahat acente
+  güvencesi"** (duyuru şeridi, anlatım son sahnesi, seslendirme metinleri).
+- Daha heyecanlı ton: ElevenLabs ayarları `stability 0.65→0.38`, `style 0.0→0.55`,
+  similarity 0.80 (speed 1.0 korundu); 7 klip yeniden üretildi (intro 5.2 / passport 4.4 /
+  photo 9.2 / upload 12.0 / track 10.7 / extras 12.1 / cta 10.7 sn) ve `voiceMs` güncellendi.
+- **Ses varsayılan AÇIK**: `soundOn` başlangıçta `true`; tarayıcı otomatik oynatmayı
+  engellerse ses açık kalıyor ve ilk kullanıcı etkileşiminde (pointerdown/keydown/touch/
+  wheel/scroll — `{once:true}`) klip başlıyor. Doğrulama: buton "Ses açık" ile açılıyor,
+  ilk tıklamadan sonra intro.mp3 çalıyor (currentTime 1.7 / duration 5.1).
+- Navbar "Ekstra Hizmetler" menüsündeki tek "eSIM & Sigorta" kaydı **iki ayrı sayfaya**
+  bölündü: **Dubai eSIM** (/esim, Smartphone) + **Dubai Seyahat Sigortası**
+  (/seyahat-sigortasi, ShieldCheck). Altbilgide de "Dubai Seyahat Sigortası" adı kullanıldı.
+  Doğrulama: menüden tıklama /seyahat-sigortasi sayfasını açıyor.

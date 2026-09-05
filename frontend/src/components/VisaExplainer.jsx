@@ -28,7 +28,7 @@ const SCENES = [
         subtitle: "Dubai vizesi almak artık çok kolay. Başvurunuz için sadece iki belge yeterli.",
         alt: "Bavuluyla gülümseyen gezgin çizimi",
         silentMs: 5000,
-        voiceMs: 5300,
+        voiceMs: 5200,
     },
     {
         key: "passport",
@@ -39,7 +39,7 @@ const SCENES = [
         subtitle: "Birincisi, pasaportunuzun kimlik bilgilerinin bulunduğu sayfa.",
         alt: "Açık pasaport ve telefonla fotoğraflama çizimi",
         silentMs: 4500,
-        voiceMs: 4300,
+        voiceMs: 4400,
     },
     {
         key: "photo",
@@ -63,7 +63,7 @@ const SCENES = [
             "Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza veya otel rezervasyonu yaptırmanıza gerek yok.",
         alt: "Belgelerin bulut simgesine yüklendiği çizim",
         silentMs: 9500,
-        voiceMs: 11500,
+        voiceMs: 12000,
     },
     {
         key: "track",
@@ -75,7 +75,7 @@ const SCENES = [
             "Başvurunuzun tüm sürecini sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-posta adresinize gönderiliyor.",
         alt: "Kulaklıklı danışman ve onay listesi çizimi",
         silentMs: 9000,
-        voiceMs: 10000,
+        voiceMs: 10700,
     },
     {
         key: "extras",
@@ -87,19 +87,19 @@ const SCENES = [
             "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de aynı başvuruya ekleyin. Böylece uçaktan indiğiniz anda internetiniz hazır, sigortanız devrede olur.",
         alt: "eSIM ve seyahat sigortası simgeleri çizimi",
         silentMs: 9000,
-        voiceMs: 12800,
+        voiceMs: 12100,
     },
     {
         key: "cta",
         step: "Son adım",
         icon: Plane,
         title: "Dubai Vize Online güvencesiyle başvurun",
-        note: "TÜRSAB üyesi A grubu seyahat acentesi · yolculuğunuz bugün başlasın",
+        note: "TÜRSAB üyesi A grubu seyahat acente güvencesi · yolculuğunuz bugün başlasın",
         subtitle:
-            "Vizenizi Dubai Vize Online güvencesiyle alın. TÜRSAB üyesi A grubu seyahat acentesiyiz. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
+            "Vizenizi Dubai Vize Online güvencesiyle alın. TÜRSAB üyesi A grubu seyahat acente güvencesi. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
         silentMs: 9000,
-        voiceMs: 11000,
+        voiceMs: 10700,
         cta: true,
     },
 ];
@@ -133,7 +133,7 @@ const Subtitle = ({ text, durationMs, paused, sceneKey, progress }) => {
 export const VisaExplainer = () => {
     const [index, setIndex] = useState(0);
     const [paused, setPaused] = useState(false);
-    const [soundOn, setSoundOn] = useState(false);
+    const [soundOn, setSoundOn] = useState(true);
     const [captions, setCaptions] = useState(true);
     const [audioProgress, setAudioProgress] = useState(0);
     const [audioMs, setAudioMs] = useState(0);
@@ -165,8 +165,20 @@ export const VisaExplainer = () => {
         audio.currentTime = 0;
         setAudioProgress(0);
         setAudioMs(0);
-        audio.play().catch(() => setSoundOn(false));
+        // Tarayici otomatik sesi engellerse ses acik kalir, ilk etkilesimde baslar.
+        audio.play().catch(() => {});
     }, [scene.key, soundOn, paused]);
+
+    // Tarayicilar sesli otomatik oynatmayi engeller: ilk kullanici etkilesiminde baslat.
+    useEffect(() => {
+        const start = () => {
+            const audio = audioRef.current;
+            if (audio && soundOn && !paused && audio.paused) audio.play().catch(() => {});
+        };
+        const events = ["pointerdown", "keydown", "touchstart", "wheel", "scroll"];
+        events.forEach((e) => window.addEventListener(e, start, { once: true, passive: true }));
+        return () => events.forEach((e) => window.removeEventListener(e, start));
+    }, [soundOn, paused]);
 
     return (
         <div

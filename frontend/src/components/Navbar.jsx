@@ -12,6 +12,7 @@ import {
     Newspaper,
     Phone,
     Search,
+    ShieldCheck,
     Smartphone,
     UserRound,
     Wrench,
@@ -52,7 +53,10 @@ const MENU_GROUPS = [
     },
     {
         label: "Ekstra Hizmetler",
-        items: [{ to: "/esim", label: "eSIM & Sigorta", icon: Smartphone }],
+        items: [
+            { to: "/esim", label: "Dubai eSIM", icon: Smartphone },
+            { to: "/seyahat-sigortasi", label: "Dubai Seyahat Sigortası", icon: ShieldCheck },
+        ],
     },
     {
         label: "Kurumsal",

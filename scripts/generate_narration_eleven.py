@@ -22,14 +22,14 @@ LINES = {
     "upload": "Belgelerinizi yükleyip ödemenizi tamamlamanız yeterli. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza veya otel rezervasyonu yaptırmanıza gerek yok.",
     "track": "Başvurunuzun tüm sürecini sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-posta adresinize gönderiliyor.",
     "extras": "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de aynı başvuruya ekleyin. Böylece uçaktan indiğiniz anda internetiniz hazır, sigortanız devrede olur.",
-    "cta": "Vizenizi Dubai Vize Online güvencesiyle alın. TÜRSAB üyesi A grubu seyahat acentesiyiz. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
+    "cta": "Vizenizi Dubai Vize Online güvencesiyle alın. TÜRSAB üyesi A grubu seyahat acente güvencesi. Hemen başvurun ve Dubai'ye yolculuğunuzun ilk adımını bugün atın.",
 }
 
 
 def main():
     client = ElevenLabs(api_key=os.environ["ELEVENLABS_API_KEY"])
     # speed parametresi konusmayi yapay sekilde uzatip duraksamalara yol aciyor -> 1.0 birakildi.
-    settings = VoiceSettings(stability=0.65, similarity_boost=0.78, style=0.0, use_speaker_boost=True, speed=1.0)
+    settings = VoiceSettings(stability=0.38, similarity_boost=0.8, style=0.55, use_speaker_boost=True, speed=1.0)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for name, text in LINES.items():
         stream = client.text_to_speech.convert(
