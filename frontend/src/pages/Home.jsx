@@ -29,6 +29,7 @@ import { VisaShowcase } from "../components/VisaShowcase";
 import { HeroSlider } from "../components/HeroSlider";
 import { HeroHeadline } from "../components/HeroHeadline";
 import { HomeBundleStrip } from "../components/HomeBundleStrip";
+import { EasyCompare } from "../components/EasyCompare";
 import { FxNote } from "../components/FxNote";
 import {
     Accordion,
@@ -208,6 +209,8 @@ export default function Home() {
                     </div>
                 </div>
             </section>
+
+            <EasyCompare />
 
             {/* BASVURU SURECI */}
             <section

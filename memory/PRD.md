@@ -394,3 +394,12 @@ otel/uçak bileti almanıza gerek yok" gibi kolaylık ibareleri eklenmesi.
   gerekmez" açıklaması. `/vize-tipleri` hariç tutulanlar listesine "(vize için zorunlu değildir)".
 - Doğrulama: `/api/content/site` → ticket/hotel `required: false`, yeni SSS sorusu dönüyor;
   ana sayfa ve belgeler sayfası ekran görüntüleriyle kontrol edildi.
+
+## 2026-06-06 · "Neden bizde kolay?" karşılaştırma bölümü
+`components/EasyCompare.jsx` (yeni) ana sayfada Avantajlar ile Başvuru Süreci arasında
+(`landing-easy-compare`). 8 satırlı 3 kolonlu tablo: Süreç · Dubai Vize Online (yeşil, tikli) ·
+Klasik acente yöntemi (gri, çarpı). Satırlar: istenen belgeler, uçak bileti/otel şartı,
+pasaportun nerede kaldığı, randevu/ofis, sonuç süresi, fiyat, başvuru takibi, seyahat ekstraları
+(`compare-row-{key}`). Altta "Pasaportunuzla başlayın" CTA + hukuki güvenlik notu
+("her acentenin süreci farklılık gösterebilir" — rakip ismi verilmiyor).
+md altında satırlar kolon başlığı etiketleriyle dikey yığılır. Ekran görüntüsüyle doğrulandı (8/8 satır).
