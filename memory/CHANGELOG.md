@@ -64,3 +64,25 @@
 - Bilinen eski test hataları (bu turla ilgisiz, katalog verisi değişti): `test_visa_categories`,
   `test_tour_safari`, `test_iteration_48::TestVisaPrices`, `test_zami_otp_fix::test_visa_types`.
   Not: pytest **sıralı** çalıştırılmalı (`-n 0`), paralel koşu OTP hız sınırlarına takılır.
+
+## 2026-06-09 (2) · Aile indirimi vitrini + Fotoğraf rehberi
+
+### Aile indirimi vitrini (`components/FamilyDiscountMeter.jsx`)
+- Başvuru özeti kartının en üstünde canlı gösterge: kademeler `/api/content/site` içindeki
+  `family_discount_tiers` alanından dinamik okunur (şu an tek kademe: 2+ yolcu → %10).
+- 1 yolcuda: "1 yolcu daha ekleyin, tüm vize bedellerinde %10 aile indirimi açılır" + ilerleme
+  çubuğu + "Yolcu ekle ve indirimi aç" butonu (`family-discount-add-traveler`).
+- Kademe sağlandığında: "%10 aktif" etiketi, "2 yolcu ile %10 indirim uygulanıyor · X ₺ tasarruf"
+  (tasarruf tutarı `quote.family_discount`'tan gelir), kademe listesi yeşile döner.
+- test-id'ler: `family-discount-meter`, `family-discount-active-badge|active-text`,
+  `family-discount-progress-text`, `family-discount-tiers`, `family-discount-tier-{min}`.
+- Not: `content.py > FAMILY_DISCOUNT_TIERS` içine yeni kademe eklenirse vitrin otomatik gösterir.
+
+### Fotoğraf rehberi (`components/PhotoGuide.jsx`)
+- Uyarı çıkan yolcunun altında "Doğru fotoğraf nasıl olmalı? Örneklere bak" bağlantısı
+  (`traveler-{i}-photo-guide-toggle`) → 1 doğru + 3 yanlış örnek yan yana
+  (`traveler-{i}-photo-guide`). Rehber, yolcu kartının tam genişliğinde açılır.
+- Görseller Gemini ile üretilip 3:4 kırpılarak `frontend/public/photo-guide/` altına konuldu:
+  `ok.jpg` (düz beyaz zemin), `bad-background.jpg` (kalabalık koyu ortam),
+  `bad-sunglasses.jpg` (gözlük + şapka + sert gölge), `bad-selfie.jpg` (selfie açısı, bulanık).
+- Doğrulama: koyu zeminli fotoğraf yüklendi → uyarı çıktı → rehber açıldı (Playwright).

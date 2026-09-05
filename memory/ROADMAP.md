@@ -12,6 +12,7 @@
 - [ ] `email_outbox` eski kayıtlarında HTML gövdesi yok → yalnız 2026-06-08 sonrası önizlenebilir.
 - [ ] Tarihi belli olmayan başvurular için "tarihim belli oldu" hatırlatma e-postası.
 - [ ] Grup/aile başvurusunda yolcu bazlı evrak eksikliği özeti (kim hangi belgeyi yüklemedi).
+- [ ] Fotoğraf rehberi Gerekli Belgeler sayfasına da eklenebilir (şu an yalnız başvuru Adım 3).
 
 ## P2
 - [ ] Eski test dosyalarındaki katalog beklentileri güncellenmeli: `test_visa_categories.py`,

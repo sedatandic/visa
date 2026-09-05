@@ -1048,3 +1048,9 @@ Ayrıntılı kayıt: `CHANGELOG.md` (2026-06-09), kalan işler: `ROADMAP.md`.
 - Adım 2 Ek hizmetler: Seyahat Sağlık Sigortası + Dubai eSIM anahtarları (en uygun paketi seçer).
 - Adım 3 Evraklar: ikon + ZORUNLU/OPSİYONEL etiketli, "Dosya Seç" butonlu kartlar.
 - Vesikalık fotoğrafta arka plan artık deterministik ölçülüyor (beyaz/beyaza yakın zorunlu).
+
+### 2026-06-09 (2) · Aile indirimi vitrini + Fotoğraf rehberi
+- Başvuru özeti kartında canlı aile indirimi göstergesi (kademeler backend'den dinamik,
+  "1 yolcu daha ekleyin → %10" / "%10 aktif · X ₺ tasarruf" + yolcu ekle butonu).
+- Fotoğraf uyarısı alan yolcuya 1 doğru + 3 yanlış örnekli rehber
+  (`public/photo-guide/*.jpg`, `components/PhotoGuide.jsx`).

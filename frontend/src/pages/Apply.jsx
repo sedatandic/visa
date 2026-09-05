@@ -47,6 +47,8 @@ import { FxNote } from "../components/FxNote";
 import { BundlePicker } from "../components/BundlePicker";
 import { ComboSelector } from "../components/ComboSelector";
 import { ImportantNotice } from "../components/ImportantNotice";
+import { FamilyDiscountMeter } from "../components/FamilyDiscountMeter";
+import { PhotoGuide } from "../components/PhotoGuide";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { BankTransferInfo } from "../components/BankTransferInfo";
 import { Button } from "../components/ui/button";
@@ -185,6 +187,8 @@ export default function Apply() {
 
     const [visaTypes, setVisaTypes] = useState([]);
     const [addonMeta, setAddonMeta] = useState([]);
+    const [familyTiers, setFamilyTiers] = useState([]);
+    const [photoGuideKeys, setPhotoGuideKeys] = useState([]);
     const [maxTravelers, setMaxTravelers] = useState(10);
     const [step, setStep] = useState(0);
     const [contact, setContact] = useState({ full_name: "", email: "", phone: "+90 5", address_city: "", whatsapp_optin: false });
@@ -391,6 +395,7 @@ export default function Apply() {
             .then(([v, c]) => {
                 setVisaTypes(v.data);
                 setAddonMeta(c.data.addons || []);
+                setFamilyTiers(c.data.family_discount_tiers || []);
                 setMaxTravelers(c.data.max_travelers || 10);
                 setBankInfo(c.data.bank_transfer || null);
                 setAgencyItems((c.data.agency_info || {}).items || []);
@@ -2252,6 +2257,27 @@ export default function Apply() {
                                                                     <p className="mt-2 text-xs text-muted-foreground">
                                                                         Yine de bu fotoğrafla devam edebilirsiniz.
                                                                     </p>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            setPhotoGuideKeys((keys) =>
+                                                                                keys.includes(t.key)
+                                                                                    ? keys.filter((k) => k !== t.key)
+                                                                                    : [...keys, t.key]
+                                                                            )
+                                                                        }
+                                                                        className="mt-2 text-xs font-bold text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-200 hover:decoration-primary"
+                                                                        data-testid={`traveler-${idx}-photo-guide-toggle`}
+                                                                    >
+                                                                        {photoGuideKeys.includes(t.key)
+                                                                            ? "Örnekleri gizle"
+                                                                            : "Doğru fotoğraf nasıl olmalı? Örneklere bak"}
+                                                                    </button>
+                                                                    {photoGuideKeys.includes(t.key) && (
+                                                                        <p className="mt-2 text-xs text-muted-foreground">
+                                                                            Örnekler aşağıda.
+                                                                        </p>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                             {te.photo && (
@@ -2261,6 +2287,9 @@ export default function Apply() {
                                                             )}
                                                         </div>
                                                     </div>
+                                                    {photoGuideKeys.includes(t.key) && (
+                                                        <PhotoGuide testId={`traveler-${idx}-photo-guide`} />
+                                                    )}
                                                 </div>
                                             );
                                         })}
@@ -2990,6 +3019,16 @@ export default function Apply() {
                                     <span className="rounded-md bg-[hsl(var(--sand-surface))] px-2 py-1 text-[11px] font-bold text-primary">
                                         {travelers.length} yolcu
                                     </span>
+                                </div>
+                                <div className="mt-4">
+                                    <FamilyDiscountMeter
+                                        tiers={familyTiers}
+                                        travelerCount={travelers.length}
+                                        discountAmount={quote?.family_discount || 0}
+                                        currency={quote?.currency || "TRY"}
+                                        canAddTraveler={travelers.length < maxTravelers}
+                                        onAddTraveler={() => addTraveler("adult")}
+                                    />
                                 </div>
                                 {quote ? (
                                     <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
