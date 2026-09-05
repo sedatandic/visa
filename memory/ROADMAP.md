@@ -31,3 +31,18 @@
       `routes_public.py`).
 - [ ] Hız sınırları bellek içi; çoklu replikada Redis'e taşınmalı.
 - [ ] Fotoğraf arka plan eşikleri admin panelinden ayarlanabilir olabilir.
+
+## Beklemede — Global İngilizce sürüm (kullanıcı kararı bekliyor, 2026-06-09)
+Kullanıcı: "later we will decide like global english only version targeting all passport
+holders in all countries" → ŞİMDİ YAPILMAYACAK. Karar verildiğinde kapsam:
+- Tek dil **İngilizce** (TR/EN switcher değil): tüm müşteri sayfaları, sihirbaz, e-postalar,
+  dinamik DB içeriği (vize tipleri, 7 rehber, blog, yorumlar, banka etiketleri).
+- Hedef kitle **tüm ülke pasaportları** → mevcut kısıtlar kaldırılmalı: yalnız Türkiye doğumlu
+  kabul eden kural (`routes_public._validate_travel_rules` + `Apply.jsx` birth_country),
+  `+90 5XX` telefon maskesi (uluslararası ülke kodu seçimi), fiyatlarda birincil para birimi
+  USD (₺ ikincil), ülkeye göre vize uygunluğu/ücret farkları araştırılmalı.
+- Ana sayfadaki 75 sn'lik anlatım: İngilizce seslendirme (ElevenLabs İngilizce ses) +
+  İngilizce altyazı; illüstrasyonlarda Türkçe yazılar ("TÜRKİYE CUMHURİYETİ", "GEREK YOK")
+  yenilenmeli. Türk pasaportu görselleri jenerik pasaportla değiştirilmeli.
+- Yönetici paneli Türkçe kalabilir (kararlaştırılacak). KVKK/yasal metinlerin İngilizce
+  karşılıkları hukuki kontrol gerektirir.
