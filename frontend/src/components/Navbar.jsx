@@ -128,12 +128,19 @@ export const Navbar = () => {
                     data-testid="navbar-logo-link"
                 >
                     <BrandMark />
-                    <span className="ml-7 hidden items-end gap-1 sm:flex" data-testid="brand-flag-pair">
+                </Link>
+
+                <div
+                    className="hidden flex-1 items-end justify-center pb-2 sm:flex"
+                    data-testid="brand-flag-pair"
+                    aria-hidden="true"
+                >
+                    <span className="flex items-center gap-1.5">
                         <TrFlag className="h-7 w-14" />
-                        <ArrowRight className="mb-1 h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                        <ArrowRight className="h-3.5 w-3.5 text-primary" />
                         <UaeFlag className="h-7 w-14" />
                     </span>
-                </Link>
+                </div>
 
                 <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Ana menü">
                     {PRIMARY_LINKS.map((l) => (
