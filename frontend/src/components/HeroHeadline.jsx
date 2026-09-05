@@ -81,6 +81,28 @@ export const HeroHeadline = () => {
                     </motion.p>
                 </AnimatePresence>
             </div>
+
+            {/* Sloganlarin altinda ilerleme cizgileri (anlatim panelindeki gibi) */}
+            <div className="mx-auto mt-5 flex max-w-[260px] items-center gap-1.5" data-testid="hero-progress">
+                {SLOGANS.map((s, i) => (
+                    <button
+                        key={s.top}
+                        type="button"
+                        onClick={() => setIndex(i)}
+                        aria-label={`${i + 1}. başlık: ${s.top} ${s.bottom}`}
+                        className="h-1.5 flex-1 overflow-hidden rounded-full bg-foreground/15 transition-colors duration-200 hover:bg-foreground/25"
+                        data-testid={`hero-progress-dot-${i}`}
+                    >
+                        <motion.span
+                            key={`${i}-${index}`}
+                            initial={{ width: i < index ? "100%" : "0%" }}
+                            animate={{ width: i <= index ? "100%" : "0%" }}
+                            transition={{ duration: i === index ? 4.2 : 0, ease: "linear" }}
+                            className="block h-full bg-primary"
+                        />
+                    </button>
+                ))}
+            </div>
         </>
     );
 };

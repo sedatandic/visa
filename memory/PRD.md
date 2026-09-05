@@ -868,3 +868,6 @@ gerekmedi**; testing_agent ile regresyon doğrulaması yapıldı (backend %100, 
   lisa LYfSi2g3Frvxg50fRl91, aysel 1dZlYtnYGmIIA3kV1FuX, duygu MzfWWOj9g3sIKex1YFMV.
   Bu grup daha canlı ayarla üretildi (stability 0.4, style 0.15) — monotonluk azalır.
   Dinleme sayfasında toplam **20 demo** (13-20 = enerjik kadın grubu).
+- **Hero flip başlıklarının altına ilerleme çizgileri** (`HeroHeadline.jsx`): anlatım
+  panelindekiyle aynı stil, 5 segment, aktif segment 4,2 sn'de doluyor, tıklanınca o
+  başlığa atlıyor (`data-testid="hero-progress"`, `hero-progress-dot-{i}`). Doğrulandı.
