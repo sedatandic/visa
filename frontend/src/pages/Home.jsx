@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     ArrowRight,
     BadgeCheck,
-    Clock,
     CreditCard,
     FileCheck2,
     FileText,
@@ -11,13 +10,11 @@ import {
     IdCard,
     Image as ImageIcon,
     MessageCircle,
-    Percent,
     PlaneTakeoff,
     CalendarClock,
     Search,
     ShieldCheck,
     Radar,
-    Users,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "../lib/api";
@@ -139,45 +136,6 @@ export default function Home() {
 
                         <div className="relative mt-10">
                             <HeroSlider />
-                        </div>
-
-                        {content?.promo && (
-                            <div
-                                className="panel-cream relative mt-8 flex items-start gap-3 p-5"
-                                data-testid="hero-promo-banner"
-                            >
-                                <Percent className="mt-0.5 h-5 w-5 shrink-0 text-foreground/70" aria-hidden="true" />
-                                <div>
-                                    <p className="text-sm font-bold">{content.promo.title}</p>
-                                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                        {content.promo.detail}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        <div
-                            className="relative mt-8 grid gap-4 rounded-[var(--radius-lg)] border border-border/70 bg-card p-4 sm:grid-cols-3 sm:divide-x sm:divide-border/70"
-                            data-testid="hero-trust-strip"
-                        >
-                            {[
-                                { icon: Users, title: "Aile başvurusu", detail: "Tek formda çoklu yolcu" },
-                                { icon: BadgeCheck, title: "Evrak kontrolü", detail: "Başvuru öncesi ücretsiz" },
-                                { icon: Clock, title: "Ortalama 2 gün", detail: "Ekspreste 8 mesai saati" },
-                            ].map(({ icon: Icon, title, detail }) => (
-                                <div
-                                    key={title}
-                                    className="flex min-w-0 items-center gap-2.5 sm:px-3.5 sm:first:pl-0 sm:last:pr-0"
-                                >
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                        <Icon className="h-4 w-4" aria-hidden="true" />
-                                    </span>
-                                    <div className="min-w-0">
-                                        <p className="truncate text-[13px] font-bold leading-tight">{title}</p>
-                                        <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{detail}</p>
-                                    </div>
-                                </div>
-                            ))}
                         </div>
                     </motion.div>
                 </div>
