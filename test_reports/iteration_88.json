@@ -1,0 +1,26 @@
+{
+  "summary": "Frontend-only regression for three fixes: (1) Hizmetler now uses ConciergeBell icon (not wrench) in both desktop dropdown and mobile sheet; (2) mobile BAŞVURU group now shows only Hizmet Bedelleri + Başvuru Takip (Başvurularım/hesabim removed) while /hesabim remains reachable via direct URL; (3) Dubai office added on /iletisim, /footer, and admin. All targeted areas verified at 390px and 1920px.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Mobile Sheet (all)", "issues": ["Radix DialogContent a11y warning: missing DialogTitle inside SheetContent. Console-only, not user-visible, but should be wrapped in VisuallyHidden."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Optional) Add DialogTitle inside SheetContent (VisuallyHidden) to silence Radix a11y console warning.",
+    "(Optional) Add data-testid to mobile grouped nav links (Hizmetler, Gerekli Belgeler, etc.) for future automation — currently only PRIMARY_LINKS have mobile-nav-link-* testids."
+  ],
+  "critical_code_review_comments": [
+    "Navbar.jsx group items (line ~268) omit data-testid, unlike PRIMARY_LINKS. Adding mobile-nav-link-{slug} testids across all groups would harmonise the mobile/desktop test surface."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% (all targeted checks pass)"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Verified at preview URL: (a) mobile menu shows only mobile-nav-link-vize-tipleri and mobile-nav-link-takip under BAŞVURU (no mobile-nav-link-hesabim). (b) Hizmetler mobile link SVG class is 'lucide lucide-concierge-bell'; no lucide-wrench on page. Desktop Bilgi&Hizmetler dropdown renders Hizmetler with ConciergeBell path. (c) /takip mobile contains tracking-code-input + tracking-submit-button plus 'Başvurularım' e-posta login card. /hesabim still reachable by URL and renders. (d) /iletisim: both contact-office-istanbul and contact-office-dubai cards present; contact-office-dubai-phone='+971 50 867 26 30', address contains 'Level 27' and 'Marina Plaza'; both istanbul and dubai map iframes and directions buttons present, at 390px and 1920px. (e) Footer footer-dubai-office reads 'Level 27, Unit 2705, Marina Plaza, Dubai Marina, Dubai - United Arab Emirates · +971 50 867 26 30'; footer-affiliation still visible. (f) brand-flag-pair visible at both breakpoints; mobile sheet header shows TR+UAE flags. (g) No horizontal overflow at 1920 (scrollWidth==clientWidth==1920). (h) Smoke pages /vize-tipleri, /gelismeler, /seyahat-sigortasi load OK. Only console noise is a Radix DialogTitle a11y warning. Admin regression (/admin/acente dubai fields, /api/content/site) not exercised in this run since it requires OTP mint — main agent confirmed via self-check.",
+  "rca of the issue": "N/A — all reported fixes verified."
+}

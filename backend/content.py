@@ -566,6 +566,8 @@ COMPANY = {
     "instagram": "https://www.instagram.com/dubaivizeonline/",
     "google_review": "https://www.google.com/search?q=Dubai+Vize+Online+yorumlar",
     "address": "Maltepe Mahallesi, Eski Çırpıcı Yolu Sokak No:8, Parima Plaza Kat:12 Ofis:146, 34010 Zeytinburnu / İstanbul - Türkiye",
+    "dubai_address": "Level 27, Unit 2705, Marina Plaza, Dubai Marina, Dubai - United Arab Emirates",
+    "dubai_phone": "+971 50 867 26 30",
     "working_hours": "Hafta içi 09:00 - 19:00, Cumartesi 10:00 - 16:00",
     "tursab_no": "0000",
     "tursab_type": "A Grubu Seyahat Acentesi",

@@ -100,6 +100,15 @@ export const Footer = () => {
                             <span>{contact.address}</span>
                         </li>
                     )}
+                    {contact.dubaiAddress && (
+                        <li className="flex items-start gap-2.5" data-testid="footer-dubai-office">
+                            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                            <span>
+                                {contact.dubaiAddress}
+                                {contact.dubaiPhone && ` · ${contact.dubaiPhone}`}
+                            </span>
+                        </li>
+                    )}
                     <li className="flex items-start gap-2.5">
                         <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                         <span>{contact.workingHours}</span>

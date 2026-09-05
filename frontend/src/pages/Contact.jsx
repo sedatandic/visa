@@ -50,6 +50,48 @@ const ChannelCard = ({ icon: Icon, title, detail, value, href, testId, external 
     </div>
 );
 
+const OfficeCard = ({ city, address, phone, phoneHref, testId }) => {
+    const query = encodeURIComponent(address);
+    return (
+        <div className="card-surface overflow-hidden" data-testid={testId}>
+            <div className="p-6">
+                <span className="eyebrow">{city}</span>
+                <p className="mt-2.5 text-sm leading-7 text-muted-foreground" data-testid={`${testId}-address`}>
+                    {address}
+                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                    {phone && (
+                        <a
+                            href={phoneHref}
+                            className="inline-flex items-center gap-2 text-sm font-bold text-primary transition-colors duration-150 hover:text-[hsl(var(--brand-copper))]"
+                            data-testid={`${testId}-phone`}
+                        >
+                            <Phone className="h-4 w-4" /> {phone}
+                        </a>
+                    )}
+                    <Button asChild variant="secondary" className="h-10 border border-border" data-testid={`${testId}-directions`}>
+                        <a
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${query}`}
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            <Navigation className="mr-2 h-4 w-4" /> Yol tarifi
+                        </a>
+                    </Button>
+                </div>
+            </div>
+            <iframe
+                title={`${city} ofis konumu`}
+                src={`https://www.google.com/maps?q=${query}&output=embed&hl=tr`}
+                className="h-[260px] w-full border-0 border-t border-border sm:h-[300px]"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                data-testid={`${testId}-map`}
+            />
+        </div>
+    );
+};
+
 export default function Contact() {
     const contact = useContact();
     const [form, setForm] = useState(EMPTY);
@@ -83,8 +125,6 @@ export default function Contact() {
             setSending(false);
         }
     };
-
-    const mapQuery = encodeURIComponent(contact.address || "Parima Plaza Zeytinburnu İstanbul");
 
     return (
         <div data-testid="contact-page">
@@ -217,36 +257,32 @@ export default function Contact() {
                 <section className="border-t border-border bg-[hsl(var(--cloud))] py-10 sm:py-14" data-testid="contact-office-section">
                     <div className="container-page">
                         <span className="eyebrow">Konum</span>
-                        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                            <div>
-                                <h2 className="text-2xl font-bold">Merkez ofisimiz</h2>
-                                <p className="mt-2 max-w-xl text-sm leading-7 text-muted-foreground" data-testid="contact-office-address">
-                                    {contact.address}
-                                </p>
-                            </div>
-                            <Button asChild className="h-11 shrink-0" data-testid="contact-directions-button">
-                                <a
-                                    href={`https://www.google.com/maps/dir/?api=1&destination=${mapQuery}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    <Navigation className="mr-2 h-4 w-4" /> Yol tarifi al
-                                </a>
-                            </Button>
-                        </div>
+                        <h2 className="mt-3 text-2xl font-bold">Ofislerimiz</h2>
+                        <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
+                            Başvurunuz İstanbul ofisimizde açılır, Dubai'deki ekibimiz tarafından yerel
+                            olarak takip edilir.
+                        </p>
 
-                        <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card" style={{ boxShadow: "var(--shadow-card)" }}>
-                            <iframe
-                                title="Ofis konumu"
-                                src={`https://www.google.com/maps?q=${mapQuery}&output=embed&hl=tr`}
-                                className="h-[320px] w-full border-0 sm:h-[400px]"
-                                loading="lazy"
-                                referrerPolicy="no-referrer-when-downgrade"
-                                data-testid="contact-map-iframe"
+                        <div className="mt-7 grid gap-6 lg:grid-cols-2">
+                            <OfficeCard
+                                city="İstanbul (Merkez)"
+                                address={contact.address}
+                                phone={contact.phone}
+                                phoneHref={contact.phoneHref}
+                                testId="contact-office-istanbul"
                             />
+                            {contact.dubaiAddress && (
+                                <OfficeCard
+                                    city="Dubai (BAE)"
+                                    address={contact.dubaiAddress}
+                                    phone={contact.dubaiPhone}
+                                    phoneHref={contact.dubaiPhoneHref}
+                                    testId="contact-office-dubai"
+                                />
+                            )}
                         </div>
 
-                        <p className="mt-4 flex items-start gap-2 text-xs leading-6 text-muted-foreground">
+                        <p className="mt-5 flex items-start gap-2 text-xs leading-6 text-muted-foreground">
                             <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                             Ofise gelmeniz zorunlu değildir; tüm başvuru süreci online yürütülür.
                             Yine de belgelerinizi birlikte gözden geçirmek isterseniz randevu alarak

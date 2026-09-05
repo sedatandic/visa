@@ -42,7 +42,7 @@ export const SocialDock = () => {
                     aria-label="Google yorumlarımızı okuyun"
                     title="Google yorumları"
                     data-testid="google-review-button"
-                    className={ACTION_CLASS}
+                    className={`hidden sm:flex ${ACTION_CLASS}`}
                     style={{ boxShadow: "var(--shadow-card)" }}
                 >
                     <span className="relative flex items-center justify-center">
@@ -63,7 +63,7 @@ export const SocialDock = () => {
                     aria-label="Instagram sayfamız"
                     title="Instagram"
                     data-testid="instagram-button"
-                    className={ACTION_CLASS}
+                    className={`hidden sm:flex ${ACTION_CLASS}`}
                     style={{
                         boxShadow: "var(--shadow-card)",
                         background: "linear-gradient(135deg, #F58529 0%, #DD2A7B 55%, #8134AF 100%)",

@@ -51,6 +51,7 @@ import { FamilyDiscountMeter } from "../components/FamilyDiscountMeter";
 import { PhotoGuide } from "../components/PhotoGuide";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { BankTransferInfo } from "../components/BankTransferInfo";
+import { BankAccounts } from "../components/BankAccounts";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -117,6 +118,8 @@ const formatPhoneTR = (value) => {
     );
     return groups.length ? `+90 ${groups.join(" ")}` : "+90 ";
 };
+
+const PHONE_MASK = "+90 5XX XXX XX XX";
 
 const Field = ({ label, children, error, required, htmlFor }) => (    <div className="space-y-2" data-invalid={error ? "true" : undefined}>
         <Label htmlFor={htmlFor}>
@@ -312,6 +315,7 @@ export default function Apply() {
     // birakirsa, "kaldigin yerden devam" linkini e-postayla gonderebilmek icin
     // arka planda sessizce kaydediyoruz (5 sn'de bir, degisiklik oldukca).
     const autoSaveRef = useRef({ signature: "", submitted: false });
+    const submitLock = useRef(false);
     useEffect(() => {
         if (submitting) return;
         const email = (contact.email || "").trim();
@@ -1210,6 +1214,7 @@ export default function Apply() {
     const setConsent = (key, value) => setConsents((s) => ({ ...s, [key]: value }));
 
     const submitApplication = async () => {
+        if (submitLock.current) return null;
         if (!kvkk) {
             toast.error("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekir.");
             return null;
@@ -1226,6 +1231,7 @@ export default function Apply() {
             toast.error("Seçtiğiniz tur için tarih belirlemeniz gerekiyor.");
             return null;
         }
+        submitLock.current = true;
         setSubmitting(true);
         try {
             const { data } = await api.post("/applications", {
@@ -1269,6 +1275,7 @@ export default function Apply() {
             toast.error(apiError(err, "Başvuru oluşturulamadı."));
             return null;
         } finally {
+            submitLock.current = false;
             setSubmitting(false);
         }
     };
@@ -1333,7 +1340,7 @@ export default function Apply() {
                 <div className="container-page">
                     {/* STEPPER */}
                     <div
-                        className="sticky top-[77px] z-30 overflow-hidden rounded-[var(--radius-lg)] border border-border/70 bg-card/95 backdrop-blur-xl"
+                        className="sticky top-[86px] z-30 overflow-hidden rounded-[var(--radius-lg)] border border-border/70 bg-card/95 backdrop-blur-xl sm:top-[98px] lg:top-[110px]"
                         style={{ boxShadow: "var(--shadow-card)" }}
                         data-testid="wizard-stepper"
                     >
@@ -1499,24 +1506,35 @@ export default function Apply() {
                                                 htmlFor="c-phone"
                                                 error={errors.phone}
                                             >
-                                                <Input
-                                                    id="c-phone"
-                                                    type="tel"
-                                                    inputMode="numeric"
-                                                    autoComplete="tel"
-                                                    value={contact.phone}
-                                                    onChange={(ev) =>
-                                                        setContact((s) => ({ ...s, phone: formatPhoneTR(ev.target.value) }))
-                                                    }
-                                                    onFocus={() =>
-                                                        setContact((s) =>
-                                                            s.phone.replace(/\D/g, "").length > 2 ? s : { ...s, phone: "+90 5" }
-                                                        )
-                                                    }
-                                                    placeholder="+90 5XX XXX XX XX"
-                                                    maxLength={17}
-                                                    data-testid="input-contact-phone"
-                                                />
+                                                <div className="relative">
+                                                    <Input
+                                                        id="c-phone"
+                                                        type="tel"
+                                                        inputMode="numeric"
+                                                        autoComplete="tel"
+                                                        value={contact.phone}
+                                                        onChange={(ev) =>
+                                                            setContact((s) => ({ ...s, phone: formatPhoneTR(ev.target.value) }))
+                                                        }
+                                                        onFocus={() =>
+                                                            setContact((s) =>
+                                                                s.phone.replace(/\D/g, "").length > 2 ? s : { ...s, phone: "+90 5" }
+                                                            )
+                                                        }
+                                                        maxLength={17}
+                                                        data-testid="input-contact-phone"
+                                                    />
+                                                    <span
+                                                        aria-hidden="true"
+                                                        className="pointer-events-none absolute inset-0 flex items-center px-4 text-base md:text-sm"
+                                                        data-testid="phone-mask-hint"
+                                                    >
+                                                        <span className="invisible whitespace-pre">{contact.phone}</span>
+                                                        <span className="whitespace-pre text-muted-foreground/45">
+                                                            {PHONE_MASK.slice(contact.phone.length)}
+                                                        </span>
+                                                    </span>
+                                                </div>
                                                 <p className="mt-1.5 text-xs text-muted-foreground">
                                                     Başvurunuzla ilgili dönüş bu numaraya WhatsApp üzerinden yapılacaktır.
                                                 </p>
@@ -3021,14 +3039,18 @@ export default function Apply() {
                                                         <dt className="text-muted-foreground">Hesap sahibi</dt>
                                                         <dd className="text-right font-semibold">{transferInfo.bank?.account_name}</dd>
                                                     </div>
-                                                    <div className="flex justify-between gap-3">
-                                                        <dt className="text-muted-foreground">Banka</dt>
-                                                        <dd className="text-right font-semibold">{transferInfo.bank?.bank_name}</dd>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3">
-                                                        <dt className="text-muted-foreground">IBAN</dt>
-                                                        <dd className="text-right font-mono-code font-semibold" data-testid="bank-transfer-iban">{transferInfo.bank?.iban}</dd>
-                                                    </div>
+                                                    {!(transferInfo.bank?.banks || []).length && (
+                                                        <>
+                                                            <div className="flex justify-between gap-3">
+                                                                <dt className="text-muted-foreground">Banka</dt>
+                                                                <dd className="text-right font-semibold">{transferInfo.bank?.bank_name}</dd>
+                                                            </div>
+                                                            <div className="flex justify-between gap-3">
+                                                                <dt className="text-muted-foreground">IBAN</dt>
+                                                                <dd className="text-right font-mono-code font-semibold" data-testid="bank-transfer-iban">{transferInfo.bank?.iban}</dd>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                     <div className="flex justify-between gap-3">
                                                         <dt className="text-muted-foreground">Açıklama</dt>
                                                         <dd className="text-right font-mono-code font-semibold">{transferInfo.reference_code}</dd>
@@ -3040,6 +3062,11 @@ export default function Apply() {
                                                         </dd>
                                                     </div>
                                                 </dl>
+                                                {(transferInfo.bank?.banks || []).length > 0 && (
+                                                    <div className="mt-4">
+                                                        <BankAccounts bank={transferInfo.bank} />
+                                                    </div>
+                                                )}
                                                 <p className="mt-3 text-xs leading-5 text-muted-foreground">{transferInfo.bank?.note}</p>
                                                 <Button asChild variant="secondary" className="mt-4 h-10 border border-border">
                                                     <a href={waLink(siteContact, `Merhaba, ${transferInfo.reference_code} numaralı başvurumun havale dekontunu göndermek istiyorum.`)} target="_blank" rel="noreferrer" data-testid="send-receipt-whatsapp">
@@ -3053,16 +3080,16 @@ export default function Apply() {
                             )}
 
                             {/* NAV */}
-                            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
-                                <Button type="button" variant="secondary" className="h-11 border border-border" onClick={back} disabled={step === 0} data-testid="wizard-prev-step-button">
+                            <div className="mt-8 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                                <Button type="button" variant="secondary" className="h-11 w-full border border-border sm:w-auto" onClick={back} disabled={step === 0} data-testid="wizard-prev-step-button">
                                     <ArrowLeft className="mr-2 h-4 w-4" /> Geri
                                 </Button>
 
-                                <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                                     <Button
                                         type="button"
                                         variant="secondary"
-                                        className="h-11 border border-border"
+                                        className="h-11 w-full border border-border sm:w-auto"
                                         onClick={saveDraft}
                                         disabled={savingDraft}
                                         data-testid="wizard-save-draft-button"
@@ -3075,11 +3102,11 @@ export default function Apply() {
                                     </Button>
 
                                     {step < STEPS.length - 1 ? (
-                                        <Button type="button" className="h-11 px-6" onClick={next} data-testid="wizard-next-step-button">
+                                        <Button type="button" className="h-12 w-full text-base sm:h-11 sm:w-auto sm:px-6 sm:text-sm" onClick={next} data-testid="wizard-next-step-button">
                                             Devam Et <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     ) : (
-                                        <Button type="button" className="h-12 px-7 text-base" onClick={payMethod === "transfer" ? startBankTransfer : startPayment} disabled={submitting || paying} data-testid="wizard-pay-button">
+                                        <Button type="button" className="h-12 w-full px-7 text-base sm:w-auto" onClick={payMethod === "transfer" ? startBankTransfer : startPayment} disabled={submitting || paying} data-testid="wizard-pay-button">
                                             {submitting || paying ? (
                                                 <>
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

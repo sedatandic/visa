@@ -1069,3 +1069,10 @@ Ayrıntılı kayıt: `CHANGELOG.md` (2026-06-09), kalan işler: `ROADMAP.md`.
   kullanıcı isteğiyle "XXXX …" yer tutucu.
 - **Menüde Vize Rehberi**: 7 rehber navbar dropdown'ında; nav linkleri telefonla aynı hizada.
 - **/gelismeler** kapak görselli kartlar; **/seyahat-sigortasi** detaylı bilgi sayfası (satın alma yok).
+
+## 2026-06-10 (2) — Mobil + iletişim güncellemeleri (özet)
+- Mobil (iPhone/Samsung) başvuru ve ödeme akışı yatay kaydırma olmadan çalışıyor (iteration_89 %100).
+- Telefon alanında `+90 5` sonrası hayalet maske; mobil menüde WhatsApp yeşili tel butonu.
+- Dubai ofisi (Marina Plaza, Level 27 Unit 2705 · +971 50 867 26 30) iletişim sayfası, footer ve
+  admin panelinde yönetilebilir.
+- Mobil menüde tek "Başvuru Takip" girişi; "Hizmetler" ikonu servis çanı.

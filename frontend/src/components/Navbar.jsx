@@ -4,6 +4,7 @@ import {
     ArrowRight,
     BookOpen,
     ChevronDown,
+    ConciergeBell,
     FileCheck2,
     HelpCircle,
     Info,
@@ -14,8 +15,6 @@ import {
     Search,
     ShieldCheck,
     Smartphone,
-    UserRound,
-    Wrench,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import {
@@ -26,7 +25,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { COMPANY } from "../lib/site";
 import { api } from "../lib/api";
 import { BrandMark } from "./BrandMark";
@@ -39,16 +38,13 @@ const PRIMARY_LINKS = [
     { to: "/takip", label: "Başvuru Takip", icon: Search },
 ];
 
-/** Mobil menude ayrica gosterilen hesap linki. */
-const TRACK_LINKS = [{ to: "/hesabim", label: "Başvurularım", icon: UserRound }];
-
 /** "Bilgi & Hizmetler" menusu altinda toplanan linkler. */
 const MENU_GROUPS = [
     {
         label: "Vize Bilgileri",
         items: [
             { to: "/gerekli-belgeler", label: "Gerekli Belgeler", icon: BookOpen },
-            { to: "/hizmetler", label: "Hizmetler", icon: Wrench },
+            { to: "/hizmetler", label: "Hizmetler", icon: ConciergeBell },
             { to: "/sss", label: "Sıkça Sorulan Sorular", icon: HelpCircle },
         ],
     },
@@ -121,7 +117,7 @@ export const Navbar = () => {
             data-testid="site-navbar"
         >
             <div className="h-px w-full bg-border" aria-hidden="true" />
-            <div className="mx-auto flex h-[108px] w-full max-w-[88rem] items-end justify-between gap-4 px-4 pb-3.5 sm:px-6">
+            <div className="mx-auto flex h-[84px] w-full max-w-[88rem] items-end justify-between gap-4 px-4 pb-3 sm:h-[96px] sm:px-6 sm:pb-3.5 lg:h-[108px]">
                 <Link
                     to="/"
                     className="flex shrink-0 items-end gap-2.5 rounded-lg focus-visible:outline-none"
@@ -131,14 +127,14 @@ export const Navbar = () => {
                 </Link>
 
                 <div
-                    className="hidden flex-1 items-end justify-center pb-[2px] sm:flex"
+                    className="hidden flex-1 items-end justify-center pb-[1px] min-[360px]:flex lg:pb-[2px]"
                     data-testid="brand-flag-pair"
                     aria-hidden="true"
                 >
-                    <span className="flex items-center gap-2">
-                        <TrFlag className="h-[46px] w-[92px]" />
-                        <ArrowRight className="h-4 w-4 text-primary" />
-                        <UaeFlag className="h-[46px] w-[92px]" />
+                    <span className="flex items-center gap-1 lg:gap-2">
+                        <TrFlag className="h-4 w-8 min-[380px]:h-5 min-[380px]:w-10 sm:h-6 sm:w-12 lg:h-[46px] lg:w-[92px]" />
+                        <ArrowRight className="hidden h-4 w-4 text-primary lg:block" />
+                        <UaeFlag className="h-4 w-8 min-[380px]:h-5 min-[380px]:w-10 sm:h-6 sm:w-12 lg:h-[46px] lg:w-[92px]" />
                     </span>
                 </div>
 
@@ -229,10 +225,17 @@ export const Navbar = () => {
                         </button>
                     </SheetTrigger>
                     <SheetContent side="right" className="w-[88vw] max-w-sm overflow-y-auto p-0">
+                        <SheetTitle className="sr-only">Menü</SheetTitle>
+                        <SheetDescription className="sr-only">
+                            Site menüsü: vize bilgileri, rehberler ve iletişim bağlantıları
+                        </SheetDescription>
                         <div className="flex h-full flex-col" data-testid="mobile-menu">
-                            <div className="flex items-center gap-2.5 border-b border-border px-5 py-4">
+                            <div className="flex items-center gap-2 border-b border-border px-5 py-4">
                                 <BrandMark />
-                                <UaeFlag className="h-5 w-10" />
+                                <span className="ml-auto flex shrink-0 items-center gap-1">
+                                    <TrFlag className="h-5 w-10" />
+                                    <UaeFlag className="h-5 w-10" />
+                                </span>
                             </div>
 
                             <div className="flex-1 px-4 py-4">
@@ -240,10 +243,11 @@ export const Navbar = () => {
                                     Başvuru
                                 </p>
                                 <div className="mt-1.5 flex flex-col gap-0.5">
-                                    {[...PRIMARY_LINKS, ...TRACK_LINKS].map(({ to, label, icon: Icon }) => (
+                                    {PRIMARY_LINKS.map(({ to, label, icon: Icon }) => (
                                         <NavLink
                                             key={to}
                                             to={to}
+                                            data-testid={`mobile-${testId(to)}`}
                                             className={({ isActive }) =>
                                                 `flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-sm font-semibold ${
                                                     isActive
@@ -295,10 +299,11 @@ export const Navbar = () => {
                                 {contact.phone && (
                                 <a
                                     href={contact.phoneHref}
-                                    className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold text-foreground"
+                                    className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-opacity duration-150 hover:opacity-90"
+                                    style={{ backgroundColor: "#25D366", boxShadow: "var(--shadow-float)" }}
                                     data-testid="mobile-phone-link"
                                 >
-                                    <Phone className="h-4 w-4 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
+                                    <Phone className="h-4 w-4" aria-hidden="true" />
                                     {contact.phone}
                                 </a>
                                 )}

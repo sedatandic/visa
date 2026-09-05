@@ -195,3 +195,34 @@ FamilyDiscountMeter'ın 2 yolcuda %10 / 5 yolcuda %15 göstermesi.
   - "`is` ile literal karşılaştırma" → `ruff --select F632` **0 bulgu**; eşleşmeler docstring/log
     metinlerindeki "is" kelimesi.
   - "6 tanımsız değişken" → `ruff --select F821` ve `pyflakes` **0 bulgu**.
+
+## 2026-06-10 (2) — Mobil deneyim, telefon maskesi ve Dubai ofisi
+
+### Mobil uyumluluk (iPhone + Samsung)
+- Header mobilde kısaldı (`h-[84px] sm:h-[96px] lg:h-[108px]`); başvuru sihirbazının sabit adım
+  çubuğu artık header'ın tam altında (`top-[86px] sm:top-[98px] lg:top-[110px]`) — önceden 33px
+  header'ın arkasında kalıyordu.
+- Sihirbaz butonları mobilde tam genişlik ve alt alta, birincil CTA en üstte
+  (`flex flex-col-reverse ... sm:flex-row`).
+- Yüzen sosyal buton grubu mobilde yalnız WhatsApp gösteriyor (Google/Instagram `hidden sm:flex`) —
+  içeriğin üzerini kapatma sorunu giderildi.
+- `SelectTrigger` mobilde 16px (iOS'ta otomatik zoom olmuyor); mobil menüye erişilebilir
+  `SheetTitle` + `SheetDescription` (sr-only) eklendi.
+- Bayrak çifti 360px'ten itibaren görünür (`min-[360px]:flex`, kademeli boyut), yatay taşma yok.
+- Doğrulama: iteration_89 (mobil uçtan uca başvuru + ödeme, %100 PASS) ve iteration_90.
+
+### Telefon alanı hayalet maske
+- `/basvuru` iletişim telefonunda `+90 5` sonrası kalan `XX XXX XX XX` deseni soluk “ghost”
+  olarak görünüyor, yazdıkça karakter karakter kayboluyor, silindiğinde geri geliyor
+  (`PHONE_MASK`, `data-testid="phone-mask-hint"`, pointer-events yok).
+- Mobil menüdeki telefon butonu WhatsApp tarzı dolu yeşil (#25D366, 48px) hâle getirildi.
+
+### Dubai ofisi ve içerik
+- `COMPANY.dubai_address` / `dubai_phone`: Level 27, Unit 2705, Marina Plaza, Dubai Marina —
+  Tel +971 50 867 26 30. `/iletisim`'de İstanbul + Dubai ofis kartları (adres, telefon, harita,
+  yol tarifi), footer'da Dubai satırı, Admin → Acente Bilgileri'nde yeni alanlar.
+- Menüde "Hizmetler" ikonu tamirat anahtarı yerine `ConciergeBell`; mobil menüden ayrı
+  "Başvurularım" girişi kaldırıldı (tarayıcıdaki gibi tek "Başvuru Takip" sayfası).
+- Havale kartlarındaki hesap sahibi adı "VizeAtlas…" → "Dubai Vize Online Turizm ve Danışmanlık A.Ş.".
+- Sihirbazın havale onay ekranı artık tek eski IBAN yerine 3 bankalı kopyalanabilir akordiyonu
+  gösteriyor; başvuru gönderiminde çift tıklama kilidi (`submitLock`) eklendi.

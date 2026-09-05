@@ -250,6 +250,8 @@ class CompanyInfoIn(BaseModel):
     instagram: Optional[str] = Field(default="", max_length=200)
     google_review: Optional[str] = Field(default="", max_length=300)
     address: Optional[str] = Field(default="", max_length=240)
+    dubai_address: Optional[str] = Field(default="", max_length=240)
+    dubai_phone: Optional[str] = Field(default="", max_length=40)
     working_hours: Optional[str] = Field(default="", max_length=160)
     tursab_no: Optional[str] = Field(default="", max_length=30)
     tursab_type: Optional[str] = Field(default="", max_length=80)

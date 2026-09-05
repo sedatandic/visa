@@ -30,10 +30,14 @@ const normalize = (company) => {
         return value || fallback;
     };
     const phone = pick("phone", FALLBACK.phone);
+    const dubaiPhone = String(company?.dubai_phone ?? "").trim();
     const whatsapp = pick("whatsapp", FALLBACK.whatsapp).replace(/\D/g, "");
     return {
         phone,
         phoneHref: `tel:${phone.replace(/[^\d+]/g, "")}`,
+        dubaiPhone,
+        dubaiPhoneHref: dubaiPhone ? `tel:${dubaiPhone.replace(/[^\d+]/g, "")}` : "",
+        dubaiAddress: String(company?.dubai_address ?? "").trim(),
         whatsapp,
         whatsappHref: whatsapp ? `https://wa.me/${whatsapp}` : "",
         email: pick("email", FALLBACK.email),

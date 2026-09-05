@@ -1,7 +1,6 @@
 # ROADMAP (2026-06-10 itibarıyla)
 
-## P0 — Kullanıcıdan bekleyen içerik
-- [ ] **Gerçek IBAN'lar**: `/vize-tipleri` ve ödeme adımındaki 3 banka kartında IBAN'lar hâlâ
+## P0 — Kullanıcıdan bekleyen içerik- [ ] **Gerçek IBAN'lar**: `/vize-tipleri` ve ödeme adımındaki 3 banka kartında IBAN'lar hâlâ
       yer tutucu (`TR00 0000 …`). Admin → Banka sekmesinden gerçek TL/USD IBAN'lar girilecek.
       Banka listesi de değiştirilebilir (İş Bankası / Garanti BBVA / Ziraat varsayılan).
 - [ ] **Şirket unvanı**: iştirak cümlesindeki "XXXX Travel Solutions Turizm Ltd. Şti." ve

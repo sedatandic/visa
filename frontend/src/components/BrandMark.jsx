@@ -12,7 +12,7 @@ export const BrandMark = ({ light = false }) => (
             className={
                 light
                     ? "h-16 w-auto shrink-0 rounded-lg bg-white/95 object-contain px-2 py-1 shadow-sm sm:h-20"
-                    : "h-16 w-auto shrink-0 object-contain sm:h-20"
+                    : "h-14 w-auto shrink-0 object-contain sm:h-16 lg:h-20"
             }
             width="929"
             height="260"
