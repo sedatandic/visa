@@ -14,7 +14,7 @@ const FACTS = [
 /** Onaylanan e-vizenin ornek gorseli: buyutmeli onizleme + kisa bilgi listesi. */
 export const VisaSpecimen = ({ compact = false }) => (
     <section className="border-t border-border bg-[hsl(var(--cloud))] py-14 sm:py-20" data-testid="visa-specimen-section">
-        <div className="container-page grid items-start gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="container-page grid items-start gap-10 lg:grid-cols-2">
             <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[hsl(var(--brand-copper))]">
                     e-Vize örneği
@@ -51,7 +51,7 @@ export const VisaSpecimen = ({ compact = false }) => (
                 <DialogTrigger asChild>
                     <button
                         type="button"
-                        className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-white transition-transform duration-300 hover:-translate-y-1"
+                        className="group relative block w-full max-w-md overflow-hidden rounded-2xl border border-border bg-white transition-transform duration-300 hover:-translate-y-1"
                         style={{ boxShadow: "var(--shadow-card)" }}
                         data-testid="visa-specimen-open-button"
                     >
@@ -62,18 +62,18 @@ export const VisaSpecimen = ({ compact = false }) => (
                             loading="lazy"
                         />
                         <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-foreground/85 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 sm:opacity-90">
-                            <Maximize2 className="h-3 w-3" /> Büyüt
+                            <Maximize2 className="h-3 w-3" /> Büyütmek için tıklayın
                         </span>
                     </button>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl bg-card">
+                <DialogContent className="max-w-5xl bg-card">
                     <DialogHeader>
                         <DialogTitle>Örnek Dubai e-Vizesi</DialogTitle>
                     </DialogHeader>
                     <img
                         src="/samples/evisa-specimen.jpg"
                         alt="Örnek Dubai e-vize belgesi tam görünüm"
-                        className="max-h-[75vh] w-full object-contain"
+                        className="max-h-[80vh] w-full object-contain"
                         data-testid="visa-specimen-full-image"
                     />
                 </DialogContent>

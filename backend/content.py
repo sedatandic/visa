@@ -562,7 +562,7 @@ COMPANY = {
     "dubai_company": "Moruya Travel Solutions FZE",
     "phone": "+90 532 588 26 30",
     "whatsapp": "905325882630",
-    "email": "info@dubaivizeonline.com",
+    "email": "info@dubaivizehatti.com",
     "instagram": "https://www.instagram.com/dubaivizeonline/",
     "google_review": "https://www.google.com/search?q=Dubai+Vize+Online+yorumlar",
     "address": "Maltepe Mahallesi, Eski Çırpıcı Yolu Sokak No:8, Parima Plaza Kat:12 Ofis:146, 34010 Zeytinburnu / İstanbul - Türkiye",

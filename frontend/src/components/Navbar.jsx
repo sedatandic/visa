@@ -29,6 +29,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from 
 import { COMPANY } from "../lib/site";
 import { api } from "../lib/api";
 import { BrandMark } from "./BrandMark";
+import { CartButton } from "./CartButton";
 import { TrFlag, UaeFlag } from "./FlagIcons";
 import { useContact } from "../lib/contact";
 
@@ -106,6 +107,9 @@ export const Navbar = () => {
         MENU_LINKS.some((l) => location.pathname.startsWith(l.to)) ||
         location.pathname.startsWith("/dubai-vizesi");
 
+    // Logo/bayrak alanina tiklandiginda ana sayfaya gider ve sayfa basina kaydirir
+    // (zaten ana sayfadaysa route degismedigi icin kaydirmayi burada yapiyoruz).
+    const goHomeTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
     return (
         <header
@@ -120,23 +124,26 @@ export const Navbar = () => {
             <div className="mx-auto flex h-[84px] w-full max-w-[88rem] items-end justify-between gap-4 px-4 pb-3 sm:h-[96px] sm:px-6 sm:pb-3.5 lg:h-[108px]">
                 <Link
                     to="/"
+                    onClick={goHomeTop}
                     className="flex shrink-0 items-end gap-2.5 rounded-lg focus-visible:outline-none"
                     data-testid="navbar-logo-link"
                 >
                     <BrandMark />
                 </Link>
 
-                <div
+                <Link
+                    to="/"
+                    onClick={goHomeTop}
+                    aria-label="Ana sayfaya dön"
                     className="hidden flex-1 items-end justify-center pb-[1px] min-[360px]:flex lg:pb-[2px]"
                     data-testid="brand-flag-pair"
-                    aria-hidden="true"
                 >
                     <span className="flex items-center gap-1 lg:gap-2">
                         <TrFlag className="h-4 w-8 min-[380px]:h-5 min-[380px]:w-10 sm:h-6 sm:w-12 lg:h-[46px] lg:w-[92px]" />
                         <ArrowRight className="hidden h-4 w-4 text-primary lg:block" />
                         <UaeFlag className="h-4 w-8 min-[380px]:h-5 min-[380px]:w-10 sm:h-6 sm:w-12 lg:h-[46px] lg:w-[92px]" />
                     </span>
-                </div>
+                </Link>
 
                 <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Ana menü">
                     {PRIMARY_LINKS.map((l) => (
@@ -208,6 +215,7 @@ export const Navbar = () => {
                         {contact.phone}
                     </a>
                     )}
+                    <CartButton />
                     <Button asChild className="h-14 px-6 text-lg" data-testid="navbar-apply-button">
                         <Link to="/basvuru">Başvuru Yap</Link>
                     </Button>
@@ -260,6 +268,7 @@ export const Navbar = () => {
                                             {label}
                                         </NavLink>
                                     ))}
+                                    <CartButton variant="mobile" />
                                 </div>
 
                                 {groups.map((group) => (

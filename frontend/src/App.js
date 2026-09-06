@@ -20,6 +20,7 @@ import Track from "./pages/Track";
 import MyAccount from "./pages/MyAccount";
 import Esim from "./pages/Esim";
 import Insurance from "./pages/Insurance";
+import Cart from "./pages/Cart";
 import OrderStatus from "./pages/OrderStatus";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
@@ -78,6 +79,7 @@ function App() {
                     <Route path="/hesabim" element={<Site><MyAccount /></Site>} />
                     <Route path="/esim" element={<Site><Esim /></Site>} />
                     <Route path="/seyahat-sigortasi" element={<Site><Insurance /></Site>} />
+                    <Route path="/sepet" element={<Site><Cart /></Site>} />
                     <Route path="/siparis/:reference" element={<Site><OrderStatus /></Site>} />
                     <Route path="/odeme/basarili" element={<Site><PaymentSuccess /></Site>} />
                     <Route path="/odeme/iptal" element={<Site><PaymentCancel /></Site>} />

@@ -421,3 +421,74 @@ markanın sitenin tamamına taşınmasını istedi.
 Vergi dairesi / vergi no / MERSİS / ticaret sicil no alanları `company_info` içinde boş
 (varsayılan `content.py` değerleri: "Beşiktaş Vergi Dairesi", "0000000000"). Yönetici →
 Şirket ekranından girilmeli; yasal metinlerde bu bilgiler gösteriliyor.
+
+## 2026-06-10 · Sepet (eSIM/sigorta ayrı satış), anlatım düzeni, kur kaynağı
+Kullanıcı istekleri: "i cant choose other summary cards, same for insurance make kind of
+sepet to see users what services they bought — maybe someone bought visa later wanted to add
+insurance or esim" + anlatım panelinde yazı/resim çakışması + örnek vize çok büyük + logo
+alanına tıklayınca ana sayfa + fiyat sekmelerinin ortalanması + Barchart kur kaynağı.
+
+### 1) Sepet sistemi (yeni)
+- `frontend/src/lib/cart.js` (yeni): localStorage tabanlı sepet (`dv_cart_v1`), `useCart()`
+  hook'u (add/setQty/remove/clear/linkApplication), `dv-cart-change` event'i ile tüm
+  bileşenler senkron. Yalnız `product_id` + `quantity` saklanır; fiyat her zaman
+  `/api/products`'tan gelir (bayat fiyat riski yok). Limitler: 10 adet/kalem, 6 kalem.
+- `components/PlanShowcase.jsx`: eSIM ve sigorta kartları artık **seçilebilir** —
+  adet arttır/azalt + "Sepete ekle" (`plan-add-to-cart-{id}`, `plan-qty-plus/minus-{id}`),
+  sepette olan kartta yeşil "Sepette · N adet" rozeti. Alt CTA "bilgi amaçlıdır" yerine
+  "Sepete git (n)" + "Vize başvurusuna başla". `?basvuru=REF` parametresi sepete başvuru
+  kodunu bağlar ve bilgi notu gösterir.
+- `components/CartButton.jsx` (yeni): navbar'da sepet ikonu + adet rozeti
+  (`navbar-cart-button`, `navbar-cart-count`), mobil menüde "Sepetim" satırı.
+- `pages/Cart.jsx` (yeni, `/sepet`): kalemler (adet +/-, sil, satır toplamı), ara toplam,
+  **%10 paket indirimi** (sigorta + eSIM birlikteyse), ödenecek tutar; ad/e-posta/telefon,
+  opsiyonel gidiş-dönüş tarihi, opsiyonel **vize başvuru kodu**, not; ödeme yöntemi
+  kart (Stripe) / havale. Kart → `POST /orders/{id}/checkout` → Stripe; havale →
+  `/siparis/{SV-...}` (banka bilgileri orada). Başarıda sepet boşalır. Boş sepet durumu
+  eSIM/sigorta linkleriyle.
+- `pages/MyAccount.jsx`: "eSIM & sigorta siparişlerim" → **"Satın aldığım ek hizmetler"**
+  (boş durumda mağaza butonları + "Sepetim"), sipariş satırında bağlı başvuru kodu;
+  her başvuru kartında **"eSIM ekle"** ve **"Sigorta ekle"** düğmeleri
+  (`/esim?basvuru=REF`, `/seyahat-sigortasi?basvuru=REF`).
+- Backend `routes_store.py`: `OrderCreateIn.application_reference` + `_linked_application()`
+  — kod bulunamazsa 400, e-posta uyuşmazsa 400, doğruysa siparişe `application_id` +
+  `application_reference` yazılır; bağımsız siparişlerde `source: "store"`.
+- Test: iteration_94 backend %100 (6/6 pytest, `backend/tests/test_iteration_94_cart.py`) +
+  frontend %100 (sepete ekleme, sayfalar arası kalıcılık, %10 indirim matematiği,
+  havale ve kart ödeme akışı, form doğrulama, `?basvuru=` derin linki).
+
+### 2) Anlatım paneli (VisaExplainer) — çakışma + boyut
+- Yerleşim `sm:absolute` katmandan **2 kolonlu grid**'e geçti (`sm:grid-cols-[46%_54%]`,
+  metin solda, görsel sağda) → yazılar artık resmin üstüne binmiyor (ölçüm: altyazı sağ
+  kenarı 874 < görsel sol kenarı 918). Panel yüksekliği 470→**420px**, görsel dolgusu
+  `p-1.5 sm:p-2`, metin genişlikleri 420/400px.
+- Görseller ~%25-35 büyütüldü: `scripts/trim_explainer_images.py` (yeni) tüm
+  illüstrasyonların çevresindeki boş zemini kırpıyor (track 1180→909 px genişlik).
+- Kullanıcı "en sondaki animasyon boyutları iyi, diğerlerini de öyle yap" dedi → geniş
+  (1.75-1.8 oranlı) 4 illüstrasyon **kare kompozisyona** yeniden üretildi (Gemini 3.1 Flash
+  Image, referans olarak eski görseller verilerek stil/metin korundu): intro, passport
+  (TÜRKİYE CUMHURİYETİ / REPUBLIC OF TÜRKİYE / PASAPORT yazıları korunuyor), photo, upload
+  (GEREK YOK yazısı korunuyor). Eski geniş sürümler `*.wide.png`, kırpma öncesi
+  `*.pretrim.png` olarak yedekte. Artık 7 sahnenin tamamı çerçeveyi dikeyde dolduruyor
+  (vgap 0) — üst/alt boşluk kalmadı.
+
+### 3) Örnek vize (VisaSpecimen)
+Önizleme soldaki metin kolonuyla aynı genişlikte (`max-w-md`, 448px; grid `lg:grid-cols-2`),
+üzerinde "Büyütmek için tıklayın" etiketi; tıklayınca Dialog `max-w-5xl` / `max-h-[80vh]`
+ile tam boy açılıyor.
+
+### 4) Logo/bayrak alanı → ana sayfa + en üst
+`Navbar`: logo linki ve **bayrak çifti** artık `Link to="/"`; `goHomeTop()` ile aynı
+sayfadayken de yumuşak şekilde en üste kaydırıyor (doğrulandı: y=3319 → y=131 → y=1).
+
+### 5) Fiyat sekmeleri ortalandı
+`PricingTabs`: sekme şeridi `flex justify-center` içine alındı — "Tek Girişli Vize /
+Çok Girişli Vize / Çocuk Vizesi" satırda ortada (1920px'te merkez tam 960).
+
+### 6) USD/TRY kur kaynağı (Barchart engelliyor)
+Kullanıcı barchart.com/forex/quotes/^USDTRY istedi; **sunucudan erişilemiyor**
+(Cloudflare bot koruması: HTTP 202, boş gövde, çerez yok — Playwright/Chromium de bu podda
+kurulu değil). Aynı bankalar arası kotasyonu veren **Yahoo Finance `USDTRY=X`** birincil
+kaynak yapıldı (`fx.py` YAHOO_URL + `parse_yahoo_json`), doviz.com / open.er-api /
+exchangerate.host yedekte. Kur notu kaynağı "forex (USD/TRY)" olarak gösteriyor
+(48,41 × %2 marj = 49,38 ₺; eski doviz.com serbest piyasa satışı 49,46 ₺ idi).

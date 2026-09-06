@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="6" time="5.024" timestamp="2026-09-06T09:56:34.206944+00:00" hostname="agent-env-d74c194b-7a54-4124-878e-cf2e4df15423"><testcase classname="tests.test_iteration_94_cart" name="test_fx" time="0.266" /><testcase classname="tests.test_iteration_94_cart" name="test_products" time="0.039" /><testcase classname="tests.test_iteration_94_cart" name="test_order_with_bundle_discount" time="2.558" /><testcase classname="tests.test_iteration_94_cart" name="test_order_single_kind_no_discount" time="0.505" /><testcase classname="tests.test_iteration_94_cart" name="test_order_invalid_app_reference" time="0.046" /><testcase classname="tests.test_iteration_94_cart" name="test_order_checkout_stripe" time="1.199"><error message="failed on teardown with &quot;pymongo.errors.InvalidURI: Invalid URI scheme: URI must begin with 'mongodb://' or 'mongodb+srv://'&quot;">tests/test_iteration_94_cart.py:42: in cleanup
+    asyncio.get_event_loop().run_until_complete(do())
+/usr/local/lib/python3.11/asyncio/base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/test_iteration_94_cart.py:35: in do
+    c = AsyncIOMotorClient(env["MONGO_URL"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/motor/core.py:148: in __init__
+    delegate = self.__delegate_class__(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/pymongo/mongo_client.py:771: in __init__
+    res = uri_parser.parse_uri(
+/root/.venv/lib/python3.11/site-packages/pymongo/uri_parser.py:497: in parse_uri
+    raise InvalidURI(f"Invalid URI scheme: URI must begin with '{SCHEME}' or '{SRV_SCHEME}'")
+E   pymongo.errors.InvalidURI: Invalid URI scheme: URI must begin with 'mongodb://' or 'mongodb+srv://'</error></testcase></testsuite></testsuites>

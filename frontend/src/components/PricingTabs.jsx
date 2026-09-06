@@ -35,28 +35,30 @@ export const PricingTabs = ({ compactHeading = false }) => {
 
     return (
         <div data-testid="pricing-tabs">
-            <div
-                className="inline-flex max-w-full flex-wrap gap-1 rounded-2xl border border-border bg-card p-1.5"
-                role="tablist"
-                style={{ boxShadow: "var(--shadow-card)" }}
-            >
-                {categories.map((c) => (
-                    <button
-                        key={c.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={active === c.id}
-                        onClick={() => setActive(c.id)}
-                        data-testid={`pricing-tab-${c.id}`}
-                        className={`min-h-[44px] rounded-xl px-4 text-sm font-bold transition-colors duration-150 focus-visible:outline-none ${
-                            active === c.id
-                                ? "bg-primary text-primary-foreground"
-                                : "text-foreground/75 hover:bg-muted hover:text-foreground"
-                        }`}
-                    >
-                        {c.label}
-                    </button>
-                ))}
+            <div className="flex justify-center">
+                <div
+                    className="inline-flex max-w-full flex-wrap justify-center gap-1 rounded-2xl border border-border bg-card p-1.5"
+                    role="tablist"
+                    style={{ boxShadow: "var(--shadow-card)" }}
+                >
+                    {categories.map((c) => (
+                        <button
+                            key={c.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={active === c.id}
+                            onClick={() => setActive(c.id)}
+                            data-testid={`pricing-tab-${c.id}`}
+                            className={`min-h-[44px] rounded-xl px-4 text-sm font-bold transition-colors duration-150 focus-visible:outline-none ${
+                                active === c.id
+                                    ? "bg-primary text-primary-foreground"
+                                    : "text-foreground/75 hover:bg-muted hover:text-foreground"
+                            }`}
+                        >
+                            {c.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {discountText && (

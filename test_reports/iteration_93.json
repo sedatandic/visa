@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend regression + bug verification testing for iteration 93. Primary bug (visible email info@dubaivizeonline.com) is fully fixed: scanned 30+ public routes (home, iletisim, hakkimizda, sss, gerekli-belgeler, hizmet-bedelleri, vize-tipleri, sigorta, basvuru, takip, kvkk, all 5 legal footer pages, /esim, /seyahat-sigortasi, /gelismeler, /hizmetler, all /dubai-vizesi/* variants) — 0 hits for old email; new email info@dubaivizehatti.com visible everywhere expected. /iletisim mailto: links point to info@dubaivizehatti.com. Admin login page still uses old email as placeholder as documented (intentional). Backend /api/content/site.company.email = info@dubaivizehatti.com and /api/content/legal has 0 hits for old email. Dubai office card (contact-office-dubai) renders with Marina Plaza address, +971 50 867 26 30 phone, Yol tarifi link, embedded Google map iframe. Istanbul card still renders. Footer contains Dubai/Marina Plaza address, Moruya Travel Solutions Turizm Ltd. Şti., Moruya Travel Solutions FZE. Visa specimen section works on / and /gerekli-belgeler: image loads (naturalWidth 1200), open button opens full preview, Escape closes it, apply button on Documents page navigates to /basvuru. Explainer illustration on desktop 1920x900 renders at ~478px height (>470 target), 7 explainer dots present ('specimen' scene removed as requested), no visible overlap. Mobile 390x844 explainer visually fits within card (image has slight absolute-positioning bleed of ~3-4px each side but object-contain keeps it visually contained — no cropping/distortion). Admin /admin/ziyaretciler page loads without errors after resetting counters (fresh visits accumulated during testing are expected). Basvuru wizard step 1 filled and next-step button advances to step 2 (Vize). WhatsApp button number and site brand 'Dubai Vize Hattı' confirmed everywhere.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_93.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "backend/.env still uses SENDER_EMAIL / ADMIN_LOGIN_EMAIL = info@dubaivizeonline.com (as documented, tied to Resend-verified domain). Not a customer-visible bug; consider re-verifying new domain in Resend and migrating to avoid future confusion.",
+    "Mobile explainer image element has absolute inset-0 with slight computed bleed (~3-4px each side of the illustration container). Object-contain hides it visually but if you tighten viewport further it may become visible. Consider adding overflow-hidden on the parent frame."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Admin token via /app/backend/admin_test_token.py (localStorage key dv_admin_token). No password-based test creds needed.",
+  "seed_data_creation": "None. Test-generated visitor rows were created during /admin/ziyaretciler verification (expected behavior).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 4 asks + primary email bug in iteration 93 verified green. Dubai office card, visa specimen, resized explainer (7 scenes), visitors reset, contact email swap all confirmed. Admin login placeholder retains old email intentionally. Backend .env sender email deliberately unchanged until new domain is verified with Resend.",
+  "rca of the issue": "Original bug: info@dubaivizeonline.com still visible on customer pages. Root cause was COMPANY.email default in /app/backend/content.py + fallback in /app/frontend/src/lib/site.js. Fix applied by main agent (email swapped in both places, MongoDB site_settings/company_info.value.email overridden). Verified across all public routes + legal endpoints — no residual old-email strings on customer surfaces."
+}

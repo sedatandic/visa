@@ -1,4 +1,4 @@
-# ROADMAP (2026-06-10 itibarıyla)
+# ROADMAP (2026-06-10 itibarıyla · sepet turu sonrası)
 
 ## P0 — Kullanıcıdan bekleyen içerik- [ ] **Gerçek IBAN'lar**: `/vize-tipleri` ve ödeme adımındaki 3 banka kartında IBAN'lar hâlâ
       yer tutucu (`TR00 0000 …`). Admin → Banka sekmesinden gerçek TL/USD IBAN'lar girilecek.
@@ -11,6 +11,10 @@
 - [ ] Sigorta poliçesini düzenleyen sigorta şirketi adı sayfada belirtilmiyor (istenirse eklenir).
 
 ## P1
+- [ ] Sepet ikinci tur: çöl safarisi (tarih/saat gerektiriyor) ve hazır paketler (bundle)
+      de sepetten satılabilir; sepette misafir kullanıcı için "siparişimi takip et" kısayolu.
+- [ ] Barchart kuru gerçekten istenirse: headless Chromium (playwright install chromium) ile
+      günlük tek çekim denenebilir; Cloudflare engeli sürerse ücretli Barchart OnDemand API şart.
 - [ ] Fiyat/politika tutarlılığı: rakip içerikte olup bizde olmayan başlıklar — resmî harç ile
       hizmet bedeli ayrımı, TL ödemede kur açıklaması, vize alındıktan sonra 60 gün içinde giriş
       şartı, yeşil/gri/diplomatik pasaportta 90 gün vizesiz giriş, uzatmanın en fazla 2 kez

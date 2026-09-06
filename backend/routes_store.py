@@ -177,6 +177,7 @@ class OrderCreateIn(BaseModel):
     travel_start: Optional[str] = None
     travel_end: Optional[str] = None
     note: Optional[str] = Field(None, max_length=500)
+    application_reference: Optional[str] = Field(None, max_length=24)
     payment_method: str = Field("card", pattern="^(card|transfer)$")
 
 
@@ -286,9 +287,28 @@ async def _notify_new_order(doc: dict, view: dict, bank: Optional[dict]) -> None
     )
 
 
+async def _linked_application(reference: Optional[str], email: str) -> dict:
+    """Musteri sepette vize basvuru kodu verdiyse siparisi o basvuruya baglar."""
+    code = (reference or "").strip().upper()
+    if not code:
+        return {}
+    from db import applications_col
+
+    app_doc = await applications_col.find_one({"reference_code": code})
+    if not app_doc:
+        raise HTTPException(400, "Bu vize basvuru kodu bulunamadi. Kodu bos birakip devam edebilirsiniz.")
+    app_email = ((app_doc.get("contact") or {}).get("email") or "").lower()
+    if app_email and app_email != (email or "").strip().lower():
+        raise HTTPException(
+            400, "Basvuru kodu ile e-posta adresi eslesmiyor. Basvurudaki e-postayi kullanin."
+        )
+    return {"application_id": app_doc.get("id"), "application_reference": app_doc.get("reference_code")}
+
+
 @router.post("/orders")
 async def create_order(payload: OrderCreateIn) -> dict:
     lines = await _build_order_lines(payload)
+    linked = await _linked_application(payload.application_reference, payload.contact.email)
     now = datetime.now(timezone.utc)
     doc = {
         "id": str(uuid.uuid4()),
@@ -298,6 +318,8 @@ async def create_order(payload: OrderCreateIn) -> dict:
         "travel_start": payload.travel_start,
         "travel_end": payload.travel_end,
         "note": payload.note,
+        "source": "store",
+        **linked,
         **_pricing_block(lines),
         "currency": "TRY",
         "fx_rate": (await get_fx())["effective_rate"],

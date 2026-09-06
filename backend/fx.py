@@ -1,7 +1,10 @@
 """USD -> TRY canli kur yonetimi.
 
-- Birincil kaynak: doviz.com serbest piyasa satis kuru (HTML). Basarisiz olursa
-  open.er-api.com ve exchangerate.host denenir; hicbiri olmazsa son bilinen kur.
+- Birincil kaynak: Yahoo Finance USDTRY=X (Barchart ^USDTRY ile ayni bankalar arasi
+  kur). Barchart kendi sitesinden sunucu tarafi erisimi engelliyor (bot korumasi,
+  HTTP 202 + bos govde), bu yuzden ayni kotasyonu veren Yahoo kullanilir.
+  Yedekler: doviz.com serbest piyasa satisi, open.er-api.com, exchangerate.host;
+  hicbiri olmazsa son bilinen kur.
 - Admin panelinden manuel kur ve kur payi (marj %) girilebilir.
 - Kur 24 saatte bir tazelenir (lazy refresh: ilk istekte suresi gecmisse guncellenir).
 """
@@ -22,16 +25,31 @@ FALLBACK_RATE = 41.0  # son cikis noktasi; ilk canli cagri ile guncellenir
 DEFAULT_MARGIN_PCT = 2.0
 
 DOVIZ_URL = "https://kur.doviz.com/serbest-piyasa/amerikan-dolari"
+YAHOO_URL = "https://query1.finance.yahoo.com/v8/finance/chart/USDTRY=X?interval=1d&range=1d"
 BROWSER_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
 )
 
 SOURCES = [
+    ("forex (USD/TRY)", YAHOO_URL),
     ("doviz.com", DOVIZ_URL),
     ("open.er-api.com", "https://open.er-api.com/v6/latest/USD"),
     ("exchangerate.host", "https://api.exchangerate.host/latest?base=USD&symbols=TRY"),
 ]
+
+
+def parse_yahoo_json(payload: dict) -> float | None:
+    """Yahoo Finance chart yanitindan anlik USD/TRY kotasyonunu okur."""
+    try:
+        meta = payload["chart"]["result"][0]["meta"]
+    except (KeyError, IndexError, TypeError):
+        return None
+    for key in ("regularMarketPrice", "previousClose", "chartPreviousClose"):
+        value = meta.get(key)
+        if value and 5 < float(value) < 500:
+            return float(value)
+    return None
 
 
 def parse_doviz_html(html: str) -> float | None:
@@ -68,6 +86,8 @@ async def fetch_live_rate() -> dict | None:
                 res.raise_for_status()
                 if source == "doviz.com":
                     rate = parse_doviz_html(res.text)
+                elif url == YAHOO_URL:
+                    rate = parse_yahoo_json(res.json())
                 else:
                     rate = _extract_rate(source, res.json())
                 if rate and rate > 0:

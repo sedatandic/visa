@@ -27,6 +27,7 @@ import { ReviewSpotlight } from "../components/ReviewSpotlight";
 import { AuthorityStrip } from "../components/AuthorityStrip";
 import { VisaShowcase } from "../components/VisaShowcase";
 import { VisaExplainer } from "../components/VisaExplainer";
+import { VisaSpecimen } from "../components/VisaSpecimen";
 import { HeroHeadline } from "../components/HeroHeadline";
 import { HomeBundleStrip } from "../components/HomeBundleStrip";
 import { EasyCompare } from "../components/EasyCompare";
@@ -259,6 +260,8 @@ export default function Home() {
             </section>
 
             {/* BASVURU TAKIBI */}
+            <VisaSpecimen compact />
+
             <section className="section" data-testid="landing-tracking">
                 <div className="container-page grid items-center gap-10 lg:grid-cols-[1fr_0.9fr]">
                     <div>

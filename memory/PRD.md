@@ -1078,3 +1078,18 @@ Ayrıntılı kayıt: `CHANGELOG.md` (2026-06-09), kalan işler: `ROADMAP.md`.
 - Dubai ofisi (Marina Plaza, Level 27 Unit 2705 · +971 50 867 26 30) iletişim sayfası, footer ve
   admin panelinde yönetilebilir.
 - Mobil menüde tek "Başvuru Takip" girişi; "Hizmetler" ikonu servis çanı.
+
+## 2026-06-10 · Sepet (ayrı satış) + anlatım/örnek vize düzeni + kur kaynağı
+Detaylar CHANGELOG.md 2026-06-10 kaydında. Özet:
+- **Sepet**: `/sepet` sayfası, navbar sepet ikonu, eSIM/sigorta kartlarında "Sepete ekle",
+  %10 sigorta+eSIM indirimi, kart (Stripe) ve havale ödeme, siparişler "Başvurularım →
+  Satın aldığım ek hizmetler" altında; vizesi olan müşteri `?basvuru=REF` ile hizmetleri
+  başvurusuna bağlayabiliyor (backend `application_reference` doğrulaması).
+- **Anlatım paneli**: 2 kolonlu grid (çakışma bitti), illüstrasyonlar kırpıldı/büyütüldü,
+  geniş 4 sahne kare kompozisyona yeniden üretildi → tüm sahneler çerçeveyi dolduruyor.
+- **Örnek vize**: önizleme sol metin kolonu genişliğinde, tıklayınca tam boy Dialog.
+- **Logo + bayrak alanı**: tıklayınca ana sayfa + en üste kaydırma.
+- **Fiyat sekmeleri** satırda ortalandı.
+- **Kur**: Barchart sunucudan erişilemediği için Yahoo Finance `USDTRY=X` birincil kaynak
+  (aynı bankalar arası kotasyon), doviz.com yedek.
+- Test: iteration_94 backend %100 + frontend %100 (0 açık bulgu).

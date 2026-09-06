@@ -205,12 +205,12 @@ export const VisaExplainer = () => {
 
     return (
         <div
-            className="relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--panel-2))] sm:block"
+            className="relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--panel-2))] sm:grid sm:grid-cols-[46%_54%] sm:items-center"
             style={{ boxShadow: "var(--shadow-card)" }}
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:overflow-visible sm:absolute sm:bottom-6 sm:right-6 sm:top-6 sm:order-none sm:aspect-auto sm:h-auto sm:w-[50%]">
+            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:order-2 sm:aspect-auto sm:h-full sm:min-h-[420px] sm:w-full">
                 <AnimatePresence initial={false}>
                     <motion.img
                         key={scene.key}
@@ -225,14 +225,14 @@ export const VisaExplainer = () => {
                             x: { duration: 0.7, ease: "easeOut" },
                             scale: { duration: paused ? 0.4 : sceneMs / 1000, ease: "linear" },
                         }}
-                        className="absolute inset-0 h-full w-full object-contain object-center"
+                        className="absolute inset-0 h-full w-full object-contain object-center p-1.5 sm:p-2"
                         data-testid={`explainer-image-${scene.key}`}
                     />
                 </AnimatePresence>
             </div>
 
             {/* METIN KATMANI */}
-            <div className="relative order-2 flex flex-col gap-3 p-5 pt-2 sm:order-1 sm:min-h-[430px] sm:justify-center sm:w-[48%] sm:gap-4 sm:p-6">
+            <div className="relative order-2 flex flex-col gap-3 p-5 pt-2 sm:order-1 sm:min-h-[420px] sm:justify-center sm:gap-4 sm:p-6">
                 {!playing && (
                     <button
                         type="button"
@@ -250,7 +250,7 @@ export const VisaExplainer = () => {
                     </span>
                 </div>
 
-                <div className="max-w-lg">
+                <div className="max-w-[420px]">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={scene.key}
@@ -312,7 +312,7 @@ export const VisaExplainer = () => {
                     </AnimatePresence>
 
                     {captions && (
-                        <div className="mt-3 max-w-md">
+                        <div className="mt-3 max-w-[400px]">
                             <Subtitle
                                 text={scene.subtitle}
                                 durationMs={sceneMs}

@@ -11,6 +11,9 @@ import {
     LogOut,
     Mail,
     RefreshCw,
+    ShieldCheck,
+    ShoppingBag,
+    Smartphone,
     Trash2,
     User,
     UserCheck,
@@ -205,9 +208,55 @@ export default function MyAccount() {
                             )}
 
                             {/* ORDERS (eSIM / sigorta) */}
-                            {orders.length > 0 && (
-                                <div className="mt-10" data-testid="account-orders">
-                                    <h2 className="font-heading text-lg font-bold">eSIM & sigorta siparişlerim</h2>
+                            <div className="mt-10" data-testid="account-orders">
+                                <div className="flex flex-wrap items-end justify-between gap-3">
+                                    <div>
+                                        <h2 className="font-heading text-lg font-bold">
+                                            Satın aldığım ek hizmetler
+                                        </h2>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            eSIM ve seyahat sigortası siparişleriniz. Vizeniz hazır olsa bile
+                                            sonradan ekleyebilirsiniz.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        asChild
+                                        variant="secondary"
+                                        className="h-10 border border-border"
+                                        data-testid="account-open-cart"
+                                    >
+                                        <Link to="/sepet">
+                                            <ShoppingBag className="mr-2 h-4 w-4" /> Sepetim
+                                        </Link>
+                                    </Button>
+                                </div>
+
+                                {orders.length === 0 ? (
+                                    <div className="card-surface mt-4 p-6" data-testid="account-orders-empty">
+                                        <p className="text-sm leading-6 text-muted-foreground">
+                                            Henüz ek hizmet siparişiniz yok. Dubai eSIM ve seyahat sigortası
+                                            paketlerini inceleyip sepete ekleyebilirsiniz; ikisini birlikte
+                                            aldığınızda %10 indirim uygulanır.
+                                        </p>
+                                        <div className="mt-4 flex flex-wrap gap-3">
+                                            <Button asChild className="h-10" data-testid="account-shop-esim">
+                                                <Link to="/esim">
+                                                    <Smartphone className="mr-2 h-4 w-4" /> eSIM paketleri
+                                                </Link>
+                                            </Button>
+                                            <Button
+                                                asChild
+                                                variant="secondary"
+                                                className="h-10 border border-border"
+                                                data-testid="account-shop-insurance"
+                                            >
+                                                <Link to="/seyahat-sigortasi">
+                                                    <ShieldCheck className="mr-2 h-4 w-4" /> Sigorta paketleri
+                                                </Link>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
                                     <div className="mt-4 space-y-3">
                                         {orders.map((o) => (
                                             <div
@@ -229,6 +278,9 @@ export default function MyAccount() {
                                                             : o.payment?.status === "paid"
                                                               ? "Hazırlanıyor"
                                                               : "Ödeme bekleniyor"}
+                                                        {o.application_reference
+                                                            ? ` · Başvuru: ${o.application_reference}`
+                                                            : ""}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-4">
@@ -247,8 +299,8 @@ export default function MyAccount() {
                                             </div>
                                         ))}
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
 
                             {/* SAVED TRAVELERS */}
                             <div className="mt-10" data-testid="account-saved-travelers">
@@ -374,6 +426,26 @@ export default function MyAccount() {
                                                             )}`}
                                                         >
                                                             Başvuruyu takip et
+                                                        </Link>
+                                                    </Button>
+                                                    <Button
+                                                        asChild
+                                                        variant="secondary"
+                                                        className="h-10 border border-border"
+                                                        data-testid={`add-esim-${a.reference_code}`}
+                                                    >
+                                                        <Link to={`/esim?basvuru=${a.reference_code}`}>
+                                                            <Smartphone className="mr-2 h-4 w-4" /> eSIM ekle
+                                                        </Link>
+                                                    </Button>
+                                                    <Button
+                                                        asChild
+                                                        variant="secondary"
+                                                        className="h-10 border border-border"
+                                                        data-testid={`add-insurance-${a.reference_code}`}
+                                                    >
+                                                        <Link to={`/seyahat-sigortasi?basvuru=${a.reference_code}`}>
+                                                            <ShieldCheck className="mr-2 h-4 w-4" /> Sigorta ekle
                                                         </Link>
                                                     </Button>
                                                     <Button
