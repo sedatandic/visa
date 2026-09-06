@@ -813,3 +813,23 @@ kartı · safari kişi sayısı yolcu sayısı kadar).
   sepetteki sigorta/eSIM adetleri forma taşınıyor.
 - Test: testing_agent iteration_101 → backend %100 (6/6 pytest), frontend %100, sıfır bulgu.
   Yeni test: `tests/test_iteration_101_family_bundle.py`.
+
+## 2026-09-06 · Dinamik Aile Paketi + "Tam tatil" çöl safarisi
+- **Yeni endpoint `GET /api/bundles/quote`** (`bundle_id`, `adults` 1-6, `children` 0-4,
+  `tour`): paketi yolcu sayısına göre yeniden fiyatlandırır. `routes_store._bundle_item()`
+  yardımcısına çıkarıldı; `bundle_list()` de aynı yardımcıyı kullanıyor.
+  Adet kuralları: sigorta = yolcu sayısı, eSIM = yetişkin sayısı, safari = yolcu sayısı.
+  Paket indirimi (%10) **tur dahil** tüm ek hizmetlere uygulanıyor (sipariş fiyatlamasıyla
+  birebir aynı), vize bedellerine yolcu sayısına göre %10/%15 aile indirimi.
+- **Ana sayfa aile kartı etkileşimli** (`HomeBundleStrip.jsx` yeniden yazıldı: `Stepper` +
+  `BundleCard`): Yetişkin/Çocuk adımlayıcıları ve "Tam tatil: N kişilik çöl safarisi ekle"
+  kutusu; her değişiklikte fiyat, içerik listesi, indirim satırı ve alt başlık
+  (`3 YETİŞKİN + 2 ÇOCUK · TAM TATİL`) 180 ms debounce ile sunucudan güncelleniyor.
+  Örnek: 2+1 → 14.409 ₺, 2+1 + safari → 20.403 ₺, 3+2 + safari → 31.941,50 ₺.
+- **Sepet ve başvuru formu birebir aynı tutarı gösteriyor**: kart → sepet
+  (`cart-grand-total`) → `/basvuru?paket=…&yetiskin=…&cocuk=…&tur=1` özet toplamı
+  31.941,50 ₺. Bunun için Apply'da tur seçili olup tarihi boşsa gidişin ertesi günü 15:00
+  otomatik atanıyor (aksi halde tarihsiz tur fiyata girmiyordu — iteration_102 UX bulgusu).
+- Test: testing_agent iteration_102 → backend %100 (9/9 pytest, sipariş fiyat paritesi
+  dahil), frontend %100. Rapor sonrası tek UX bulgusu (kart↔form tutar farkı) giderildi ve
+  doğrulandı. Yeni test: `tests/test_iteration_102_family_quote.py`.

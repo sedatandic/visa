@@ -664,13 +664,15 @@ export default function Apply() {
     const bundleApplied = useRef(false);
     useEffect(() => {
         if (!bundleParam || bundleApplied.current) return;
+        const adultsParam = Math.max(1, Number(searchParams.get("yetiskin")) || 1);
+        const wantTour = searchParams.get("tur") === "1";
         api.get("/bundles")
             .then(({ data }) => {
                 const match = (data.items || []).find((b) => b.id === bundleParam);
                 if (!match) return;
                 bundleApplied.current = true;
                 setInsurancePick(match.insurance.id);
-                setEsimQty({ [match.esim.id]: 1 });
+                setEsimQty({ [match.esim.id]: Math.min(Math.max(adultsParam, 1), 10) });
                 if (match.visa?.id) {
                     setTravelers((list) =>
                         list.map((t) =>
@@ -678,9 +680,19 @@ export default function Apply() {
                         )
                     );
                 }
-                toast.success(`${match.name} seçildi. Vize, sigorta ve eSIM hazır geldi.`);
+                // "Tam tatil" secildiyse col safarisini yolcu sayisi kadar ekle
+                if (wantTour && match.tour?.id) {
+                    const travelers = adultsParam + Math.max(0, Number(searchParams.get("cocuk")) || 0);
+                    setTourQty({ [match.tour.id]: Math.min(Math.max(travelers, 1), 10) });
+                }
+                toast.success(
+                    wantTour
+                        ? `${match.name} seçildi. Vize, sigorta, eSIM ve çöl safarisi hazır geldi.`
+                        : `${match.name} seçildi. Vize, sigorta ve eSIM hazır geldi.`
+                );
             })
             .catch(() => {});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bundleParam]);
 
     // Sepetten gelen basvuru (?sepet=1): sigorta / eSIM / tur secimleri forma tasinir
@@ -717,7 +729,8 @@ export default function Apply() {
         }
     }, [insuranceProducts, insurancePick]);
 
-    const applyRecommended = () => {        if (!extrasSelectable) {
+    const applyRecommended = () => {
+        if (!extrasSelectable) {
             toast.error("Önce gidiş tarihinizi seçin veya \"tarihim henüz belli değil\" seçeneğini işaretleyin.");
             return;
         }
@@ -959,6 +972,24 @@ export default function Apply() {
         });
         toast.success("Çöl safarisi eklendi. Tarih ve saati Özet adımında değiştirebilirsiniz.");
     };
+
+    // Tur secili ama tarih bos ise gidis tarihine gore otomatik doldur (ozet fiyatta gorunsun)
+    useEffect(() => {
+        if (!suggestedTourDate) return;
+        const missing = Object.keys(tourQty).filter(
+            (id) => Number(tourQty[id]) > 0 && !(tourSchedule[id] || {}).date
+        );
+        if (!missing.length) return;
+        setTourSchedule((prev) => {
+            const next = { ...prev };
+            for (const id of missing) {
+                const product = tourProducts.find((p) => p.id === id);
+                next[id] = { date: suggestedTourDate, time: product ? preferredSlot(product) : "" };
+            }
+            return next;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [suggestedTourDate, tourQty, tourSchedule, tourProducts]);
 
     // Gidis-donus tarihine gore 3 oneri: sigorta, eSIM, col safarisi
     const tripSuggestions = useMemo(() => {

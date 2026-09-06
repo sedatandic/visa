@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 102 - Dinamik Aile Paketi (stepper adults/children + col safarisi tam tatil) tested end-to-end. BACKEND (9/9 pytest passed): new GET /api/bundles/quote returns correct quantities/pricing for (a) 2+1 no tour -> {ins:3,esim:2,tour:0}, list 3160, discount 316, price 2844, visa_subtotal 12850, visa_discount 1285 (10%), total_with_visa 14409; (b) 2+1 with tour -> {ins:3,esim:2,tour:3}, list 9820, discount 982, price 8838, total_with_visa 20403; (c) 3+2 with tour -> {ins:5,esim:3,tour:5}, price 14508, family rate 15%, visa_subtotal 20510, visa_discount 3076.5, total_with_visa 31941.5; (d) 4+2 -> 15% tier; (e) clamping 99->6/4 and 0->1 works; (f) unknown bundle -> 404. Bundle-list regression: all 6 packages match expected (pack_short 837.9/6027.9, pack_standard 1170/6360, pack_comfort 3765.6/8955.6, pack_family 2844/14409 tour=0, pack_long 1948.5/11828.5, pack_long_plus 5768.1/15648.1). ?visa_days=60 filter still limits to {pack_long, pack_long_plus}. Order pricing parity verified: POST /api/orders with ins_15d x3 + esim_3gb x2 + tour_desert_safari x3 (with scheduled_date+time, contact delivered@resend.dev, transfer) returned items_total 9820, bundle_discount 982, price 8838 - matches the quote. FRONTEND: Home family card (home-bundle-pack_family) live-updates via debounced /bundles/quote: default 2+1 -> 14.409 ₺ subtitle '2 YETISKIN + 1 COCUK', toggling tam-tatil checkbox -> 20.403 ₺ subtitle appends 'TAM TATIL' and home-bundle-tour-line-pack_family appears. Steppers respect limits: adults min=1 max=6, children min=0 max=4 (buttons become disabled correctly). Configuring 3+2 with tour shows price 31.941,50 ₺. 'Paketi sepete ekle' produces cart-grand-total 31.941,50 ₺ (exact card parity, no 1.110 ₺ delta) with cart-family-discount label 'Aile indirimi (%15) . 5 yolcu' and -3.076,50 ₺. Removing all visas via cart-visa-remove-button restores cart-checkout-button. Non-family regression: pack_standard has NO steppers/checkbox, shows 'kisi basi', price 6.360 ₺, add-to-cart -> cart grand 6.360 ₺, CTA href /basvuru?paket=pack_standard&vize=visa_30_single (no yetiskin/cocuk). Family CTA href = /basvuru?paket=pack_family&vize=visa_30_single&yetiskin=3&cocuk=2&tur=1; landing on Apply shows 5 traveller cards (3 adult + 2 child), insurance selected, eSIM qty = adults, aile indirimi %15 aktif rozeti. NOTE: On Apply, the desert safari IS added to tourQty (visible in Ek Hizmetler step), but until user picks a tour date the summary-total-price excludes it (21.951,50 vs card 31.941,50). This is by-design (Apply.jsx storeItems drops tour lines with no plan.date, same rule as the cart), but the initial mismatch between card and Apply summary is a minor UX concern.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/basvuru?paket=pack_family&tur=1",
+        "issues": [
+          "When arriving from the family card CTA with tur=1, the col safarisi is selected in tourQty but summary-total-price/wizard-stepper-total show 21.951,50 TL instead of the card total 31.941,50 TL because the tour date is not yet set. Consider (a) auto-selecting a suggested tour date (or the travel arrival_date once entered) so the summary matches the card, or (b) surfacing an inline 'Cöl safarisi tarihi seciniz' banner on the summary explaining why the tour isn't priced yet. Same UX rule already applies to cart -> visa apply flow."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_102_family_quote.py",
+    "/app/test_reports/pytest/iter102.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: Reduce the card<->Apply summary mismatch when tur=1 by auto-scheduling the tour (or defaulting to travel arrival_date) so pricing stays consistent between homepage card, cart, and Apply wizard summary."
+  ],
+  "critical_code_review_comments": [
+    "routes_store._bundle_item: adult_count uses max(1, ...); the /bundles/quote endpoint additionally clamps to min(6). Bounds are also duplicated in the response as family.max_adults/max_children. Consider centralising in a small constants block to avoid drift.",
+    "HomeBundleStrip.jsx: BundleCard passes booleans to axios params as `withTour` (JS boolean). Backend accepts `tour=true/false` strings but also 1/0. Non-issue; noting for regression awareness.",
+    "Apply.jsx line 685 recomputes travelers as adultsParam + Number(searchParams.get('cocuk')) inside the ?paket= effect but does not rely on the actual traveller card list; if user manually adds/removes travellers after landing, safari qty won't follow. Minor.",
+    "Apply.jsx storeItems (line 859) silently drops tour lines without a date -> summary can silently diverge from card total when tur=1. Recommend the auto-scheduling or banner mitigation described above."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Not required (public endpoints). Used delivered@resend.dev for the order-parity POST.",
+  "seed_data_creation": "One bank-transfer test order (TEST Iter102, delivered@resend.dev, note=TEST_iteration_102) created via POST /api/orders during test_order_bundle_discount_matches_quote_tour. Reference not deleted; can be pruned by admin (filter note starts with TEST_iteration_102).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 102 dinamik aile paketi is fully green. Key testids: home-bundle-pack_family, home-bundle-adults-pack_family(-plus/-minus), home-bundle-children-pack_family(-plus/-minus), home-bundle-tour-toggle-pack_family, home-bundle-tour-line-pack_family, home-bundle-subtitle-pack_family, home-bundle-price-pack_family, home-bundle-price-note-pack_family, home-bundle-add-to-cart-pack_family, home-bundle-cta-pack_family. Cart parity confirmed for 3+2+tour = 31.941,50 TL and pack_standard = 6.360 TL. Apply page summary intentionally excludes tour lines lacking a date (see design_issue).",
+  "rca of the issue": "N/A - no functional bugs found. The card-vs-Apply mismatch on tur=1 is by design (Apply.jsx:859 requires plan.date before pricing the tour) and is flagged as a UX improvement."
+}

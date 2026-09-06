@@ -83,11 +83,13 @@ BUNDLE_TEMPLATES = [
         "id": "pack_family",
         "visa_days": 30,
         "name": "Aile Paketi",
-        "tagline": "2 yetişkin + 1 çocuk: vizeler, üç kişilik sigorta ve iki eSIM tek pakette.",
+        "tagline": "Yolcu sayısını seçin; vizeler, sigorta ve eSIM tek pakette. İsterseniz çöl safarisini de ekleyin.",
         "insurance_id": "ins_15d",
         "esim_id": "esim_3gb",
         # 3 yolcu: vize bedellerine aile indirimi, ek hizmetlere paket indirimi uygulanir
-        "family": {"adults": 2, "children": 1, "insurance_qty": 3, "esim_qty": 2},
+        "family": {"adults": 2, "children": 1},
+        # "Tam tatil" secenegi: yolcu sayisi kadar col safarisi
+        "tour_id": "tour_desert_safari",
     },
     {
         "id": "pack_long",
@@ -109,6 +111,126 @@ BUNDLE_TEMPLATES = [
 ]
 
 
+def _bundle_item(
+    tpl: dict,
+    products: dict,
+    visas: list,
+    adults: Optional[int] = None,
+    children: Optional[int] = None,
+    with_tour: bool = False,
+) -> Optional[dict]:
+    """Paketi verilen yolcu sayisina gore fiyatlandirir (varsayilan: sablon degerleri)."""
+    insurance = products.get(tpl["insurance_id"])
+    esim = products.get(tpl["esim_id"])
+    if not insurance or not esim:
+        return None
+    rate = float(BUNDLE_DISCOUNT["rate"])
+    family = tpl.get("family") or None
+    adult_count = max(1, int(adults if adults is not None else (family or {}).get("adults", 1)))
+    child_count = max(0, int(children if children is not None else (family or {}).get("children", 0)))
+    travelers = adult_count + child_count
+    candidates = [
+        v
+        for v in visas
+        if int(v.get("duration_days") or 0) == tpl["visa_days"]
+        and v.get("applicant_type") == "adult"
+        and v.get("category") == "single"
+    ]
+    visa = min(candidates, key=lambda v: float(v["price"])) if candidates else None
+    child_visa = None
+    if child_count:
+        child_candidates = [
+            v
+            for v in visas
+            if int(v.get("duration_days") or 0) == tpl["visa_days"] and v.get("category") == "child"
+        ]
+        child_visa = min(child_candidates, key=lambda v: float(v["price"])) if child_candidates else None
+
+    ins_qty = travelers if family else 1
+    esim_qty = adult_count if family else 1
+    tour = products.get(tpl.get("tour_id") or "") if family else None
+    tour_qty = travelers if (with_tour and tour) else 0
+
+    extras_list = round(float(insurance["price"]) * ins_qty + float(esim["price"]) * esim_qty, 2)
+    tour_total = round(float(tour["price"]) * tour_qty, 2) if tour_qty else 0.0
+    # Paket indirimi siparis fiyatlamasiyla ayni: sigorta+eSIM varsa tum ek hizmetlere %10
+    discount = round((extras_list + tour_total) * rate, 2)
+    price = round(extras_list + tour_total - discount, 2)
+    visa_subtotal = round(
+        (float(visa["price"]) * adult_count if visa else 0.0)
+        + (float(child_visa["price"]) * child_count if child_visa else 0.0),
+        2,
+    )
+    family_rate = family_discount_rate(travelers) if family else 0.0
+    visa_discount = round(visa_subtotal * family_rate, 2)
+
+    return {
+        "id": tpl["id"],
+        "name": tpl["name"],
+        "tagline": tpl["tagline"],
+        "visa_days": tpl["visa_days"],
+        "popular": tpl.get("popular", False),
+        "visa": (
+            {"id": visa["id"], "name": visa["name"], "price": float(visa["price"])} if visa else None
+        ),
+        "insurance": {
+            "id": insurance["id"],
+            "name": insurance["name"],
+            "price": insurance["price"],
+            "validity_days": insurance.get("validity_days"),
+            "coverage": insurance.get("coverage"),
+        },
+        "esim": {
+            "id": esim["id"],
+            "name": esim["name"],
+            "price": esim["price"],
+            "data_amount": esim.get("data_amount"),
+            "validity_days": esim.get("validity_days"),
+        },
+        "tour": (
+            {
+                "id": tour["id"],
+                "name": tour["name"],
+                "price": tour["price"],
+                "duration": tour.get("summary"),
+                "selected": bool(tour_qty),
+                "total": tour_total,
+            }
+            if tour
+            else None
+        ),
+        "list_total": round(extras_list + tour_total, 2),
+        "discount": discount,
+        "price": price,
+        "quantities": {"insurance": ins_qty, "esim": esim_qty, "tour": tour_qty},
+        "family": (
+            {
+                "adults": adult_count,
+                "children": child_count,
+                "child_visa": (
+                    {
+                        "id": child_visa["id"],
+                        "name": child_visa["name"],
+                        "price": float(child_visa["price"]),
+                    }
+                    if child_visa
+                    else None
+                ),
+                "visa_subtotal": visa_subtotal,
+                "visa_discount": visa_discount,
+                "visa_discount_rate": family_rate,
+                "traveler_count": travelers,
+                "max_adults": 6,
+                "max_children": 4,
+            }
+            if family
+            else None
+        ),
+        "total_with_visa": (round(price + visa_subtotal - visa_discount, 2) if visa else None),
+        "currency": "TRY",
+    }
+
+
 async def bundle_list(visa_days: Optional[int] = None) -> dict:
     """Vize suresine uygun hazir paketleri fiyatlariyla dondurur."""
     from db import visa_types_col
@@ -116,104 +238,43 @@ async def bundle_list(visa_days: Optional[int] = None) -> dict:
     products = {p["id"]: p for p in await product_list()}
     visa_docs = await visa_types_col.find({"active": True}).to_list(100)
     visas = await apply_fx_to_list(serialize_doc(visa_docs)) if visa_docs else []
-    rate = float(BUNDLE_DISCOUNT["rate"])
     items = []
     for tpl in BUNDLE_TEMPLATES:
         if visa_days and tpl["visa_days"] != int(visa_days):
             continue
-        insurance = products.get(tpl["insurance_id"])
-        esim = products.get(tpl["esim_id"])
-        if not insurance or not esim:
-            continue
-        candidates = [
-            v
-            for v in visas
-            if int(v.get("duration_days") or 0) == tpl["visa_days"]
-            and v.get("applicant_type") == "adult"
-            and v.get("category") == "single"
-        ]
-        visa = min(candidates, key=lambda v: float(v["price"])) if candidates else None
-        family = tpl.get("family") or None
-        adults = int((family or {}).get("adults", 1))
-        children = int((family or {}).get("children", 0))
-        ins_qty = int((family or {}).get("insurance_qty", 1))
-        esim_qty = int((family or {}).get("esim_qty", 1))
-        child_visa = None
-        if children:
-            child_candidates = [
-                v
-                for v in visas
-                if int(v.get("duration_days") or 0) == tpl["visa_days"] and v.get("category") == "child"
-            ]
-            child_visa = min(child_candidates, key=lambda v: float(v["price"])) if child_candidates else None
-        list_total = round(float(insurance["price"]) * ins_qty + float(esim["price"]) * esim_qty, 2)
-        discount = round(list_total * rate, 2)
-        price = round(list_total - discount, 2)
-        visa_subtotal = round(
-            (float(visa["price"]) * adults if visa else 0.0)
-            + (float(child_visa["price"]) * children if child_visa else 0.0),
-            2,
-        )
-        family_rate = family_discount_rate(adults + children) if family else 0.0
-        visa_discount = round(visa_subtotal * family_rate, 2)
-        items.append(
-            {
-                "id": tpl["id"],
-                "name": tpl["name"],
-                "tagline": tpl["tagline"],
-                "visa_days": tpl["visa_days"],
-                "popular": tpl.get("popular", False),
-                "visa": (
-                    {"id": visa["id"], "name": visa["name"], "price": float(visa["price"])}
-                    if visa
-                    else None
-                ),
-                "insurance": {
-                    "id": insurance["id"],
-                    "name": insurance["name"],
-                    "price": insurance["price"],
-                    "validity_days": insurance.get("validity_days"),
-                    "coverage": insurance.get("coverage"),
-                },
-                "esim": {
-                    "id": esim["id"],
-                    "name": esim["name"],
-                    "price": esim["price"],
-                    "data_amount": esim.get("data_amount"),
-                    "validity_days": esim.get("validity_days"),
-                },
-                "list_total": list_total,
-                "discount": discount,
-                "price": price,
-                "quantities": {"insurance": ins_qty, "esim": esim_qty},
-                "family": (
-                    {
-                        "adults": adults,
-                        "children": children,
-                        "child_visa": (
-                            {
-                                "id": child_visa["id"],
-                                "name": child_visa["name"],
-                                "price": float(child_visa["price"]),
-                            }
-                            if child_visa
-                            else None
-                        ),
-                        "visa_subtotal": visa_subtotal,
-                        "visa_discount": visa_discount,
-                        "visa_discount_rate": family_rate,
-                        "traveler_count": adults + children,
-                    }
-                    if family
-                    else None
-                ),
-                "total_with_visa": (
-                    round(price + visa_subtotal - visa_discount, 2) if visa else None
-                ),
-                "currency": "TRY",
-            }
-        )
+        item = _bundle_item(tpl, products, visas)
+        if item:
+            items.append(item)
     return {"items": items, "bundle": BUNDLE_DISCOUNT}
+
+
+@router.get("/bundles/quote")
+async def get_bundle_quote(
+    bundle_id: str,
+    adults: int = 1,
+    children: int = 0,
+    tour: bool = False,
+) -> dict:
+    """Yolcu sayisi ve tur secimine gore paket fiyatini yeniden hesaplar."""
+    from db import visa_types_col
+
+    tpl = next((t for t in BUNDLE_TEMPLATES if t["id"] == bundle_id), None)
+    if not tpl:
+        raise HTTPException(status_code=404, detail="Paket bulunamadı.")
+    products = {p["id"]: p for p in await product_list()}
+    visa_docs = await visa_types_col.find({"active": True}).to_list(100)
+    visas = await apply_fx_to_list(serialize_doc(visa_docs)) if visa_docs else []
+    item = _bundle_item(
+        tpl,
+        products,
+        visas,
+        adults=max(1, min(int(adults), 6)),
+        children=max(0, min(int(children), 4)),
+        with_tour=bool(tour),
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Paket fiyatlandırılamadı.")
+    return {"item": item, "bundle": BUNDLE_DISCOUNT}
 
 
 # ------------------------------------------------------------------- modeller

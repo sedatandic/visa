@@ -1174,3 +1174,9 @@ Ana sayfada "Aile Paketi" (2 yetişkin + 1 çocuk) tek tıkla sepete ekleniyor: 
 vizesi, 1 çocuk vizesi, 3 sigorta, 2 eSIM. Sepet artık birden fazla vize satırı tutuyor,
 aile indirimini gösteriyor ve "Vize başvurusunu tamamla" ile forma 3 yolcuyu hazır açıyor.
 Doğrulama: iteration_101 (backend %100 / frontend %100).
+
+## 2026-09-06 · Yolcu sayısına göre paket + tam tatil
+Aile Paketi kartında yetişkin/çocuk sayısı seçilebiliyor ve "Tam tatil" kutusuyla yolcu
+sayısı kadar çöl safarisi ekleniyor; fiyat/içerik `GET /api/bundles/quote` ile anında
+güncelleniyor. Kart, sepet ve başvuru formu aynı toplamı gösteriyor (tur tarihi otomatik
+öneriliyor). Doğrulama: iteration_102 (%100/%100) + sonrasında UX düzeltmesi.
