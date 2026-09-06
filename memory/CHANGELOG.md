@@ -695,3 +695,29 @@ Kullanıcı notları doğrultusunda anlatım baştan üretildi (`scripts/generat
   Doğrulama: gerçek sipariş oluşturulup e-posta gövdesindeki link kontrol edildi
   (`status=sent`, link doğru), `/siparis/{kod}?email=` otomatik sorguladı, sepet kısayolu
   göründü; test siparişi ve e-posta kayıtları temizlendi. pytest test_emailer 7/7.
+
+## 2026-06-12 · Seyahat tarihleri Adım 1'e taşındı + tarihe göre 3 öneri kartı
+Kullanıcı isteği: "seyahat tarihleri sor gidiş ve dönüş tarihi, ona göre eSIM, seyahat sağlık
+sigortası ve Çöl Safarisi tavsiye et" (seçimler: tarihler Adım 1'e taşınsın · 3 ayrı öneri
+kartı · safari kişi sayısı yolcu sayısı kadar).
+- **Adım 1 (Bilgiler)**: iletişim bilgilerinin altına `travel-dates-block` eklendi —
+  Gidiş/Dönüş tarihi (`input-arrival-date`, `input-departure-date`), "tarihim henüz belli
+  değil" kutusu + yaklaşık zaman seçenekleri ve `trip-days-note` ("Seyahatiniz X gün").
+  Bu alanlar Adım 2'den kaldırıldı; Adım 2'de artık özet satırı var
+  (`visa-step-dates-summary` + `visa-step-edit-dates-button` → Adım 1'e döner).
+  Adım 2 başlığı "Vize ve tarihler" → **"Vize seçimi"**.
+- **Doğrulama taşındı**: tarih zorunluluğu, dönüş<gidiş kontrolü ve pasaport 6 ay kuralı
+  artık Adım 1'de (`validateStep` step 0); kalış süresi–vize uyumu (`stay_length`) vize
+  seçimi gerektirdiği için Adım 2'de kaldı.
+- **`trip-suggestions` (yeni)**: tarihlere göre 3 kart — Seyahat sağlık sigortası, Dubai eSIM,
+  Çöl Safarisi (popüler ürün). Her kartta ürün adı, süre/kapsam bilgisi, kişi başı fiyat ve
+  Ekle/Kaldır düğmesi (`suggestion-toggle-{insurance|esim|tour}`). Sigorta ve eSIM `bestFit`
+  ile seyahat süresini karşılayan en ucuz paket; safaride tarih **gidişin ertesi günü**
+  (dönüşü aşarsa gidiş günü) ve saat **15:00** ön seçili (`suggestedTourDate`,
+  `preferredSlot`), kişi sayısı yolcu sayısı kadar. Sigorta+eSIM birlikte seçilince
+  `suggestions-bundle-note` %10 paket indirimini duyurur.
+- Doğrulama (Playwright): 10 günlük seyahatte ins_15d (560₺) + esim_3gb (740₺) +
+  safari 11 Temmuz 15:00 önerildi, üçü eklendiğinde özet 5.190 + 560 + 740 + 2.220 − 352
+  = **8.358 ₺**; 6 günlük seyahatte ins_8d/esim_1gb önerildi (mobil 414px'te kartlar dikey
+  yığılıyor); tarih boşken Adım 1'den ilerlenemiyor; Adım 2 özeti "10 Temmuz 2026 –
+  19 Temmuz 2026 · 10 gün" ve "Tarihleri düzenle" Adım 1'e dönüyor.

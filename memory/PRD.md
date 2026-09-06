@@ -1147,3 +1147,10 @@ girilince canlıya geçer (ROADMAP P0).
 - Şirket unvanı / TÜRSAB belge no / Instagram-Google yorum linkleri.
 - Not: yönetici giriş e-postası hâlâ `info@dubaivizeonline.com` (marka artık
   dubaivizehatti.com) — kullanıcı onayı bekliyor.
+
+## 2026-06-12 · Tarih odaklı çapraz satış (Adım 1)
+Sihirbaz Adım 1'de gidiş/dönüş tarihi soruluyor; hemen altında seyahat süresine göre
+3 öneri kartı çıkıyor (sigorta · eSIM · çöl safarisi), tek tıkla eklenip kaldırılabiliyor.
+Safari tarihi gidişin ertesi günü 15:00 olarak ön seçili, kişi sayısı yolcu sayısı kadar.
+Tarih doğrulamaları Adım 1'e taşındı; Adım 2 yalnızca vize seçimi + tarih özeti gösteriyor.
+Test: Playwright ile masaüstü + mobil uçtan uca doğrulandı (bkz. CHANGELOG 2026-06-12).
