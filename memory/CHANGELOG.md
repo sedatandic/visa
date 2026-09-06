@@ -634,3 +634,6 @@ Kullanıcı notları doğrultusunda anlatım baştan üretildi (`scripts/generat
   Yedekler: `intro.desert.{jpg,png}` (quad/jet ski öncesi), `intro.palmoverlap.{jpg,png}` (ilk hali).
 - Doğrulama: mobil 414x900 ve masaüstü 1440x900 ekran görüntüsü — görsel kırpılmıyor
   (taşma 0px), sahne senkronu ve kapak karesi çalışıyor.
+- Kullanıcı geri bildirimi: jet ski kaldırıldı, intro sahnesi jet ski öncesi haline döndürüldü
+  (`intro.desert.{jpg,png}` → `intro.{jpg,png}`; quad bike jeepin yanında). Jet ski'li sürüm
+  `intro.quadjetski.{jpg,png}` olarak saklandı.
