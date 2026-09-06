@@ -18,7 +18,12 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 
-from content import BANK_TRANSFER, BUNDLE_DISCOUNT, bundle_discount_amount
+from content import (
+    BANK_TRANSFER,
+    BUNDLE_DISCOUNT,
+    bundle_discount_amount,
+    family_discount_rate,
+)
 from db import cart_snapshots_col, orders_col, serialize_doc, settings_col
 from emailer import order_admin_html, order_received_html, send_email
 from fx import apply_fx_to_list, get_fx
@@ -75,6 +80,16 @@ BUNDLE_TEMPLATES = [
         "esim_id": "esim_10gb",
     },
     {
+        "id": "pack_family",
+        "visa_days": 30,
+        "name": "Aile Paketi",
+        "tagline": "2 yetişkin + 1 çocuk: vizeler, üç kişilik sigorta ve iki eSIM tek pakette.",
+        "insurance_id": "ins_15d",
+        "esim_id": "esim_3gb",
+        # 3 yolcu: vize bedellerine aile indirimi, ek hizmetlere paket indirimi uygulanir
+        "family": {"adults": 2, "children": 1, "insurance_qty": 3, "esim_qty": 2},
+    },
+    {
         "id": "pack_long",
         "visa_days": 60,
         "name": "Uzun Konaklama Paketi",
@@ -118,9 +133,29 @@ async def bundle_list(visa_days: Optional[int] = None) -> dict:
             and v.get("category") == "single"
         ]
         visa = min(candidates, key=lambda v: float(v["price"])) if candidates else None
-        list_total = round(float(insurance["price"]) + float(esim["price"]), 2)
+        family = tpl.get("family") or None
+        adults = int((family or {}).get("adults", 1))
+        children = int((family or {}).get("children", 0))
+        ins_qty = int((family or {}).get("insurance_qty", 1))
+        esim_qty = int((family or {}).get("esim_qty", 1))
+        child_visa = None
+        if children:
+            child_candidates = [
+                v
+                for v in visas
+                if int(v.get("duration_days") or 0) == tpl["visa_days"] and v.get("category") == "child"
+            ]
+            child_visa = min(child_candidates, key=lambda v: float(v["price"])) if child_candidates else None
+        list_total = round(float(insurance["price"]) * ins_qty + float(esim["price"]) * esim_qty, 2)
         discount = round(list_total * rate, 2)
         price = round(list_total - discount, 2)
+        visa_subtotal = round(
+            (float(visa["price"]) * adults if visa else 0.0)
+            + (float(child_visa["price"]) * children if child_visa else 0.0),
+            2,
+        )
+        family_rate = family_discount_rate(adults + children) if family else 0.0
+        visa_discount = round(visa_subtotal * family_rate, 2)
         items.append(
             {
                 "id": tpl["id"],
@@ -150,7 +185,31 @@ async def bundle_list(visa_days: Optional[int] = None) -> dict:
                 "list_total": list_total,
                 "discount": discount,
                 "price": price,
-                "total_with_visa": round(price + float(visa["price"]), 2) if visa else None,
+                "quantities": {"insurance": ins_qty, "esim": esim_qty},
+                "family": (
+                    {
+                        "adults": adults,
+                        "children": children,
+                        "child_visa": (
+                            {
+                                "id": child_visa["id"],
+                                "name": child_visa["name"],
+                                "price": float(child_visa["price"]),
+                            }
+                            if child_visa
+                            else None
+                        ),
+                        "visa_subtotal": visa_subtotal,
+                        "visa_discount": visa_discount,
+                        "visa_discount_rate": family_rate,
+                        "traveler_count": adults + children,
+                    }
+                    if family
+                    else None
+                ),
+                "total_with_visa": (
+                    round(price + visa_subtotal - visa_discount, 2) if visa else None
+                ),
                 "currency": "TRY",
             }
         )

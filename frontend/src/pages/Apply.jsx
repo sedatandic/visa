@@ -436,6 +436,31 @@ export default function Apply() {
                     const found = v.data.find((x) => x.id === wanted);
                     const childVisa = found.category === "child";
                     preselectedVisa.current = wanted;
+                    // Sepetten gelen aile paketi: yolcu listesini de kur (2 yetişkin + 1 çocuk gibi)
+                    const adults = Math.min(Math.max(Number(searchParams.get("yetiskin")) || 0, 0), 8);
+                    const children = Math.min(Math.max(Number(searchParams.get("cocuk")) || 0, 0), 8);
+                    if (!childVisa && adults + children > 1) {
+                        const childType = v.data.find(
+                            (x) =>
+                                x.category === "child" &&
+                                Number(x.duration_days) === Number(found.duration_days)
+                        );
+                        const list = [];
+                        for (let i = 0; i < Math.max(adults, 1); i += 1) {
+                            list.push({ ...newTraveler("adult"), visa_type_id: wanted });
+                        }
+                        for (let i = 0; i < children; i += 1) {
+                            list.push({
+                                ...newTraveler("child"),
+                                visa_type_id: childType ? childType.id : "",
+                            });
+                        }
+                        setTravelers(list);
+                        toast.success(
+                            `${found.name} ve ${children} çocuk vizesi forma eklendi (${list.length} yolcu).`
+                        );
+                        return;
+                    }
                     setTravelers((list) =>
                         list.map((t) => {
                             const isChild = t.applicant_type === "child";

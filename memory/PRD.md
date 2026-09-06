@@ -1168,3 +1168,9 @@ işlem süresi, kimlere uygun). Tablodan seçim forma otomatik işleniyor.
   başvuru sonrası sepet boşalıyor.
 - Vize karşılaştırma tablosunda çocuk ücreti satırı + aile indirimi dipnotu var.
 - Doğrulama: iteration_100 test raporu (backend %100, frontend %100).
+
+## 2026-09-06 · Aile Paketi
+Ana sayfada "Aile Paketi" (2 yetişkin + 1 çocuk) tek tıkla sepete ekleniyor: 2 yetişkin
+vizesi, 1 çocuk vizesi, 3 sigorta, 2 eSIM. Sepet artık birden fazla vize satırı tutuyor,
+aile indirimini gösteriyor ve "Vize başvurusunu tamamla" ile forma 3 yolcuyu hazır açıyor.
+Doğrulama: iteration_101 (backend %100 / frontend %100).

@@ -11,7 +11,7 @@ const EVENT = "dv-cart-change";
 export const CART_MAX_QTY = 10;
 export const CART_MAX_LINES = 6;
 
-const EMPTY = { items: [], applicationRef: "", bundleId: "", visaTypeId: "", visaQty: 1 };
+const EMPTY = { items: [], applicationRef: "", bundleId: "", visas: [] };
 
 const clampQty = (value) => Math.min(CART_MAX_QTY, Math.max(1, Number(value) || 1));
 
@@ -30,9 +30,15 @@ export const readCart = () => {
                 })),
             applicationRef: raw.applicationRef || "",
             bundleId: raw.bundleId || "",
-            // Vize satiri: basvuru formu gerektirdigi icin ayri tutulur
-            visaTypeId: raw.visaTypeId || "",
-            visaQty: clampQty(raw.visaQty || 1),
+            // Vize satirlari: basvuru formu gerektirdigi icin urunlerden ayri tutulur
+            visas: (Array.isArray(raw.visas)
+                ? raw.visas
+                : raw.visaTypeId
+                  ? [{ visa_type_id: raw.visaTypeId, quantity: raw.visaQty }]
+                  : []
+            )
+                .filter((v) => v && v.visa_type_id)
+                .map((v) => ({ visa_type_id: String(v.visa_type_id), quantity: clampQty(v.quantity) })),
         };
     } catch {
         return EMPTY;
@@ -46,7 +52,7 @@ const writeCart = (state) => {
 
 export const cartCount = (state) =>
     (state.items || []).reduce((sum, i) => sum + Number(i.quantity || 0), 0) +
-    (state.visaTypeId ? Number(state.visaQty || 1) : 0);
+    (state.visas || []).reduce((sum, v) => sum + Number(v.quantity || 0), 0);
 
 const mergeItem = (items, productId, quantity, extras) => {
     const existing = items.find((i) => i.product_id === productId);
@@ -110,31 +116,37 @@ export const useCart = () => {
             ...current,
             items,
             bundleId: options.bundleId ?? current.bundleId,
-            visaTypeId: options.visaTypeId ?? current.visaTypeId,
-            visaQty: clampQty(options.visaQty ?? current.visaQty ?? 1),
+            visas: options.visas ?? current.visas,
         });
         return { ok: true };
     }, []);
 
-    /** Vize satiri: sepette gorunur, odemesi basvuru formunda alinir. */
-    const setVisa = useCallback((visaTypeId, quantity = 1) => {
+    /** Vize satirlari: sepette gorunur, odemesi basvuru formunda alinir. */
+    const setVisas = useCallback((list) => {
         const current = readCart();
-        writeCart({ ...current, visaTypeId: visaTypeId || "", visaQty: clampQty(quantity) });
+        writeCart({
+            ...current,
+            visas: (list || [])
+                .filter((v) => v && v.visa_type_id)
+                .map((v) => ({ visa_type_id: v.visa_type_id, quantity: clampQty(v.quantity) })),
+        });
     }, []);
 
-    const setVisaQty = useCallback((quantity) => {
+    const setVisaQty = useCallback((visaTypeId, quantity) => {
         const current = readCart();
         const qty = Math.min(CART_MAX_QTY, Math.max(0, Number(quantity) || 0));
-        writeCart(
-            qty
-                ? { ...current, visaQty: qty }
-                : { ...current, visaTypeId: "", visaQty: 1 }
-        );
+        const visas = qty
+            ? current.visas.map((v) => (v.visa_type_id === visaTypeId ? { ...v, quantity: qty } : v))
+            : current.visas.filter((v) => v.visa_type_id !== visaTypeId);
+        writeCart({ ...current, visas });
     }, []);
 
-    const removeVisa = useCallback(() => {
+    const removeVisa = useCallback((visaTypeId) => {
         const current = readCart();
-        writeCart({ ...current, visaTypeId: "", visaQty: 1 });
+        writeCart({
+            ...current,
+            visas: visaTypeId ? current.visas.filter((v) => v.visa_type_id !== visaTypeId) : [],
+        });
     }, []);
 
     const setQty = useCallback((productId, quantity) => {
@@ -177,12 +189,11 @@ export const useCart = () => {
         items: state.items,
         applicationRef: state.applicationRef,
         bundleId: state.bundleId,
-        visaTypeId: state.visaTypeId,
-        visaQty: state.visaQty,
+        visas: state.visas,
         count: cartCount(state),
         add,
         addMany,
-        setVisa,
+        setVisas,
         setVisaQty,
         removeVisa,
         setQty,

@@ -790,3 +790,26 @@ kartı · safari kişi sayısı yolcu sayısı kadar).
   dipnotu (`visa-comparison-family-note`).
 - Test: testing_agent iteration_100 → backend 100%, frontend 100%, sıfır bulgu.
   Yeni testler: `tests/test_iteration_100_emailer_logo.py`, `tests/test_iteration_100_e2e.py`.
+
+## 2026-09-06 · Aile Paketi (2 yetişkin + 1 çocuk) ve çoklu vize sepeti
+- **Yeni paket `pack_family`** (`routes_store.py` BUNDLE_TEMPLATES): 2 yetişkin 30 günlük
+  vize + 1 çocuk 30 günlük vize + 3 sigorta (ins_15d) + 2 eSIM (esim_3gb).
+  `bundle_list()` artık `quantities` (sigorta/eSIM adedi) ve `family` bloğu
+  (adults, children, child_visa, visa_subtotal, visa_discount, traveler_count) döndürüyor;
+  ekstralara %10 paket, vizelere %10 aile indirimi uygulanıyor →
+  ekstralar 2.844 ₺, vize dahil toplam **14.409 ₺**.
+- **Sepet çoklu vize satırını destekliyor**: `lib/cart.js` artık `visas: [{visa_type_id,
+  quantity}]` tutuyor (`setVisas`, `setVisaQty(id, qty)`, `removeVisa(id)`), eski
+  `visaTypeId/visaQty` biçimi otomatik göç ediyor. Test kimlikleri
+  `cart-visa-line-{id}`, `cart-visa-qty-{id}`, `cart-visa-plus/minus/remove-{id}`.
+- **Ana sayfa şeridi**: PICKS artık Standart · **Aile** · Uzun Konaklama. Aile kartında
+  "2 YETİŞKİN + 1 ÇOCUK" etiketi, "Aile" badge'i, çocuk vizesi satırı, "× 2 / × 3" adet
+  gösterimi ve "1.601 ₺ indirim (paket + aile)" var. "Paketi sepete ekle" 8 kalem ekliyor.
+- **Sepet özeti**: `cart-family-discount` satırı (`/api/content/site` →
+  `family_discount_tiers` ile hesaplanır) eklendi; böylece sepetteki "Vize dahil tahmini
+  toplam" ana sayfadaki paket fiyatıyla birebir aynı (14.409 ₺).
+- **Başvuru formu**: `/basvuru?vize=…&paket=…&sepet=1&yetiskin=2&cocuk=1` ile açıldığında
+  2 yetişkin + 1 çocuk yolcu kartı otomatik oluşuyor, çocuğa çocuk vizesi atanıyor,
+  sepetteki sigorta/eSIM adetleri forma taşınıyor.
+- Test: testing_agent iteration_101 → backend %100 (6/6 pytest), frontend %100, sıfır bulgu.
+  Yeni test: `tests/test_iteration_101_family_bundle.py`.

@@ -1,31 +1,41 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Plane, ShieldCheck, ShoppingBag, Signal, Sparkles } from "lucide-react";
+import { ArrowRight, Baby, Check, Plane, ShieldCheck, ShoppingBag, Signal, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/site";
 import { useCart } from "../lib/cart";
 
-const PICKS = ["pack_standard", "pack_comfort", "pack_long"];
+const PICKS = ["pack_standard", "pack_family", "pack_long"];
 
 export const HomeBundleStrip = () => {
     const [bundles, setBundles] = useState([]);
     const cart = useCart();
 
-    /** Hazir paketi (vize + sigorta + eSIM) tek tikla sepete ekler. */
+    /** Hazir paketi (vizeler + sigorta + eSIM) tek tikla sepete ekler. */
     const addBundleToCart = (bundle) => {
+        const visas = [];
+        if (bundle.visa) {
+            visas.push({ visa_type_id: bundle.visa.id, quantity: bundle.family?.adults || 1 });
+        }
+        if (bundle.family?.child_visa && bundle.family.children) {
+            visas.push({ visa_type_id: bundle.family.child_visa.id, quantity: bundle.family.children });
+        }
         const res = cart.addMany(
             [
-                { product_id: bundle.insurance?.id, quantity: 1 },
-                { product_id: bundle.esim?.id, quantity: 1 },
+                { product_id: bundle.insurance?.id, quantity: bundle.quantities?.insurance || 1 },
+                { product_id: bundle.esim?.id, quantity: bundle.quantities?.esim || 1 },
             ].filter((i) => i.product_id),
-            { bundleId: bundle.id, visaTypeId: bundle.visa?.id || "" }
+            { bundleId: bundle.id, visas }
         );
         if (!res.ok) {
             toast.error("Sepete en fazla 6 farklı ürün ekleyebilirsiniz.");
             return;
         }
-        toast.success(`${bundle.name} sepete eklendi: vize + sigorta + eSIM (%10 indirimli).`, {
+        const detail = bundle.family
+            ? `${bundle.family.adults} yetişkin + ${bundle.family.children} çocuk vizesi, ${bundle.quantities.insurance} sigorta, ${bundle.quantities.esim} eSIM`
+            : "vize + sigorta + eSIM";
+        toast.success(`${bundle.name} sepete eklendi: ${detail}.`, {
             action: { label: "Sepete git", onClick: () => window.location.assign("/sepet") },
         });
     };
@@ -71,13 +81,21 @@ export const HomeBundleStrip = () => {
                                 <div>
                                     <p className="font-heading text-base font-bold">{b.name}</p>
                                     <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                        {b.visa_days} günlük vize için
+                                        {b.family
+                                            ? `${b.family.adults} yetişkin + ${b.family.children} çocuk`
+                                            : `${b.visa_days} günlük vize için`}
                                     </p>
                                 </div>
-                                {b.id === popularId && (
+                                {b.family ? (
                                     <span className="rounded-full bg-[hsl(var(--cream-tag))] px-2.5 py-1 text-[11px] font-bold">
-                                        En çok seçilen
+                                        Aile
                                     </span>
+                                ) : (
+                                    b.id === popularId && (
+                                        <span className="rounded-full bg-[hsl(var(--cream-tag))] px-2.5 py-1 text-[11px] font-bold">
+                                            En çok seçilen
+                                        </span>
+                                    )
                                 )}
                             </div>
 
@@ -89,8 +107,21 @@ export const HomeBundleStrip = () => {
                                         <Plane className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                                         <span>
                                             {b.visa.name}
+                                            {b.family?.adults > 1 ? ` × ${b.family.adults}` : ""}
                                             <span className="block text-xs text-muted-foreground">
-                                                {formatMoney(b.visa.price, b.currency)}
+                                                {formatMoney(b.visa.price, b.currency)} / yetişkin
+                                            </span>
+                                        </span>
+                                    </li>
+                                )}
+                                {b.family?.child_visa && (
+                                    <li className="flex items-start gap-2.5">
+                                        <Baby className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                                        <span>
+                                            {b.family.child_visa.name}
+                                            {b.family.children > 1 ? ` × ${b.family.children}` : ""}
+                                            <span className="block text-xs text-muted-foreground">
+                                                {formatMoney(b.family.child_visa.price, b.currency)} / çocuk
                                             </span>
                                         </span>
                                     </li>
@@ -99,6 +130,7 @@ export const HomeBundleStrip = () => {
                                     <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                                     <span>
                                         {b.insurance.name}
+                                        {b.quantities?.insurance > 1 ? ` × ${b.quantities.insurance}` : ""}
                                         <span className="block text-xs text-muted-foreground">
                                             {b.insurance.coverage}
                                         </span>
@@ -108,6 +140,7 @@ export const HomeBundleStrip = () => {
                                     <Signal className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                                     <span>
                                         {b.esim.name}
+                                        {b.quantities?.esim > 1 ? ` × ${b.quantities.esim}` : ""}
                                         <span className="block text-xs text-muted-foreground">
                                             {b.esim.data_amount} veri · {b.esim.validity_days} gün
                                         </span>
@@ -116,7 +149,8 @@ export const HomeBundleStrip = () => {
                                 <li className="flex items-start gap-2.5">
                                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--brand-green))]" aria-hidden="true" />
                                     <span className="font-semibold text-[hsl(var(--brand-green))]">
-                                        {formatMoney(b.discount, b.currency)} paket indirimi
+                                        {formatMoney(b.discount + (b.family?.visa_discount || 0), b.currency)} indirim
+                                        {b.family?.visa_discount ? " (paket + aile)" : " (paket)"}
                                     </span>
                                 </li>
                             </ul>
@@ -130,7 +164,8 @@ export const HomeBundleStrip = () => {
                                     {formatMoney(b.total_with_visa ?? b.price, b.currency)}
                                 </p>
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                    kişi başı · ekstralar {formatMoney(b.price, b.currency)}
+                                    {b.family ? `${b.family.traveler_count} kişi` : "kişi başı"} · ekstralar{" "}
+                                    {formatMoney(b.price, b.currency)}
                                 </p>
                                 <div className="mt-4 flex flex-col gap-2.5">
                                     <Link

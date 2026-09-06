@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+    Baby,
     Clock,
     CreditCard,
     Landmark,
@@ -116,6 +117,7 @@ export default function Cart() {    const navigate = useNavigate();
     const cart = useCart();
     const [products, setProducts] = useState([]);
     const [visaTypes, setVisaTypes] = useState([]);
+    const [familyTiers, setFamilyTiers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [method, setMethod] = useState("card");
@@ -146,6 +148,9 @@ export default function Cart() {    const navigate = useNavigate();
         api.get("/visa-types")
             .then(({ data }) => setVisaTypes(data || []))
             .catch(() => {});
+        api.get("/content/site")
+            .then(({ data }) => setFamilyTiers(data.family_discount_tiers || []))
+            .catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -166,17 +171,34 @@ export default function Cart() {    const navigate = useNavigate();
         [cart.items, products]
     );
 
-    // Sepetteki vize satiri: odemesi basvuru formunda alinir
-    const visaLine = useMemo(() => {
-        if (!cart.visaTypeId) return null;
-        const visa = visaTypes.find((v) => v.id === cart.visaTypeId);
-        if (!visa) return null;
-        const qty = Math.max(1, Number(cart.visaQty) || 1);
-        return { visa, qty, total: Number(visa.price) * qty };
-    }, [cart.visaTypeId, cart.visaQty, visaTypes]);
+    // Sepetteki vize satirlari: odemesi basvuru formunda alinir
+    const visaLines = useMemo(() => {
+        if (!cart.visas?.length || !visaTypes.length) return [];
+        return cart.visas
+            .map((entry) => {
+                const visa = visaTypes.find((v) => v.id === entry.visa_type_id);
+                if (!visa) return null;
+                const qty = Math.max(1, Number(entry.quantity) || 1);
+                return { visa, qty, total: Number(visa.price) * qty };
+            })
+            .filter(Boolean);
+    }, [cart.visas, visaTypes]);
 
-    const applyHref = visaLine
-        ? `/basvuru?vize=${visaLine.visa.id}${cart.bundleId ? `&paket=${cart.bundleId}` : ""}&sepet=1`
+    const visaTotal = visaLines.reduce((sum, l) => sum + l.total, 0);
+    const visaPassengers = visaLines.reduce((sum, l) => sum + l.qty, 0);
+    // Aile indirimi: basvuru formunda uygulanan oran sepette de gosterilir
+    const familyRate = familyTiers
+        .filter((t) => visaPassengers >= Number(t.min))
+        .reduce((max, t) => Math.max(max, Number(t.rate)), 0);
+    const familyDiscount = Math.round(visaTotal * familyRate * 100) / 100;
+    const adultVisaLine = visaLines.find((l) => l.visa.category !== "child") || visaLines[0] || null;
+    const childPassengers = visaLines
+        .filter((l) => l.visa.category === "child")
+        .reduce((sum, l) => sum + l.qty, 0);
+
+    const applyHref = adultVisaLine
+        ? `/basvuru?vize=${adultVisaLine.visa.id}${cart.bundleId ? `&paket=${cart.bundleId}` : ""}` +
+          `&sepet=1&yetiskin=${visaPassengers - childPassengers}&cocuk=${childPassengers}`
         : "";
 
     const itemsTotal = lines.reduce((sum, l) => sum + l.total, 0);
@@ -184,7 +206,7 @@ export default function Cart() {    const navigate = useNavigate();
     const bundleDiscount =
         kinds.has("esim") && kinds.has("insurance") ? Math.round(itemsTotal * BUNDLE_RATE * 100) / 100 : 0;
     const total = itemsTotal - bundleDiscount;
-    const grandTotal = total + (visaLine?.total || 0);
+    const grandTotal = total + visaTotal - familyDiscount;
     const missingSchedule = lines.filter(
         (l) => l.product.needs_schedule && (!l.scheduled_date || !l.scheduled_time)
     );
@@ -278,7 +300,7 @@ export default function Cart() {    const navigate = useNavigate();
         }
     }, [lines, form, method, cart, navigate, missingSchedule]);
 
-    const empty = !loading && lines.length === 0 && !visaLine;
+    const empty = !loading && lines.length === 0 && !visaLines.length;
 
     return (
         <div data-testid="cart-page">
@@ -341,14 +363,15 @@ export default function Cart() {    const navigate = useNavigate();
                                     <FxNote />
                                 </div>
 
-                                {visaLine && (
+                                {visaLines.length > 0 && (
                                     <div
                                         className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/[0.06] p-4"
                                         data-testid="cart-bundle-strip"
                                     >
                                         <p className="text-sm leading-6">
                                             <span className="font-heading font-bold">
-                                                Sepetinizde vize var.
+                                                Sepetinizde {visaPassengers > 1 ? `${visaPassengers} kişilik ` : ""}
+                                                vize var.
                                             </span>{" "}
                                             Vize için pasaport ve fotoğraf bilgileriniz gerekiyor; başvuru formunda
                                             vize, sigorta ve eSIM'i tek seferde ödeyeceksiniz.
@@ -361,74 +384,85 @@ export default function Cart() {    const navigate = useNavigate();
                                     </div>
                                 )}
 
-                                {visaLine && (
-                                    <div
-                                        className="mt-5 border-b border-border pb-4"
-                                        data-testid="cart-visa-line"
-                                    >
-                                        <div className="flex flex-wrap items-center justify-between gap-4">
-                                            <div className="min-w-[200px] flex-1">
-                                                <p className="flex items-center gap-2 font-heading text-base font-bold">
-                                                    <Plane className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                                                    {visaLine.visa.name}
-                                                </p>
-                                                <p className="mt-1 text-xs text-muted-foreground">
-                                                    Vize ·{" "}
-                                                    {formatMoney(visaLine.visa.price, visaLine.visa.currency)} / kişi ·
-                                                    başvuru formunda tahsil edilir
-                                                </p>
-                                            </div>
+                                {visaLines.length > 0 && (
+                                    <div className="mt-5 divide-y divide-border border-b border-border" data-testid="cart-visa-lines">
+                                        {visaLines.map((line) => (
+                                            <div
+                                                key={line.visa.id}
+                                                className="py-4 first:pt-0"
+                                                data-testid={`cart-visa-line-${line.visa.id}`}
+                                            >
+                                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                                    <div className="min-w-[200px] flex-1">
+                                                        <p className="flex items-center gap-2 font-heading text-base font-bold">
+                                                            {line.visa.category === "child" ? (
+                                                                <Baby className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                                                            ) : (
+                                                                <Plane className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                                                            )}
+                                                            {line.visa.name}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-muted-foreground">
+                                                            Vize · {formatMoney(line.visa.price, line.visa.currency)} /
+                                                            kişi · başvuru formunda tahsil edilir
+                                                        </p>
+                                                    </div>
 
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => cart.setVisaQty(visaLine.qty - 1)}
-                                                    aria-label="Yolcu sayısını azalt"
-                                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card transition-colors duration-150 hover:border-primary/60 hover:text-primary"
-                                                    data-testid="cart-visa-minus"
-                                                >
-                                                    <Minus className="h-3.5 w-3.5" />
-                                                </button>
-                                                <span
-                                                    className="min-w-8 text-center font-heading text-base font-bold"
-                                                    data-testid="cart-visa-qty"
-                                                >
-                                                    {visaLine.qty}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        cart.setVisaQty(Math.min(CART_MAX_QTY, visaLine.qty + 1))
-                                                    }
-                                                    aria-label="Yolcu sayısını artır"
-                                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card transition-colors duration-150 hover:border-primary/60 hover:text-primary"
-                                                    data-testid="cart-visa-plus"
-                                                >
-                                                    <Plus className="h-3.5 w-3.5" />
-                                                </button>
-                                            </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => cart.setVisaQty(line.visa.id, line.qty - 1)}
+                                                            aria-label="Yolcu sayısını azalt"
+                                                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card transition-colors duration-150 hover:border-primary/60 hover:text-primary"
+                                                            data-testid={`cart-visa-minus-${line.visa.id}`}
+                                                        >
+                                                            <Minus className="h-3.5 w-3.5" />
+                                                        </button>
+                                                        <span
+                                                            className="min-w-8 text-center font-heading text-base font-bold"
+                                                            data-testid={`cart-visa-qty-${line.visa.id}`}
+                                                        >
+                                                            {line.qty}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                cart.setVisaQty(
+                                                                    line.visa.id,
+                                                                    Math.min(CART_MAX_QTY, line.qty + 1)
+                                                                )
+                                                            }
+                                                            aria-label="Yolcu sayısını artır"
+                                                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card transition-colors duration-150 hover:border-primary/60 hover:text-primary"
+                                                            data-testid={`cart-visa-plus-${line.visa.id}`}
+                                                        >
+                                                            <Plus className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
 
-                                            <div className="flex items-center gap-3">
-                                                <span
-                                                    className="font-heading text-base font-extrabold"
-                                                    data-testid="cart-visa-total"
-                                                >
-                                                    {formatMoney(visaLine.total, visaLine.visa.currency)}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        cart.removeVisa();
-                                                        toast.success("Vize sepetten çıkarıldı.");
-                                                    }}
-                                                    aria-label="Vizeyi sepetten çıkar"
-                                                    className="rounded-lg border border-border p-2 text-destructive transition-colors duration-150 hover:bg-destructive/10"
-                                                    data-testid="cart-visa-remove"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                    <div className="flex items-center gap-3">
+                                                        <span
+                                                            className="font-heading text-base font-extrabold"
+                                                            data-testid={`cart-visa-total-${line.visa.id}`}
+                                                        >
+                                                            {formatMoney(line.total, line.visa.currency)}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                cart.removeVisa(line.visa.id);
+                                                                toast.success("Vize sepetten çıkarıldı.");
+                                                            }}
+                                                            aria-label="Vizeyi sepetten çıkar"
+                                                            className="rounded-lg border border-border p-2 text-destructive transition-colors duration-150 hover:bg-destructive/10"
+                                                            data-testid={`cart-visa-remove-${line.visa.id}`}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 )}
 
@@ -538,17 +572,29 @@ export default function Cart() {    const navigate = useNavigate();
                                             {formatMoney(itemsTotal)}
                                         </span>
                                     </div>
-                                    {visaLine && (
+                                    {visaLines.length > 0 && (
                                         <div
                                             className="flex items-start justify-between gap-3"
                                             data-testid="cart-visa-summary"
                                         >
                                             <span className="text-muted-foreground">
-                                                Vize ({visaLine.qty} kişi) · başvuru formunda tahsil edilir
+                                                Vize ({visaPassengers} kişi) · başvuru formunda tahsil edilir
                                             </span>
                                             <span className="font-semibold" data-testid="cart-visa-summary-total">
-                                                {formatMoney(visaLine.total, visaLine.visa.currency)}
+                                                {formatMoney(visaTotal)}
                                             </span>
+                                        </div>
+                                    )}
+                                    {familyDiscount > 0 && (
+                                        <div
+                                            className="flex items-center justify-between text-[hsl(var(--brand-green))]"
+                                            data-testid="cart-family-discount"
+                                        >
+                                            <span className="font-semibold">
+                                                Aile indirimi (%{Math.round(familyRate * 100)}) ·{" "}
+                                                {visaPassengers} yolcu
+                                            </span>
+                                            <span className="font-semibold">- {formatMoney(familyDiscount)}</span>
                                         </div>
                                     )}
                                     {bundleDiscount > 0 && (
@@ -611,14 +657,14 @@ export default function Cart() {    const navigate = useNavigate();
 
                                 <div className="flex items-center justify-between py-4">
                                     <span className="font-semibold">
-                                        {visaLine ? "Sepette ödenecek (sigorta + eSIM)" : "Ödenecek tutar"}
+                                        {visaLines.length > 0 ? "Sepette ödenecek (sigorta + eSIM)" : "Ödenecek tutar"}
                                     </span>
                                     <span className="font-heading text-2xl font-extrabold" data-testid="cart-total">
                                         {formatMoney(total)}
                                     </span>
                                 </div>
 
-                                {visaLine && (
+                                {visaLines.length > 0 && (
                                     <div
                                         className="flex items-center justify-between border-t border-border py-4"
                                         data-testid="cart-grand-total-row"
@@ -633,7 +679,7 @@ export default function Cart() {    const navigate = useNavigate();
                                     </div>
                                 )}
 
-                                {visaLine ? (
+                                {visaLines.length > 0 ? (
                                     <div
                                         className="space-y-3 border-t border-border pt-5"
                                         data-testid="cart-visa-checkout-panel"
@@ -660,7 +706,9 @@ export default function Cart() {    const navigate = useNavigate();
                                             }}
                                             data-testid="cart-visa-remove-button"
                                         >
-                                            Vizeyi çıkar, sadece sigorta + eSIM öde
+                                            {visaLines.length > 1
+                                                ? "Vizeleri çıkar, sadece sigorta + eSIM öde"
+                                                : "Vizeyi çıkar, sadece sigorta + eSIM öde"}
                                         </Button>
                                         <p className="text-xs leading-5 text-muted-foreground">
                                             Başvurunuzu tamamladığınızda sepetiniz otomatik boşalır; poliçeniz ve eSIM

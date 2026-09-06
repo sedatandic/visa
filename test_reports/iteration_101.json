@@ -1,0 +1,20 @@
+{
+  "summary": "Iteration 101 - Aile Paketi (family bundle) + multi-visa cart tested end-to-end. Backend: 6/6 pytest tests passed - pack_family bundle values (price 2844, total_with_visa 14409, visa_subtotal 12850, visa_discount 1285 @10%), pack_standard regression (1170 / 6360), visa_days=60 filter, and POST /api/orders with qty>1 (3xins_15d + 2xesim_3gb) producing items_total 3160, bundle_discount 316, price 2844. Frontend: home strip renders 3 cards (pack_standard, pack_family, pack_long) with correct family layout ('2 YETİŞKİN + 1 ÇOCUK' + 'Aile' badge, '× 2' adult visa line, child visa line, 'Seyahat Sigortası × 3', 'Dubai eSIM × 2', '1.601 ₺ indirim (paket + aile)', 14.409 ₺, '3 kişi · ekstralar 2.844 ₺'). Adding pack_family puts 8 units in cart (badge 8), pack_standard puts 3 (badge 3). /sepet renders TWO visa lines (cart-visa-line-visa_30_single qty 2 = 10.380 ₺, cart-visa-line-visa_30_child qty 1 = 2.470 ₺). Summary rows exact: cart-visa-summary-total 12.850 ₺, cart-family-discount -1.285 ₺ '3 yolcu', paket indirimi -316 ₺, cart-total 2.844 ₺, cart-grand-total 14.409 ₺ (== homepage). Steppers cart-visa-plus/minus-{id} work (+1 adult -> 18.178 ₺). Removing child visa -> 2 yolcu, family%10 kept, grand-total 12.186 ₺. Removing all visas via cart-visa-remove-button restores cart-checkout-button. cart-visa-apply-button navigates to /basvuru?vize=visa_30_single&paket=pack_family&sepet=1&yetiskin=2&cocuk=1 and Apply page pre-creates 3 traveller cards. pack_standard apply URL = /basvuru?vize=visa_30_single&paket=pack_standard&sepet=1&yetiskin=1&cocuk=0, 1 traveler card. Old localStorage shape (visaTypeId/visaQty) correctly migrated to visas[] array (qty preserved).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_iteration_101_family_bundle.py", "/app/test_reports/pytest/iter101.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "HomeBundleStrip.jsx line 172: Link `to` attribute has a stray literal newline/indent inside the string (`to={`/basvuru?paket=${b.id}`}                                        className=...`) - works but is ugly formatting. Minor.",
+    "cart-visa-apply-button is a <button> (uses onClick navigate) rather than a <Link>; anchor `href` returns None but navigation works. Consider using <Link> for SEO/right-click open-in-new-tab.",
+    "cart.js readCart migration: legacy shape supported for one visa via visaTypeId/visaQty - good backward compat; consider clearing legacy keys after first successful migration write."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Not required for this iteration (public endpoints only). delivered@resend.dev used for order emails.",
+  "seed_data_creation": "Created one bank-transfer test order (contact TEST Aile / delivered@resend.dev) via POST /api/orders as part of pytest. Order reference not deleted; recommend cleanup via admin if needed.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All family-bundle / multi-visa cart flows are green. Testid map: cart-visa-lines wrapper, cart-visa-line-{visaId}, cart-visa-qty-{visaId} (span, not input), cart-visa-plus/minus/remove-{visaId}, cart-visa-total-{visaId}, cart-visa-summary-total, cart-family-discount, cart-total, cart-grand-total, cart-visa-apply-button (BUTTON with onClick, no href), cart-visa-remove-button (removes ALL visas), cart-checkout-button (visible only when no visa lines). Home: home-bundle-pack_family, home-bundle-add-to-cart-{id}, home-bundle-price-{id}, home-bundle-cta-{id}. Apply page pre-creates traveller cards from ?yetiskin=&cocuk= and ?sepet=1 imports cart extras.",
+  "rca of the issue": "N/A - no bugs found."
+}
