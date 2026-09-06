@@ -75,8 +75,8 @@ SCENES = [
     },
     {
         "key": "cta",
-        "text": "Dubaai vizenizi Dubaai Vize Online güvencesiyle kolayca alın. "
-        "TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle başvurunuzu güvenle tamamlayın. "
+        "text": "Vizenizi Dubaai Vize Hattı ile kolayca alın. "
+        "TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle başvurunuzu tamamlayın. "
         "Hemen başvurun ve Dubaai yolculuğunuzun ilk adımını bugün atın. "
         "Dubaai sizi bekliyor!",
     },

@@ -1,45 +1,45 @@
 {
- "duration": 85.136,
+ "duration": 78.083,
  "scenes": [
   {
    "key": "intro",
    "start": 0.0,
-   "end": 7.303
+   "end": 6.838
   },
   {
    "key": "passport",
-   "start": 7.303,
-   "end": 12.643
+   "start": 6.838,
+   "end": 12.109
   },
   {
    "key": "photo",
-   "start": 12.643,
-   "end": 22.337
+   "start": 12.109,
+   "end": 21.525
   },
   {
    "key": "upload",
-   "start": 22.337,
-   "end": 33.483
+   "start": 21.525,
+   "end": 32.276
   },
   {
    "key": "track",
-   "start": 33.483,
-   "end": 44.989
+   "start": 32.276,
+   "end": 42.818
   },
   {
    "key": "extras",
-   "start": 44.989,
-   "end": 58.724
+   "start": 42.818,
+   "end": 55.613
   },
   {
    "key": "cta",
-   "start": 58.724,
-   "end": 75.883
+   "start": 55.613,
+   "end": 69.603
   },
   {
    "key": "specimen",
-   "start": 75.883,
-   "end": 85.136
+   "start": 69.603,
+   "end": 78.083
   }
  ]
 }
