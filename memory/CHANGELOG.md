@@ -647,3 +647,32 @@ Kullanıcı notları doğrultusunda anlatım baştan üretildi (`scripts/generat
 - intro sahnesi son rötuşlar: jeepin tavan sepetine **quad bike** eklendi, BAE bayrağı Museum
   of the Future halkasına **temas etmeyecek** şekilde yukarı-sola alındı, paraşütçü **tandem
   (2 kişi)** yapıldı ve kanopiye **SKYDIVE DUBAI** yazıldı. Yedek: `intro.refnoquad.jpg`.
+
+## 2026-06-11 · E-postalar premium kimlik + intro sahnesi son hali
+- **E-posta şablonları premium hale getirildi** (`backend/emailer.py`):
+  - `_wrap`: krem zemin, 16px köşeli beyaz kart, logo altında "TÜRSAB Üyesi A Grubu Seyahat
+    Acentesi" harf aralıklı üst başlık, altın ince çizgi, 21px başlık.
+  - Yeni `_contact_footer()`: künye artık **şirket unvanları + iletişim** içeriyor —
+    Moruya Travel Solutions Turizm Ltd. Şti., BAE iştiraki Moruya Travel Solutions FZE,
+    TÜRSAB üyeliği, telefon (tel: linki), WhatsApp (wa.me), e-posta (mailto:),
+    www.dubaivizehatti.com, İstanbul + Dubai adresleri, Dubai telefonu, çalışma saatleri,
+    telif satırı. Tüm şablonlarda otomatik görünür (giriş kodu, başvuru, ödeme, vize hazır,
+    sipariş, sepet hatırlatma...).
+  - `_row` yenilendi: çerçeve yerine ince altın alt çizgi, küçük büyük harf etiket, sağa
+    hizalı kalın değer; boş değerlerde "-" yazar.
+- **Taslak e-postalarına başvuru bilgileri eklendi**: "Sayın <ad>," selamı + Başvuran,
+  Vize tipi (`_visa_label` ile `visa_type_id` → katalog kısa adı; seçilmediyse "Seçim
+  aşamasında"), 1'den fazla yolcu varsa Yolcular listesi, Devam kodu, Yolcu sayısı
+  (`draft_saved_html` ve `draft_reminder_html`).
+- Doğrulama: 3 şablon tarayıcıda görsel kontrol (kapak, tablo, künye), tüm şablonlarda künye
+  metni assert edildi, Resend ile gerçek gönderim `status=sent`, ilgili pytest paketleri
+  (test_emailer, iteration_80, iteration_91) 27 passed.
+- **intro sahnesi son hali**: sol ve sağdaki palmiyeler artık **tam görünüyor** (kadraj
+  dışına taşmıyor), paraşüt **tandem 2 kişi** ve kanopide okunaklı **SKYDIVE DUBAI**, jeep
+  tavanında quad bike, bayrak Museum of the Future halkasına temas etmiyor.
+  Ara sürümler yedekte: `intro.floatdune.jpg`, `intro.singlejumper.jpg`, `intro.cutpalms.jpg`,
+  `intro.refnoquad.jpg`, `intro.prevdesert.{jpg,png}`, `intro.palmoverlap.{jpg,png}`.
+- Kapanış (cta) sahnesinin metni kullanıcı yazımıyla güncellendi (seslendirme + altyazı):
+  "Vizenizi Dubai Vize Hattı ile kolayca alın. TÜRSAB üyesi A grubu seyahat acentesi iş
+  birliğiyle başvurunuzu baştan sona biz yürütüyoruz. Formu doldurun, gerisini bize bırakın.
+  Dubai sizi bekliyor!" · full.mp3 66,7 sn, cta penceresi 53,21-66,74 sn.

@@ -96,7 +96,7 @@ const SCENES = [
         title: "Dubai Vize Hattı ile güvenle başvurun",
         note: "TÜRSAB üyesi A Grubu seyahat acentesi güvencesi · Dubai sizi bekliyor",
         subtitle:
-            "Vizenizi Dubai Vize Hattı ile kolayca alın. TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle başvurunuzu tamamlayın. Hemen başvurun ve Dubai yolculuğunuzun ilk adımını bugün atın. Dubai sizi bekliyor!",
+            "Vizenizi Dubai Vize Hattı ile kolayca alın. TÜRSAB üyesi A grubu seyahat acentesi iş birliğiyle başvurunuzu baştan sona biz yürütüyoruz. Formu doldurun, gerisini bize bırakın. Dubai sizi bekliyor!",
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
         silentMs: 12000,
         voiceMs: 14243,

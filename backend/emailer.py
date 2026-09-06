@@ -12,11 +12,18 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
+from content import COMPANY, VISA_TYPES
 from db import email_outbox_col
 
 logger = logging.getLogger(__name__)
 
 BRAND = "Dubai Vize Hattı"
+
+GOLD = "#B06A29"
+INK = "#3E2A14"
+MUTED = "#8A7355"
+FAINT = "#A08A6B"
+LINE = "#EADFCB"
 
 # Pazarlama nitelikli postalar: tek tik abonelik iptali basliklari eklenir
 MARKETING_KINDS = {"draft_reminder"}
@@ -36,34 +43,72 @@ SITE_URL = (os.environ.get("PUBLIC_SITE_URL") or "").strip().strip('"').rstrip("
 LOGO_URL = f"{SITE_URL}/brand/logo-horizontal-gold-palm.png"
 
 
+def _contact_footer() -> str:
+    """Marka kunyesi: sirket unvanlari + telefon, WhatsApp, e-posta, adresler."""
+    site = SITE_URL or "https://www.dubaivizehatti.com"
+    site_label = "www.dubaivizehatti.com"
+    link = f"color:{GOLD};text-decoration:none;font-weight:600;"
+    return f"""
+    <tr><td style="padding:22px 26px 6px;background-color:#FBF6EC;border-top:1px solid {LINE};">
+      <div style="font-size:13px;font-weight:bold;color:{INK};letter-spacing:.3px;">{BRAND}</div>
+      <div style="margin-top:5px;font-size:12px;line-height:19px;color:{MUTED};">
+        {COMPANY['legal_name']}<br />
+        BAE iştiraki: {COMPANY['dubai_company']}<br />
+        TÜRSAB üyesi {COMPANY['tursab_type']}
+      </div>
+      <div style="margin-top:13px;font-size:12px;line-height:21px;">
+        <a href="tel:{COMPANY['phone'].replace(' ', '')}" style="{link}">{COMPANY['phone']}</a>
+        <span style="color:{LINE};">&nbsp;|&nbsp;</span>
+        <a href="https://wa.me/{COMPANY['whatsapp']}" style="{link}">WhatsApp</a>
+        <span style="color:{LINE};">&nbsp;|&nbsp;</span>
+        <a href="mailto:{COMPANY['email']}" style="{link}">{COMPANY['email']}</a>
+        <span style="color:{LINE};">&nbsp;|&nbsp;</span>
+        <a href="{site}" style="{link}">{site_label}</a>
+      </div>
+      <div style="margin-top:11px;font-size:11px;line-height:18px;color:{FAINT};">
+        İstanbul: {COMPANY['address']}<br />
+        Dubai: {COMPANY['dubai_address']} · {COMPANY['dubai_phone']}<br />
+        Çalışma saatleri: {COMPANY['working_hours']}
+      </div>
+    </td></tr>
+    <tr><td style="padding:14px 26px 22px;background-color:#FBF6EC;font-size:11px;line-height:18px;color:{FAINT};">
+      Bu e-posta {BRAND} tarafından gönderilmiştir; sorularınız için doğrudan yanıtlayabilirsiniz.
+    </td></tr>
+    """
+
+
 def _wrap(title: str, body_html: str) -> str:
     return f"""
-<div style="margin:0;padding:24px;background-color:#F7EEDF;font-family:Helvetica,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background-color:#ffffff;border:1px solid #EADFCB;border-radius:14px;">
-    <tr><td align="center" style="padding:22px 24px 18px;background-color:#FDF8F0;border-radius:14px 14px 0 0;">
+<div style="margin:0;padding:28px 16px;background-color:#F4EBDD;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background-color:#ffffff;border:1px solid {LINE};border-radius:16px;">
+    <tr><td align="center" style="padding:26px 24px 16px;background-color:#FDF8F0;border-radius:16px 16px 0 0;">
       <img src="{LOGO_URL}" width="230" alt="{BRAND}" style="display:block;width:230px;max-width:78%;height:auto;border:0;outline:none;text-decoration:none;" />
+      <div style="margin-top:12px;font-size:10px;letter-spacing:2.2px;text-transform:uppercase;color:{FAINT};">
+        TÜRSAB Üyesi {COMPANY['tursab_type']}
+      </div>
     </td></tr>
-    <tr><td style="height:4px;background-color:#B06A29;line-height:4px;font-size:0;">&nbsp;</td></tr>
-    <tr><td style="padding:28px 24px;color:#3E2A14;">
-      <h1 style="margin:0 0 16px;font-size:20px;color:#3E2A14;">{title}</h1>
+    <tr><td style="height:3px;background-color:{GOLD};line-height:3px;font-size:0;">&nbsp;</td></tr>
+    <tr><td style="padding:30px 26px 26px;color:{INK};">
+      <h1 style="margin:0 0 18px;font-size:21px;line-height:28px;color:{INK};letter-spacing:-.2px;">{title}</h1>
       {body_html}
     </td></tr>
-    <tr><td style="padding:16px 24px;border-top:1px solid #EADFCB;color:#8A7355;font-size:12px;background-color:#FBF6EC;border-radius:0 0 14px 14px;">
-      Bu e-posta {BRAND} tarafından gönderilmiştir. Sorularınız için bu e-postayı yanıtlayabilirsiniz.<br />
-      <span style="color:#A08A6B;">TÜRSAB üyesi A Grubu seyahat acentesi</span>
-    </td></tr>
+    {_contact_footer()}
   </table>
+  <div style="max-width:600px;margin:14px auto 0;text-align:center;font-size:11px;line-height:17px;color:{FAINT};">
+    © {datetime.now(timezone.utc).year} {COMPANY['legal_name']} · Tüm hakları saklıdır.
+  </div>
 </div>
 """
 
 
 def _row(label: str, value: str) -> str:
-    """Bilgi tablosu satiri: cerceveli, logo renkleriyle."""
+    """Bilgi tablosu satiri: ince altin cizgi, kucuk buyuk harf etiket."""
+    shown = value if (value or value == 0) and str(value).strip() else "-"
     return (
-        '<tr><td style="padding:10px 12px;border:1px solid #EADFCB;background-color:#FDF8F0;'
-        f'color:#8A7355;font-size:13px;width:42%;">{label}</td>'
-        '<td style="padding:10px 12px;border:1px solid #EADFCB;color:#3E2A14;font-size:13px;'
-        f'font-weight:600;">{value}</td></tr>'
+        f'<tr><td style="padding:11px 2px 11px 0;border-bottom:1px solid {LINE};color:{MUTED};'
+        f'font-size:10px;letter-spacing:1.1px;text-transform:uppercase;width:42%;vertical-align:top;">{label}</td>'
+        f'<td style="padding:11px 0;border-bottom:1px solid {LINE};color:{INK};font-size:14px;'
+        f'font-weight:600;text-align:right;">{shown}</td></tr>'
     )
 
 
@@ -482,6 +527,40 @@ def login_code_html(code: str, ttl_minutes: int, account_url: str = "") -> str:
     return _wrap("Giriş kodunuz", body)
 
 
+def _visa_label(visa_type_id: str | None) -> str:
+    """Vize tipi kimliginden kisa ad (katalog sabit listesinden)."""
+    visa = next((v for v in VISA_TYPES if v["id"] == (visa_type_id or "")), None)
+    return (visa.get("short_name") or visa.get("name")) if visa else ""
+
+
+def _draft_name(draft: dict) -> str:
+    contact = ((draft.get("data") or {}).get("contact")) or {}
+    if contact.get("full_name"):
+        return contact["full_name"].strip()
+    first = ((draft.get("data") or {}).get("travelers") or [{}])[0]
+    return f"{first.get('first_name','')} {first.get('last_name','')}".strip()
+
+
+def _draft_info_rows(draft: dict) -> str:
+    """Basvuran adi, vize tipi, devam kodu ve yolcu sayisi."""
+    travelers = ((draft.get("data") or {}).get("travelers")) or []
+    labels = [_visa_label(t.get("visa_type_id")) for t in travelers]
+    picked = sorted({label for label in labels if label})
+    name = _draft_name(draft)
+    rows = _row("Başvuran", name) if name else ""
+    rows += _row("Vize tipi", " · ".join(picked) if picked else "Seçim aşamasında")
+    if len(travelers) > 1:
+        names = ", ".join(
+            f"{t.get('first_name','')} {t.get('last_name','')}".strip()
+            + (" (çocuk)" if t.get("applicant_type") == "child" else "")
+            for t in travelers
+        )
+        rows += _row("Yolcular", names)
+    rows += _row("Devam kodu", draft.get("resume_code", ""))
+    rows += _row("Yolcu sayısı", draft.get("traveler_count", 1))
+    return rows
+
+
 def draft_saved_html(draft: dict, resume_url: str = "") -> str:
     """Taslak kaydedildi bilgilendirmesi."""
     button = ""
@@ -494,13 +573,15 @@ def draft_saved_html(draft: dict, resume_url: str = "") -> str:
     </table>
     <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton çalışmıyorsa: {resume_url}</p>
     """
+    name = _draft_name(draft)
+    greeting = f"Sayın {name}," if name else "Merhaba,"
     body = f"""
+    <p style="margin:0 0 14px;font-size:14px;line-height:22px;">{greeting}</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
-      Başvurunuz kaydedildi. Dilediğiniz zaman kaldığınız yerden devam edebilirsiniz.
+      Dubai vize başvurunuz kaydedildi. Dilediğiniz zaman kaldığınız yerden devam edebilirsiniz.
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      {_row('Devam kodu', draft.get('resume_code', ''))}
-      {_row('Yolcu sayısı', draft.get('traveler_count', 1))}
+      {_draft_info_rows(draft)}
     </table>
     {button}
     <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
@@ -522,15 +603,15 @@ def draft_reminder_html(draft: dict, resume_url: str = "") -> str:
     </table>
     <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton çalışmıyorsa: {resume_url}</p>
     """
+    name = _draft_name(draft)
     body = f"""
-    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Merhaba,</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">{f'Sayın {name},' if name else 'Merhaba,'}</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
       Dubai vize başvurunuz yarım kalmış görünüyor. Bilgileriniz kayıtlı; kaldığınız yerden
       devam edip başvurunuzu birkaç dakikada tamamlayabilirsiniz.
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      {_row('Devam kodu', draft.get('resume_code', ''))}
-      {_row('Yolcu sayısı', draft.get('traveler_count', 1))}
+      {_draft_info_rows(draft)}
     </table>
     {button}
     <p style="margin:18px 0 0;font-size:13px;line-height:21px;color:#8A7355;">

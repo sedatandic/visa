@@ -1,40 +1,40 @@
 {
- "duration": 67.78,
+ "duration": 66.74,
  "scenes": [
   {
    "key": "intro",
    "start": 0.0,
-   "end": 7.42
+   "end": 7.58
   },
   {
    "key": "passport",
-   "start": 7.42,
-   "end": 12.736
+   "start": 7.58,
+   "end": 12.576
   },
   {
    "key": "photo",
-   "start": 12.736,
-   "end": 21.348
+   "start": 12.576,
+   "end": 20.954
   },
   {
    "key": "upload",
-   "start": 21.348,
-   "end": 31.555
+   "start": 20.954,
+   "end": 30.85
   },
   {
    "key": "track",
-   "start": 31.555,
-   "end": 41.438
+   "start": 30.85,
+   "end": 41.078
   },
   {
    "key": "extras",
-   "start": 41.438,
-   "end": 53.848
+   "start": 41.078,
+   "end": 53.208
   },
   {
    "key": "cta",
-   "start": 53.848,
-   "end": 67.78
+   "start": 53.208,
+   "end": 66.74
   }
  ]
 }

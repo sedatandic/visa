@@ -1123,3 +1123,8 @@ girilince canlıya geçer (ROADMAP P0).
   ile jpg'den saydam png üretiliyor.
 - **Resend e-posta çalışıyor** (tam yetkili anahtar + doğrulanmış `dubaivizehatti.com`),
   ROADMAP P0'dan düşürüldü.
+- E-posta şablonları premium künyeli (şirket unvanları, telefon, WhatsApp, e-posta, adresler,
+  çalışma saatleri) ve taslak e-postaları başvuran adı + vize tipi gösteriyor.
+- Anlatım metinleri ve intro çizimi 2026-06-11'de kullanıcı onayıyla son halini aldı;
+  seslendirmeyi güncellemek için `python /app/scripts/generate_narration_eleven.py` yeterli
+  (metin bu dosyada, altyazılar `VisaExplainer.jsx` içinde — ikisini birlikte güncelleyin).

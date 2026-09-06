@@ -90,8 +90,8 @@ SCENES = [
         "key": "cta",
         "sentences": [
             "[confident] Vizenizi Dubai Vize Hattı ile kolayca alın.",
-            "[confident] TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle başvurunuzu tamamlayın.",
-            "[excited] Hemen başvurun ve Dubai yolculuğunuzun ilk adımını bugün atın.",
+            "[confident] TÜRSAB üyesi A grubu seyahat acentesi iş birliğiyle başvurunuzu baştan sona biz yürütüyoruz.",
+            "[energetic] Formu doldurun, gerisini bize bırakın.",
             "[excited] Dubai sizi bekliyor!",
         ],
     },
