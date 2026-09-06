@@ -40,6 +40,11 @@ def _html_to_text(html: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
+def esc(value) -> str:
+    """Kullanici girdisini HTML govdeye guvenle gomer (etiket/baglanti enjeksiyonunu engeller)."""
+    return html_lib.escape(str(value if value is not None else ""))
+
+
 SITE_URL = (os.environ.get("PUBLIC_SITE_URL") or "").strip().strip('"').rstrip("/")
 LOGO_URL = f"{SITE_URL}/brand/logo-horizontal-gold-palm.png"
 
@@ -252,14 +257,14 @@ def money(amount: float, currency: str = "TRY") -> str:
 def _contact_name(app_doc: dict) -> str:
     contact = app_doc.get("contact") or {}
     if contact.get("full_name"):
-        return contact["full_name"]
+        return esc(contact["full_name"])
     applicant = app_doc.get("applicant") or {}
-    return f"{applicant.get('first_name','')} {applicant.get('last_name','')}".strip()
+    return esc(f"{applicant.get('first_name','')} {applicant.get('last_name','')}".strip())
 
 
 def _contact_email(app_doc: dict) -> str:
     contact = app_doc.get("contact") or {}
-    return contact.get("email") or (app_doc.get("applicant") or {}).get("email") or ""
+    return esc(contact.get("email") or (app_doc.get("applicant") or {}).get("email") or "")
 
 
 def _travelers_table(app_doc: dict) -> str:
@@ -267,9 +272,9 @@ def _travelers_table(app_doc: dict) -> str:
     if not travelers:
         return ""
     rows = "".join(
-        f'<tr><td style="padding:8px 10px;border-top:1px solid #E3E8EF;font-size:13px;">{i + 1}. {t.get("first_name","")} {t.get("last_name","")}'
+        f'<tr><td style="padding:8px 10px;border-top:1px solid #E3E8EF;font-size:13px;">{i + 1}. {esc(t.get("first_name",""))} {esc(t.get("last_name",""))}'
         f'{" (Çocuk)" if t.get("applicant_type") == "child" else ""}</td>'
-        f'<td style="padding:8px 10px;border-top:1px solid #E3E8EF;font-size:13px;">{t.get("visa_short_name") or t.get("visa_type_name","")}</td>'
+        f'<td style="padding:8px 10px;border-top:1px solid #E3E8EF;font-size:13px;">{esc(t.get("visa_short_name") or t.get("visa_type_name",""))}</td>'
         f'<td style="padding:8px 10px;border-top:1px solid #E3E8EF;font-size:13px;font-weight:600;text-align:right;">{money(t.get("price", 0), t.get("currency", "TRY"))}</td></tr>'
         for i, t in enumerate(travelers)
     )
@@ -384,8 +389,8 @@ def admin_notify_html(app_doc: dict) -> str:
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       {_row('Takip Kodu', app_doc.get('reference_code',''))}
       {_row('İletişim', _contact_name(app_doc))}
-      {_row('E-posta', contact.get('email',''))}
-      {_row('Telefon', contact.get('phone',''))}
+      {_row('E-posta', esc(contact.get('email','')))}
+      {_row('Telefon', esc(contact.get('phone','')))}
       {_row('Yolcu sayısı', str(len(app_doc.get('travelers') or [])))}
       {_travel_date_rows(t)}
     </table>
@@ -451,7 +456,7 @@ def status_change_html(app_doc: dict, status_label: str, note: str = "") -> str:
 
 def visa_ready_html(app_doc: dict, download_url: str, message: str = "") -> str:
     message_html = (
-        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#8A7355;">{message}</p>'
+        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#8A7355;">{esc(message)}</p>'
         if message
         else ""
     )
@@ -528,12 +533,12 @@ def documents_completed_admin_html(app_doc: dict, uploaded_keys: list) -> str:
 def contact_admin_html(msg: dict) -> str:
     body = f"""
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      {_row('Ad Soyad', msg.get('name',''))}
-      {_row('E-posta', msg.get('email',''))}
-      {_row('Telefon', msg.get('phone','-'))}
-      {_row('Konu', msg.get('subject','-'))}
+      {_row('Ad Soyad', esc(msg.get('name','')))}
+      {_row('E-posta', esc(msg.get('email','')))}
+      {_row('Telefon', esc(msg.get('phone','-')))}
+      {_row('Konu', esc(msg.get('subject','-')))}
     </table>
-    <p style="margin:16px 0 0;font-size:14px;line-height:22px;white-space:pre-wrap;">{msg.get('message','')}</p>
+    <p style="margin:16px 0 0;font-size:14px;line-height:22px;white-space:pre-wrap;">{esc(msg.get('message',''))}</p>
     """
     return _wrap("Yeni iletişim mesajı", body)
 
@@ -571,9 +576,9 @@ def _visa_label(visa_type_id: str | None) -> str:
 def _draft_name(draft: dict) -> str:
     contact = ((draft.get("data") or {}).get("contact")) or {}
     if contact.get("full_name"):
-        return contact["full_name"].strip()
+        return esc(contact["full_name"].strip())
     first = ((draft.get("data") or {}).get("travelers") or [{}])[0]
-    return f"{first.get('first_name','')} {first.get('last_name','')}".strip()
+    return esc(f"{first.get('first_name','')} {first.get('last_name','')}".strip())
 
 
 def _draft_info_rows(draft: dict) -> str:
@@ -586,7 +591,7 @@ def _draft_info_rows(draft: dict) -> str:
     rows += _row("Vize tipi", " · ".join(picked) if picked else "Seçim aşamasında")
     if len(travelers) > 1:
         names = ", ".join(
-            f"{t.get('first_name','')} {t.get('last_name','')}".strip()
+            esc(f"{t.get('first_name','')} {t.get('last_name','')}".strip())
             + (" (çocuk)" if t.get("applicant_type") == "child" else "")
             for t in travelers
         )
@@ -684,7 +689,7 @@ def _order_items_rows(order: dict) -> str:
     rows = []
     for item in order.get("items") or []:
         rows.append(
-            f'<tr><td style="padding:8px 0;font-size:13px;color:#3E2A14;">{item.get("name","")}'
+            f'<tr><td style="padding:8px 0;font-size:13px;color:#3E2A14;">{esc(item.get("name",""))}'
             f' <span style="color:#8A7355;">x{item.get("quantity",1)}</span>'
             f'{_date_range_note(item)}</td>'
             f'<td style="padding:8px 0;font-size:13px;text-align:right;color:#3E2A14;">'
@@ -742,7 +747,7 @@ def order_received_html(order: dict, bank: dict | None = None) -> str:
     </div>
     """
     body = f"""
-    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {order.get('contact',{}).get('full_name','')},</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {esc(order.get('contact',{}).get('full_name',''))},</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
       Siparişiniz alındı. Ödemeniz onaylandıktan sonra eSIM QR kodunuz ve/veya sigorta poliçeniz
       e-posta ile size iletilecek.
@@ -770,9 +775,9 @@ def order_admin_html(order: dict) -> str:
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Yeni eSIM / sigorta siparişi oluşturuldu.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       {_row('Sipariş kodu', order.get('reference_code',''))}
-      {_row('Müşteri', order.get('contact',{}).get('full_name',''))}
-      {_row('E-posta', order.get('contact',{}).get('email',''))}
-      {_row('Telefon', order.get('contact',{}).get('phone',''))}
+      {_row('Müşteri', esc(order.get('contact',{}).get('full_name','')))}
+      {_row('E-posta', esc(order.get('contact',{}).get('email','')))}
+      {_row('Telefon', esc(order.get('contact',{}).get('phone','')))}
       {_row('Tutar', money(order.get('price', 0), order.get('currency', 'TRY')))}
       {_row('Ödeme', _payment_method_label(order))}
     </table>
@@ -790,12 +795,12 @@ def order_delivered_html(order: dict, links: list, message: str = "") -> str:
         for l in links
     )
     note = (
-        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#3E2A14;">{message}</p>'
+        f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#3E2A14;">{esc(message)}</p>'
         if message
         else ""
     )
     body = f"""
-    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {order.get('contact',{}).get('full_name','')},</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {esc(order.get('contact',{}).get('full_name',''))},</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">
       {order.get('reference_code','')} kodlu siparişiniz hazır. Belgelerinizi aşağıdaki bağlantılardan
       indirebilirsiniz.
@@ -816,7 +821,7 @@ def _snapshot_items_rows(snapshot: dict) -> str:
     rows = []
     for item in snapshot.get("items") or []:
         rows.append(
-            f'<tr><td style="padding:8px 0;font-size:13px;color:#3E2A14;">{item.get("name","")}'
+            f'<tr><td style="padding:8px 0;font-size:13px;color:#3E2A14;">{esc(item.get("name",""))}'
             f' <span style="color:#8A7355;">x{item.get("quantity",1)}</span></td>'
             f'<td style="padding:8px 0;font-size:13px;text-align:right;color:#3E2A14;">'
             f'{money(item.get("total", 0), currency)}</td></tr>'
@@ -828,7 +833,7 @@ def cart_reminder_html(snapshot: dict, cart_url: str, stage: int = 1) -> str:
     """Terk edilmis sepet hatirlatmasi (2. ve 24. saat)."""
     currency = snapshot.get("currency", "TRY")
     name = (snapshot.get("full_name") or "").strip()
-    greeting = f"Sayın {name}," if name else "Merhaba,"
+    greeting = f"Sayın {esc(name)}," if name else "Merhaba,"
     intro = (
         "Sepetinizdeki Dubai hizmetleri hâlâ sizi bekliyor. Ödemenizi tamamladığınızda eSIM QR kodunuz, "
         "poliçeniz ve tur kuponunuz e-postanıza gelir."

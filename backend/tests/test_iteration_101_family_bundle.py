@@ -27,7 +27,7 @@ class TestFamilyBundle:
         fam = get_bundle(bundles, "pack_family")
         assert fam is not None
         assert fam["name"] == "Aile Paketi"
-        assert fam["quantities"] == {"insurance": 3, "esim": 2}
+        assert fam["quantities"] == {"insurance": 3, "esim": 2, "tour": 0}
         assert fam["price"] == 2844.0
         assert fam["total_with_visa"] == 14409.0
 

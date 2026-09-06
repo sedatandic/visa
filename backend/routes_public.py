@@ -1081,9 +1081,8 @@ async def _find_application_for_tracking(code: str, last_name: str) -> dict:
     if not code or not last_name:
         raise HTTPException(400, "Takip kodu ve soyad zorunludur.")
     doc = await applications_col.find_one({"reference_code": code})
-    if not doc:
-        raise HTTPException(404, "Bu takip koduyla bir basvuru bulunamadi.")
-    if last_name.lower() not in _tracking_last_names(doc):
+    # Kod bulunamadi ve soyad eslesmedi durumlari ayni yaniti dondurur (kod tarama engeli).
+    if not doc or last_name.lower() not in _tracking_last_names(doc):
         raise HTTPException(404, "Takip kodu ve soyad bilgisi eslesmiyor.")
     return doc
 

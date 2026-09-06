@@ -1193,3 +1193,23 @@ Ana sayfa anlatımının video sürümü üretildi ve siteden indirilebilir:
 Sıradaki açık işler değişmedi: WhatsApp botunu canlıya alma (Meta kimlik bilgileri kullanıcıdan),
 gerçek IBAN bilgileri, paylaşılabilir aile paketi linki (P2), İngilizce/global sürüm (P2).
 
+
+## 2026-06-06 · Güvenlik denetimi turu 2 (deploy edilmiş uygulama) — TAMAMLANDI
+Sonuç: **Critical/High bulgu yok** (CONDITIONAL PASS). 3 bulgu + 2 sıkılaştırma düzeltildi,
+`testing_agent` iteration_103 ile bağımsız doğrulandı (backend 12/12, frontend %100):
+- WhatsApp webhook artık **fail-closed** (imza yoksa/geçersizse 403) + dakikada 120 olay sınırı
+- Yönetici OTP kodu düz metin saklanmıyor, e-posta konusunda da geçmiyor
+- İşlemsel e-postalarda kullanıcı girdisi HTML olarak kaçırılıyor (`emailer.esc`)
+- Takip sorgusunda kod taranabilirliği kapatıldı; WhatsApp bot durum sorgusunda
+  telefon VEYA soyad doğrulaması zorunlu
+Kalıcı regresyon paketi: `/app/backend/tests/test_security_audit_fixes.py` (12 test).
+
+**ÖNEMLİ / CANLIYA ALMA ŞARTI**: WhatsApp botu canlıya alınırken Admin → WhatsApp → Bot Ayarları
+ekranına Meta **App Secret** girilmesi artık zorunludur; girilmezse gelen webhook istekleri
+güvenlik gereği reddedilir (panelde amber uyarı gösterilir).
+
+Açık işler (değişmedi): Meta kimlik bilgileriyle WhatsApp canlıya alma (kullanıcı),
+gerçek IBAN bilgileri, paylaşılabilir aile paketi linki (P2), İngilizce/global sürüm (P2).
+Kabul edilen P3 riskler: `email_outbox` posta günlüğü OTP kodunu HTML gövdede tutar;
+`.env` içindeki kullanılmayan `ADMIN_LOGIN_PASSWORD`; CORS alt alan adı regex'i.
+

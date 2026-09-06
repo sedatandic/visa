@@ -130,19 +130,19 @@ async def admin_request_code(payload: AdminCodeRequest, request: Request) -> dic
         update.update(
             {
                 "code_hash": hash_code(code),
-                # Destek/otomasyon icin: kod 10 dakika sonra gecersiz olur.
-                "code_plain": code,
                 "expires_at": now + timedelta(minutes=CODE_TTL_MINUTES),
                 "attempts": 0,
             }
         )
-    await admin_login_codes_col.update_one({"email": email}, {"$set": update}, upsert=True)
+    await admin_login_codes_col.update_one(
+        {"email": email}, {"$set": update, "$unset": {"code_plain": ""}}, upsert=True
+    )
 
     email_status = "skipped"
     if is_admin:
         result = await send_email(
             email,
-            f"Yönetici giriş kodunuz: {code}",
+            "Yönetici giriş kodunuz",
             admin_code_html(code, CODE_TTL_MINUTES, update["ip"]),
             kind="admin_login_code",
             meta={"email": email},

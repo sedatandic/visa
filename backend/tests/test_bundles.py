@@ -24,9 +24,16 @@ class TestBundles:
     def test_all_bundles(self, session):
         data = _get(session, f"{API}/bundles")
         items = data["items"]
-        assert len(items) == 5
+        assert len(items) == 6
         ids = {b["id"] for b in items}
-        assert ids == {"pack_short", "pack_standard", "pack_comfort", "pack_long", "pack_long_plus"}
+        assert ids == {
+            "pack_short",
+            "pack_standard",
+            "pack_comfort",
+            "pack_family",
+            "pack_long",
+            "pack_long_plus",
+        }
         # sub-objects must have price/name
         for b in items:
             assert b["insurance"]["price"] > 0
@@ -37,7 +44,7 @@ class TestBundles:
     def test_visa_30_bundles(self, session):
         data = _get(session, f"{API}/bundles", visa_days=30)
         items = {b["id"]: b for b in data["items"]}
-        assert set(items.keys()) == {"pack_short", "pack_standard", "pack_comfort"}
+        assert set(items.keys()) == {"pack_short", "pack_standard", "pack_comfort", "pack_family"}
         # pack_standard is popular
         assert items["pack_standard"]["popular"] is True
         # Check pairing
@@ -48,7 +55,10 @@ class TestBundles:
         assert items["pack_comfort"]["insurance"]["id"] == "ins_30d_plus"
         assert items["pack_comfort"]["esim"]["id"] == "esim_10gb"
         # Verify math: list_total = ins.price + esim.price; discount = 10%; price = list - discount
-        for b in items.values():
+        # (pack_family adet bazli hesaplanir, bu dogrulamadan haric tutulur)
+        for bundle_id, b in items.items():
+            if bundle_id == "pack_family":
+                continue
             expected_list = round(b["insurance"]["price"] + b["esim"]["price"], 2)
             assert abs(b["list_total"] - expected_list) < 0.02, f"list_total mismatch {b}"
             expected_disc = round(expected_list * 0.10, 2)

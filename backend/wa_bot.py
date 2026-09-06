@@ -174,7 +174,9 @@ async def application_status_text(text: str, wa_id: str) -> str | None:
         if last_name and last_name in (text or "").lower():
             surname_ok = True
             break
-    if app_phone and sender and app_phone != sender and not surname_ok:
+    # Dogrulama: gonderen numara basvurudaki numarayla ayni olmali ya da soyad yazilmali.
+    phone_ok = bool(app_phone) and bool(sender) and app_phone == sender
+    if not phone_ok and not surname_ok:
         return (
             f"{code} numaralı başvuruyu buldum ancak güvenlik için doğrulama gerekiyor. "
             "Başvurudaki soyadı da yazar mısınız?"

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Copy, Link2, Loader2, Save, Users } from "lucide-react";
+import { AlertTriangle, Copy, Link2, Loader2, Save, Users } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../../lib/api";
 import { Button } from "../ui/button";
@@ -87,6 +87,19 @@ export const WaBotSettings = ({ config, onSaved }) => {
 
     return (
         <div className="space-y-6" data-testid="wa-settings-panel">
+            {!form.has_app_secret && (
+                <div
+                    className="flex items-start gap-3 rounded-[var(--radius-md)] border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+                    data-testid="wa-app-secret-warning"
+                >
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    <p>
+                        <strong>App Secret girilmedi.</strong> Güvenlik gereği imzasız webhook istekleri
+                        reddedilir; bot şu an gelen WhatsApp mesajlarını işlemez. Meta Developer → App
+                        settings → Basic ekranındaki App Secret değerini aşağıya girip kaydedin.
+                    </p>
+                </div>
+            )}
             <div className="card-surface p-6">
                 <h2 className="font-heading text-base font-bold">Webhook</h2>
                 <p className="mt-1 text-sm text-muted-foreground">

@@ -6,7 +6,9 @@
 """
 
 import logging
+import time
 from datetime import datetime, timezone
+from hmac import compare_digest
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Request, UploadFile
@@ -24,13 +26,31 @@ router = APIRouter()
 
 DOCUMENT_TYPES = ("document", "image")
 
+# Webhook hiz siniri: imza gecerli olsa da dakikada en fazla bu kadar olay islenir
+# (LLM ve mesaj maliyetini sinirlar).
+WEBHOOK_WINDOW_SECONDS = 60
+WEBHOOK_MAX_EVENTS = 120
+_webhook_hits: list[float] = []
+
+
+def _webhook_rate_ok() -> bool:
+    now = time.monotonic()
+    cutoff = now - WEBHOOK_WINDOW_SECONDS
+    while _webhook_hits and _webhook_hits[0] < cutoff:
+        _webhook_hits.pop(0)
+    if len(_webhook_hits) >= WEBHOOK_MAX_EVENTS:
+        return False
+    _webhook_hits.append(now)
+    return True
+
 
 # ---------------------------------------------------------------- webhook
 @router.get("/whatsapp/webhook", response_class=PlainTextResponse)
 async def verify_webhook(request: Request) -> PlainTextResponse:
     params = request.query_params
     cfg = await wa_cloud.config(masked=False)
-    if params.get("hub.mode") == "subscribe" and params.get("hub.verify_token") == cfg["verify_token"]:
+    token_ok = compare_digest(params.get("hub.verify_token") or "", cfg["verify_token"] or "")
+    if params.get("hub.mode") == "subscribe" and token_ok:
         return PlainTextResponse(params.get("hub.challenge", ""))
     raise HTTPException(403, "Dogrulama basarisiz.")
 
@@ -40,7 +60,11 @@ async def receive_webhook(request: Request, background: BackgroundTasks) -> dict
     raw = await request.body()
     cfg = await wa_cloud.config(masked=False)
     if not wa_cloud.verify_signature(raw, request.headers.get("X-Hub-Signature-256"), cfg["app_secret"]):
+        await wa_cloud.log_event("webhook_rejected", {"reason": "invalid_signature", "size": len(raw)})
         raise HTTPException(403, "Imza dogrulanamadi.")
+    if not _webhook_rate_ok():
+        await wa_cloud.log_event("webhook_rejected", {"reason": "rate_limited"})
+        raise HTTPException(429, "Cok fazla webhook istegi.")
     try:
         payload = await request.json()
     except ValueError:

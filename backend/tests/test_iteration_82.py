@@ -186,8 +186,14 @@ class TestAdminOTP:
         assert r.status_code == 200, f"request-code: {r.status_code} {r.text[:200]}"
         time.sleep(1)
         doc = db.admin_login_codes.find_one({"email": ADMIN_EMAIL.lower()})
-        assert doc and doc.get("code_plain"), f"admin code_plain missing: {doc}"
-        code = doc["code_plain"]
+        assert doc and doc.get("code_hash"), f"admin code_hash missing: {doc}"
+        assert "code_plain" not in doc, f"admin code must not be stored in clear: {doc}"
+        mail = db.email_outbox.find_one(
+            {"to": ADMIN_EMAIL.lower(), "kind": "admin_login_code"}, sort=[("created_at", -1)]
+        )
+        assert mail, "admin_login_code email not recorded"
+        assert re.search(r"\d{6}", mail.get("subject", "")) is None, "code must not be in subject"
+        code = re.search(r"\b(\d{6})\b", mail.get("html", "")).group(1)
         ok = api.post(f"{API}/admin/verify-code",
                       json={"email": ADMIN_EMAIL, "code": code}, timeout=15)
         assert ok.status_code == 200, f"verify: {ok.status_code} {ok.text[:200]}"

@@ -861,3 +861,55 @@ gönderelim, en sonunda websitesini de göster".
   20,95-30,85 penceresiyle uyumlu, 68. sn = kapanış karesi), preview URL'den
   `http=200 · video/mp4` ve indirme sayfası ekran görüntüsü.
 
+
+## 2026-06-06 · Güvenlik denetimi turu 2 (security_audit_agent) — 3 bulgu + 2 sıkılaştırma DÜZELTİLDİ
+Kullanıcı isteği: "Run the Security Audit on the deployed app." Denetim sonucu:
+**CONDITIONAL PASS** (Critical/High yok). Önceki turda kapatılan maddeler doğrulandı ve hâlâ
+kapalı: e-posta+soyad ile müşteri girişi kaldırılmış (yalnız OTP), Zami bookmarklet çıktısı
+`dvoEsc` ile kaçışlı, dosya/handoff jetonları nesne bazlı HMAC + süreli (handoff 10 kullanım),
+`JWT_SECRET` yedeği yok, admin karşılaştırması sabit zamanlı, fiyatlar her zaman sunucuda
+hesaplanıyor, tüm admin route'larında `require_admin` var.
+
+Düzeltilenler:
+1. **SEC-001 (MEDIUM) İmzasız WhatsApp webhook kabul ediliyordu** — `wa_cloud.verify_signature`
+   `app_secret` boşken `True` dönüyordu; kimliksiz biri sahte mesaj gönderip Claude yanıtları
+   üretebiliyor (maliyet istismarı + uydurma sohbet kaydı) ve canlıda sahte tedarikçi belgesi
+   akıtabilirdi. Artık **fail-closed**: secret yoksa veya imza geçersizse 403 +
+   `wa_events` içine `webhook_rejected` kaydı. `GET /whatsapp/webhook` doğrulama anahtarı
+   karşılaştırması `hmac.compare_digest` ile yapılıyor. Ek olarak
+   `routes_whatsapp._webhook_rate_ok` (dakikada 120 olay, bellek içi kayan pencere) eklendi.
+   Admin panelinde (`WaBotSettings.jsx`) App Secret girilmediğinde amber uyarı kutusu
+   (`data-testid="wa-app-secret-warning"`): "imzasız webhook istekleri reddedilir, bot şu an
+   gelen mesajları işlemez". `wa_cloud.config()` artık `signature_ready` alanı döndürüyor.
+   NOT: Bot canlıya alınırken Meta App Secret'ın girilmesi ARTIK ZORUNLU.
+2. **SEC-002 (LOW) Yönetici tek kullanımlık kodu düz metin saklanıyordu** — `code_plain` alanı
+   kaldırıldı (her yazımda `$unset`), e-posta konusundan kod çıkarıldı
+   ("Yönetici giriş kodunuz"). Kod yalnız `code_hash` olarak saklanıyor; testler kodu
+   `email_outbox` HTML gövdesinden okuyor (müşteri OTP'siyle aynı yöntem).
+   Mevcut kayıtlardaki `code_plain` alanları DB'den temizlendi.
+   `tests/test_iteration_82/83/91` ve `memory/test_credentials.md` bu yönteme güncellendi.
+3. **SEC-003 (LOW) İşlemsel e-postalarda HTML/bağlantı enjeksiyonu** — `emailer.esc()`
+   (html.escape) eklendi ve kullanıcı girdisinin geçtiği tüm yerlere uygulandı:
+   `_contact_name`, `_contact_email`, `_travelers_table`, `admin_notify_html`,
+   `contact_admin_html` (ad/e-posta/telefon/konu/mesaj), sipariş şablonları
+   (oluşturuldu/admin/teslim), `visa_ready` admin notu, `_draft_name` + `_draft_info_rows`,
+   `cart_reminder_html`, ürün satırı adları. `_row()` içine kaçış EKLENMEDİ (tek bir
+   `<strong>Toplam</strong>` satırı HTML geçiyor) — kaçış veri kaynağında yapılıyor.
+4. **P3 Takip kodu taranabilirliği** — `_find_application_for_tracking` artık "kod yok" ve
+   "soyad eşleşmiyor" için aynı 404 mesajını döndürüyor.
+5. **P3 WhatsApp bot durum sorgusu** — `wa_bot`: başvuruda telefon kayıtlı değilse doğrulama
+   atlanıyordu; artık **telefon eşleşmesi VEYA soyad** şart (`phone_ok or surname_ok`).
+
+Kabul edilen kalanlar (P3): `email_outbox` gönderilen postanın tam HTML'ini (dolayısıyla OTP
+kodunu) saklıyor — posta günlüğü olarak bilinçli tercih, test akışları buna dayanıyor;
+`.env` içindeki kullanılmayan `ADMIN_LOGIN_PASSWORD` (yalnız `test_iteration_80.py` okuyor);
+CORS `allow_credentials` + alt alan adı regex'i (yıldız yok, allowlist dar tutulacak).
+
+Doğrulama: `testing_agent` iteration_103 → backend **12/12**, frontend %100
+(`/app/backend/tests/test_security_audit_fixes.py` yeni kalıcı regresyon paketi).
+Ayrıca ajan kendi doğrulaması: imzasız/bozuk imzalı webhook 403, doğru verify_token 200 + challenge,
+admin OTP akışı uçtan uca (kod yok → hash var, konuda kod yok, gövdedeki kodla giriş 200),
+takip 404 mesajları aynı, `pytest tests/test_emailer.py` 7/7.
+Bakım: eski `tests/test_bundles.py` ve `test_iteration_101` beklentileri `pack_family`
+eklendiğinden güncellendi (güvenlikle ilgisiz, bayat testler).
+

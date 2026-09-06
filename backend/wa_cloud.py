@@ -65,6 +65,8 @@ async def config(masked: bool = True) -> dict:
         cfg[key] = bool(stored.get(key, default))
     cfg["ready"] = bool(cfg["access_token"] and cfg["phone_number_id"])
     cfg["mode"] = "live" if cfg["ready"] else "simulate"
+    # Imza dogrulamasi zorunlu: app_secret yoksa gelen webhook reddedilir.
+    cfg["signature_ready"] = bool(cfg["app_secret"])
     if masked:
         for key in _SECRET_KEYS:
             cfg[f"has_{key}"] = bool(cfg[key])
@@ -93,9 +95,10 @@ def supplier_numbers(cfg: dict) -> list[str]:
 
 
 def verify_signature(raw_body: bytes, header: str | None, app_secret: str) -> bool:
-    """Meta imzasini dogrular. App secret tanimli degilse dogrulama atlanir."""
+    """Meta imzasini dogrular. App secret tanimli degilse istek reddedilir (fail-closed)."""
     if not app_secret:
-        return True
+        logger.error("META_APP_SECRET tanimli degil; imzasiz webhook istegi reddedildi.")
+        return False
     if not header or not header.startswith("sha256="):
         return False
     digest = hmac.new(app_secret.encode(), raw_body, hashlib.sha256).hexdigest()

@@ -11,6 +11,7 @@ Focus:
 """
 import io
 import os
+import re
 import sys
 import requests
 import pytest
@@ -145,8 +146,11 @@ def test_admin_request_code_and_verify(s, db):
     r = s.post(f"{API}/admin/request-code", json={"email": email})
     assert r.status_code == 200, r.text
     doc = db.admin_login_codes.find_one({"email": email})
-    assert doc and doc.get("code_plain")
-    r2 = s.post(f"{API}/admin/verify-code", json={"email": email, "code": doc["code_plain"]})
+    assert doc and doc.get("code_hash")
+    assert "code_plain" not in doc
+    mail = db.email_outbox.find_one({"to": email, "kind": "admin_login_code"}, sort=[("created_at", -1)])
+    code = re.search(r"\b(\d{6})\b", (mail or {}).get("html", "")).group(1)
+    r2 = s.post(f"{API}/admin/verify-code", json={"email": email, "code": code})
     assert r2.status_code == 200, r2.text
     assert "token" in r2.json()
 

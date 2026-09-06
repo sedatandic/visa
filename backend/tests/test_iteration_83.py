@@ -208,10 +208,16 @@ class TestOTPRegression:
         doc = MongoClient(mongo_url)[db_name]["admin_login_codes"].find_one(
             {"email": "info@dubaivizeonline.com"}, sort=[("created_at", -1)]
         )
-        assert doc and doc.get("code_plain"), doc
+        assert doc and doc.get("code_hash"), doc
+        assert "code_plain" not in doc, doc
+        mail = MongoClient(mongo_url)[db_name]["email_outbox"].find_one(
+            {"to": "info@dubaivizeonline.com", "kind": "admin_login_code"},
+            sort=[("created_at", -1)],
+        )
+        code = re.search(r"\b(\d{6})\b", (mail or {}).get("html", "")).group(1)
         r2 = s.post(
             f"{BASE_URL}/api/admin/verify-code",
-            json={"email": "info@dubaivizeonline.com", "code": doc["code_plain"]},
+            json={"email": "info@dubaivizeonline.com", "code": code},
             timeout=30,
         )
         assert r2.status_code == 200, r2.text
