@@ -585,3 +585,40 @@ kesik görünüyordu.
 - Diğer 6 sahne kontrast kontak sayfasıyla denetlendi; benzer aşınma yok.
 - Test: iteration_97 → mobil (414x900) + masaüstü (1920x800): telefon tam görünüyor
   (taşma < 1px), 7 sahnenin görseli yükleniyor, ses/CC/duraklat/CTA/TÜRSAB mührü çalışıyor.
+
+## 2026-06-11 · Anlatım kapağı + Resend anahtarı + hero CTA (iteration_98, %100)
+- **Anlatım kapağı** (`VisaExplainer.jsx`): yeni `started` state. Sayfa açılışında sahne
+  döngüsü, Ken Burns ve ses TAMAMEN durur; illüstrasyonun üzerinde kapak katmanı
+  (`explainer-cover`) + yuvarlak oynat düğmesi (`explainer-cover-play-button`) ve
+  "Anlatımı başlat · 1,5 dakika" etiketi görünür. Kaydırma/tıklama artık sesi başlatmıyor
+  (eski "ilk etkileşimde çal" dinleyicisi kaldırıldı); anlatım bitince kapak karesine dönülür
+  (`onEnded` → started/soundOn false, index 0). Mobil "Anlatımı dinle" düğmesi yalnız anlatım
+  başladıktan sonra ve duraklamışken görünür.
+- **Resend**: kullanıcı tam yetkili anahtar verdi → `backend/.env RESEND_API_KEY` güncellendi.
+  Resend'de doğrulanmış alan adı `dubaivizehatti.com` (SENDER_EMAIL zaten o). Gerçek gönderim
+  testi: `status=sent` + provider_id; `/api/account/request-code` akışı da `sent`.
+- Hero ana butonu: "Başvuruya Başla" → **"Hemen Başvuruya Başla"** (`Home.jsx`).
+- Test: iteration_98 backend %100 + frontend %100 (masaüstü ve 414x900 mobil).
+
+## 2026-06-11 · Seslendirme v3 + duraklamalar + intro çizimi (iteration_99, %100)
+Kullanıcı notları doğrultusunda anlatım baştan üretildi (`scripts/generate_narration_eleven.py`):
+- **Model `eleven_v3`** + cümle başı duygu etiketleri: `[warm]`, `[energetic]`, `[excited]`,
+  `[confident]`, `[reassuring]`, `[informative]`, `[emphatic]` → yeni cümleye enerjik giriş,
+  cümle sonuna doğru tempo düşüşü. "Dubai sizi bekliyor!" `[excited]`.
+- **"Dubaai" yazımı kaldırıldı** (artık düz "Dubai" okunuyor).
+- **Gerçek duraklamalar**: v3 `<break>` etiketlerini 0,1-0,2 sn'ye sıkıştırdığı için sessizlik
+  artık ses dosyasına sonradan ekleniyor (pydub + ffmpeg): cümle araları **0,35 sn**,
+  "İlk olarak" cümlesinden önce **0,70 sn**. Zaman damgaları eklenen sessizliğe göre kaydırılır
+  (`insert_pauses` + `shifted`), böylece altyazı/sahne senkronu bozulmaz.
+  full.mp3 67,4 sn (ham 62,5 + 4,9 sn duraklama).
+- **Metin değişiklikleri**: "Fotoğrafınızın gözlüksüz ve şapkasız olması **gerekmektedir**.";
+  takip sahnesi tek cümle: "Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyor ve
+  onaylanan Dubai vizenizi ortalama iki iş günü içinde e-mail adresinize ve WhatsApp ile
+  gönderiyoruz." (hem seslendirme hem altyazı).
+- **intro çizimi yenilendi**: palmiyeler artık yalnız sol/sağ kenardan giriyor (devenin ve
+  jeepin üstünden çıkmıyor), deve + gezgin + jeep **çöl kumu zemininde** duruyor; gökyüzü
+  saydam (1264x848). Eski dosyalar `intro.palmoverlap.{jpg,png}` olarak yedekte.
+  NOT: Gemini ile "sadece palmiyeyi taşı" düzenlemesi denendi ama görseli baştan çizip
+  Arapça benzeri yazı ekledi → kullanılmadı, sahne aynı öğelerle sıfırdan üretildi.
+- Test: iteration_99 frontend %100 (7 sahne senkronu 4/9/16/25/35/46/60 sn, yeni altyazılar,
+  intro görseli kırpılmıyor, kapak davranışı ve tüm kontroller).

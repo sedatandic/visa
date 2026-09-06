@@ -48,7 +48,7 @@ const SCENES = [
         title: "Güncel bir vesikalık fotoğraf",
         note: "Beyaz fon, gözlüksüz ve şapkasız",
         subtitle:
-            "Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. Fotoğrafınızın gözlüksüz ve şapkasız olması gerektiğini lütfen unutmayın.",
+            "Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. Fotoğrafınızın gözlüksüz ve şapkasız olması gerekmektedir.",
         alt: "Yan yana iki vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
         silentMs: 8500,
         voiceMs: 9682,
@@ -72,7 +72,7 @@ const SCENES = [
         title: "Süreci sizin adınıza biz takip ediyoruz",
         note: "Onaylanan vizeniz ortalama 2 iş gününde e-mail ve WhatsApp'ınızda",
         subtitle:
-            "Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-mail adresinize ve WhatsApp ile gönderilir.",
+            "Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyor ve onaylanan Dubai vizenizi ortalama iki iş günü içinde e-mail adresinize ve WhatsApp ile gönderiyoruz.",
         alt: "Kulaklıklı danışman ve onay listesi çizimi",
         silentMs: 9000,
         voiceMs: 11262,
@@ -133,7 +133,9 @@ const Subtitle = ({ text, durationMs, paused, sceneKey, progress }) => {
 export const VisaExplainer = () => {
     const [index, setIndex] = useState(0);
     const [paused, setPaused] = useState(false);
-    const [soundOn, setSoundOn] = useState(true);
+    // Sayfa acilisinda anlatim durur: kapak karesi gorunur, kullanici baslatir.
+    const [started, setStarted] = useState(false);
+    const [soundOn, setSoundOn] = useState(false);
     const [captions, setCaptions] = useState(true);
     const [audioProgress, setAudioProgress] = useState(0);
     const [timeline, setTimeline] = useState(null);
@@ -158,32 +160,20 @@ export const VisaExplainer = () => {
     }, []);
 
     useEffect(() => {
-        if (paused || soundOn) return;
+        if (!started || paused || soundOn) return;
         const timer = setTimeout(() => setIndex((i) => (i + 1) % SCENES.length), scene.silentMs);
         return () => clearTimeout(timer);
-    }, [index, paused, soundOn, scene.silentMs]);
+    }, [index, started, paused, soundOn, scene.silentMs]);
 
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
-        if (!soundOn || paused) {
+        if (!started || !soundOn || paused) {
             audio.pause();
             return;
         }
-        // Tarayici otomatik sesi engellerse ses acik kalir, ilk etkilesimde baslar.
         audio.play().catch(() => {});
-    }, [soundOn, paused]);
-
-    // Tarayicilar sesli otomatik oynatmayi engeller: ilk kullanici etkilesiminde baslat.
-    useEffect(() => {
-        const start = () => {
-            const audio = audioRef.current;
-            if (audio && soundOn && !paused && audio.paused) audio.play().catch(() => {});
-        };
-        const events = ["pointerdown", "keydown", "touchstart", "wheel", "scroll"];
-        events.forEach((e) => window.addEventListener(e, start, { once: true, passive: true }));
-        return () => events.forEach((e) => window.removeEventListener(e, start));
-    }, [soundOn, paused]);
+    }, [started, soundOn, paused]);
 
     // Sahneye atlar; ses acikken tek parca kaydin ilgili saniyesine konumlanir.
     const goToScene = (i) => {
@@ -192,9 +182,10 @@ export const VisaExplainer = () => {
         if (audio && timeline?.[i]) audio.currentTime = timeline[i].start;
     };
 
-    // Mobilde tek dokunusla anlatimi bastan baslatir (autoplay engelini asar).
+    // Kapaktaki tek dokunusla anlatimi bastan baslatir (autoplay engelini asar).
     const startNarration = () => {
         const audio = audioRef.current;
+        setStarted(true);
         setSoundOn(true);
         setPaused(false);
         setIndex(0);
@@ -218,7 +209,7 @@ export const VisaExplainer = () => {
                         alt={scene.alt}
                         decoding="async"
                         initial={{ opacity: 0, scale: 1.0, x: 30 }}
-                        animate={{ opacity: 1, scale: paused ? 1.0 : 1.03, x: 0 }}
+                        animate={{ opacity: 1, scale: paused || !started ? 1.0 : 1.03, x: 0 }}
                         exit={{ opacity: 0, x: -24 }}
                         transition={{
                             opacity: { duration: 0.6 },
@@ -229,11 +220,35 @@ export const VisaExplainer = () => {
                         data-testid={`explainer-image-${scene.key}`}
                     />
                 </AnimatePresence>
+
+                {/* KAPAK KARESI: sayfa acilisinda hareket ve ses yok */}
+                {!started && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4 }}
+                        className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[hsl(var(--panel-2))]/35 backdrop-blur-[1px]"
+                        data-testid="explainer-cover"
+                    >
+                        <button
+                            type="button"
+                            onClick={startNarration}
+                            aria-label="Anlatımı başlat"
+                            className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl transition-transform duration-200 hover:scale-105 active:scale-95"
+                            data-testid="explainer-cover-play-button"
+                        >
+                            <Play className="ml-0.5 h-6 w-6 fill-current" aria-hidden="true" />
+                        </button>
+                        <span className="rounded-full bg-white/90 px-3.5 py-1.5 text-[11px] font-bold text-foreground shadow-sm">
+                            Anlatımı başlat · 1,5 dakika
+                        </span>
+                    </motion.div>
+                )}
             </div>
 
             {/* METIN KATMANI */}
             <div className="relative order-2 flex flex-col gap-3 p-5 pt-2 sm:order-1 sm:min-h-[420px] sm:justify-center sm:gap-4 sm:p-6">
-                {!playing && (
+                {started && !playing && (
                     <button
                         type="button"
                         onClick={startNarration}
@@ -316,7 +331,7 @@ export const VisaExplainer = () => {
                             <Subtitle
                                 text={scene.subtitle}
                                 durationMs={sceneMs}
-                                paused={paused}
+                                paused={paused || !started}
                                 sceneKey={scene.key}
                                 progress={soundOn ? audioProgress : null}
                             />
@@ -339,7 +354,7 @@ export const VisaExplainer = () => {
                                         initial={{ width: i < index ? "100%" : "0%" }}
                                         animate={{ width: i <= index ? "100%" : "0%" }}
                                         transition={{
-                                            duration: i === index && !paused ? sceneMs / 1000 : 0,
+                                            duration: i === index && started && !paused ? sceneMs / 1000 : 0,
                                             ease: "linear",
                                         }}
                                         className="block h-full bg-primary"
@@ -402,8 +417,10 @@ export const VisaExplainer = () => {
                 onPlay={() => setPlaying(true)}
                 onPause={() => setPlaying(false)}
                 onEnded={() => {
-                    // Sesli anlatim bir kez calisir: bitince ses kapanir, gorsel dongu devam eder.
+                    // Anlatim bir kez calisir: bitince kapak karesine donulur.
                     setSoundOn(false);
+                    setStarted(false);
+                    setIndex(0);
                 }}
                 data-testid="explainer-audio"
             />

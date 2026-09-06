@@ -1,10 +1,8 @@
 # ROADMAP (2026-06-11 itibarıyla · WhatsApp AI paneli sonrası)
 
 ## P0 — Acil
-- [ ] **E-posta gönderimi kapalı**: Resend'de `dubaivizehatti.com` domaini doğrulanmalı ve
-      `SENDER_EMAIL` bu domaine geçmeli (şu an tüm e-postalar "domain is not verified"
-      hatası alıyor: giriş kodu, sipariş bildirimi, sepet hatırlatma). Ayrıca mevcut
-      `RESEND_API_KEY` kısıtlı bir anahtar → "Full Access" anahtar gerekiyor.
+- [x] ~~E-posta gönderimi kapalı~~ → 2026-06-11: kullanıcı tam yetkili Resend anahtarı verdi,
+      `dubaivizehatti.com` doğrulanmış; gerçek gönderim testi `status=sent` (iteration_98).
 - [ ] **WhatsApp canlı moda geçiş**: Meta Developer App açılıp `phone_number_id`,
       `access_token`, `app_secret`, `verify_token` Admin → WhatsApp → Bot Ayarları'ndan
       girilmeli; webhook adresi `{BACKEND_URL}/api/whatsapp/webhook`. Şu an simülasyon modu.

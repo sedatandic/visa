@@ -1113,3 +1113,13 @@ Dosyalar: `pages/AdminWhatsApp.jsx` + `components/whatsapp/Wa{DocumentQueue,Conv
 BotSettings,Simulator,ManualNotify}.jsx`. Backend değişmedi (`routes_whatsapp.py`).
 Test: iteration_96 frontend %100. Bot hâlâ **simülasyon modunda** — Meta anahtarları
 girilince canlıya geçer (ROADMAP P0).
+
+## 2026-06-11 · Anlatım paneli, seslendirme ve e-posta (bkz. CHANGELOG 2026-06-11)
+- Ana sayfa anlatımı artık **kapak karesiyle** açılıyor (hareket/ses yok, kullanıcı başlatır),
+  bitince kapağa döner. Seslendirme ElevenLabs **eleven_v3** + duygu etiketleriyle üretiliyor;
+  cümle araları sessizlik olarak ses dosyasına ekleniyor (pydub/ffmpeg) → toplam 67,4 sn.
+  Tek komut: `python /app/scripts/generate_narration_eleven.py`.
+- intro çizimi çöl zeminli, palmiyeler kenardan; `scripts/rebuild_explainer_png.py <sahne>`
+  ile jpg'den saydam png üretiliyor.
+- **Resend e-posta çalışıyor** (tam yetkili anahtar + doğrulanmış `dubaivizehatti.com`),
+  ROADMAP P0'dan düşürüldü.

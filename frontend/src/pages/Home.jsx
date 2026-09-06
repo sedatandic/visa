@@ -148,7 +148,7 @@ export default function Home() {
                             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                                 <Button asChild size="lg" data-testid="hero-apply-now-button">
                                     <Link to="/basvuru">
-                                        Başvuruya Başla <ArrowRight className="ml-1 h-4 w-4" />
+                                        Hemen Başvuruya Başla <ArrowRight className="ml-1 h-4 w-4" />
                                     </Link>
                                 </Button>
                                 <Button asChild size="lg" variant="outline" data-testid="hero-pricing-button">
