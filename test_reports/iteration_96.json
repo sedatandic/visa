@@ -1,0 +1,26 @@
+{
+  "summary": "Frontend-only E2E test of /admin/whatsapp (5-tab WhatsApp AI dashboard). All 5 tabs render, mode badge shows 'Simülasyon modu', simulate warning visible. Document queue filters/refresh/list work; simulator upload created a pending_review doc; assign flow shows search results & assign buttons. Conversations list (4 items), waiting badge present, detail/messages load, bot toggle shows success toast, manual reply sent successfully ('Mesaj gönderildi.'). Bot Settings save persists after reload; group create/invite buttons show graceful Turkish error toast (not_configured) as expected in simulate mode. Simulator message returns LLM Turkish reply in wa-sim-reply; document simulator returns status pending_review + no_match. Notify legacy tab: form loads, provider switching shows meta/twilio fields, save success toast, logs section renders.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All tabs", "issues": ["Success/error toasts appear duplicated (rendered twice) for save, group buttons and bot toggle — likely Sonner Toaster mounted twice or handler firing twice. Cosmetic only."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Optional) Investigate duplicate Sonner toasts on WhatsApp admin actions (save, group buttons, bot toggle, manual reply). Check for double <Toaster/> mount or duplicated toast.success calls."
+  ],
+  "critical_code_review_comments": [
+    "Duplicate toast issue suggests <Toaster/> may be mounted in both a layout and page, or toast is fired both in mutation and effect. Search for multiple Toaster mounts or duplicate onSuccess."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100% of requested flows passed"},
+  "test_credentials": "admin_test_token JWT for info@dubaivizeonline.com set in localStorage as dv_admin_token",
+  "seed_data_creation": "Created 1 pending_review document via simulator PDF upload (id 87575f29-...); also created 2 test conversations (wa_ids 905550001111, 905550002222). Existing 3 delivered docs left untouched.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All admin WhatsApp UI flows verified against public backend URL. Only cosmetic duplicate-toast issue remains. Documents queue now has 1 pending_review + 3 delivered.",
+  "rca of the issue": "N/A"
+}

@@ -1,172 +1,137 @@
-<analysis><analysis>
-- The user's primary language is Turkish. They communicated UI/UX changes, logic changes, and feature additions in Turkish.
-- The agent accomplished a massive amount of work in this session: UI alignments, logo generation/editing (adding a palm tree), removing manual fields from the application wizard and auto-filling them in the backend, completely overhauling the insurance flow (pricing based on duration, 100% markup, TRY conversion), adding a profit chart in the admin panel, moving upsells (eSIM/Insurance) to Step 4, adding bundle strips to the homepage, adding a Bank Transfer option, cleaning DB demo data, and resolving several code review findings.
-- However, the highest priority issue from the *previous* handoff (Zami Bookmarklet Submit button capture) was completely ignored because the user immediately started requesting UI changes. Furthermore, the latest code review flagged a critical  vulnerability in  and a circular import ( ↔ ) which the agent did not address before the session ended.
-- Testing agent was used successfully multiple times.
-</analysis>
+<analysis>**original_problem_statement**: 
+The user is enhancing a visa application platform (Dubai Vize Hattı). The focus is implementing e-commerce features (Cart system, bundled packages, abandoned cart reminders, Desert Safari tours) and a robust autonomous WhatsApp AI bot. This bot must handle 7/24 customer service and automatically parse/route supplier visa documents (PDFs) to the correct customer or flag them for admin review. 
+PRODUCT REQUIREMENTS: A robust, Turkish-language targeted React/FastAPI platform that handles visa applications, e-commerce cart, dynamic pricing, and an advanced WhatsApp Cloud API integration with AI document parsing.
 
-**original_problem_statement**: 
-User wants a Dubai visa application website (VizeAtlas Dubai / Dubai Vize Online) that includes general info, pricing, and a simple, beautiful application form. Features include saving applications to DB, an admin panel, email notifications, passport/photo uploads, online payment via Stripe/Bank Transfer, multi-passenger family applications, admin visa PDF uploads, AI passport OCR for autofill, and dynamic admin management of site assets. Also includes eSIM and Travel Insurance cross-selling with bundle discounts, automated Zami Tours RPA integration, visual customer tracking, and WhatsApp notifications.
-PRODUCT REQUIREMENTS:
-- End-to-end visa application with Stripe and Bank Transfer.
-- Admin panel for managing applications, content, Zami RPA transfers, insurance profit tracking, and settings.
-- eSIM and Travel Insurance add-ons dynamically tied to visa duration, presented at the end of the form.
-- AI-powered Passport OCR data extraction with autofill for mother/father/marital/profession.
-- Zami Tours RPA Integration for automated application forwarding.
-- WhatsApp & Resend email notifications.
-
-**User's preferred language**: Turkish (TR). (INSTRUCT: Next agent MUST respond in Turkish only)
+**User's preferred language**: Turkish (You MUST automatically detect the user's primary language from their messages inside the <trajectory> tag and INSTRUCT next agent to respond in the user's preferred language only)
 
 **what currently exists?** 
-A highly polished, production-ready Full-Stack application. The frontend features a fully integrated 4-step wizard, home page bundle strips, live pricing via Doviz, custom-generated gold logos with a palm tree, and a 2-column tracking page. The backend supports automated margin calculations for insurance, bank transfer checkout flows, Resend emails, and Zami RPA. Recent updates scrubbed all demo data, moved upsells to Step 4, removed AI wording from the UI, and added a monthly profit chart to the Admin dashboard.
+A fully functional React/FastAPI visa application platform featuring a complete Cart system, dynamic pricing, bundles, tours, and abandoned cart emails. The backend foundation for a WhatsApp Cloud API bot and AI document routing is completely implemented and tested via simulation scripts. The frontend route for  exists, but the UI component () is an outdated manual screen that lacks the new AI bot controls.
 
-**Last working item**: 
-    - Last item agent was working: The agent was addressing an automated Code Review Report. It successfully fixed hardcoded test credentials, / identity operators, and simplified . All 39 backend tests passed.
-    - Status: NOT STARTED (Next step is addressing the remaining code review issues and the user's backlog).
-    - Agent Testing Done: Y (for the last implemented fixes).
-    - Which testing method agent to use? backend testing agent
+**Last working item**:
+    - Last item agent was working: The agent audited the frontend codebase to verify the integration of the WhatsApp Admin dashboard. The agent found that  is correctly routed in  and , but the actual UI of  is outdated. The agent used  to propose completely rewriting  to include Tabs for AI Bot Settings, Conversation Viewer, Document Match Queue, and a Simulator.
+    - Status: USER VERIFICATION PENDING
+    - Agent Testing Done: N
+    - Which testing method agent to use? Frontend testing agent / Screenshot tool (Once UI is built).
     - User Testing Done: N
 
-**All Pending/In progress Issue list**:  
-  Issue 1: Zami Bookmarklet Submit Button Capture (Priority: P0)
-     - Attempted fixes: Ignored in this session due to new user prompts.
-     - Next debug checklist: Modify the bookmarklet JS code in  ( endpoint) to locate and capture the form's Gönder (Submit) button selector, and save it in the mapping payload. Update  to handle and display this.
-     - Why fix this issue and what will be achieved with the fix?: Allows the Zami RPA to automatically click Submit after filling the form, achieving 100% automation.
-     - Status: NOT STARTED
-     - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Both
-     - Blocked on other issue: None
-
-  Issue 2: Critical Code Review Findings (Priority: P0)
-     - Attempted fixes: Agent fixed other code review items but skipped these two.
-     - Next debug checklist: 
-       1. Fix  vulnerability in .
-       2. Fix Circular Import Dependency between  and .
-     - Why fix this issue and what will be achieved with the fix?: Prevents runtime crashes and severe security vulnerabilities.
-     - Status: NOT STARTED
-     - Is recurring issue?: Y
-     - Should Test frontend/backend/both after fix?: Backend
-
-  Issue 3: Zami RPA Initial OTP Entry (Priority: P1)
-     - Attempted fixes: Awaiting user action.
-     - Next debug checklist: User must manually trigger and complete the OTP via Admin -> Zami Aktarımı -> Robot Oturumu (B) -> Oturum başlat.
-     - Why fix this issue and what will be achieved with the fix?: Initializes the 30-day trusted device cookie for the RPA to bypass future OTPs.
+**All Pending/In progress Issue list**:
+  Issue 1: Update Admin WhatsApp Dashboard UI (P0)
+     - Attempted fixes: The agent analyzed  and found it only has old manual notification UI elements. It lacks the complex queue, settings, and conversation history needed for the newly built backend bot.
+     - Next debug checklist: Await user approval on the pending  prompt, then rewrite  using Shadcn Tabs (e.g., Mapping/Documents, Conversations, Settings). Connect it to endpoints in .
+     - Why fix this issue and what will be achieved with the fix? Crucial for admins to monitor the AI WhatsApp bot, intercept conversations, and manually review unconfident AI document matches.
      - Status: USER VERIFICATION PENDING
-     - Is recurring issue?: Y (Once a month)
-     - Should Test frontend/backend/both after fix?: NA
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Frontend (Screenshot tool).
+     - Blocked on other issue: Awaiting user response to .
 
-  Issue 4: Deployment blocked by Emergent manual review (Priority: P2)
-     - Attempted fixes: Platform-level Trust & Safety block.
-     - Next debug checklist: Await user confirmation that Emergent Support has lifted the block.
-     - Status: BLOCKED
+  Issue 2: Resend Email Domain Verification / API Key (P1)
+     - Attempted fixes: The user verified the domain on Resend, but the current  is a restricted key from a different workspace/domain setup. Emails are silently failing.
+     - Next debug checklist: Ask the user to generate a new Full Access API key for the correct Resend workspace and update .
+     - Why fix this issue and what will be achieved with the fix? Abandoned cart and visa delivery emails rely on this to function correctly.
+     - Status: BLOCKED (User parked this, but it needs resolution for production).
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Backend (curl / python -c).
+     - Blocked on other issue: User providing a new API Key.
 
 **In progress Task List**:
- None.
+  Task 1: Complete WhatsApp Cloud API Integration
+     - Where to resume: Build the frontend dashboard (). Then, request the actual Meta Developer App credentials (, , etc.) from the user to transition from simulated mode to live mode in .
+     - What will be achieved with this? 7/24 AI customer support and automated supplier PDF delivery directly to users.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix? Both
+     - Blocked on something: User providing actual Meta API keys and approving the UI plan.
 
 **Upcoming and Future Tasks**
-  - P1: IBAN Kopyalama Butonu: Add a Copy IBAN button to the Bank Transfer UI ().
-  - P1: Dekont Yükleme: Allow users to upload their Bank Transfer receipt (dekont) on the Tracking () page.
-  - P2: Sağlayıcı Otomasyonu: Connect actual insurance provider API to auto-issue policies instead of just creating internal admin tasks.
-  - P2: Add real customer testimonials via Admin panel to replace the placeholders.
+    Future Tasks:
+    - Global English Version (P2): Transition platform to English-only, change currency to USD, remove Turkish-citizen restrictions (Parked in ROADMAP.md).
 
 **Completed work in this session**
-- UI polishing: Aligned cards, removed top spacing, changed texts to gold, added flip animations () (DONE)
-- Custom Logo Generation: Created gold logo and successfully spliced a left-leaning palm tree into it () (DONE)
-- Track Application: Merged standard tracking and account login into a 2-column view (, ) (DONE)
-- UX Simplification: Removed Yapay Zeka labels. Removed User Inputs for Mother/Father/Profession/Marital Status and auto-filled them securely in backend (DONE)
-- Insurance overhaul: Scraped competitor, aligned insurance packages to visa duration, added 100% markup, and converted to TRY (DONE)
-- Admin Profit Dashboard: Added  for queue tracking and  for insurance/eSIM revenue tracking (DONE)
-- Bank Transfer: Added Havale/EFT as a payment method with dynamic company/bank details (DONE)
-- Form restructuring: Moved Insurance and eSIM selections to Step 4 (Checkout). Built  and  (DONE)
-- Code Quality: Cleaned up identity operator bugs ( vs ) and removed test secrets (DONE)
+- Audited the frontend React structure and routing to verify WhatsApp Admin integration points.
+- Confirmed that  route is successfully wired in  and .
+- Identified that  needs a complete rewrite and proposed this to the user.
 
 **Earlier issues found/mentioned but not fixed**
-  Issue 1: Zami Bookmarklet Submit Button
-  - Debug checklist: See Issue 1 above.
-  - Why to solve this issue and what will be achieved with this: Full RPA automation.
-  - Should Test frontend/backend/both after fix: Both
-  - Is recurring issue? N
+   None.
 
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: None
+  - Issue recurrence in previous fork: N/A
   - Recurrence count: 0
-  - Status: RESOLVED
+  - Status: NA
 
 **Code Architecture**
-- : FastAPI server (). 
-  - Cron jobs: , , . 
-  - RPA logic: , . 
-  - Admin routes: , , . 
-  - Pricing/Store: , .
-- : React + Vite. Uses Shadcn components () and Tailwind.
-  - Pages: , , .
-  - Components: , , , .
+- Frontend: React, Tailwind CSS, Shadcn UI ()
+- Backend: FastAPI, Python ()
+- Database: MongoDB (PyMongo)
 
 **Key Technical Concepts**
-FARM stack, Playwright (Headless Chromium for RPA), Emergent LLM (Vision for OCR & Captcha solving), Resend (Emails), Stripe, TailwindCSS, Recharts (for profit graphs).
+WhatsApp Cloud API Webhooks, E-commerce Cart state, AI Document Parsing (Emergent LLM key), Background Schedulers (APScheduler), Shadcn UI Tabs.
 
 **key DB schema**
-  - : {..., zami_status, zami_id}
-  - : Stores , , , .
-  - : Stores pricing and types.
-  -  / : Tracks upsell purchases and policy delivery statuses.
+  - : User application data.
+  - : Cart and payment tracking.
+  - : Tracks user sessions and AI bot chats.
+  - : Tracks supplier-uploaded visa PDFs and their matching status.
 
 **changes in tech stack**
-  - Added  to frontend for Admin Profit graphs.
+  - None this session.
 
 **All files of reference** 
-  -  (Massively overhauled; Step 4 now handles bundles and combos).
-  -  &  (New homepage sales UI).
-  -  (New: Handles insurance policy queues and profit math).
-  -  (Updated with dynamic bundle pricing based on visa duration).
-  -  (New Admin chart).
-  -  (New active logo).
-  -  (Contains the  vulnerability that MUST be fixed).
+  - : The primary file that needs rewriting for the new admin dashboard.
+  - : Contains the routes (Note: It is , not ).
+  - : The backend admin endpoints the new UI will consume.
 
-**Areas that need refactoring**:
--  and  have a circular dependency identified by the code review tool. Needs a shared  or lazy loading.
+**Areas that need refactoring**: 
+-  must be entirely refactored to support the new features instead of its legacy manual notification design.
 
 **key api endpoints**
--  (Returns visa+insurance+esim bundled prices based on duration)
--  (Initiates an order for wire transfers)
--  (Needs update for Submit button capture)
+  - : Meta verification and incoming messages.
+  - Endpoints prefixed with  (inside ) for the frontend UI to consume.
 
 **Critical Info for New Agent** 
-- User ONLY speaks Turkish. Always respond in Turkish.
-- The user is highly detail-oriented about UI (spacing, borders, wording). Do not change UI elements unless asked.
-- **DO NOT IGNORE PENDING TASKS**: The Zami Bookmarklet Gönder Button task has been carried over multiple sessions. Fix it immediately when the user allows.
-- Fix the  in  and the circular import.
+- **Language Requirements:** You MUST communicate with the user in Turkish.
+- **Frontend Extension:** The main React router file is  (not ), which previously caused a  failure. Keep this in mind when searching.
+- **WhatsApp Webhook State:** The backend logic is currently in simulate mode using dummy credentials. For actual live usage, the user must create a Meta App and provide environment variables.
+- **Pending Human Response:** The session ended immediately after asking the user for permission to rewrite . Wait for their answer or proceed based on their reply.
 
-**documents and test reports created in this job**
-  -  to 
-  - 
+**documents and test reports created in this job** 
+  - /app/memory/PRD.md
+  - /app/memory/CHANGELOG.md
+  - /app/memory/ROADMAP.md
+  - /app/test_reports/iteration_95.json
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1. User: Vizeyi eSIM ekle ve seyahat sigortası ekle ve toplu fiyatları gör... -> DONE
-2. User: Sadece vize başvuru yapmak istiyorum, vize + esim vs bütün kombinasyonları yapalım. Havale/eft seçildiğinde bilgileri göster. -> DONE
-3. Agent: Tests run. -> DONE
-4. Agent: Asks human for next steps. -> SKIPPED
-5. Automated: Code review findings (Circular imports, , hardcoded secrets). -> PARTIALLY DONE (Secrets and Identity operators fixed. Circular import and  PENDING).
+ - *User*: (Handover analysis message with summary). (COMPLETED)
+ - *User*: Please use ask_human tool and confirm your plan now. (COMPLETED)
+ - *User (PENDING)*: User is currently reviewing the  prompt where the agent stated: Backend WhatsApp is done, but the AdminWhatsApp.jsx UI is outdated and lacks the bot controls. Shall I build the new UI? 
 
 **Project Health Check:**
-- Broken:  vulnerability in , Circular Import in .
-- Passing: 39/39 Backend tests passed. Full application flow works.
+- Broken: Resend emails (API key lacks correct permissions).
+- Mocked: WhatsApp API (Operating via bash simulations until Meta API keys are injected).
 
 **3rd Party Integrations** 
-  - Playwright (RPA engine)
+  - Meta WhatsApp Cloud API — requires User API Key/Tokens (Pending Setup)
+  - Claude Sonnet 4.6 (WhatsApp Bot LLM) — uses Emergent LLM Key
+  - Gemini (Image Validation/Generation) — uses Emergent LLM Key
+  - Resend (Email) — requires User API Key (Currently restricted/failing)
   - Stripe (Payments) — requires User API Key
-  - Resend (Email) — requires User API Key
-  - Emergent LLM (Vision/OCR/Images) — uses Emergent LLM Key
 
 **Testing status**
-  - Testing agent used after significant changes: YES (iterations 56-62)
+  - Testing agent used after significant changes: NO (No code written in this specific run yet).
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None (modified existing Pytests).
-  - Known regressions: Circular import flagged by linter.
+  - Test files created: None
+  - Known regressions: Email delivery blocked by Resend API Key scope.
 
 **Credentials to test flow:**
-- Admin panel: Check  for  and  (User removed hardcoded values).
+Admin email:  (Check ).
 
 **What agent forgot to execute**
-- The agent completely forgot to implement the Zami Bookmarklet Submit Button Capture from the previous handoff.
-- The agent left the  vulnerability in  and the Circular Import between  and  unaddressed from the final code review.</analysis>
+Nothing was forgotten. The agent correctly analyzed the state of the repo and paused execution to obtain human approval before rewriting a critical frontend file.
+
+**Debugging checklist for current issue**
+    Issue: Implement Admin WhatsApp Dashboard UI
+
+    Frontend files to check: 
+    - : Needs a complete rewrite based on Shadcn UI Tabs (e.g., Document Match Queue, Live Conversations, Settings).
+  
+    Backend files to check:
+    - : Ensure you align your frontend fetch calls with the schemas and endpoints defined here.</analysis>

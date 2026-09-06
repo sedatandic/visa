@@ -20,5 +20,5 @@
   "seed_data_creation": "None. Emailer tests stub email_outbox_col and resend module; no DB writes, no real emails sent.",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Emailer tests live at /app/backend/tests/test_emailer.py and stub both resend and email_outbox_col; safe to rerun without touching Resend. Home per-section copy verified via substring match; if copy strings change, update the checks dict in the Playwright block accordingly. Preview URL: https://otp-admin-flow.preview.emergentagent.com."
+  "context_for_next_testing_agent": "Emailer tests live at /app/backend/tests/test_emailer.py and stub both resend and email_outbox_col; safe to rerun without touching Resend. Home per-section copy verified via substring match; if copy strings change, update the checks dict in the Playwright block accordingly. Preview URL: https://visa-bot-dashboard.preview.emergentagent.com."
 }

@@ -1103,3 +1103,13 @@ Detaylar CHANGELOG.md 2026-06-10 kaydında. Özet:
   (`cart_reminders.py`, 15 dk'lık sweep), sipariş verilince kayıt kapanır.
 - ⚠️ Resend gönderici domaini (`dubaivizeonline.com`) doğrulanmamış → e-postalar gitmiyor;
   `dubaivizehatti.com` doğrulanmalı (ROADMAP P0).
+
+## 2026-06-11 · Admin WhatsApp AI paneli tamam (bkz. CHANGELOG 2026-06-11)
+`/admin/whatsapp` artık 5 sekmeli WhatsApp AI yönetim paneli: **Belge Kuyruğu** (tedarikçi
+PDF'lerinin AI eşleşmesi, ata/reddet), **Konuşmalar** (bot aç-kapa + manuel yanıt),
+**Bot Ayarları** (Meta Cloud API kimlik bilgileri + webhook), **Simülatör** (mesaj ve belge
+testi), **Sonuç Bildirimi** (eski manuel bildirim ekranı korundu).
+Dosyalar: `pages/AdminWhatsApp.jsx` + `components/whatsapp/Wa{DocumentQueue,Conversations,
+BotSettings,Simulator,ManualNotify}.jsx`. Backend değişmedi (`routes_whatsapp.py`).
+Test: iteration_96 frontend %100. Bot hâlâ **simülasyon modunda** — Meta anahtarları
+girilince canlıya geçer (ROADMAP P0).

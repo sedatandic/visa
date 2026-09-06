@@ -548,3 +548,26 @@ hatırlatma 2 saat + 24 saat (b).
 domain is not verified"). Yeni marka domaini `dubaivizehatti.com` resend.com/domains
 üzerinde doğrulanıp `SENDER_EMAIL` güncellenmeli; aksi halde giriş kodu, sipariş ve
 sepet hatırlatma e-postaları müşteriye ulaşmıyor.
+
+## 2026-06-11 · Admin WhatsApp AI paneli (iteration_96, frontend %100)
+Eski "manuel bildirim" ekranı yerine `/admin/whatsapp` 5 sekmeli WhatsApp AI paneli oldu.
+- `pages/AdminWhatsApp.jsx` yeniden yazıldı: mod rozeti (`wa-mode-badge`: Canlı / Simülasyon),
+  simülasyon uyarı bandı (`wa-simulate-warning`) ve Shadcn Tabs (`wa-tabs`).
+- `components/whatsapp/WaDocumentQueue.jsx`: tedarikçi belgeleri kuyruğu — durum filtreleri
+  (onay bekleyen / iletilen / okunamayan / tümü), belgeden AI'nin okuduğu alanlar, eşleşme
+  güven yüzdesi + sebep etiketleri, başvuru arama (`/ai/applications`) ile **ata** ve **reddet**.
+- `components/whatsapp/WaConversations.jsx`: konuşma listesi (temsilci bekleyen rozeti),
+  mesaj baloncukları (müşteri/bot/temsilci), sohbet bazlı bot aç-kapa, manuel yanıt
+  (24 saatlik servis penceresi hatası Türkçe gösterilir).
+- `components/whatsapp/WaBotSettings.jsx`: webhook adresi + kopyala, bot/otomatik teslim
+  anahtarları, Meta Cloud API alanları (phone_number_id, waba_id, access_token, app_secret,
+  verify_token, graph_version, tedarikçi grup/numaralar, şablon adı/dili), grup oluştur +
+  davet linki (simülasyon modunda Türkçe hata verir, çökmez).
+- `components/whatsapp/WaSimulator.jsx`: müşteri mesajı simülasyonu (botun gerçek LLM yanıtı)
+  + tedarikçi PDF yükleyip eşleştirme testi.
+- `components/whatsapp/WaManualNotify.jsx`: eski vize sonucu bildirim ayarları + son
+  bildirimler logu korundu (5. sekme).
+- Test: iteration_96 → istenen tüm akışlar geçti. "Toast iki kez çıkıyor" bulgusu
+  doğrulandı ve **yanlış pozitif** (tek `<Toaster/>`, ölçümde 1 toast).
+- Simülasyon test verileri temizlendi (`wa_conversations`, `wa_documents`, `wa_messages`,
+  `wa_events` → 0) ve `graph_version` v25.0'a geri alındı.
