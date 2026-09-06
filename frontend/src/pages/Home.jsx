@@ -30,6 +30,7 @@ import { VisaExplainer } from "../components/VisaExplainer";
 import { VisaSpecimen } from "../components/VisaSpecimen";
 import { HeroHeadline } from "../components/HeroHeadline";
 import { HomeBundleStrip } from "../components/HomeBundleStrip";
+import { HomeTourStrip } from "../components/HomeTourStrip";
 import { EasyCompare } from "../components/EasyCompare";
 import { FxNote } from "../components/FxNote";
 import {
@@ -214,6 +215,9 @@ export default function Home() {
 
             {/* SEYAHAT PAKETLERI */}
             <HomeBundleStrip />
+
+            {/* COL SAFARISI TANITIM SERIDI */}
+            <HomeTourStrip />
 
             {/* GEREKLI BELGELER */}
             <section className="section border-y border-border bg-[hsl(var(--cloud))]" data-testid="landing-documents">

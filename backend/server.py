@@ -299,6 +299,7 @@ import routes_admin  # noqa: E402
 import routes_store  # noqa: E402
 import routes_payments  # noqa: E402
 import routes_public  # noqa: E402
+import routes_whatsapp  # noqa: E402
 import routes_zami  # noqa: E402
 
 api_router.include_router(routes_public.router, tags=["public"])
@@ -306,6 +307,7 @@ api_router.include_router(routes_payments.router, tags=["payments"])
 api_router.include_router(routes_account.router, tags=["account"])
 api_router.include_router(routes_store.router, tags=["store"])
 api_router.include_router(routes_admin.router, tags=["admin"])
+api_router.include_router(routes_whatsapp.router, tags=["whatsapp"])
 api_router.include_router(routes_zami.router, tags=["zami"])
 
 app.include_router(api_router)
@@ -320,7 +322,7 @@ for extra in (os.environ.get("PUBLIC_SITE_URL"), os.environ.get("PUBLIC_BASE_URL
     if extra and extra.strip().rstrip("/") not in CORS_ORIGINS:
         CORS_ORIGINS.append(extra.strip().rstrip("/"))
 CORS_ORIGIN_REGEX = os.environ.get("CORS_ORIGIN_REGEX") or (
-    r"^(https://([a-z0-9-]+\.)*(dubaivizeonline\.com|emergentagent\.com|emergent\.host)"
+    r"^(https://([a-z0-9-]+\.)*(dubaivizehatti\.com|dubaivizeonline\.com|emergentagent\.com|emergent\.host)"
     r"|http://localhost:3000)$"
 )
 

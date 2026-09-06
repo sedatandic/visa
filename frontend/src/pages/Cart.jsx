@@ -6,8 +6,10 @@ import {
     Landmark,
     Loader2,
     Minus,
+    PiggyBank,
     Plane,
     Plus,
+    PlusCircle,
     ShieldCheck,
     ShoppingBag,
     Smartphone,
@@ -137,6 +139,25 @@ export default function Cart() {
     const missingSchedule = lines.filter(
         (l) => l.product.needs_schedule && (!l.scheduled_date || !l.scheduled_time)
     );
+
+    // Tasarruf sayaci: eksik olan urun eklenirse kazanilacak %10 indirimi canli gosterir.
+    const savingsOffer = useMemo(() => {
+        if (!lines.length || bundleDiscount > 0) return null;
+        const missingKind = !kinds.has("insurance") ? "insurance" : !kinds.has("esim") ? "esim" : null;
+        if (!missingKind) return null;
+        const candidates = products.filter((p) => p.kind === missingKind);
+        if (!candidates.length) return null;
+        const product =
+            candidates.find((p) => p.popular) ||
+            candidates.reduce((min, p) => (p.price < min.price ? p : min), candidates[0]);
+        const amount = Math.round((itemsTotal + Number(product.price)) * BUNDLE_RATE);
+        return {
+            product,
+            amount,
+            label: missingKind === "insurance" ? "Seyahat sigortası" : "Dubai eSIM",
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lines, products, itemsTotal, bundleDiscount]);
 
     // Sepeti sunucuya kaydet: e-posta bilindiginde 2 ve 24 saat sonra hatirlatma gonderilir.
     useEffect(() => {
@@ -405,7 +426,48 @@ export default function Cart() {
                                             <span className="font-semibold">- {formatMoney(bundleDiscount)}</span>
                                         </div>
                                     )}
-                                    {bundleDiscount === 0 && (
+                                    {bundleDiscount > 0 && (
+                                        <p
+                                            className="rounded-lg bg-[hsl(var(--brand-green))]/10 px-3 py-2 text-xs font-bold leading-5 text-[hsl(var(--brand-green))]"
+                                            data-testid="cart-savings-earned"
+                                        >
+                                            Tebrikler! Paket indirimiyle {formatMoney(bundleDiscount)} kazandınız.
+                                        </p>
+                                    )}
+                                    {bundleDiscount === 0 && savingsOffer && (
+                                        <div
+                                            className="rounded-xl border border-[hsl(var(--brand-green))]/35 bg-[hsl(var(--brand-green))]/[0.07] p-3.5"
+                                            data-testid="cart-savings-offer"
+                                        >
+                                            <p className="flex items-start gap-2 text-xs font-bold leading-5 text-[hsl(var(--brand-green))]">
+                                                <PiggyBank className="mt-0.5 h-4 w-4 shrink-0" />
+                                                <span data-testid="cart-savings-amount">
+                                                    {savingsOffer.label} ekleyin, {formatMoney(savingsOffer.amount)}{" "}
+                                                    kazanın
+                                                </span>
+                                            </p>
+                                            <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                                                {savingsOffer.product.name} ·{" "}
+                                                {formatMoney(savingsOffer.product.price, savingsOffer.product.currency)}{" "}
+                                                — sigorta ve eSIM birlikte alındığında sepetin tamamına %10 indirim
+                                                uygulanır.
+                                            </p>
+                                            <Button
+                                                className="mt-3 h-10 w-full"
+                                                onClick={() => {
+                                                    cart.add(savingsOffer.product.id, 1);
+                                                    toast.success(
+                                                        `${savingsOffer.product.name} sepete eklendi · %10 paket indirimi uygulandı.`
+                                                    );
+                                                }}
+                                                data-testid="cart-savings-add-button"
+                                            >
+                                                <PlusCircle className="mr-2 h-4 w-4" /> {savingsOffer.label} ekle ve
+                                                kazan
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {bundleDiscount === 0 && !savingsOffer && (
                                         <p className="text-xs leading-5 text-muted-foreground">
                                             İpucu: sigorta ve eSIM'i birlikte alırsanız %10 paket indirimi
                                             otomatik uygulanır.

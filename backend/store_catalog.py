@@ -166,7 +166,7 @@ TOUR_PRODUCTS = [
         "name": "Çöl Safarisi · VIP Akşam Turu",
         "summary": "Özel araçta kumul turu, quad bike denemesi, VIP kamp masası ve ateş başında canlı gösteriler.",
         "price_usd": 55.0,
-        "image_url": "https://images.unsplash.com/photo-1762893996953-b2f403a03f32?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+        "image_url": "https://images.unsplash.com/photo-1631730690491-d2efef90fc21?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
         "needs_schedule": True,
         "time_slots": ["14:00", "14:30", "15:00", "15:30", "16:00"],
         "features": [
