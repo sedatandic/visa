@@ -1128,3 +1128,22 @@ girilince canlıya geçer (ROADMAP P0).
 - Anlatım metinleri ve intro çizimi 2026-06-11'de kullanıcı onayıyla son halini aldı;
   seslendirmeyi güncellemek için `python /app/scripts/generate_narration_eleven.py` yeterli
   (metin bu dosyada, altyazılar `VisaExplainer.jsx` içinde — ikisini birlikte güncelleyin).
+
+## 2026-06-12 · Admin bekleyen iş sayacı + misafir sipariş takibi
+- `GET /api/admin/stats` → `wa_pending_documents`, `wa_needs_human` alanları eklendi;
+  `AdminLayout` menüde rozet gösteriyor (Mesajlar/WhatsApp), `AdminDashboard` üstünde
+  "WhatsApp'ta bekleyen işlem var" bandı.
+- Sipariş onay + teslim e-postalarında "Siparişimi takip et" butonu
+  (`emailer.order_track_url`, `{SITE}/siparis/{kod}?email=`); `OrderStatus` `?email=` ile
+  otomatik sorgulama; sepet altında son sipariş kısayolu (`dv_last_order_ref`).
+- Test: manuel uçtan uca (gerçek sipariş + e-posta linki + ekran görüntüleri), pytest
+  test_emailer 7/7. Test verileri silindi.
+
+## Kullanıcıdan bekleyen (2026-06-12 itibarıyla)
+- **Gerçek IBAN'lar** (havale kartlarında hâlâ "Örnek Bank A.Ş." / TR00… yer tutucu)
+  → Admin → Banka Bilgileri.
+- **WhatsApp canlı mod**: Meta App bilgileri (phone_number_id, access_token, app_secret,
+  verify_token) → Admin → WhatsApp → Bot Ayarları. Şu an simülasyon modunda.
+- Şirket unvanı / TÜRSAB belge no / Instagram-Google yorum linkleri.
+- Not: yönetici giriş e-postası hâlâ `info@dubaivizeonline.com` (marka artık
+  dubaivizehatti.com) — kullanıcı onayı bekliyor.

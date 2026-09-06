@@ -21,6 +21,7 @@ import {
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { BrandMark } from "./BrandMark";
+import { api } from "../lib/api";
 
 const NAV_GROUPS = [
     {
@@ -35,9 +36,9 @@ const NAV_GROUPS = [
     {
         label: "Müşteri İletişimi",
         items: [
-            { to: "/admin/mesajlar", label: "Mesajlar", icon: MessageSquare },
+            { to: "/admin/mesajlar", label: "Mesajlar", icon: MessageSquare, badge: "messages" },
             { to: "/admin/e-postalar", label: "E-postalar", icon: Mail },
-            { to: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle },
+            { to: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle, badge: "whatsapp" },
         ],
     },
     {
@@ -85,7 +86,7 @@ export const RequireAdmin = ({ children }) => {
     return children;
 };
 
-const NavList = () => (
+const NavList = ({ badges = {} }) => (
     <nav className="space-y-5" aria-label="Yönetim menüsü">
         {NAV_GROUPS.map((group) => (
             <div key={group.label}>
@@ -93,12 +94,24 @@ const NavList = () => (
                     {group.label}
                 </p>
                 <div className="mt-1.5 space-y-0.5">
-                    {group.items.map(({ to, label, icon: Icon, end }) => (
-                        <NavLink key={to} to={to} end={end} data-testid={navTestId(to)} className={itemClass}>
-                            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                            {label}
-                        </NavLink>
-                    ))}
+                    {group.items.map(({ to, label, icon: Icon, end, badge }) => {
+                        const count = badge ? badges[badge] || 0 : 0;
+                        return (
+                            <NavLink key={to} to={to} end={end} data-testid={navTestId(to)} className={itemClass}>
+                                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                                <span className="flex-1 truncate">{label}</span>
+                                {count > 0 && (
+                                    <span
+                                        className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground"
+                                        data-testid={`admin-nav-badge-${badge}`}
+                                        title={`${count} bekleyen`}
+                                    >
+                                        {count > 99 ? "99+" : count}
+                                    </span>
+                                )}
+                            </NavLink>
+                        );
+                    })}
                 </div>
             </div>
         ))}
@@ -109,9 +122,32 @@ export const AdminLayout = ({ children, title, description, actions = null }) =>
     const navigate = useNavigate();
     const location = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [badges, setBadges] = useState({});
     const email = localStorage.getItem("dv_admin_email") || "";
 
     useEffect(() => setMenuOpen(false), [location.pathname]);
+
+    // Bekleyen mesaj / WhatsApp belgesi sayaci: her sayfada ve 60 sn'de bir tazelenir.
+    useEffect(() => {
+        let alive = true;
+        const load = () =>
+            api
+                .get("/admin/stats")
+                .then(({ data }) => {
+                    if (!alive) return;
+                    setBadges({
+                        messages: data.unread_messages || 0,
+                        whatsapp: (data.wa_pending_documents || 0) + (data.wa_needs_human || 0),
+                    });
+                })
+                .catch(() => {});
+        load();
+        const timer = setInterval(load, 60000);
+        return () => {
+            alive = false;
+            clearInterval(timer);
+        };
+    }, []);
 
     const logout = () => {
         localStorage.removeItem("dv_admin_token");
@@ -129,7 +165,7 @@ export const AdminLayout = ({ children, title, description, actions = null }) =>
                         </Link>
                     </div>
                     <div className="flex-1 overflow-y-auto px-3 py-5">
-                        <NavList />
+                        <NavList badges={badges} />
                     </div>
                     <div className="border-t border-border p-3">
                         <p className="truncate px-3 pb-2 text-xs text-muted-foreground" title={email}>
@@ -165,7 +201,7 @@ export const AdminLayout = ({ children, title, description, actions = null }) =>
                                         <BrandMark />
                                     </div>
                                     <div className="px-3 py-5">
-                                        <NavList />
+                                        <NavList badges={badges} />
                                     </div>
                                     <div className="border-t border-border p-3">
                                         <Button

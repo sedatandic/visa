@@ -676,3 +676,22 @@ Kullanıcı notları doğrultusunda anlatım baştan üretildi (`scripts/generat
   "Vizenizi Dubai Vize Hattı ile kolayca alın. TÜRSAB üyesi A grubu seyahat acentesi iş
   birliğiyle başvurunuzu baştan sona biz yürütüyoruz. Formu doldurun, gerisini bize bırakın.
   Dubai sizi bekliyor!" · full.mp3 66,7 sn, cta penceresi 53,21-66,74 sn.
+
+## 2026-06-12 · Admin bekleyen iş sayacı + misafir sipariş takibi (P1 x2)
+- **Admin bildirim sayacı** (ROADMAP P1): `GET /api/admin/stats` iki yeni alan döndürüyor —
+  `wa_pending_documents` (wa_documents `pending_review`/`failed`) ve `wa_needs_human`
+  (wa_conversations `needs_human:true`). `AdminLayout` bu uç noktayı açılışta ve 60 sn'de bir
+  çekip menüdeki **Mesajlar** (okunmamış mesaj) ve **WhatsApp** (belge + temsilci talebi)
+  satırlarına sayı rozeti basıyor (`admin-nav-badge-messages`, `admin-nav-badge-whatsapp`).
+  Başvurular sayfasının üstünde ayrıca uyarı bandı (`admin-wa-alert`) + "WhatsApp panelini aç"
+  butonu var. Doğrulama: rozet "2", band "1 belge eşleştirme bekliyor · 1 konuşma temsilci
+  istiyor" (test verileri sonrasında silindi).
+- **Misafir sipariş takibi** (ROADMAP P1): `emailer.order_track_url()` +
+  `_order_track_button()` → sipariş onayı ve teslim e-postalarına "Siparişimi takip et"
+  butonu eklendi (`{SITE}/siparis/{kod}?email=...`, üyelik gerekmez).
+  `OrderStatus.jsx` artık `?email=` parametresini okuyup siparişi otomatik açıyor.
+  `Cart.jsx`: sipariş sonrası `dv_last_order_ref` saklanıyor ve sepet sayfasının altında
+  `cart-last-order-shortcut` kutusu ("Son siparişiniz DV-… · Siparişimi takip et") görünüyor.
+  Doğrulama: gerçek sipariş oluşturulup e-posta gövdesindeki link kontrol edildi
+  (`status=sent`, link doğru), `/siparis/{kod}?email=` otomatik sorguladı, sepet kısayolu
+  göründü; test siparişi ve e-posta kayıtları temizlendi. pytest test_emailer 7/7.

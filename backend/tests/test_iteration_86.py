@@ -9,7 +9,7 @@ import requests
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from admin_test_token import admin_token  # type: ignore
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://visa-bot-dashboard.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://whatsapp-ai-test.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
 HEADERS_BROWSER = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120"}

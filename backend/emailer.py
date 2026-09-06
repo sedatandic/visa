@@ -11,6 +11,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import quote
 
 from content import COMPANY, VISA_TYPES
 from db import email_outbox_col
@@ -666,6 +667,27 @@ def _payment_method_label(order: dict) -> str:
     }.get(method, method or "-")
 
 
+def order_track_url(order: dict) -> str:
+    """Misafir musteri icin siparis takip baglantisi (kod + e-posta on dolu)."""
+    site = SITE_URL or "https://www.dubaivizehatti.com"
+    reference = (order.get("reference_code") or "").strip()
+    email = ((order.get("contact") or {}).get("email") or "").strip()
+    url = f"{site}/siparis/{quote(reference)}"
+    return f"{url}?email={quote(email)}" if email else url
+
+
+def _order_track_button(order: dict) -> str:
+    return f"""
+    <p style="margin:22px 0 0;">
+      <a href="{order_track_url(order)}" style="display:inline-block;background-color:{GOLD};color:#ffffff;
+      text-decoration:none;font-size:14px;font-weight:bold;padding:13px 26px;border-radius:999px;">Siparişimi takip et</a>
+    </p>
+    <p style="margin:10px 0 0;font-size:12px;line-height:20px;color:{MUTED};">
+      Hesap açmanıza gerek yok; bu bağlantı sipariş kodunuz ve e-posta adresinizle çalışır.
+    </p>
+    """
+
+
 def order_received_html(order: dict, bank: dict | None = None) -> str:
     """eSIM / seyahat sigortasi siparis onayi."""
     currency = order.get("currency", "TRY")
@@ -704,6 +726,7 @@ def order_received_html(order: dict, bank: dict | None = None) -> str:
       </table>
     </div>
     {bank_html}
+    {_order_track_button(order)}
     """
     return _wrap("Siparişiniz alındı", body)
 
@@ -745,6 +768,7 @@ def order_delivered_html(order: dict, links: list, message: str = "") -> str:
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{link_html}</table>
     {note}
+    {_order_track_button(order)}
     <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
       eSIM kurulumu: Ayarlar &gt; Mobil Veri &gt; eSIM ekle &gt; QR kodu tarat. Kurulum sırasında
       internet bağlantısı gereklidir.

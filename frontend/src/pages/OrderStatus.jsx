@@ -66,9 +66,13 @@ export default function OrderStatus() {
         [reference]
     );
 
+    // E-postadaki takip linki (?email=...) misafir musteriyi tek tikla siparisine getirir.
     useEffect(() => {
-        const saved = localStorage.getItem("dv_last_order_email");
+        const fromLink = (searchParams.get("email") || "").trim();
+        const saved = fromLink || localStorage.getItem("dv_last_order_email");
+        if (fromLink) setEmail(fromLink);
         if (saved) load(saved);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [load]);
 
     useEffect(() => {

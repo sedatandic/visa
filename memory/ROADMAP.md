@@ -17,10 +17,11 @@
 - [ ] Sigorta poliçesini düzenleyen sigorta şirketi adı sayfada belirtilmiyor (istenirse eklenir).
 
 ## P1
-- [ ] Sepette misafir kullanıcı için "siparişimi takip et" kısayolu + sipariş e-postasına
-      sepet linki (turlar ve hazır paket sepete ekleme 2026-06-10'da tamamlandı).
-- [ ] WhatsApp panelinde bekleyen belge/temsilci sayısı için admin ana sayfasında bildirim
-      sayacı (şu an yalnız WhatsApp sekmesinde görülüyor).
+- [x] ~~Sepette misafir "siparişimi takip et" kısayolu + sipariş e-postasına takip linki~~
+      → 2026-06-12 tamamlandı (`cart-last-order-shortcut`, `/siparis/{kod}?email=`,
+      e-postalarda "Siparişimi takip et" butonu).
+- [x] ~~WhatsApp bekleyen belge/temsilci sayacı~~ → 2026-06-12: admin menüsünde rozet
+      (Mesajlar + WhatsApp) ve Başvurular sayfasında uyarı bandı.
 - [ ] Barchart kuru gerçekten istenirse: headless Chromium ile günlük tek çekim denenebilir;
       Cloudflare engeli sürerse ücretli Barchart OnDemand API şart.
 - [ ] Fiyat/politika tutarlılığı: resmî harç ile hizmet bedeli ayrımı, TL ödemede kur

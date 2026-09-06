@@ -17,7 +17,7 @@ try:
                 BASE_URL = line.split("=", 1)[1].strip()
                 break
 except Exception:
-    BASE_URL = "https://visa-bot-dashboard.preview.emergentagent.com"
+    BASE_URL = "https://whatsapp-ai-test.preview.emergentagent.com"
 
 API_BASE = f"{BASE_URL}/api"
 

@@ -51,7 +51,7 @@ async def main() -> None:
     print("Test mapping uygulandi (Waiting + Save).")
 
     try:
-        payload = zami.build_payload(doc, "https://visa-bot-dashboard.preview.emergentagent.com")
+        payload = zami.build_payload(doc, "https://whatsapp-ai-test.preview.emergentagent.com")
         result = await zami_rpa.fill_application(doc, payload, dry_run=False, actor="real-save-test")
         print("\nok:", result.get("ok"), "| gonderildi(save):", result.get("submitted"))
         print("dolu alan:", result.get("filled_count"))

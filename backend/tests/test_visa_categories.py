@@ -2,7 +2,7 @@
 import os
 import requests
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://visa-bot-dashboard.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://whatsapp-ai-test.preview.emergentagent.com').rstrip('/')
 
 
 def test_visa_categories_three_with_new_labels():

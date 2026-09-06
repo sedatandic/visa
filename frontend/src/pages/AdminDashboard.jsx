@@ -108,6 +108,36 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
+                {/* BEKLEYEN WHATSAPP ISLERI */}
+                {stats && (stats.wa_pending_documents > 0 || stats.wa_needs_human > 0) && (
+                    <div
+                        className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/[0.06] p-4"
+                        data-testid="admin-wa-alert"
+                    >
+                        <p className="text-sm leading-6">
+                            <span className="font-heading font-bold">WhatsApp'ta bekleyen işlem var:</span>{" "}
+                            {stats.wa_pending_documents > 0 && (
+                                <span data-testid="admin-wa-alert-documents">
+                                    {stats.wa_pending_documents} belge eşleştirme bekliyor
+                                </span>
+                            )}
+                            {stats.wa_pending_documents > 0 && stats.wa_needs_human > 0 && " · "}
+                            {stats.wa_needs_human > 0 && (
+                                <span data-testid="admin-wa-alert-handoffs">
+                                    {stats.wa_needs_human} konuşma temsilci istiyor
+                                </span>
+                            )}
+                        </p>
+                        <Button
+                            className="h-10"
+                            onClick={() => navigate("/admin/whatsapp")}
+                            data-testid="admin-wa-alert-button"
+                        >
+                            WhatsApp panelini aç
+                        </Button>
+                    </div>
+                )}
+
                 {/* OCR PERFORMANS RAPORU */}
                 <OcrReportCard />
 

@@ -24,6 +24,8 @@ from db import (
     applications_col,
     articles_col,
     contact_col,
+    conversations_col,
+    wa_documents_col,
     email_outbox_col,
     notifications_col,
     payments_col,
@@ -194,6 +196,10 @@ async def admin_stats(admin: dict = Depends(require_admin)) -> dict:
     async for d in paid_cursor:
         revenue += float(d.get("price") or 0)
     unread_messages = await contact_col.count_documents({"is_read": False})
+    wa_pending_documents = await wa_documents_col.count_documents(
+        {"status": {"$in": ["pending_review", "failed"]}}
+    )
+    wa_needs_human = await conversations_col.count_documents({"needs_human": True})
     return {
         "total": total,
         "today": today_count,
@@ -203,6 +209,8 @@ async def admin_stats(admin: dict = Depends(require_admin)) -> dict:
         "rejected": rejected,
         "revenue": revenue,
         "unread_messages": unread_messages,
+        "wa_pending_documents": wa_pending_documents,
+        "wa_needs_human": wa_needs_human,
     }
 
 

@@ -6,6 +6,7 @@ import {
     Landmark,
     Loader2,
     Minus,
+    PackageSearch,
     PiggyBank,
     Plane,
     Plus,
@@ -80,8 +81,38 @@ const TourSchedule = ({ line, onChange }) => (
     </div>
 );
 
-export default function Cart() {
-    const navigate = useNavigate();
+// Misafir musteri kisayolu: son siparis kodu tarayicida saklanir, hesap gerekmez.
+const LastOrderShortcut = () => {
+    const reference = localStorage.getItem("dv_last_order_ref");
+    const mail = localStorage.getItem("dv_last_order_email") || "";
+    if (!reference) return null;
+    return (
+        <div
+            className="mx-auto mt-6 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 p-4"
+            data-testid="cart-last-order-shortcut"
+        >
+            <p className="text-sm leading-6">
+                Son siparişiniz{" "}
+                <span className="font-heading font-bold" data-testid="cart-last-order-ref">
+                    {reference}
+                </span>{" "}
+                — durumunu üyelik olmadan görebilirsiniz.
+            </p>
+            <Button
+                asChild
+                variant="secondary"
+                className="h-10 border border-border"
+                data-testid="cart-track-order-button"
+            >
+                <Link to={`/siparis/${reference}${mail ? `?email=${encodeURIComponent(mail)}` : ""}`}>
+                    <PackageSearch className="mr-2 h-4 w-4" /> Siparişimi takip et
+                </Link>
+            </Button>
+        </div>
+    );
+};
+
+export default function Cart() {    const navigate = useNavigate();
     const cart = useCart();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -210,6 +241,7 @@ export default function Cart() {
             });
             const order = data.order;
             localStorage.setItem("dv_last_order_email", email);
+            localStorage.setItem("dv_last_order_ref", order.reference_code);
             cart.clear();
 
             if (method === "card") {
@@ -627,6 +659,7 @@ export default function Cart() {
                             </div>
                         </div>
                     )}
+                    <LastOrderShortcut />
                 </div>
             </section>
         </div>
