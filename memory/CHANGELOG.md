@@ -571,3 +571,17 @@ Eski "manuel bildirim" ekranı yerine `/admin/whatsapp` 5 sekmeli WhatsApp AI pa
   doğrulandı ve **yanlış pozitif** (tek `<Toaster/>`, ölçümde 1 toast).
 - Simülasyon test verileri temizlendi (`wa_conversations`, `wa_documents`, `wa_messages`,
   `wa_events` → 0) ve `graph_version` v25.0'a geri alındı.
+
+## 2026-06-11 · BUG: anlatımda telefonun sol alt köşesi kırpık (iteration_97, %100)
+Kullanıcı mobil ekran görüntüsü paylaştı: ADIM 3 (track) sahnesinde telefonun sol alt köşesi
+kesik görünüyordu.
+- **Kök neden**: CSS/kırpma değil, **görsel dosyasının kendisi** bozuktu. `track.png`in saydam
+  zemini üretilirken zemin ayıklama telefonun sol kenar çizgisinden içeri sızmış ve alt sol
+  köşeyi silmişti (kaynak `track.jpg` sağlamdı). `object-contain` olduğu için CSS kırpması yoktu.
+- **Düzeltme**: `scripts/rebuild_explainer_png.py` (yeni) — sağlam `track.jpg`ten düşük eşikli
+  (thresh 20) flood fill ile zemin saydamlaştırıldı, kenarlar 6px payla kırpıldı.
+  Yeni dosya 1251x839, zemin %49 saydam; bozuk sürüm `track.cutcorner.png` olarak yedekte.
+  JSX/CSS değişmedi.
+- Diğer 6 sahne kontrast kontak sayfasıyla denetlendi; benzer aşınma yok.
+- Test: iteration_97 → mobil (414x900) + masaüstü (1920x800): telefon tam görünüyor
+  (taşma < 1px), 7 sahnenin görseli yükleniyor, ses/CC/duraklat/CTA/TÜRSAB mührü çalışıyor.
