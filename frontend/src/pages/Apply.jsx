@@ -73,6 +73,13 @@ const TRAVEL_WINDOWS = [
     { id: "undecided", label: "Henüz karar vermedim" },
 ];
 
+// Oneri kartlari icin kapak gorselleri (urunde image_url yoksa kullanilir)
+const SUGGESTION_COVERS = {
+    insurance:
+        "https://images.unsplash.com/photo-1581553673739-c4906b5d0de8?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+    esim: "https://images.unsplash.com/photo-1651467606797-e1c660cf3fda?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+};
+
 const STEPS = [
     { key: "people", label: "Bilgiler", icon: Users },
     { key: "visa", label: "Vize", icon: CalendarDays },
@@ -192,6 +199,8 @@ export default function Apply() {
     const [addonMeta, setAddonMeta] = useState([]);
     const [familyTiers, setFamilyTiers] = useState([]);
     const photoInputs = useRef({});
+    // Vize kartindan gelen secim (?vize=): yeni eklenen yolculara da uygulanir
+    const preselectedVisa = useRef("");
     const [maxTravelers, setMaxTravelers] = useState(10);
     const [step, setStep] = useState(0);
     const [contact, setContact] = useState({ full_name: "", email: "", phone: "+90 5", address_city: "", whatsapp_optin: false });
@@ -412,13 +421,16 @@ export default function Apply() {
                 const wanted = searchParams.get("vize");
                 if (wanted && v.data.some((x) => x.id === wanted)) {
                     const found = v.data.find((x) => x.id === wanted);
+                    const childVisa = found.category === "child";
+                    preselectedVisa.current = wanted;
                     setTravelers((list) =>
-                        list.map((t, i) =>
-                            i === 0
-                                ? { ...t, visa_type_id: wanted, applicant_type: found.applicant_type || "adult" }
-                                : t
-                        )
+                        list.map((t) => {
+                            const isChild = t.applicant_type === "child";
+                            if (isChild !== childVisa) return t;
+                            return { ...t, visa_type_id: wanted, applicant_type: childVisa ? "child" : "adult" };
+                        })
                     );
+                    toast.success(`${found.name} formda otomatik seçildi.`);
                 }
             })
             .catch(() => toast.error("Vize tipleri yüklenemedi."));
@@ -897,6 +909,7 @@ export default function Apply() {
                     tripDays ? ` · ${tripDays} günlük seyahatinizi kapsar` : ""
                 }`,
                 unit: "kişi",
+                image: insurance.image_url || SUGGESTION_COVERS.insurance,
                 selected: insurancePick === insurance.id,
                 onToggle: () => {
                     if (insurancePick === insurance.id) {
@@ -917,6 +930,7 @@ export default function Apply() {
                 product: esim,
                 meta: `${esim.validity_days} gün internet · varışta anında aktif`,
                 unit: "kişi",
+                image: esim.image_url || SUGGESTION_COVERS.esim,
                 selected: Number(esimQty[esim.id] || 0) > 0,
                 onToggle: () => {
                     if (esimQty[esim.id]) {
@@ -948,6 +962,7 @@ export default function Apply() {
                           : "Kumul turu, deve gezisi ve akşam yemeği",
                 unit: "kişi",
                 selected,
+                image: tour.image_url || "",
                 onToggle: () => toggleSuggestedTour(tour),
             });
         }
@@ -1016,6 +1031,22 @@ export default function Apply() {
     const primaryApplicantType = travelers[0]?.applicant_type === "child" ? "child" : "adult";
     const hasChildApplicant = travelers.some((t) => t.applicant_type === "child");
 
+    // Adim 1'deki "basvurulan vize turu" dropdown'i: ayni kategorideki tum yolculara uygulanir
+    const primaryVisaId = travelers[0]?.visa_type_id || "";
+    const primaryVisaOptions = visaOptionsFor(primaryApplicantType);
+    const primaryVisa = visaById(primaryVisaId);
+
+    const setPrimaryVisa = (id) => {
+        const chosen = visaById(id);
+        if (!chosen) return;
+        const childVisa = chosen.category === "child";
+        preselectedVisa.current = id;
+        setTravelers((list) =>
+            list.map((t) => ((t.applicant_type === "child") === childVisa ? { ...t, visa_type_id: id } : t))
+        );
+        setErrors((p) => ({ ...p, stay_length: undefined }));
+    };
+
     const setPrimaryApplicantType = (value) => {
         const first = travelers[0];
         if (!first) return;
@@ -1079,7 +1110,14 @@ export default function Apply() {
             toast.error(`Tek başvuruda en fazla ${maxTravelers} yolcu ekleyebilirsiniz.`);
             return;
         }
-        setTravelers((list) => [...list, newTraveler(type)]);
+        setTravelers((list) => {
+            const fresh = newTraveler(type);
+            const preset = visaTypes.find((v) => v.id === preselectedVisa.current);
+            if (preset && (preset.category === "child") === (type === "child")) {
+                fresh.visa_type_id = preset.id;
+            }
+            return [...list, fresh];
+        });
         toast.success(type === "child" ? "Çocuk yolcu eklendi." : "Yolcu eklendi.");
     };
 
@@ -1722,6 +1760,65 @@ export default function Apply() {
                                         </label>
                                     </div>
 
+                                    {/* BASVURULAN VIZE TURU: vize kartindan gelindiyse otomatik secili */}
+                                    <div
+                                        className="mt-6 rounded-xl border border-border bg-[hsl(var(--cloud))] p-5"
+                                        data-testid="primary-visa-block"
+                                    >
+                                        <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                                            Başvurduğunuz vize türü
+                                        </h3>
+                                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                            Bir vize kartından geldiyseniz otomatik seçilir. Yolcu bazında farklı vize
+                                            seçmek isterseniz 2. adımda düzenleyebilirsiniz.
+                                        </p>
+                                        <div className="mt-4 sm:max-w-md">
+                                            <Field label="Vize Türü" required>
+                                                <Select value={primaryVisaId} onValueChange={setPrimaryVisa}>
+                                                    <SelectTrigger data-testid="primary-visa-select">
+                                                        <SelectValue placeholder="Vize türü seçin" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {primaryVisaOptions.map((v) => (
+                                                            <SelectItem
+                                                                key={v.id}
+                                                                value={v.id}
+                                                                data-testid={`primary-visa-option-${v.id}`}
+                                                            >
+                                                                {v.name} · {formatMoney(v.price, v.currency)}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </Field>
+                                        </div>
+                                        {primaryVisa && (
+                                            <p
+                                                className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs leading-5 text-muted-foreground"
+                                                data-testid="primary-visa-meta"
+                                            >
+                                                <span>
+                                                    Kalış süresi:{" "}
+                                                    <strong className="text-foreground">
+                                                        {primaryVisa.duration_days} gün
+                                                    </strong>
+                                                </span>
+                                                <span>
+                                                    Giriş:{" "}
+                                                    <strong className="text-foreground">
+                                                        {primaryVisa.entry_type === "multiple" ? "Çok girişli" : "Tek girişli"}
+                                                    </strong>
+                                                </span>
+                                                <span>
+                                                    Kişi başı:{" "}
+                                                    <strong className="text-foreground">
+                                                        {formatMoney(primaryVisa.price, primaryVisa.currency)}
+                                                    </strong>
+                                                </span>
+                                            </p>
+                                        )}
+                                    </div>
+
                                     {/* SEYAHAT TARIHLERI: oneriler bu tarihlere gore hesaplanir */}
                                     <div
                                         className="mt-6 rounded-xl border border-border bg-[hsl(var(--cloud))] p-5"
@@ -1875,6 +1972,18 @@ export default function Apply() {
                                                             }`}
                                                             data-testid={`suggestion-card-${s.key}`}
                                                         >
+                                                            {s.image && (
+                                                                <div className="-mx-5 -mt-5 mb-4 overflow-hidden rounded-t-xl">
+                                                                    <img
+                                                                        src={s.image}
+                                                                        alt={s.product.name}
+                                                                        loading="lazy"
+                                                                        decoding="async"
+                                                                        className="h-32 w-full object-cover transition-transform duration-500 hover:scale-105"
+                                                                        data-testid={`suggestion-image-${s.key}`}
+                                                                    />
+                                                                </div>
+                                                            )}
                                                             <div className="flex items-center gap-2">
                                                                 <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                                                                 <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -1884,21 +1993,23 @@ export default function Apply() {
                                                             <p className="mt-2.5 font-heading text-sm font-bold">
                                                                 {s.product.name}
                                                             </p>
-                                                            <p
-                                                                className="mt-1.5 text-xs leading-5 text-muted-foreground"
-                                                                data-testid={`suggestion-meta-${s.key}`}
-                                                            >
-                                                                {s.meta}
-                                                            </p>
-                                                            <p
-                                                                className="mt-3 font-heading text-base font-extrabold text-primary"
-                                                                data-testid={`suggestion-price-${s.key}`}
-                                                            >
-                                                                {formatMoney(s.product.price, s.product.currency)}
-                                                                <span className="ml-1 text-xs font-semibold text-muted-foreground">
-                                                                    / {s.unit}
-                                                                </span>
-                                                            </p>
+                                                            <div className="flex-1">
+                                                                <p
+                                                                    className="mt-1.5 text-xs leading-5 text-muted-foreground"
+                                                                    data-testid={`suggestion-meta-${s.key}`}
+                                                                >
+                                                                    {s.meta}
+                                                                </p>
+                                                                <p
+                                                                    className="mt-3 font-heading text-base font-extrabold text-primary"
+                                                                    data-testid={`suggestion-price-${s.key}`}
+                                                                >
+                                                                    {formatMoney(s.product.price, s.product.currency)}
+                                                                    <span className="ml-1 text-xs font-semibold text-muted-foreground">
+                                                                        / {s.unit}
+                                                                    </span>
+                                                                </p>
+                                                            </div>
                                                             <Button
                                                                 type="button"
                                                                 variant={s.selected ? "secondary" : "default"}

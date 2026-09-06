@@ -721,3 +721,26 @@ kartı · safari kişi sayısı yolcu sayısı kadar).
   = **8.358 ₺**; 6 günlük seyahatte ins_8d/esim_1gb önerildi (mobil 414px'te kartlar dikey
   yığılıyor); tarih boşken Adım 1'den ilerlenemiyor; Adım 2 özeti "10 Temmuz 2026 –
   19 Temmuz 2026 · 10 gün" ve "Tarihleri düzenle" Adım 1'e dönüyor.
+- **Öneri kartlarına kapak fotoğrafı (2026-06-12)**: Çöl Safarisi kartında ürünün kendi
+  `image_url`'i (Unsplash kumul) kapak olarak gösteriliyor; kartların hizası bozulmasın diye
+  sigorta ve eSIM kartlarına da kapak eklendi (`SUGGESTION_COVERS`: pasaport damgaları /
+  Burj Khalifa silueti). Görseller `h-32 object-cover`, hover'da hafif zoom;
+  metin bloğu `flex-1` ile sarıldı, böylece 3 kartın "Ekle" düğmesi aynı hizada.
+  Doğrulama: 1440px'de 3 kart 386px eşit yükseklik, üç görsel de 1200px yüklendi.
+
+## 2026-09-06 · Adım 1'e vize türü dropdown'ı + hero flip düzeni
+- **Adım 1'de "Başvurduğunuz vize türü" dropdown'ı** (`primary-visa-block`,
+  `primary-visa-select`): seyahat tarihlerinin hemen üstünde. Seçim, aynı kategorideki
+  (yetişkin/çocuk) tüm yolculara uygulanır; altında kalış süresi, giriş tipi ve kişi başı
+  ücret özeti (`primary-visa-meta`).
+- **Vize kartından otomatik seçim güçlendirildi**: `?vize=` parametresi artık yalnızca ilk
+  yolcuya değil, aynı kategorideki tüm yolculara uygulanıyor; seçim `preselectedVisa` ref'inde
+  tutulduğu için sonradan eklenen yolcular da aynı vizeyle geliyor ve
+  "… formda otomatik seçildi" bildirimi gösteriliyor.
+  Doğrulama: `/basvuru?vize=visa_60_multi` → dropdown "60 Günlük Çok Girişli · 14.810 ₺",
+  dropdown'dan 30 günlüğe geçiş Adım 2'deki yolcu seçimine de yansıdı.
+- **Hero flip sırası**: "Dubai vizeniz / 2 iş gününde hazır" ilk slogana alındı (HeroHeadline).
+- **Metin**: "gerisini biz yönetelim" → **"gerisini biz halledelim"** (hero sloganı, alt metni
+  ve Home'daki vurgulu satır). Doğrulama: sayfada "yönetelim" ifadesi kalmadı.
+- Not: DateField'da geçmiş tarih girildiğinde çıkan "seçilebilir aralığın dışında" uyarısı
+  doğru çalışıyor (pod tarihi 2026-09-06; test tarihleri buna göre seçilmeli).

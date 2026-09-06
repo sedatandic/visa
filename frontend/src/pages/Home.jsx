@@ -142,7 +142,7 @@ export default function Home() {
                             </ul>
 
                             <p className="mt-5 text-sm font-semibold text-primary" data-testid="hero-closing-line">
-                                Siz sadece belgelerinizi yükleyin, vize sürecinizi biz yönetelim.
+                                Siz sadece belgelerinizi yükleyin, vize sürecinizi biz halledelim.
                             </p>
 
                             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
