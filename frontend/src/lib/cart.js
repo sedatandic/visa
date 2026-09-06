@@ -11,7 +11,7 @@ const EVENT = "dv-cart-change";
 export const CART_MAX_QTY = 10;
 export const CART_MAX_LINES = 6;
 
-const EMPTY = { items: [], applicationRef: "", bundleId: "" };
+const EMPTY = { items: [], applicationRef: "", bundleId: "", visaTypeId: "", visaQty: 1 };
 
 const clampQty = (value) => Math.min(CART_MAX_QTY, Math.max(1, Number(value) || 1));
 
@@ -30,6 +30,9 @@ export const readCart = () => {
                 })),
             applicationRef: raw.applicationRef || "",
             bundleId: raw.bundleId || "",
+            // Vize satiri: basvuru formu gerektirdigi icin ayri tutulur
+            visaTypeId: raw.visaTypeId || "",
+            visaQty: clampQty(raw.visaQty || 1),
         };
     } catch {
         return EMPTY;
@@ -42,7 +45,8 @@ const writeCart = (state) => {
 };
 
 export const cartCount = (state) =>
-    (state.items || []).reduce((sum, i) => sum + Number(i.quantity || 0), 0);
+    (state.items || []).reduce((sum, i) => sum + Number(i.quantity || 0), 0) +
+    (state.visaTypeId ? Number(state.visaQty || 1) : 0);
 
 const mergeItem = (items, productId, quantity, extras) => {
     const existing = items.find((i) => i.product_id === productId);
@@ -106,8 +110,31 @@ export const useCart = () => {
             ...current,
             items,
             bundleId: options.bundleId ?? current.bundleId,
+            visaTypeId: options.visaTypeId ?? current.visaTypeId,
+            visaQty: clampQty(options.visaQty ?? current.visaQty ?? 1),
         });
         return { ok: true };
+    }, []);
+
+    /** Vize satiri: sepette gorunur, odemesi basvuru formunda alinir. */
+    const setVisa = useCallback((visaTypeId, quantity = 1) => {
+        const current = readCart();
+        writeCart({ ...current, visaTypeId: visaTypeId || "", visaQty: clampQty(quantity) });
+    }, []);
+
+    const setVisaQty = useCallback((quantity) => {
+        const current = readCart();
+        const qty = Math.min(CART_MAX_QTY, Math.max(0, Number(quantity) || 0));
+        writeCart(
+            qty
+                ? { ...current, visaQty: qty }
+                : { ...current, visaTypeId: "", visaQty: 1 }
+        );
+    }, []);
+
+    const removeVisa = useCallback(() => {
+        const current = readCart();
+        writeCart({ ...current, visaTypeId: "", visaQty: 1 });
     }, []);
 
     const setQty = useCallback((productId, quantity) => {
@@ -150,9 +177,14 @@ export const useCart = () => {
         items: state.items,
         applicationRef: state.applicationRef,
         bundleId: state.bundleId,
+        visaTypeId: state.visaTypeId,
+        visaQty: state.visaQty,
         count: cartCount(state),
         add,
         addMany,
+        setVisa,
+        setVisaQty,
+        removeVisa,
         setQty,
         setSchedule,
         remove,

@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from content import BANK_TRANSFER
 from db import applications_col, payments_col, serialize_doc, settings_col
-from emailer import bank_transfer_html, payment_received_html, send_email
+from emailer import bank_transfer_html, payment_received_html, send_email, subject_with_ref
 from models import CheckoutRequest
 
 logger = logging.getLogger(__name__)
@@ -121,7 +121,7 @@ async def _notify_application_payment(application_id: str) -> None:
         return
     await send_email(
         to_email,
-        f"Ödemeniz alındı - {fresh['reference_code']}",
+        subject_with_ref(fresh["reference_code"], "için ödemeniz alındı"),
         payment_received_html(serialize_doc(fresh)),
         kind="payment_received",
         meta={"reference_code": fresh["reference_code"]},
@@ -259,7 +259,7 @@ async def choose_bank_transfer(payload: CheckoutRequest):
     if to_email:
         await send_email(
             to_email,
-            f"Havale/EFT odeme bilgileri - {fresh['reference_code']}",
+            subject_with_ref(fresh["reference_code"], "için havale/EFT ödeme bilgileri"),
             bank_transfer_html(serialize_doc(fresh), bank),
             kind="bank_transfer_instructions",
             meta={"reference_code": fresh["reference_code"]},

@@ -761,3 +761,32 @@ kartı · safari kişi sayısı yolcu sayısı kadar).
 - Doğrulama: masaüstünde 4 kolon, fiyatlar 5.190/9.880/9.880/14.810 ₺ ve çıkış davranışı
   doğru; CTA linki `?vize=visa_60_multi`; Dialog'dan seçim sonrası dropdown "60 Günlük Çok
   Girişli · 14.810 ₺" ve meta "60 gün · Çok girişli"; 414px'te tablo kaydırılabilir.
+
+## 2026-09-06 · E-posta logosu gömüldü, konu satırına başvuru no, sepete vize satırı
+- **BUG: e-postada logo görünmüyordu.** Kök neden: logo `<img src>` ile geçici önizleme
+  alan adından (`*.preview.emergentagent.com`) çekiliyordu; pod uykuya geçtiğinde/istemci
+  proxy'si erişemediğinde kırık görsel çıkıyordu. Çözüm: logo artık **postanın içine
+  gömülüyor** — Resend inline attachment (`content_id: dvh-logo`,
+  `/app/backend/assets/email-logo.png`, 460px/44KB) ve gövdede `src="cid:dvh-logo"`.
+  `email_outbox`'a kaydedilen HTML'de cid yerine genel URL yazılıyor, böylece yönetici
+  panelindeki e-posta önizlemesi bozulmuyor.
+- **Konu satırları**: yeni yardımcı `emailer.subject_with_ref(ref, tail)` →
+  "DV-XXXXXX başvuru nolu Dubai vize başvurunuz alındı". Uygulanan e-postalar: başvuru
+  alındı, taslak kaydedildi/yarım kaldı, eksik belge, durum güncellemesi, vize hazır,
+  ödeme alındı, havale bilgileri. Referans yoksa "Dubai vize başvurunuz …" olarak düşer.
+  (Sipariş e-postaları "Siparişiniz alındı - SV-…" formatında kaldı.)
+- **BUG: paket kartındaki düğme vizeyi sepete eklemiyordu.** Kullanıcı (a) seçeneğini seçti.
+  `lib/cart.js` artık `visaTypeId` + `visaQty` tutuyor (`setVisa`, `setVisaQty`,
+  `removeVisa`, sepet sayacı vizeyi de sayıyor). HomeBundleStrip düğmesi
+  **"Paketi sepete ekle"** oldu ve vize + sigorta + eSIM ekliyor.
+  `/sepet`: `cart-visa-line` (yolcu sayısı adımlayıcısı + kaldır), özet satırı
+  `cart-visa-summary`, "Vize dahil tahmini toplam" `cart-grand-total`. Vize sepette
+  olduğunda ödeme formu yerine `cart-visa-checkout-panel` çıkıyor
+  ("Vize başvurusunu tamamla" → `/basvuru?vize=…&paket=…&sepet=1`, "Vizeyi çıkar…").
+  `Apply.jsx` `?sepet=1` ile sepetteki sigorta/eSIM/tur seçimlerini forma taşıyor ve
+  başvuru oluştuğunda sepeti boşaltıyor.
+- **Karşılaştırma tablosu**: "Çocuk ücreti (0-17 yaş)" satırı eklendi (30 gün 2.470 ₺,
+  60 gün 5.190 ₺, çok girişli kolonlarda "Çocuk vizesi tek girişlidir") + aile indirimi
+  dipnotu (`visa-comparison-family-note`).
+- Test: testing_agent iteration_100 → backend 100%, frontend 100%, sıfır bulgu.
+  Yeni testler: `tests/test_iteration_100_emailer_logo.py`, `tests/test_iteration_100_e2e.py`.

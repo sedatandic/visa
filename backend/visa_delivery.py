@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 
 from db import applications_col, serialize_doc, uploads_col
 import file_access
-from emailer import send_email, visa_ready_html
+from emailer import send_email, subject_with_ref, visa_ready_html
 from storage import APP_NAME, put_object
 
 logger = logging.getLogger(__name__)
@@ -182,7 +182,7 @@ async def deliver_visa_document(app_doc: dict, origin: str) -> dict:
     now = datetime.now(timezone.utc)
     res = await send_email(
         to_email,
-        f"Vizeniz hazır - {app_doc.get('reference_code', '')}",
+        subject_with_ref(app_doc.get("reference_code", ""), "onaylandı - vizeniz hazır"),
         visa_ready_html(serialize_doc(app_doc), download_url, ""),
         kind="visa_delivered",
         meta={"reference_code": app_doc.get("reference_code"), "auto": True},

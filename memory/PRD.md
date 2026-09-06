@@ -1159,3 +1159,12 @@ Test: Playwright ile masaüstü + mobil uçtan uca doğrulandı (bkz. CHANGELOG 
 `/vize-tipleri` sayfasında ve başvuru Adım 1'deki "Vizeleri karşılaştır" penceresinde
 30/60 gün × tek/çok giriş vizeleri tek tabloda karşılaştırılıyor (süre, giriş hakkı, ücret,
 işlem süresi, kimlere uygun). Tablodan seçim forma otomatik işleniyor.
+
+## 2026-09-06 · E-posta güvenilirliği + sepette vize
+- E-posta logosu artık inline (cid) gömülü; konu satırları "{başvuru no} başvuru nolu
+  Dubai vize başvurunuz …" ile başlıyor.
+- Hazır paket düğmesi vizeyi de sepete ekliyor; vize sepetteyken ödeme başvuru formunda
+  alınıyor (`/basvuru?vize=…&paket=…&sepet=1`), form sepetteki ek hizmetleri devralıyor ve
+  başvuru sonrası sepet boşalıyor.
+- Vize karşılaştırma tablosunda çocuk ücreti satırı + aile indirimi dipnotu var.
+- Doğrulama: iteration_100 test raporu (backend %100, frontend %100).

@@ -51,6 +51,7 @@ import { ImportantNotice } from "../components/ImportantNotice";
 import { FamilyDiscountMeter } from "../components/FamilyDiscountMeter";
 import { PhotoRetryHelper } from "../components/PhotoRetryHelper";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
+import { useCart } from "../lib/cart";
 import { BankTransferInfo } from "../components/BankTransferInfo";
 import { BankAccounts } from "../components/BankAccounts";
 import { VisaComparison } from "../components/VisaComparison";
@@ -213,6 +214,7 @@ export default function Apply() {
     const [maxTravelers, setMaxTravelers] = useState(10);
     const [step, setStep] = useState(0);
     const [compareOpen, setCompareOpen] = useState(false);
+    const cart = useCart();
 
     const [contact, setContact] = useState({ full_name: "", email: "", phone: "+90 5", address_city: "", whatsapp_optin: false });
     const [travelers, setTravelers] = useState([newTraveler()]);
@@ -655,6 +657,33 @@ export default function Apply() {
             })
             .catch(() => {});
     }, [bundleParam]);
+
+    // Sepetten gelen basvuru (?sepet=1): sigorta / eSIM / tur secimleri forma tasinir
+    const cartImported = useRef(false);
+    useEffect(() => {
+        if (searchParams.get("sepet") !== "1" || cartImported.current || !storeProducts.length) return;
+        cartImported.current = true;
+        const esim = {};
+        const tours = {};
+        for (const item of cart.items) {
+            const product = storeProducts.find((p) => p.id === item.product_id);
+            if (!product) continue;
+            if (product.kind === "insurance") setInsurancePick(product.id);
+            if (product.kind === "esim") esim[product.id] = item.quantity;
+            if (product.kind === "tour") {
+                tours[product.id] = item.quantity;
+                if (item.scheduled_date) {
+                    setTourSchedule((prev) => ({
+                        ...prev,
+                        [product.id]: { date: item.scheduled_date, time: item.scheduled_time || "" },
+                    }));
+                }
+            }
+        }
+        if (Object.keys(esim).length) setEsimQty(esim);
+        if (Object.keys(tours).length) setTourQty(tours);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, storeProducts]);
 
     // Süre değişince kapsamı yetmeyen poliçe seçimini düşür
     useEffect(() => {
@@ -1450,6 +1479,7 @@ export default function Apply() {
                 consents,
             });
             setCreated(data);
+            if (searchParams.get("sepet") === "1") cart.clear();
             toast.success(`Başvurunuz oluşturuldu. Takip kodu: ${data.reference_code}`);
             return data;
         } catch (err) {

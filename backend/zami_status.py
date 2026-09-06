@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 
 from content import STATUS_LABELS
 from db import applications_col, serialize_doc, settings_col
-from emailer import send_email, status_change_html
+from emailer import send_email, status_change_html, subject_with_ref
 from zami import SESSION_KEY, get_mapping, log_event
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ async def _notify_status_email(app_id: str, matched: str) -> str:
         return "skipped"
     res = await send_email(
         to_email,
-        f"Başvuru durumu güncellendi - {fresh['reference_code']}",
+        subject_with_ref(fresh["reference_code"], "durumu güncellendi"),
         status_change_html(serialize_doc(fresh), STATUS_LABELS[matched], ""),
         kind="status_change",
         meta={"reference_code": fresh["reference_code"], "status": matched, "source": "zami"},

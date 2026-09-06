@@ -66,6 +66,7 @@ from emailer import (
     contact_admin_html,
     documents_completed_admin_html,
     send_email,
+    subject_with_ref,
 )
 from models import ApplicationCreate, ContactCreate, DocumentSubmission, QuoteRequest, VisitIn
 from doc_reminders import missing_documents
@@ -1009,7 +1010,7 @@ async def _send_application_emails(doc: dict, traveler_count: int) -> dict:
     view = serialize_doc(doc)
     email_result = await send_email(
         doc["contact"]["email"],
-        f"Dubai vize başvurunuz alındı - {reference_code}",
+        subject_with_ref(reference_code, "alındı"),
         applicant_received_html(view),
         kind="application_received",
         meta={"reference_code": reference_code},

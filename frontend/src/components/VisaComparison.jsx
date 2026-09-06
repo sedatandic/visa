@@ -29,10 +29,24 @@ const ROWS = [
     },
     {
         key: "price",
-        label: "Kişi başı ücret",
+        label: "Yetişkin ücreti",
         value: (v) => formatMoney(v.price, v.currency),
         sub: (v) => (v.price_usd ? `${formatUsd(v.price_usd)} · güncel kurla TL tahsil` : ""),
         strong: true,
+    },
+    {
+        key: "child",
+        label: "Çocuk ücreti (0-17 yaş)",
+        value: (v, ctx) => {
+            const child = ctx.childFor(v);
+            return child ? formatMoney(child.price, child.currency) : "Çocuk vizesi tek girişlidir";
+        },
+        sub: (v, ctx) => {
+            const child = ctx.childFor(v);
+            if (!child) return `${v.duration_days} günlük tek girişli çocuk vizesi ile başvurulur`;
+            const save = Math.round((1 - Number(child.price) / Number(v.price)) * 100);
+            return save > 0 ? `Yetişkin ücretine göre %${save} daha ucuz` : "";
+        },
     },
     { key: "processing", label: "İşlem süresi", value: (v) => v.processing_days },
     { key: "fit", label: "Kimler için uygun?", value: (v) => FIT[v.id] || v.description },
@@ -48,6 +62,16 @@ export const VisaComparison = ({ visas = [], onSelect, selectedId = "" }) => {
         .filter((v) => v.category !== "child" && v.auto_suggest !== false && v.active !== false)
         .slice()
         .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+
+    // Ayni sureye sahip cocuk vizesi (aile farkini gostermek icin)
+    const childFor = (v) =>
+        visas.find(
+            (c) =>
+                c.category === "child" &&
+                c.active !== false &&
+                Number(c.duration_days) === Number(v.duration_days) &&
+                (v.entry_type === "multiple" ? false : true)
+        ) || null;
 
     if (list.length < 2) return null;
 
@@ -119,11 +143,11 @@ export const VisaComparison = ({ visas = [], onSelect, selectedId = "" }) => {
                                                 : "text-foreground/90"
                                         }
                                     >
-                                        {r.value(v)}
+                                        {r.value(v, { childFor })}
                                     </span>
-                                    {r.sub && r.sub(v) ? (
+                                    {r.sub && r.sub(v, { childFor }) ? (
                                         <span className="mt-1 block font-mono-code text-[11px] text-muted-foreground">
-                                            {r.sub(v)}
+                                            {r.sub(v, { childFor })}
                                         </span>
                                     ) : null}
                                 </td>
@@ -174,6 +198,14 @@ export const VisaComparison = ({ visas = [], onSelect, selectedId = "" }) => {
                 </tbody>
             </table>
             </div>
+            <p
+                className="mt-3 text-xs leading-5 text-muted-foreground"
+                data-testid="visa-comparison-family-note"
+            >
+                Aile başvurusu: 2-3 yolcuda %10, 4 ve üzeri yolcuda %15 indirim tüm vize bedellerine
+                otomatik uygulanır. Çocuk vizeleri tek girişlidir; çok girişli vize alan ebeveynlerle
+                aynı başvuruda ilerleyebilirler.
+            </p>
         </div>
     );
 };

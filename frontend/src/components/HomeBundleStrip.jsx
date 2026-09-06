@@ -12,20 +12,20 @@ export const HomeBundleStrip = () => {
     const [bundles, setBundles] = useState([]);
     const cart = useCart();
 
-    /** Hazir paketin sigorta + eSIM urunlerini tek tikla sepete ekler. */
+    /** Hazir paketi (vize + sigorta + eSIM) tek tikla sepete ekler. */
     const addBundleToCart = (bundle) => {
         const res = cart.addMany(
             [
                 { product_id: bundle.insurance?.id, quantity: 1 },
                 { product_id: bundle.esim?.id, quantity: 1 },
             ].filter((i) => i.product_id),
-            { bundleId: bundle.id }
+            { bundleId: bundle.id, visaTypeId: bundle.visa?.id || "" }
         );
         if (!res.ok) {
             toast.error("Sepete en fazla 6 farklı ürün ekleyebilirsiniz.");
             return;
         }
-        toast.success(`${bundle.name}: sigorta + eSIM sepete eklendi (%10 indirimli).`, {
+        toast.success(`${bundle.name} sepete eklendi: vize + sigorta + eSIM (%10 indirimli).`, {
             action: { label: "Sepete git", onClick: () => window.location.assign("/sepet") },
         });
     };
@@ -146,8 +146,7 @@ export const HomeBundleStrip = () => {
                                         className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border-2 border-border px-6 text-sm font-semibold text-foreground transition-colors duration-150 hover:border-primary/60 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                                         data-testid={`home-bundle-add-to-cart-${b.id}`}
                                     >
-                                        <ShoppingBag className="h-4 w-4" aria-hidden="true" /> Sigorta + eSIM'i
-                                        sepete ekle
+                                        <ShoppingBag className="h-4 w-4" aria-hidden="true" /> Paketi sepete ekle
                                     </button>
                                 </div>
                             </div>

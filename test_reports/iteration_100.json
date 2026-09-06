@@ -1,0 +1,28 @@
+{
+  "summary": "Iteration 100 - Verified email inline logo (cid attachment), 'başvuru nolu' subject prefix, homepage bundle-adds-visa flow, /sepet visa line + visa-checkout panel, apply-form preselection & extras import, and visa comparison child row. 15/15 emailer pytest cases PASS + 1 real end-to-end application through POST /api/applications with Resend accepting the send (status='sent') and outbox HTML containing the public logo URL (no cid:). All frontend flows PASS.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_100_emailer_logo.py",
+    "/app/backend/tests/test_iteration_100_e2e.py",
+    "/app/backend/tests/test_emailer.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "emailer.py: _resend_params uses list(logo) to pass raw bytes as int list to Resend SDK; SDK now accepts base64 string too - list is fine but heavier over the wire. Consider base64.b64encode(logo).decode() for smaller payload.",
+    "/app/frontend/src/pages/Cart.jsx is ~820 lines; still under 700-line guideline but growing - extraction of CheckoutForm + VisaCheckoutPanel would help.",
+    "Apply.jsx is 3660 lines - well past 700 - split into step components strongly recommended.",
+    "In HomeBundleStrip.jsx the CTA link 'Bu paketle başvur' does not pass ?sepet=1 and does not import cart extras; only the bottom 'Paketi sepete ekle' button seeds cart. That is intentional but the two flows can confuse users; consider unifying."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_100_emailer_logo.py (new)",
+    "/app/backend/tests/test_iteration_100_e2e.py (new)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Admin: python /app/backend/admin_test_token.py (JWT). Emails routed only to delivered@resend.dev.",
+  "seed_data_creation": "One test application (contact.email=delivered@resend.dev) created and DELETED. Related email_outbox rows also purged.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Emailer inline-logo: _logo_payload() reads /app/backend/assets/email-logo.png (verified PNG magic). _resend_params includes attachments only when html contains 'cid:dvh-logo'. _record_attempt rewrites html cid->public URL before storing in email_outbox so admin preview /admin/e-postalar shows the logo. subject_with_ref(ref, tail) returns '{ref} başvuru nolu Dubai vize başvurunuz {tail}' (or just 'Dubai vize başvurunuz {tail}' if ref empty). Real E2E via POST /api/applications produced email_notification='sent' — Resend accepted the send with the attachment. Frontend: home bundle 'Paketi sepete ekle' adds visa+insurance+eSIM (badge 3). /sepet shows cart-visa-line, stepper works, cart-total=1.170₺, cart-grand-total=6.360₺. cart-visa-apply-button navigates to /basvuru?vize=visa_30_single&paket=pack_standard&sepet=1 and primary-visa-select is preselected. Removing visa restores cart-checkout-button. Visa comparison child row shows 2.470₺ (30 single) 5.190₺ (60 single) and 'Çocuk vizesi tek girişlidir' for multi columns. Family note visible.",
+  "rca of the issue": "N/A — all fixes from this session validated end-to-end. No regressions found."
+}

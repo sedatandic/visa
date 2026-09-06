@@ -43,6 +43,30 @@ def _html_to_text(html: str) -> str:
 SITE_URL = (os.environ.get("PUBLIC_SITE_URL") or "").strip().strip('"').rstrip("/")
 LOGO_URL = f"{SITE_URL}/brand/logo-horizontal-gold-palm.png"
 
+# Logo, postanin icine gomulur (cid): onizleme pod'u kapali olsa bile gorunur.
+LOGO_CID = "dvh-logo"
+LOGO_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "email-logo.png")
+_logo_bytes: Optional[bytes] = None
+
+
+def _logo_payload() -> Optional[bytes]:
+    global _logo_bytes
+    if _logo_bytes is None:
+        try:
+            with open(LOGO_FILE, "rb") as fh:
+                _logo_bytes = fh.read()
+        except OSError as exc:
+            logger.warning("E-posta logosu okunamadi (%s): %s", LOGO_FILE, exc)
+            _logo_bytes = b""
+    return _logo_bytes or None
+
+
+def subject_with_ref(reference: str, tail: str) -> str:
+    """Konu satiri: '{kod} başvuru nolu Dubai vize başvurunuz {tail}'."""
+    ref = (reference or "").strip()
+    prefix = f"{ref} başvuru nolu " if ref else ""
+    return f"{prefix}Dubai vize başvurunuz {tail}".strip()
+
 
 def _contact_footer() -> str:
     """Marka kunyesi: sirket unvanlari + telefon, WhatsApp, e-posta, adresler."""
@@ -83,7 +107,7 @@ def _wrap(title: str, body_html: str) -> str:
 <div style="margin:0;padding:28px 16px;background-color:#F4EBDD;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background-color:#ffffff;border:1px solid {LINE};border-radius:16px;">
     <tr><td align="center" style="padding:26px 24px 16px;background-color:#FDF8F0;border-radius:16px 16px 0 0;">
-      <img src="{LOGO_URL}" width="230" alt="{BRAND}" style="display:block;width:230px;max-width:78%;height:auto;border:0;outline:none;text-decoration:none;" />
+      <img src="{'cid:' + LOGO_CID if _logo_payload() else LOGO_URL}" width="230" alt="{BRAND}" style="display:block;width:230px;max-width:78%;height:auto;border:0;outline:none;text-decoration:none;" />
       <div style="margin-top:12px;font-size:10px;letter-spacing:2.2px;text-transform:uppercase;color:{FAINT};">
         TÜRSAB Üyesi {COMPANY['tursab_type']}
       </div>
@@ -128,6 +152,16 @@ def _resend_params(to: str, subject: str, html: str, kind: str, sender: str, rep
                 "List-Unsubscribe": f"<mailto:{reply_to}?subject=Listeden%20cikar>",
                 "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
             }
+    logo = _logo_payload() if f"cid:{LOGO_CID}" in html else None
+    if logo:
+        params["attachments"] = [
+            {
+                "content": list(logo),
+                "filename": "dubai-vize-hatti.png",
+                "content_type": "image/png",
+                "content_id": LOGO_CID,
+            }
+        ]
     return params
 
 
@@ -154,8 +188,8 @@ async def _record_attempt(
                 "subject": subject,
                 "kind": kind,
                 "meta": meta or {},
-                # Yonetici panelinde tam onizleme icin gövde saklanir
-                "html": html[:120000],
+                # Yonetici panelinde tam onizleme icin gövde saklanir (cid yerine URL)
+                "html": html.replace(f"cid:{LOGO_CID}", LOGO_URL)[:120000],
                 "created_at": datetime.now(timezone.utc),
                 **result,
             }

@@ -29,7 +29,7 @@ from db import (
     serialize_doc,
 )
 from doc_reminders import missing_documents
-from emailer import draft_saved_html, login_code_html, send_email
+from emailer import draft_saved_html, login_code_html, send_email, subject_with_ref
 from rate_limit import check as rate_check, client_ip, code_request_window
 
 logger = logging.getLogger(__name__)
@@ -312,7 +312,7 @@ async def save_draft(payload: DraftIn, request: Request) -> dict:
     )
     email_result = await send_email(
         email,
-        "Başvurunuz kaydedildi - kaldığınız yerden devam edin",
+        subject_with_ref(doc.get("resume_code", ""), "kaydedildi - kaldığınız yerden devam edin"),
         draft_saved_html(doc, resume_url),
         kind="draft_saved",
         meta={"draft_id": doc["id"]},

@@ -59,6 +59,7 @@ from emailer import (
     payment_received_html,
     send_email,
     status_change_html,
+    subject_with_ref,
     visa_ready_html,
 )
 from rate_limit import code_request_window
@@ -272,7 +273,7 @@ async def _notify_status_change(fresh: dict, previous_status: str, payload: Stat
         return None
     res = await send_email(
         to_email,
-        f"Başvuru durumu güncellendi - {fresh['reference_code']}",
+        subject_with_ref(fresh["reference_code"], "durumu güncellendi"),
         status_change_html(serialize_doc(fresh), STATUS_LABELS[payload.status], payload.note or ""),
         kind="status_change",
         meta={"reference_code": fresh["reference_code"], "status": payload.status},
@@ -519,7 +520,7 @@ async def admin_send_visa(
 
     res = await send_email(
         to_email,
-        f"Vizeniz hazır - {app_doc['reference_code']}",
+        subject_with_ref(app_doc["reference_code"], "onaylandı - vizeniz hazır"),
         visa_ready_html(serialize_doc(app_doc), download_url, payload.message or ""),
         kind="visa_delivered",
         meta={"reference_code": app_doc["reference_code"]},
@@ -624,7 +625,7 @@ async def admin_mark_paid(application_id: str, admin: dict = Depends(require_adm
     if to_email:
         result = await send_email(
             to_email,
-            f"Ödemeniz alındı - {fresh['reference_code']}",
+            subject_with_ref(fresh["reference_code"], "için ödemeniz alındı"),
             payment_received_html(serialize_doc(fresh)),
             kind="payment_received",
             meta={"reference_code": fresh["reference_code"]},

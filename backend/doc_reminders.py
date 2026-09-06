@@ -11,7 +11,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 from db import applications_col, drafts_col
-from emailer import document_reminder_html, send_email
+from emailer import document_reminder_html, send_email, subject_with_ref
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +142,7 @@ async def send_document_reminder(app_doc: dict, origin: str, missing: list | Non
     upload_url = _track_url(origin, app_doc)
     result = await send_email(
         to_email,
-        f"Eksik belge hatirlatmasi - {app_doc.get('reference_code', '')}",
+        subject_with_ref(app_doc.get("reference_code", ""), "için eksik belgeler var"),
         document_reminder_html(app_doc, missing, upload_url),
         kind="document_reminder",
         meta={
@@ -304,7 +304,7 @@ async def send_draft_reminder(draft: dict, origin: str) -> dict:
     state = draft.get("reminder") or {}
     result = await send_email(
         email,
-        "Dubai vize basvurunuz yarim kaldi",
+        subject_with_ref(draft.get("resume_code", ""), "yarım kaldı"),
         draft_reminder_html(draft, _draft_resume_url(origin, draft)),
         kind="draft_reminder",
         meta={"draft_id": draft.get("id"), "reminder_no": int(state.get("count") or 0) + 1},
