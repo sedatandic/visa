@@ -557,9 +557,9 @@ STATUS_LABELS = {
 
 COMPANY = {
     "brand": "Dubai Vize Hattı",
-    "legal_name": "Dubai Vize Hattı Turizm ve Danışmanlık A.Ş.",
-    "parent_company": "XXXX Travel Solutions Turizm Ltd. Şti.",
-    "dubai_company": "XXXX Travel Solutions FZE",
+    "legal_name": "Moruya Travel Solutions Turizm Ltd. Şti.",
+    "parent_company": "Moruya Travel Solutions Turizm Ltd. Şti.",
+    "dubai_company": "Moruya Travel Solutions FZE",
     "phone": "+90 532 588 26 30",
     "whatsapp": "905325882630",
     "email": "info@dubaivizeonline.com",
@@ -595,14 +595,14 @@ AGENCY_INFO = {
 
 
 def affiliation_note(company: dict | None = None) -> str:
-    """Iştirak/satici bilgisi; sirket adlari **kalin** isaretiyle dondurulur."""
+    """Isletici sirket ve BAE grup sirketi bilgisi; adlar **kalin** isaretlenir."""
     c = company or COMPANY
     parent = c.get("parent_company") or COMPANY["parent_company"]
     dubai = c.get("dubai_company") or COMPANY["dubai_company"]
     return (
-        f"Dubaivizeonline.com bir **{parent}** iştirakidir; tüm satışlar bu şirket "
-        f"üzerinden yapılmaktadır. Birleşik Arap Emirlikleri'ndeki grup şirketimiz "
-        f"**{dubai}**'dir."
+        f"Dubai Vize Hattı, **{parent}** tarafından işletilen bir markadır; tüm satışlar "
+        f"bu şirket üzerinden yapılmaktadır. Birleşik Arap Emirlikleri'ndeki grup "
+        f"şirketimiz **{dubai}**'dir."
     )
 
 

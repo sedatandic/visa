@@ -384,3 +384,40 @@ markanın sitenin tamamına taşınmasını istedi.
   "Yeni fotoğraf yükle" dosya seçiciyi açtı ve yeni dosya yüklendiğinde kontrol yeniden koştu.
   data-testid'ler: `traveler-{i}-photo-check-warning`, `...-mine`, `...-example`,
   `...-retry-button`, `...-guide-toggle`, `...-guide`.
+
+## 2026-06-09 · Anlatımdan "vize örneği" çıkarıldı + gerçek şirket unvanları
+
+### Anlatım (VisaExplainer)
+- Son bölüm (`specimen` sahnesi: "Onaylanan vizeniz böyle görünür") anlatımdan kaldırıldı.
+  Ses tek parça yeniden üretildi: **73.3 sn / 7 sahne** (önce 78.1 sn / 8 sahne);
+  `full.json` pencereleri ve `SCENES[].voiceMs` yeni zaman damgalarıyla eşitlendi.
+  Anlatım artık CTA sahnesinde bitiyor (doğrulandı: `explainer-dot-*` 7 nokta,
+  specimen yok).
+
+### Yeni bölüm: e-Vize örneği (`components/VisaSpecimen.jsx`)
+- **/gerekli-belgeler** sayfasına taşındı: "Onaylanan vizeniz böyle görünür" başlığı,
+  büyütmeli (Dialog) belge önizlemesi, 4 maddelik bilgi listesi (PDF olarak e-posta +
+  WhatsApp'a gelir, pasaporta etiket yapıştırılmaz, havalimanında telefondan gösterilir,
+  takip koduyla yeniden indirilebilir) ve "Başvuruya başla" düğmesi.
+- Görsel web için optimize edildi: `explainer/specimen.png` (892 KB) →
+  `/samples/evisa-specimen.jpg` (1200x1696, 185 KB, progressive).
+- data-testid: `visa-specimen-section`, `visa-specimen-open-button`,
+  `visa-specimen-full-image`, `visa-specimen-apply-button`.
+
+### Gerçek şirket unvanları (kullanıcıdan geldi)
+- Türkiye: **Moruya Travel Solutions Turizm Ltd. Şti.** · Dubai: **Moruya Travel Solutions FZE**
+- `content.py COMPANY`: `legal_name`, `parent_company` (TR) ve `dubai_company` (FZE)
+  gerçek unvanlarla güncellendi; `XXXX ...` yer tutucuları tamamen kalktı (kod + DB'de 0).
+- `affiliation_note` metni yeniden yazıldı: artık alan adı değil marka üzerinden konuşuyor —
+  "Dubai Vize Hattı, **Moruya Travel Solutions Turizm Ltd. Şti.** tarafından işletilen bir
+  markadır; … BAE'deki grup şirketimiz **Moruya Travel Solutions FZE**'dir."
+- DB: `site_settings.company_info.legal_name/parent_company/dubai_company` ve
+  `bank_transfer.account_name` (havale alıcı adı) TR unvanına çevrildi.
+- `AdminCompany.jsx` alan örnekleri gerçek unvanlarla güncellendi.
+- Doğrulama: `/api/content/site` yanıtı + footer ("Ticaret Unvanı: Moruya Travel Solutions
+  Turizm Ltd. Şti.") tarayıcıda kontrol edildi.
+
+### Hâlâ eksik olan tek bilgi
+Vergi dairesi / vergi no / MERSİS / ticaret sicil no alanları `company_info` içinde boş
+(varsayılan `content.py` değerleri: "Beşiktaş Vergi Dairesi", "0000000000"). Yönetici →
+Şirket ekranından girilmeli; yasal metinlerde bu bilgiler gösteriliyor.

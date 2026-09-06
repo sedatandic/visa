@@ -6,6 +6,7 @@ import { IMAGES, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { PhotoGuide } from "../components/PhotoGuide";
+import { VisaSpecimen } from "../components/VisaSpecimen";
 import { Button } from "../components/ui/button";
 
 export default function Documents() {
@@ -130,6 +131,8 @@ export default function Documents() {
                     </div>
                 </div>
             </section>
+
+            <VisaSpecimen />
 
             <ImportantNotice />
         </div>

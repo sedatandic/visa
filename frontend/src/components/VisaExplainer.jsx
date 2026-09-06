@@ -6,7 +6,6 @@ import {
     BadgeCheck,
     Camera,
     Captions,
-    FileCheck2,
     Headphones,
     IdCard,
     Pause,
@@ -29,7 +28,7 @@ const SCENES = [
         subtitle: "Dubai vizesi almak artık çok kolay. Başvurunuzu yapmak için yalnızca iki belgeye ihtiyacınız var.",
         alt: "Bavuluyla gülümseyen gezgin çizimi",
         silentMs: 6000,
-        voiceMs: 6838,
+        voiceMs: 8185,
     },
     {
         key: "passport",
@@ -40,7 +39,7 @@ const SCENES = [
         subtitle: "İlk olarak, pasaportunuzun kimlik bilgilerinin yer aldığı sayfanın fotoğrafını yükleyin.",
         alt: "Türk pasaportu, kimlik sayfası ve telefonla fotoğraflama çizimi",
         silentMs: 5000,
-        voiceMs: 5271,
+        voiceMs: 5596,
     },
     {
         key: "photo",
@@ -52,7 +51,7 @@ const SCENES = [
             "Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. Fotoğrafınızın gözlüksüz ve şapkasız olması gerektiğini lütfen unutmayın.",
         alt: "Yan yana iki vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
         silentMs: 8500,
-        voiceMs: 9416,
+        voiceMs: 9682,
     },
     {
         key: "upload",
@@ -64,7 +63,7 @@ const SCENES = [
             "Belgelerinizi yükleyip ödemenizi yapmanız yeterlidir. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza ya da otel rezervasyonu yaptırmanıza da gerek yok.",
         alt: "Belgelerin bulut simgesine yüklendiği çizim",
         silentMs: 10000,
-        voiceMs: 10751,
+        voiceMs: 11250,
     },
     {
         key: "track",
@@ -76,7 +75,7 @@ const SCENES = [
             "Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyoruz. Onaylanan Dubai vizeniz ortalama iki iş günü içinde e-mail adresinize ve WhatsApp ile gönderilir.",
         alt: "Kulaklıklı danışman ve onay listesi çizimi",
         silentMs: 9000,
-        voiceMs: 10542,
+        voiceMs: 11262,
     },
     {
         key: "extras",
@@ -88,7 +87,7 @@ const SCENES = [
             "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de başvurunuza ekleyebilirsiniz. Böylece Dubai'ye vardığınız anda internet bağlantınız hazır olur ve seyahat sigortanız anında devreye girer.",
         alt: "eSIM ve seyahat sigortası simgeleri çizimi",
         silentMs: 11000,
-        voiceMs: 12795,
+        voiceMs: 13084,
     },
     {
         key: "cta",
@@ -100,20 +99,7 @@ const SCENES = [
             "Vizenizi Dubai Vize Hattı ile kolayca alın. TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle başvurunuzu tamamlayın. Hemen başvurun ve Dubai yolculuğunuzun ilk adımını bugün atın. Dubai sizi bekliyor!",
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
         silentMs: 12000,
-        voiceMs: 13990,
-        cta: true,
-    },
-    {
-        key: "specimen",
-        step: "Örnek",
-        icon: FileCheck2,
-        title: "Onaylanan vizeniz böyle görünür",
-        note: "e-Vize örneği · PDF olarak e-mail ve WhatsApp'ınıza gelir",
-        subtitle:
-            "İşte, onaylanan Dubai vizeniz tam olarak böyle görünür. Vizenizi PDF olarak saklayın, seyahatinizde yanınızda bulundurun.",
-        alt: "Örnek Dubai e-vize belgesi",
-        silentMs: 9000,
-        voiceMs: 8480,
+        voiceMs: 14243,
         cta: true,
     },
 ];
