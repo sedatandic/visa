@@ -60,7 +60,7 @@ const SCENES = [
         title: "Yükleyin ve ödemeyi tamamlayın",
         note: "Uçak bileti veya otel rezervasyonu gerekmiyor",
         subtitle:
-            "Belgelerinizi yükleyip ödemenizi yapmanız yeterlidir. Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza ya da otel rezervasyonu yaptırmanıza da gerek yok.",
+            "Belgelerinizi yükleyip ödemenizi yapmanız yeterlidir. Üstelik Dubai vizeniz onaylanmadan önce uçak bileti ya da otel rezervasyonu yaptırmanıza da gerek yoktur.",
         alt: "Belgelerin bulut simgesine yüklendiği çizim",
         silentMs: 10000,
         voiceMs: 11250,

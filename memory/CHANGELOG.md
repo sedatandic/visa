@@ -622,3 +622,15 @@ Kullanıcı notları doğrultusunda anlatım baştan üretildi (`scripts/generat
   Arapça benzeri yazı ekledi → kullanılmadı, sahne aynı öğelerle sıfırdan üretildi.
 - Test: iteration_99 frontend %100 (7 sahne senkronu 4/9/16/25/35/46/60 sn, yeni altyazılar,
   intro görseli kırpılmıyor, kapak davranışı ve tüm kontroller).
+
+## 2026-06-11 · Anlatım: yükleme cümlesi + intro sahnesine quad/jet ski
+- Yükleme sahnesi metni güncellendi (seslendirme + altyazı): "Belgelerinizi yükleyip
+  ödemenizi yapmanız yeterlidir. Üstelik Dubai vizeniz onaylanmadan önce uçak bileti ya da
+  otel rezervasyonu yaptırmanıza da gerek yoktur." (imla düzeltilerek uygulandı: "ya da",
+  "yaptırmanıza da"). full.mp3 yeniden üretildi: 67,8 sn, 7 sahne penceresi güncel.
+- intro çizimi: jeepin **tavan sepetinde quad bike (ATV)** ve arkasında **römorkta jet ski**
+  eklendi; deve, gezgin, UAE bayrağı, Burj Al Arab + Burj Khalifa, paraşütçü, çöl kumu ve
+  kenardan giren palmiyeler korundu (1264x848, gökyüzü saydam).
+  Yedekler: `intro.desert.{jpg,png}` (quad/jet ski öncesi), `intro.palmoverlap.{jpg,png}` (ilk hali).
+- Doğrulama: mobil 414x900 ve masaüstü 1440x900 ekran görüntüsü — görsel kırpılmıyor
+  (taşma 0px), sahne senkronu ve kapak karesi çalışıyor.

@@ -70,7 +70,7 @@ SCENES = [
         "key": "upload",
         "sentences": [
             "[energetic] Belgelerinizi yükleyip ödemenizi yapmanız yeterlidir.",
-            "[emphatic] Üstelik vizeniz onaylanmadan önce uçak bileti satın almanıza ya da otel rezervasyonu yaptırmanıza da gerek yok.",
+            "[emphatic] Üstelik Dubai vizeniz onaylanmadan önce uçak bileti ya da otel rezervasyonu yaptırmanıza da gerek yoktur.",
         ],
     },
     {
