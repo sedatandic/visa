@@ -1,77 +1,138 @@
-"""Logo wordmark degisimi: "Vize Online" -> "Vize Hatti".
+"""Logo wordmark degisimi: "Vize Online" -> "Vize Hatti" (otomatik olcum).
 
-Orijinal PNG'nin illustrasyonu ve gold DUBAI yazisi korunur; yalnizca ikinci
-satir silinip Philosopher Bold ile yeniden yazilir. Olculer orijinalden alinir:
-cap yuksekligi 53px, baseline y=252, sol kenar x=506, blok genisligi 393px
-(DUBAI ile ayni hizada bitmesi icin harf araligi otomatik ayarlanir).
+Illustrasyon ve gold DUBAI yazisi orijinal dosyadan korunur; yalnizca alt satir
+silinip Philosopher Bold ile yeniden yazilir. Olculer her dosyadan otomatik
+okunur: metin blogunun sol/sag kenari, ilk harfin ('V') cap yuksekligi ve taban
+cizgisi, metin rengi. Harf araligi ust satirla ayni yerde bitecek sekilde ayarlanir.
 
-Kullanim: python /app/scripts/rebrand_logo.py [--stroke 1]
+Kullanim:
+  python /app/scripts/rebrand_logo.py --src <png> --out <png> [--stroke 0] [--dry-run]
 """
 import argparse
 from pathlib import Path
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-SRC = Path("/app/frontend/public/brand/logo-horizontal-gold-palm.png")
 FONT = Path("/tmp/fonts/Philosopher.ttf")
 TEXT = "Vize Hattı"
-COLOR = (141, 90, 34, 255)
-
-# orijinal olculer
-LEFT, RIGHT, BASELINE, CAP = 506, 898, 252, 53
-ERASE_BOX = (490, 190, 929, 260)
 SS = 4  # supersampling
 
 
-def render_line(stroke: int) -> Image.Image:
-    """Metni cap yuksekligi CAP ve genisligi (RIGHT-LEFT) olacak sekilde uretir."""
-    size = CAP * SS
-    for _ in range(12):  # cap yuksekligini olcerek punto duzelt
+def _runs(profile, min_gap=1):
+    runs, start, in_run = [], 0, False
+    gap = 0
+    for i, v in enumerate(profile):
+        if v > 0:
+            if not in_run:
+                start, in_run = i, True
+            gap = 0
+        elif in_run:
+            gap += 1
+            if gap > min_gap:
+                runs.append((start, i - gap))
+                in_run = False
+    if in_run:
+        runs.append((start, len(profile) - 1))
+    return runs
+
+
+def measure(img: Image.Image) -> dict:
+    """Alt satir metnini bulur: bbox, taban cizgisi, cap yuksekligi, renk.
+
+    Iki asama: (1) illustrasyondan geniş bir bosluk ile ayrilan metin kolonlari,
+    (2) o kolonlarda satir bantlari -> en alt bant = "Vize Online" satiri.
+    """
+    a = np.array(img)
+    mask = a[..., 3] > 30
+
+    col_blocks = _runs(mask.sum(axis=0), min_gap=15)
+    text_cols = col_blocks[-1]  # yatay logolarda metin en sagdaki blok
+    strip = mask[:, text_cols[0] : text_cols[1] + 1]
+
+    row_bands = _runs(strip.sum(axis=1), min_gap=2)
+    if len(row_bands) < 2:
+        raise SystemExit(f"iki metin satiri bulunamadi: {row_bands}")
+    band = row_bands[-1]
+
+    sub = strip[band[0] : band[1] + 1]
+    glyph_blocks = _runs(sub.sum(axis=0), min_gap=1)
+    left = text_cols[0] + glyph_blocks[0][0]
+    right = text_cols[0] + glyph_blocks[-1][1]
+
+    first = glyph_blocks[0]
+    glyph = sub[:, first[0] : first[1] + 1]
+    rows = np.where(glyph.sum(axis=1) > 0)[0]
+    cap = int(rows.max() - rows.min() + 1)
+    baseline = int(band[0] + rows.max())
+
+    region = mask[band[0] : band[1] + 1, left : right + 1]
+    colors = a[band[0] : band[1] + 1, left : right + 1, :3][region]
+    color = tuple(int(v) for v in colors.mean(axis=0).round())
+    return {
+        "left": int(left),
+        "right": int(right),
+        "top": int(band[0]),
+        "bottom": int(band[1]),
+        "cap": cap,
+        "baseline": baseline,
+        "color": color,
+        "size": img.size,
+    }
+
+
+def render_line(m: dict, stroke: int) -> Image.Image:
+    cap, target = m["cap"], (m["right"] - m["left"] + 1) * SS
+    size = cap * SS
+    for _ in range(12):
         font = ImageFont.truetype(str(FONT), size)
         probe = Image.new("L", (size * 4, size * 3), 0)
         ImageDraw.Draw(probe).text((size, size), "V", font=font, fill=255, stroke_width=stroke * SS)
         box = probe.getbbox()
-        cap_now = box[3] - box[1]
-        if abs(cap_now - CAP * SS) <= 1:
+        if abs((box[3] - box[1]) - cap * SS) <= 1:
             break
-        size = max(8, int(size * (CAP * SS) / cap_now))
+        size = max(8, int(size * (cap * SS) / (box[3] - box[1])))
     font = ImageFont.truetype(str(FONT), size)
 
-    # harf araligi: toplam genislik hedefe esitlenir
     widths = [font.getlength(ch) for ch in TEXT]
-    target = (RIGHT - LEFT + 1) * SS
     tracking = (target - sum(widths)) / max(1, len(TEXT) - 1)
+    fill = (*m["color"], 255)
 
-    layer = Image.new("RGBA", (target + 200 * SS, CAP * SS * 3), (0, 0, 0, 0))
+    layer = Image.new("RGBA", (target + 200 * SS, cap * SS * 3), (0, 0, 0, 0))
     draw = ImageDraw.Draw(layer)
-    x = 50 * SS
-    y = CAP * SS
+    x, y = 50 * SS, cap * SS
     for ch, adv in zip(TEXT, widths):
-        draw.text((x, y), ch, font=font, fill=COLOR, stroke_width=stroke * SS, stroke_fill=COLOR)
+        draw.text((x, y), ch, font=font, fill=fill, stroke_width=stroke * SS, stroke_fill=fill)
         x += adv + tracking
-    return layer.crop(layer.getbbox()).resize(
-        (round((layer.getbbox()[2] - layer.getbbox()[0]) / SS), round((layer.getbbox()[3] - layer.getbbox()[1]) / SS)),
-        Image.LANCZOS,
-    )
+    box = layer.getbbox()
+    line = layer.crop(box)
+    return line.resize((round(line.width / SS), round(line.height / SS)), Image.LANCZOS)
 
 
-def build(stroke: int, out_path: Path) -> Image.Image:
-    base = Image.open(SRC).convert("RGBA")
-    base.paste((0, 0, 0, 0), ERASE_BOX)  # eski yaziyi sil
+def build(src: Path, out: Path, stroke: int) -> None:
+    base = Image.open(src).convert("RGBA")
+    m = measure(base)
+    print(f"{src.name}: {m}")
 
-    line = render_line(stroke)
-    # 'V' harfinin alt kenari baseline'a otursun; 'i' noktasi ustte kalabilir
-    v_only = line.crop((0, 0, min(line.width, 90), line.height))
-    v_bottom = v_only.getbbox()[3]
-    base.alpha_composite(line, (LEFT, BASELINE - v_bottom + 1))
-    base.save(out_path)
-    return base
+    pad = max(2, m["cap"] // 12)
+    base.paste((0, 0, 0, 0), (m["left"] - pad, m["top"] - pad, min(base.width, m["right"] + pad + 1), min(base.height, m["bottom"] + pad + 1)))
+
+    line = render_line(m, stroke)
+    v_slice = line.crop((0, 0, min(line.width, int(m["cap"] * 1.4)), line.height))
+    v_bottom = v_slice.getbbox()[3]
+    base.alpha_composite(line, (m["left"], m["baseline"] - v_bottom + 1))
+    base.save(out)
+    print(f"  -> {out}")
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stroke", type=int, default=1)
-    ap.add_argument("--out", default="/tmp/logo_hatti.png")
+    ap.add_argument("--src", required=True)
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--stroke", type=int, default=0)
+    ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
-    img = build(args.stroke, Path(args.out))
-    print(args.out, img.size)
+    if args.dry_run:
+        print(measure(Image.open(args.src).convert("RGBA")))
+    else:
+        build(Path(args.src), Path(args.out), args.stroke)

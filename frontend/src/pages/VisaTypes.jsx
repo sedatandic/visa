@@ -32,7 +32,7 @@ export default function VisaTypes() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vize Hizmet Bedelleri ve Fiyatları | Dubai Vize Online",
+            "Dubai Vize Hizmet Bedelleri ve Fiyatları | Dubai Vize Hattı",
             "30 ve 60 günlük tek giriş, çok giriş, çocuk vizesi ve vize uzatma hizmet bedelleri; ekspres vize ve seyahat sigortası ek hizmet fiyatları."
         );
         api.get("/content/site")

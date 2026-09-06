@@ -3,7 +3,7 @@ import { COMPANY } from "../lib/site";
 
 const BRAND_NAME = `${COMPANY.brand} ${COMPANY.brandSuffix}`.trim();
 
-/** Marka işareti: orijinal yatay logo kilidi (amblem + DUBAI Vize Online). */
+/** Marka işareti: yatay logo kilidi (amblem + DUBAI Vize Hattı). */
 export const BrandMark = ({ light = false }) => (
     <span className="flex items-center" data-testid="brand-mark">
         <img

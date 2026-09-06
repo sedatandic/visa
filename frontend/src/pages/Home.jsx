@@ -90,7 +90,7 @@ export default function Home() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vizesi Başvurusu | Online Başvuru ve Fiyatlar | Dubai Vize Online",
+            "Dubai Vizesi Başvurusu | Online Başvuru ve Fiyatlar | Dubai Vize Hattı",
             "Dubai (BAE) vize başvurunuzu tamamen online tamamlayın: evraklarınızı yükleyin, ödemenizi yapın, onaylanan vizenizi e-posta ile alın. Net fiyatlar ve başvuru takibi."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});

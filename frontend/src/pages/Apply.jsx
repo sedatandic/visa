@@ -395,7 +395,7 @@ export default function Apply() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vize Başvuru Formu | Aile Başvurusu | Dubai Vize Online",
+            "Dubai Vize Başvuru Formu | Aile Başvurusu | Dubai Vize Hattı",
             "Dubai vize başvurunuzu online tamamlayın. Tek formda birden fazla yolcu ekleyin; çocuk vizesi ve aile indirimi otomatik hesaplanır."
         );
     }, []);

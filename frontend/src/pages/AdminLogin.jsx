@@ -22,7 +22,7 @@ export default function AdminLogin() {
     const codeRef = useRef(null);
 
     useEffect(() => {
-        setMeta("Yönetici Girişi | Dubai Vize Online", "Dubai Vize Online yönetim paneli girişi.");
+        setMeta("Yönetici Girişi | Dubai Vize Hattı", "Dubai Vize Hattı yönetim paneli girişi.");
     }, []);
 
     useEffect(() => {

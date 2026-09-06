@@ -185,7 +185,7 @@ async def request_login_code(payload: EmailIn, request: Request) -> dict:
     origin = (request.headers.get("origin") or os.environ.get("PUBLIC_SITE_URL") or "").rstrip("/")
     result = await send_email(
         email,
-        "Dubai Vize Online giris kodunuz",
+        "Dubai Vize Hattı giris kodunuz",
         login_code_html(code, CODE_TTL_MINUTES, f"{origin}/hesabim" if origin else ""),
         kind="login_code",
         meta={"email": email},

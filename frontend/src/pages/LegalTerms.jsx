@@ -14,7 +14,7 @@ const CONFIG = {
         title: "İade ve İptal Koşulları",
         description:
             "Vize danışmanlığı, tur/aktivite ve transfer hizmetlerinde iptal, iade ve ret durumlarında uygulanan kuralların tamamı.",
-        meta: "İade ve İptal Koşulları | Dubai Vize Online",
+        meta: "İade ve İptal Koşulları | Dubai Vize Hattı",
         metaDesc:
             "Dubai vize başvuruları, tur ve aktivite rezervasyonlarında iptal, iade, ret (RED), no-show ve mücbir sebep koşulları.",
         testId: "refund-terms-page",
@@ -26,9 +26,9 @@ const CONFIG = {
         title: "Şartlar ve Mesafeli Hizmet Sözleşmesi",
         description:
             "Online başvuru sırasında kurulan sözleşmenin tarafları, kapsamı, aracılık statüsü ve karşılıklı yükümlülükler.",
-        meta: "Şartlar ve Mesafeli Hizmet Sözleşmesi | Dubai Vize Online",
+        meta: "Şartlar ve Mesafeli Hizmet Sözleşmesi | Dubai Vize Hattı",
         metaDesc:
-            "Dubai Vize Online hizmet sözleşmesi: kapsam, yükümlülükler, ödeme, aracılık statüsü, riskli aktiviteler, cayma hakkı ve uyuşmazlık.",
+            "Dubai Vize Hattı hizmet sözleşmesi: kapsam, yükümlülükler, ödeme, aracılık statüsü, riskli aktiviteler, cayma hakkı ve uyuşmazlık.",
         testId: "service-terms-page",
         icon: FileText,
     },
@@ -38,9 +38,9 @@ const CONFIG = {
         title: "Gizlilik Politikası",
         description:
             "Kişisel verilerinizi hangi amaçlarla işlediğimiz, kimlerle paylaştığımız, ne kadar sakladığımız ve haklarınız.",
-        meta: "Gizlilik Politikası | Dubai Vize Online",
+        meta: "Gizlilik Politikası | Dubai Vize Hattı",
         metaDesc:
-            "Dubai Vize Online gizlilik politikası: işlenen veri kategorileri, hukuki sebepler, yurt içi ve yurt dışı aktarım, saklama süreleri ve KVKK haklarınız.",
+            "Dubai Vize Hattı gizlilik politikası: işlenen veri kategorileri, hukuki sebepler, yurt içi ve yurt dışı aktarım, saklama süreleri ve KVKK haklarınız.",
         testId: "privacy-policy-page",
         icon: Lock,
     },
@@ -50,7 +50,7 @@ const CONFIG = {
         title: "Ticari Elektronik İleti Onam Formu",
         description:
             "Kampanya ve fırsat bildirimleri için verdiğiniz onayın kapsamı, işlenen bilgiler ve onayı geri alma yolları.",
-        meta: "Ticari Elektronik İleti Onam Formu | Dubai Vize Online",
+        meta: "Ticari Elektronik İleti Onam Formu | Dubai Vize Hattı",
         metaDesc:
             "Kampanya, indirim ve fırsat bildirimleri için ticari elektronik ileti onayının kapsamı, reklam eşleştirmesi ve izni geri alma adımları.",
         testId: "marketing-consent-page",

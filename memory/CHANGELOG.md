@@ -302,3 +302,52 @@ FamilyDiscountMeter'ın 2 yolcuda %10 / 5 yolcuda %15 göstermesi.
   jetonsuz/bozuk jeton 401, kod tek kullanımlık), Zami yönetici uç noktaları 401/200,
   imzalı dosya erişimi (jetonsuz 403 · admin Bearer 200), `/admin` panosu 125 başvuruyu
   listeliyor (ekran görüntüsü).
+
+## 2026-06-09 · Marka değişikliği: "Dubai Vize Online" → "Dubai Vize Hattı"
+
+Kullanıcı sesli anlatım için 5 aday isim arasından "Dubai Vize Hattı"nı seçti
+(karşılaştırma kayıtları `scripts/generate_brand_samples.py` ile üretildi) ve
+markanın sitenin tamamına taşınmasını istedi.
+
+### Yapılanlar
+- **Metinler**: 48 dosyada 80 geçiş "Dubai Vize Hattı" olarak güncellendi
+  (frontend sayfaları + bileşenler, `index.html` başlık/meta, backend `content.py`,
+  `emailer.py BRAND`, `routes_admin`, `routes_zami`, `insurance_tasks`, `otp_reminders`,
+  `server.py`, testler). `lib/site.js → COMPANY.brandSuffix = "Hattı"`.
+- **Veritabanı**: `site_settings` içindeki `bank_transfer.account_name` ve
+  `company_info.legal_name` güncellendi (ikisi de hâlâ PLACEHOLDER unvan).
+  `email_outbox` geçmiş kayıtları bilinçli olarak değiştirilmedi (arşiv).
+- **Logo**: `scripts/rebrand_logo.py` (yeni) — orijinal PNG'nin illüstrasyonu ve altın
+  DUBAI yazısı piksel piksel korunur; yalnızca alt satır silinip **Philosopher Bold**
+  (Optima benzeri, Türkçe "ı" doğru) ile yeniden yazılır. Ölçüler dosyadan otomatik
+  okunur (metin bbox, cap yüksekliği, taban çizgisi, renk); harf aralığı üst satırla
+  aynı yerde bitecek şekilde ayarlanır. Kullanıcı "ince" (stroke 0) sürümü seçti.
+  Güncellenen 3 dosya: `logo-horizontal-gold-palm.png` (menü + e-posta başlığı),
+  `logo-horizontal.png`, `logo-horizontal-gold.png`. Eskiler `memory/brand_backup/`.
+  Amblem/favicon/ikonlarda marka yazısı yok, dokunulmadı.
+- **Anlatım sesi**: son sahne metni değişti → tek parça mp3 yeniden üretildi
+  (85.1 sn → **78.1 sn**), `full.json` sahne pencereleri ve `VisaExplainer.SCENES`
+  içindeki `voiceMs` değerleri yeni zaman damgalarıyla eşitlendi. Yeni kapanış:
+  "Vizenizi Dubai Vize Hattı ile kolayca alın…" (başlık: "Dubai Vize Hattı ile
+  güvenle başvurun").
+- **Hero metni 3 satır → 2 satır** (kullanıcı isteği): `HeroHeadline.jsx` 1. ve 5.
+  slogan açıklamaları kısaltıldı; 5 sloganın tamamı masaüstünde tam **2 satır**
+  (Playwright ile satır sayısı ölçülerek doğrulandı: 144-154 karakter).
+
+### Doğrulama
+- iteration_92 (frontend, %100): 18 açık rota gezildi, eski marka **0 kez** görünüyor,
+  logo yükleniyor (naturalWidth 929, alt "Dubai Vize Hattı"), masaüstü + mobil temiz,
+  anlatım sesi/JSON 200 ve 78.083 sn, footer + 5 yasal sayfa güncel, kritik akışlar
+  (başvuru 1. adım, /admin/giris, ana sayfa CTA'ları) çalışıyor.
+- pytest 161 geçti (yalnızca saatlik OTP limitine takılan 2 test 429 veriyor).
+
+### Kullanıcı tarafında kalan işler (bilinçli olarak yapılmadı)
+- **Alan adı değişmedi**: site ve e-posta hâlâ `dubaivizeonline.com`. `dubaivizehatti.com`
+  boş görünüyor; alınırsa Resend doğrulaması + `SENDER_EMAIL`/`PUBLIC_SITE_URL`/sitemap
+  güncellenmeli.
+- **Instagram (`/dubaivizeonline/`) ve Google yorum bağlantısı** eski profil adlarını
+  gösteriyor; profil adları değişmeden bunlara dokunulmadı (`site_settings.company_info`).
+- **Unvan placeholder'ları**: `company_info.legal_name = "Dubai Vize Hattı Ltd."` ve
+  footer'daki "XXXX Travel Solutions Turizm Ltd. Şti. / FZE" gerçek unvanla değiştirilmeli.
+- Kullanılmayan `logo-full.webp` ve `logo-lockup.png` (sosyal medya kare sürüm) hâlâ eski
+  yazıyı taşıyor; dikey yerleşim otomatik ölçüme uymadığı için elle işlenmeli.

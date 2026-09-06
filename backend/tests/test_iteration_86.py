@@ -117,7 +117,7 @@ class TestBankTransferAdmin:
         put_body = {
             "enabled": original.get("enabled", True),
             "title": original.get("title") or "Havale / EFT ile ödeme",
-            "account_name": original.get("account_name") or original.get("recipient_name") or "Dubai Vize Online",
+            "account_name": original.get("account_name") or original.get("recipient_name") or "Dubai Vize Hattı",
             "bank_name": original.get("bank_name") or "Türkiye İş Bankası A.Ş.",
             "iban": original.get("iban") or "TR00 0000 0000 0000 0000 0000 00",
             "currency": original.get("currency") or "TRY",

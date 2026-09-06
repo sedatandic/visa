@@ -1,4 +1,4 @@
-"""Backend API tests for Dubai Vize Online - REGRESSION TESTING for Code Quality Refactoring"""
+"""Backend API tests for Dubai Vize Hattı - REGRESSION TESTING for Code Quality Refactoring"""
 import requests
 import subprocess
 import sys
@@ -1167,8 +1167,8 @@ class MandatoryFieldsTester:
                 self.log("Zami bookmarklet.js still contains __BASE__ placeholder", "FAIL")
                 return False
             
-            # Check if it contains expected JavaScript (marka adı: Dubai Vize Online)
-            if "Dubai Vize Online" not in content or "function" not in content:
+            # Check if it contains expected JavaScript (marka adı: Dubai Vize Hattı)
+            if "Dubai Vize Hattı" not in content or "function" not in content:
                 self.log("Zami bookmarklet.js content seems invalid", "FAIL")
                 return False
             
@@ -1369,7 +1369,7 @@ class MandatoryFieldsTester:
             return False
     
     def test_brand_name_in_backend(self):
-        """Test that brand name is 'Dubai Vize Online' not 'VizeAtlas' in backend texts"""
+        """Test that brand name is 'Dubai Vize Hattı' not 'VizeAtlas' in backend texts"""
         self.tests_run += 1
         self.log("Testing brand name in backend texts...", "INFO")
         
@@ -1378,11 +1378,11 @@ class MandatoryFieldsTester:
             response = requests.get(f"{BASE_URL}/zami/bookmarklet.js", timeout=10)
             if response.status_code == 200:
                 content = response.text
-                if "VizeAtlas" in content and "Dubai Vize Online" not in content:
-                    self.log("FAIL: bookmarklet.js still contains 'VizeAtlas' instead of 'Dubai Vize Online'", "FAIL")
+                if "VizeAtlas" in content and "Dubai Vize Hattı" not in content:
+                    self.log("FAIL: bookmarklet.js still contains 'VizeAtlas' instead of 'Dubai Vize Hattı'", "FAIL")
                     return False
-                elif "Dubai Vize Online" in content:
-                    self.log("PASS: bookmarklet.js contains 'Dubai Vize Online'", "PASS")
+                elif "Dubai Vize Hattı" in content:
+                    self.log("PASS: bookmarklet.js contains 'Dubai Vize Hattı'", "PASS")
                 else:
                     self.log("WARN: bookmarklet.js doesn't contain brand name", "WARN")
             
@@ -1390,11 +1390,11 @@ class MandatoryFieldsTester:
             response = requests.get(f"{BASE_URL}/zami/capture.js", timeout=10)
             if response.status_code == 200:
                 content = response.text
-                if "VizeAtlas" in content and "Dubai Vize Online" not in content:
-                    self.log("FAIL: capture.js still contains 'VizeAtlas' instead of 'Dubai Vize Online'", "FAIL")
+                if "VizeAtlas" in content and "Dubai Vize Hattı" not in content:
+                    self.log("FAIL: capture.js still contains 'VizeAtlas' instead of 'Dubai Vize Hattı'", "FAIL")
                     return False
-                elif "Dubai Vize Online" in content:
-                    self.log("PASS: capture.js contains 'Dubai Vize Online'", "PASS")
+                elif "Dubai Vize Hattı" in content:
+                    self.log("PASS: capture.js contains 'Dubai Vize Hattı'", "PASS")
                 else:
                     self.log("WARN: capture.js doesn't contain brand name", "WARN")
             
@@ -1757,7 +1757,7 @@ class MandatoryFieldsTester:
     def run_all_tests(self):
         """Run all backend tests"""
         self.log("=" * 70, "INFO")
-        self.log("Dubai Vize Online - REGRESSION TESTING (Code Quality Refactoring)", "INFO")
+        self.log("Dubai Vize Hattı - REGRESSION TESTING (Code Quality Refactoring)", "INFO")
         self.log("=" * 70, "INFO")
 
         self._run_public_sections()

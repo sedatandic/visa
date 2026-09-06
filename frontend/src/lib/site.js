@@ -50,7 +50,7 @@ export const PURPOSES = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
 
 export const COMPANY = {
     brand: "Dubai Vize",
-    brandSuffix: "Online",
+    brandSuffix: "Hattı",
     phone: "+90 850 000 00 00",
     phoneHref: "tel:+908500000000",
     whatsapp: "908500000000",

@@ -9,7 +9,7 @@ export default function Kvkk() {
 
     useEffect(() => {
         setMeta(
-            "KVKK ve Gizlilik Politikası | Dubai Vize Online",
+            "KVKK ve Gizlilik Politikası | Dubai Vize Hattı",
             "Kişisel verilerinizin işlenmesi, saklanması ve korunmasına ilişkin aydınlatma metni ve gizlilik politikası."
         );
         api.get("/content/site")

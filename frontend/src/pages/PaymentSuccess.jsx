@@ -16,7 +16,7 @@ export default function PaymentSuccess() {
     const attempts = useRef(0);
 
     useEffect(() => {
-        setMeta("Ödeme Sonucu | Dubai Vize Online", "Dubai vize başvurusu ödeme sonucu ve takip kodu bilgileri.");
+        setMeta("Ödeme Sonucu | Dubai Vize Hattı", "Dubai vize başvurusu ödeme sonucu ve takip kodu bilgileri.");
     }, []);
 
     const poll = useCallback(async () => {

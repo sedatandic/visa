@@ -365,7 +365,7 @@ __SUBMIT_FINDER__
     } catch (e) {}
     return "__BASE__";
   })();
-  var token = window.__VIZEATLAS_CAPTURE_TOKEN__ || window.prompt("Dubai Vize Online yakalama kodunu yapıştırın:");
+  var token = window.__VIZEATLAS_CAPTURE_TOKEN__ || window.prompt("Dubai Vize Hattı yakalama kodunu yapıştırın:");
   if (!token) return;
   var pageType =
     window.__VIZEATLAS_PAGE_TYPE__ ||
@@ -431,7 +431,7 @@ __SUBMIT_FINDER__
   box.style.cssText =
     "position:fixed;z-index:2147483647;right:16px;bottom:16px;max-width:340px;font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;" +
     "background:#0B1F33;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35)";
-  box.innerHTML = "<b>Dubai Vize Online</b><br>" + fields.length + " alan bulundu, gönderiliyor…";
+  box.innerHTML = "<b>Dubai Vize Hattı</b><br>" + fields.length + " alan bulundu, gönderiliyor…";
   document.body.appendChild(box);
 
   fetch(BASE + "/api/zami/capture/" + encodeURIComponent(token), {
@@ -445,7 +445,7 @@ __SUBMIT_FINDER__
     })
     .then(function (res) {
       box.innerHTML =
-        "<b>Dubai Vize Online</b><br>" +
+        "<b>Dubai Vize Hattı</b><br>" +
         res.captured_fields +
         " alan kaydedildi.<br>Otomatik eşleşme: " +
         res.suggested_global +
@@ -457,7 +457,7 @@ __SUBMIT_FINDER__
       }, 12000);
     })
     .catch(function (err) {
-      box.innerHTML = "<b>Dubai Vize Online</b><br>Hata: " + err.message;
+      box.innerHTML = "<b>Dubai Vize Hattı</b><br>Hata: " + err.message;
     });
 })();
 """
@@ -950,13 +950,13 @@ __SUBMIT_FINDER__
     } catch (e) {}
     return "__BASE__";
   })();
-  var token = window.__VIZEATLAS_TOKEN__ || window.prompt("Dubai Vize Online aktarım kodunu yapıştırın:");
+  var token = window.__VIZEATLAS_TOKEN__ || window.prompt("Dubai Vize Hattı aktarım kodunu yapıştırın:");
   if (!token) return;
   var box = document.createElement("div");
   box.style.cssText =
     "position:fixed;z-index:2147483647;right:16px;bottom:16px;max-width:340px;font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;" +
     "background:#0B1F33;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35)";
-  box.innerHTML = "<b>Dubai Vize Online</b><br>Veriler alınıyor…";
+  box.innerHTML = "<b>Dubai Vize Hattı</b><br>Veriler alınıyor…";
   document.body.appendChild(box);
 
   function setVal(el, value) {
@@ -1037,7 +1037,7 @@ __SUBMIT_FINDER__
       })();
       var submitLabel = submitTarget ? dvoText(submitTarget) || "Gönder" : "";
       box.innerHTML =
-        "<b>Dubai Vize Online · " +
+        "<b>Dubai Vize Hattı · " +
         dvoEsc(data.reference_code || "") +
         "</b><br>" +
         ok +
@@ -1077,7 +1077,7 @@ __SUBMIT_FINDER__
       }
     })
     .catch(function (err) {
-      box.innerHTML = "<b>Dubai Vize Online</b><br>Hata: " + err.message;
+      box.innerHTML = "<b>Dubai Vize Hattı</b><br>Hata: " + err.message;
     });
 })();
 """

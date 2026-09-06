@@ -9,7 +9,7 @@ export default function PaymentCancel() {
     const ref = searchParams.get("ref") || sessionStorage.getItem("dv_last_reference") || "";
 
     useEffect(() => {
-        setMeta("Ödeme İptal Edildi | Dubai Vize Online", "Ödeme işleminiz tamamlanmadı. Başvurunuz kayıtlı kalmaya devam eder.");
+        setMeta("Ödeme İptal Edildi | Dubai Vize Hattı", "Ödeme işleminiz tamamlanmadı. Başvurunuz kayıtlı kalmaya devam eder.");
     }, []);
 
     return (

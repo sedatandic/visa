@@ -100,7 +100,7 @@ export default function Contact() {
 
     useEffect(() => {
         setMeta(
-            "İletişim | Dubai Vize Online",
+            "İletişim | Dubai Vize Hattı",
             "Dubai vize başvurunuzla ilgili sorularınız için telefon, WhatsApp veya e-posta ile ulaşın. İstanbul Zeytinburnu ofisimizin adresi ve çalışma saatleri."
         );
     }, []);

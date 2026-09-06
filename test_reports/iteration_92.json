@@ -1,0 +1,26 @@
+{
+  "summary": "Frontend-only re-branding verification (Dubai Vize Online -> Dubai Vize Hattı). Walked all 18 public routes; 0 occurrences of the old 'Vize Online' brand text (domain 'dubaivizeonline.com' correctly retained). New brand 'Dubai Vize Hattı' present on all customer-facing pages. Logo (data-testid=brand-mark img) loads with naturalWidth=929, alt='Dubai Vize Hattı', on both desktop (1920x1080) and mobile (390x844). Brand image endpoints (/brand/logo-horizontal-gold-palm.png, logo-horizontal.png, logo-horizontal-gold.png) all return 200. Explainer audio /audio/explainer/full.mp3 200, /audio/explainer/full.json 200 with duration=78.083s and 8 scenes (last key='specimen'; SCENES[6] key='cta' in VisaExplainer.jsx confirms title 'Dubai Vize Hattı ile güvenle başvurun' and subtitle 'Vizenizi Dubai Vize Hattı ile kolayca alın...'). Captions button (data-testid='explainer-captions-button') toggles OK; sound button present. Footer contains 'Ticaret Unvanı: Dubai Vize Hattı Ltd.' and '© 2026 Dubai Vize Hattı. Tüm hakları saklıdır.'; all 5 legal links visible. Regression: Homepage 'Başvuruya Başla' -> /basvuru OK; 'Hizmet Bedellerini Gör' -> /vize-tipleri OK; /basvuru step 1 wizard renders (Bilgiler/Vize/Evraklar/Ödeme); /admin/giris renders new logo + 'Yönetici girişi' form with 'Giriş kodu gönder' button.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Footer - Acente Bilgileri", "issues": ["Placeholder 'XXXX Travel Solutions Turizm Ltd. Şti.' and 'XXXX Travel Solutions FZE' still shown in the corporate parent disclosure. Not part of this iteration's brand-rename scope but likely should be filled with the real legal entity name."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional (out of scope): replace 'XXXX Travel Solutions' placeholders in footer 'Acente Bilgileri' disclosure with real legal entity name."
+  ],
+  "critical_code_review_comments": [
+    "No new issues introduced by this brand rename. All references updated consistently. Route paths in the review request differ slightly from actual App.js (/hizmetler, /gerekli-belgeler, /seyahat-sigortasi, /gelismeler, /iade-kosullari, /hizmet-sozlesmesi, /gizlilik-politikasi, /ticari-ileti-onami); tested against actual routes -- all clean."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped per request)", "frontend": "100%"},
+  "test_credentials": "info@dubaivizeonline.com (OTP flow; not exercised - hourly IP limit noted by main agent)",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 92 verified brand rename to 'Dubai Vize Hattı' across 18 public routes + admin login. Route names in Turkish. Business logic untouched. If future iterations continue, note that footer contains 'XXXX Travel Solutions' placeholder text (pre-existing, unrelated). VisaExplainer SCENES const in /app/frontend/src/components/VisaExplainer.jsx holds titles/subtitles; audio JSON only stores timing. Explainer scene indicator dots do not use data-testid; if needing to advance to CTA scene programmatically, wait ~65s or click the container.",
+  "rca of the issue": "N/A - no bugs found in the requested scope."
+}

@@ -167,7 +167,7 @@ export default function Track() {    const [searchParams] = useSearchParams();
 
     useEffect(() => {
         setMeta(
-            "Başvuru Takip | Dubai Vize Online",
+            "Başvuru Takip | Dubai Vize Hattı",
             "Takip kodunuz ve soyadınızla Dubai vize başvurunuzun durumunu sorgulayın, onaylanan vizenizi indirin."
         );
     }, []);

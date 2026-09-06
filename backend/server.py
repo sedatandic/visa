@@ -266,14 +266,14 @@ async def lifespan(app: FastAPI):
     client.close()
 
 
-app = FastAPI(title="Dubai Vize Online API", lifespan=lifespan)
+app = FastAPI(title="Dubai Vize Hattı API", lifespan=lifespan)
 
 api_router = APIRouter(prefix="/api")
 
 
 @api_router.get("/")
 async def root() -> dict:
-    return {"service": "Dubai Vize Online API", "status": "ok"}
+    return {"service": "Dubai Vize Hattı API", "status": "ok"}
 
 
 @api_router.get("/health")

@@ -20,7 +20,7 @@ export default function Faq() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vizesi Sıkça Sorulan Sorular | Dubai Vize Online",
+            "Dubai Vizesi Sıkça Sorulan Sorular | Dubai Vize Hattı",
             "Dubai vizesi hakkında sıkça sorulan sorular: işlem süresi, pasaport geçerliliği, ödeme güvenliği, ret durumunda iade ve başvuru takibi."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});

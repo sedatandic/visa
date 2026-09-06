@@ -556,8 +556,8 @@ STATUS_LABELS = {
 }
 
 COMPANY = {
-    "brand": "Dubai Vize Online",
-    "legal_name": "Dubai Vize Online Turizm ve Danışmanlık A.Ş.",
+    "brand": "Dubai Vize Hattı",
+    "legal_name": "Dubai Vize Hattı Turizm ve Danışmanlık A.Ş.",
     "parent_company": "XXXX Travel Solutions Turizm Ltd. Şti.",
     "dubai_company": "XXXX Travel Solutions FZE",
     "phone": "+90 532 588 26 30",
@@ -580,7 +580,7 @@ COMPANY = {
 
 AGENCY_INFO = {
     "title": "Acente Bilgilerimiz",
-    "description": "Dubai Vize Online, TÜRSAB üyesi bir seyahat acentesidir. Tüm başvurularınız acente güvencesiyle yürütülür.",
+    "description": "Dubai Vize Hattı, TÜRSAB üyesi bir seyahat acentesidir. Tüm başvurularınız acente güvencesiyle yürütülür.",
     "items": [
         {"label": "Ticaret Unvanı", "value": COMPANY["legal_name"]},
         {"label": "TÜRSAB Belge No", "value": COMPANY["tursab_no"]},
@@ -699,7 +699,7 @@ PROMO = {
 BANK_TRANSFER = {
     "enabled": True,
     "title": "Havale / EFT ile ödeme",
-    "account_name": "Dubai Vize Online Turizm ve Danışmanlık A.Ş.",
+    "account_name": "Dubai Vize Hattı Turizm ve Danışmanlık A.Ş.",
     "bank_name": "Türkiye İş Bankası A.Ş.",
     "iban": "TR00 0000 0000 0000 0000 0000 00",
     "currency": "TRY",
@@ -747,7 +747,7 @@ BANK_TRANSFER = {
 
 REFUND_TERMS = {
     "updated_at": "2026-06-09",
-    "intro": "Aşağıdaki koşullar, Dubai Vize Online üzerinden alınan vize danışmanlığı ile tur, aktivite ve transfer hizmetleri için geçerlidir. Başvurunuzu veya rezervasyonunuzu tamamladığınızda bu koşulları kabul etmiş sayılırsınız.",
+    "intro": "Aşağıdaki koşullar, Dubai Vize Hattı üzerinden alınan vize danışmanlığı ile tur, aktivite ve transfer hizmetleri için geçerlidir. Başvurunuzu veya rezervasyonunuzu tamamladığınızda bu koşulları kabul etmiş sayılırsınız.",
     "sections": [
         {
             "title": "Başvuru öncesi iptal",
@@ -823,7 +823,7 @@ REFUND_TERMS = {
 
 SERVICE_TERMS = {
     "updated_at": "2026-06-09",
-    "intro": "Bu mesafeli hizmet sözleşmesi, Dubai Vize Online (Hizmet Sağlayıcı) ile online başvuru yapan misafir (Alıcı) arasında elektronik ortamda kurulur.",
+    "intro": "Bu mesafeli hizmet sözleşmesi, Dubai Vize Hattı (Hizmet Sağlayıcı) ile online başvuru yapan misafir (Alıcı) arasında elektronik ortamda kurulur.",
     "sections": [
         {
             "title": "1. Sözleşmenin konusu",
@@ -927,7 +927,7 @@ SERVICE_TERMS = {
 PRIVACY_POLICY = {
     "updated_at": "2026-06-09",
     "intro": (
-        "Bu politika, Dubai Vize Online markası altında hizmet veren "
+        "Bu politika, Dubai Vize Hattı markası altında hizmet veren "
         f"{COMPANY['legal_name']} tarafından, web sitemizi ziyaret eden ve hizmetlerimizden "
         "yararlanan kişilerin kişisel verilerinin hangi amaçlarla işlendiğini, kimlerle "
         "paylaşıldığını ve haklarınızı nasıl kullanabileceğinizi açıklar."

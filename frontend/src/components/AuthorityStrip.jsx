@@ -61,7 +61,7 @@ export const AuthorityStrip = () => {
                     <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground sm:max-w-sm">
                         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                         <span>
-                            Dubai Vize Online bir seyahat acentesidir; resmî bir devlet kurumu değildir.
+                            Dubai Vize Hattı bir seyahat acentesidir; resmî bir devlet kurumu değildir.
                             Amblemler yalnızca ilgili mercileri belirtmek için temsilîdir.
                         </span>
                     </p>

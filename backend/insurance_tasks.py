@@ -48,7 +48,7 @@ def _policy_html(order: dict, link: str, message: str) -> str:
         f'<p><a href="{link}">Poliçenizi indir (PDF)</a></p>'
         f"{extra}"
         f"<p>Sipariş kodu: <b>{order.get('reference_code','')}</b></p>"
-        f"<p>İyi yolculuklar dileriz.<br>Dubai Vize Online</p>"
+        f"<p>İyi yolculuklar dileriz.<br>Dubai Vize Hattı</p>"
     )
 
 
@@ -63,7 +63,7 @@ def _pending_html(order: dict, lines: list) -> str:
         f"kısa süre içinde PDF olarak bu adrese gönderilecek.</p>"
         f"<ul>{items}</ul>"
         f"<p>Sipariş kodu: <b>{order.get('reference_code','')}</b></p>"
-        f"<p>Dubai Vize Online</p>"
+        f"<p>Dubai Vize Hattı</p>"
     )
 
 

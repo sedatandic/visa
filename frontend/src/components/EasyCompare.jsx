@@ -70,7 +70,7 @@ export const EasyCompare = () => (
                         Süreç
                     </span>
                     <span className="border-l border-border bg-[hsl(var(--brand-green)/0.08)] px-6 py-4 font-heading text-sm font-bold text-[hsl(var(--brand-green))]">
-                        Dubai Vize Online
+                        Dubai Vize Hattı
                     </span>
                     <span className="border-l border-border px-6 py-4 font-heading text-sm font-bold text-muted-foreground">
                         Klasik acente yöntemi
@@ -88,7 +88,7 @@ export const EasyCompare = () => (
                         <span className="font-heading text-sm font-semibold md:px-6 md:py-4">{row.label}</span>
                         <div className="bg-[hsl(var(--brand-green)/0.06)] p-4 md:border-l md:border-border md:px-6 md:py-4">
                             <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--brand-green))] md:hidden">
-                                Dubai Vize Online
+                                Dubai Vize Hattı
                             </p>
                             <Cell text={row.us} positive />
                         </div>

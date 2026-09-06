@@ -76,7 +76,7 @@ def _texts(kind: str, session: dict) -> tuple[str, str, str]:
             "kesintisiz sürmesi için bir kez giriş yapmanız gerekiyor."
         )
         wa_text = (
-            "Dubai Vize Online: Zami portalı OTP kodu istiyor. "
+            "Dubai Vize Hattı: Zami portalı OTP kodu istiyor. "
             f"Robot oturumunu yenilemek için panelden giriş yapın ({ADMIN_PANEL_HINT})."
         )
     else:
@@ -88,7 +88,7 @@ def _texts(kind: str, session: dict) -> tuple[str, str, str]:
             "OTP'siz çalışır."
         )
         wa_text = (
-            f"Dubai Vize Online: Zami OTP yenileme tarihi yaklaşıyor ({due_text}). "
+            f"Dubai Vize Hattı: Zami OTP yenileme tarihi yaklaşıyor ({due_text}). "
             f"Panelden bir kez giriş yapmanız yeterli ({ADMIN_PANEL_HINT})."
         )
     html = (

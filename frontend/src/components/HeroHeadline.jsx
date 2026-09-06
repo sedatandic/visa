@@ -5,7 +5,7 @@ const SLOGANS = [
     {
         top: "Sadece 2 belgeyle",
         bottom: "Dubai vizeniz hazır",
-        sub: "Başvurunuz için yalnızca pasaportunuzun kimlik sayfası ve vesikalık fotoğrafınız yeterlidir. Belgelerinizi yükledikten sonra sürecin tamamını uzman ekibimiz sizin adınıza yönetir.",
+        sub: "Pasaportunuzun kimlik sayfası ve bir vesikalık fotoğraf yeterli. Belgelerinizi yükleyin, sürecin tamamını uzman ekibimiz sizin adınıza yönetsin.",
     },
     {
         top: "Bilet ve otel şartı yok",
@@ -25,7 +25,7 @@ const SLOGANS = [
     {
         top: "Pasaportunuzu yükleyin",
         bottom: "gerisini biz yönetelim",
-        sub: "Siz sadece belgelerinizi yükleyin, vize sürecinizi biz yönetelim. Uçak bileti veya otel rezervasyonu istemiyoruz; resmî başvuruyu yetkili merciler nezdinde biz yaparız.",
+        sub: "Siz sadece belgelerinizi yükleyin, vize sürecinizi biz yönetelim. Uçak bileti veya otel rezervasyonu istemiyoruz; resmî başvuruyu sizin adınıza yaparız.",
     },
 ];
 

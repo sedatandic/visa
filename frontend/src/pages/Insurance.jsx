@@ -101,7 +101,7 @@ export default function Insurance() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Seyahat Sigortası: Kapsam, Teminat ve Sık Sorulanlar | Dubai Vize Online",
+            "Dubai Seyahat Sigortası: Kapsam, Teminat ve Sık Sorulanlar | Dubai Vize Hattı",
             "Dubai seyahat sigortası zorunlu mu, neyi kapsar, kronik hastalıklar dahil mi? BAE genelinde geçerli 30 günlük poliçenin kapsamı, sınırları ve başvuruya nasıl eklendiği.",
             { canonicalPath: "/seyahat-sigortasi" }
         );

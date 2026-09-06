@@ -28,7 +28,7 @@ export default function ArticleDetail() {
                 if (cancelled) return;
                 setData(res);
                 const a = res.article || {};
-                setMeta(`${a.title} | Dubai Vize Online`, a.excerpt || "", {
+                setMeta(`${a.title} | Dubai Vize Hattı`, a.excerpt || "", {
                     canonicalPath: `/gelismeler/${a.slug}`,
                     ogType: "article",
                 });

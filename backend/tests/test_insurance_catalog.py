@@ -1,6 +1,6 @@
 """Backend tests: sigorta katalogu, fiyat sabitligi, siparis ve admin PATCH.
 
-Iterasyon 57 - Dubai Vize Online sigorta akisi.
+Iterasyon 57 - Dubai Vize Hattı sigorta akisi.
 """
 
 import os

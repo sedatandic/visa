@@ -36,7 +36,7 @@ export default function MyAccount() {
 
     useEffect(() => {
         setMeta(
-            "Başvurularım | Dubai Vize Online",
+            "Başvurularım | Dubai Vize Hattı",
             "Dubai vize başvurularınızı görüntüleyin, yarım kalan başvurunuza devam edin ve eski bilgilerinizle yeni başvuru açın.",
             { canonicalPath: "/hesabim", noindex: true }
         );

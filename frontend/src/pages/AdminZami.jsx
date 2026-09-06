@@ -478,7 +478,7 @@ export default function AdminZami() {
                         >
                             <ol className="space-y-2 text-sm leading-6 text-muted-foreground">
                                 <li><strong className="text-foreground">1.</strong> "Yakalama kodu oluştur" butonuna basın.</li>
-                                <li><strong className="text-foreground">2.</strong> Aşağıdaki "Dubai Vize Online → Alanları Yakala" bağlantısını yer imleri çubuğuna sürükleyin.</li>
+                                <li><strong className="text-foreground">2.</strong> Aşağıdaki "Dubai Vize Hattı → Alanları Yakala" bağlantısını yer imleri çubuğuna sürükleyin.</li>
                                 <li><strong className="text-foreground">3.</strong> Zami'de <strong className="text-foreground">yeni başvuru formunu</strong> açıp yer imine tıklayın, kodu yapıştırın, "Tamam" (başvuru formu) seçin.</li>
                                 <li><strong className="text-foreground">4.</strong> Aynısını <strong className="text-foreground">başvuru listesi/durum sayfasında</strong> yapın; bu kez "İptal" (durum sayfası) seçin.</li>
                                 <li><strong className="text-foreground">5.</strong> Bu ekranı yenileyip "Önerilen eşlemeyi uygula" butonuna basın ve kontrol edip kaydedin.</li>
@@ -574,7 +574,7 @@ export default function AdminZami() {
                                         toast.info("Bu bağlantıyı tıklamak yerine yer imleri çubuğuna sürükleyin.");
                                     }}
                                 >
-                                    Dubai Vize Online → Alanları Yakala (yer imine sürükleyin)
+                                    Dubai Vize Hattı → Alanları Yakala (yer imine sürükleyin)
                                 </a>
                                 <Textarea
                                     readOnly
@@ -745,7 +745,7 @@ export default function AdminZami() {
                             <ol className="space-y-3 text-sm leading-6 text-muted-foreground">
                                 <li>
                                     <strong className="text-foreground">1.</strong> Aşağıdaki bağlantıyı tarayıcınızın yer imleri
-                                    çubuğuna sürükleyin (adı: “Dubai Vize Online → Zami Doldur”).
+                                    çubuğuna sürükleyin (adı: “Dubai Vize Hattı → Zami Doldur”).
                                 </li>
                                 <li>
                                     <strong className="text-foreground">2.</strong> Zami portalına girin ve yeni başvuru formunu açın.
@@ -770,7 +770,7 @@ export default function AdminZami() {
                                         toast.info("Bu bağlantıyı tıklamak yerine yer imleri çubuğuna sürükleyin.");
                                     }}
                                 >
-                                    Dubai Vize Online → Zami Doldur (yer imine sürükleyin)
+                                    Dubai Vize Hattı → Zami Doldur (yer imine sürükleyin)
                                 </a>
                                 <p className="mt-3 text-xs leading-5 text-muted-foreground">
                                     Sürükleyemiyorsanız yeni bir yer imi oluşturup adres alanına şunu yapıştırın:

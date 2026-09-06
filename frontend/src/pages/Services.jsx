@@ -14,7 +14,7 @@ export default function Services() {
 
     useEffect(() => {
         setMeta(
-            "Vize Hizmetlerimiz | Dubai Vize Online",
+            "Vize Hizmetlerimiz | Dubai Vize Hattı",
             "Dubai vize başvurusu, aile başvurusu, evrak kontrolü, ekspres vize, vize uzatma ve başvuru takibi hizmetleri."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});

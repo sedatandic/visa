@@ -164,7 +164,7 @@ class TestAdminCompany:
             ]}
         }
         if not payload.get("legal_name"):
-            payload["legal_name"] = "Dubai Vize Online Ltd."
+            payload["legal_name"] = "Dubai Vize Hattı Ltd."
         payload["instagram"] = "https://www.instagram.com/dubaivizeonline/"
         payload["google_review"] = "https://www.google.com/search?q=Dubai+Vize+Online+yorumlar"
         payload["whatsapp"] = "905331234567"

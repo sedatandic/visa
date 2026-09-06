@@ -41,7 +41,7 @@ export default function OrderStatus() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        setMeta(`Sipariş ${reference} | Dubai Vize Online`, "eSIM ve seyahat sigortası sipariş durumunuz.", {
+        setMeta(`Sipariş ${reference} | Dubai Vize Hattı`, "eSIM ve seyahat sigortası sipariş durumunuz.", {
             canonicalPath: `/siparis/${reference}`,
             noindex: true,
         });

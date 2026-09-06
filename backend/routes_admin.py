@@ -714,7 +714,7 @@ def _build_whatsapp_message(app_doc: dict, template: str, origin: str, custom: s
 
     if template == "visa_ready" and visa_file_id:
         return (
-            f"Merhaba {name}, Dubai Vize Online'dan yazıyoruz. "
+            f"Merhaba {name}, Dubai Vize Hattı'dan yazıyoruz. "
             f"{ref} numaralı başvurunuz ONAYLANDI. Vize belgenizi e-postanızdan veya "
             "şu adresten indirebilirsiniz: "
             f"{file_access.file_url(origin, visa_file_id, file_access.TTL_EMAIL, download=True)} "

@@ -16,7 +16,7 @@ from db import email_outbox_col
 
 logger = logging.getLogger(__name__)
 
-BRAND = "Dubai Vize Online"
+BRAND = "Dubai Vize Hattı"
 
 # Pazarlama nitelikli postalar: tek tik abonelik iptali basliklari eklenir
 MARKETING_KINDS = {"draft_reminder"}

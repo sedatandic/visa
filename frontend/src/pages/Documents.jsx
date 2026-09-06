@@ -13,7 +13,7 @@ export default function Documents() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vizesi Gerekli Belgeler | Dubai Vize Online",
+            "Dubai Vizesi Gerekli Belgeler | Dubai Vize Hattı",
             "Dubai (BAE) vize başvurusu için gereken belgeler: pasaport fotoğrafı, vesikalık fotoğraf kriterleri, dönüş uçak bileti ve otel rezervasyonu."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
