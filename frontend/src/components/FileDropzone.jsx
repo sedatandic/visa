@@ -13,6 +13,7 @@ export const FileDropzone = ({
     icon: Icon,
     badge,
     description,
+    onInputRef,
     accept = "image/jpeg,image/png,image/webp,application/pdf",
 }) => {
     const inputRef = useRef(null);
@@ -160,7 +161,10 @@ export const FileDropzone = ({
             )}
 
             <input
-                ref={inputRef}
+                ref={(el) => {
+                    inputRef.current = el;
+                    if (onInputRef) onInputRef(el);
+                }}
                 type="file"
                 accept={accept}
                 className="hidden"

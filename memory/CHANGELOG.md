@@ -351,3 +351,36 @@ markanın sitenin tamamına taşınmasını istedi.
   footer'daki "XXXX Travel Solutions Turizm Ltd. Şti. / FZE" gerçek unvanla değiştirilmeli.
 - Kullanılmayan `logo-full.webp` ve `logo-lockup.png` (sosyal medya kare sürüm) hâlâ eski
   yazıyı taşıyor; dikey yerleşim otomatik ölçüme uymadığı için elle işlenmeli.
+
+## 2026-06-09 · Test verisi temizliği + sosyal medya logosu + vesikalık yardımcısı
+
+### 1) Test verisi temizliği (`scripts/cleanup_test_data.py`, dry-run varsayılan)
+- Ölçüt: iletişim e-postası `example.com` / `resend.dev` / `@test.` ya da ad-soyad "TEST"
+  ile başlayan başvuru/sipariş. Bağlı kayıtlar da zincirleme silinir.
+- Silinen: 136 başvuru, 138 sipariş, 337 dosya (212 bağlı + 125 sahipsiz), 580 e-posta
+  arşivi, 19 iletişim mesajı, 18 bildirim, 18 sigorta işi, 45 kayıtlı yolcu, 171 OTP kodu,
+  9 taslak, 1 ödeme kaydı, 2 OCR metriği.
+- Korunan: gerçek kayıt **DV-BJ930600 (Sedat Andic)** ve ilişkili sipariş + dosyaları.
+  Panel artık 1 başvuru gösteriyor (yönetici API ile doğrulandı).
+- Dokunulmayan: `visits` (224 ziyaretçi kaydı; çoğu Google Cloud IP'li test trafiği ama
+  gerçek ziyaret de olabileceği için kullanıcı onayı bekliyor), eski `poc_*` koleksiyonları.
+
+### 2) Sosyal medya kare logosu (`scripts/make_social_logo.py`)
+- 1080x1080, orijinal illüstrasyon (deve + altın palmiye + silüet + dalga) ve altın DUBAI
+  yazısı yatay logodan piksel piksel kırpılır; alt satır Philosopher Bold ile yazılır.
+- Üretilen dosyalar: `/brand/social-square.png` (şeffaf), `-light.png` (krem zemin),
+  `-dark.png` (lacivert zemin, krem yazı). Profil resmi daire kırpımı test edildi, taşma yok.
+- Bu dosyalar sitede kullanılmıyor; Instagram/WhatsApp profiline elle yüklenmek için.
+
+### 3) Vesikalık reddedildiğinde yardımcı (`components/PhotoRetryHelper.jsx`)
+- Eski uyarı kutusu yerine: **"Sizin kareniz" ↔ "Olması gereken"** yan yana karşılaştırma
+  (kullanıcının imzalı URL'li fotoğrafı + `/photo-guide/ok.jpg`), yapay zekânın bulduğu
+  sorun listesi, **"Doğru kare 5 adımda"** çekim rehberi, tek dokunuşla
+  **"Yeni fotoğraf yükle"** düğmesi ve varsayılan açık gelen doğru/yanlış örnek galerisi.
+- `FileDropzone` yeni `onInputRef` prop'u ile gizli dosya girdisini dışarıya veriyor;
+  yardımcıdaki düğme doğrudan dosya seçiciyi açıyor. `photoGuideKeys` state'i kaldırıldı.
+- Doğrulama (Playwright, gerçek Gemini çağrısı): manzara görseli yüklendi → yardımcı açıldı,
+  karşılaştırma görselleri ve 4 örnek yüklendi (naturalWidth > 0), 5 adımlı rehber göründü,
+  "Yeni fotoğraf yükle" dosya seçiciyi açtı ve yeni dosya yüklendiğinde kontrol yeniden koştu.
+  data-testid'ler: `traveler-{i}-photo-check-warning`, `...-mine`, `...-example`,
+  `...-retry-button`, `...-guide-toggle`, `...-guide`.

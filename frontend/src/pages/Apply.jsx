@@ -48,7 +48,7 @@ import { BundlePicker } from "../components/BundlePicker";
 import { ComboSelector } from "../components/ComboSelector";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { FamilyDiscountMeter } from "../components/FamilyDiscountMeter";
-import { PhotoGuide } from "../components/PhotoGuide";
+import { PhotoRetryHelper } from "../components/PhotoRetryHelper";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { BankTransferInfo } from "../components/BankTransferInfo";
 import { BankAccounts } from "../components/BankAccounts";
@@ -191,7 +191,7 @@ export default function Apply() {
     const [visaTypes, setVisaTypes] = useState([]);
     const [addonMeta, setAddonMeta] = useState([]);
     const [familyTiers, setFamilyTiers] = useState([]);
-    const [photoGuideKeys, setPhotoGuideKeys] = useState([]);
+    const photoInputs = useRef({});
     const [maxTravelers, setMaxTravelers] = useState(10);
     const [step, setStep] = useState(0);
     const [contact, setContact] = useState({ full_name: "", email: "", phone: "+90 5", address_city: "", whatsapp_optin: false });
@@ -2269,6 +2269,9 @@ export default function Apply() {
                                                                 description="Beyaz veya beyaza yakın düz zeminde, son 6 ay içinde çekilmiş biyometrik fotoğraf."
                                                                 docType="photo"
                                                                 value={t.photoFile}
+                                                                onInputRef={(el) => {
+                                                                    photoInputs.current[t.key] = el;
+                                                                }}
                                                                 onChange={(f) => {
                                                                     updateTraveler(t.key, { photoFile: f });
                                                                     checkPhotoWithAI(t.key, f);
@@ -2294,56 +2297,12 @@ export default function Apply() {
                                                                 </p>
                                                             )}
                                                             {photoCheck[t.key]?.status === "warn" && (
-                                                                <div
-                                                                    className="mt-2 rounded-lg border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.08)] p-3"
-                                                                    data-testid={`traveler-${idx}-photo-check-warning`}
-                                                                >
-                                                                    <p className="flex items-center gap-2 text-xs font-bold text-foreground">
-                                                                        <AlertCircle className="h-3.5 w-3.5 text-[hsl(var(--status-warning))]" />
-                                                                        {photoCheck[t.key].isPhoto === false
-                                                                            ? "Bu görüntü vesikalık fotoğraf gibi görünmüyor"
-                                                                            : "Fotoğrafta düzeltilmesi önerilen noktalar var"}
-                                                                    </p>
-                                                                    {photoCheck[t.key].issues?.length > 0 && (
-                                                                        <ul className="mt-2 space-y-1 pl-1">
-                                                                            {photoCheck[t.key].issues.map((issue, i) => (
-                                                                                <li key={i} className="text-xs leading-5 text-muted-foreground">
-                                                                                    • {issue}
-                                                                                </li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    )}
-                                                                    {photoCheck[t.key].advice && (
-                                                                        <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                                                                            {photoCheck[t.key].advice}
-                                                                        </p>
-                                                                    )}
-                                                                    <p className="mt-2 text-xs font-semibold text-destructive">
-                                                                        Bu fotoğrafla başvuruya devam edilemez. Lütfen
-                                                                        uygun bir vesikalık yükleyip tekrar deneyin.
-                                                                    </p>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            setPhotoGuideKeys((keys) =>
-                                                                                keys.includes(t.key)
-                                                                                    ? keys.filter((k) => k !== t.key)
-                                                                                    : [...keys, t.key]
-                                                                            )
-                                                                        }
-                                                                        className="mt-2 text-xs font-bold text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-200 hover:decoration-primary"
-                                                                        data-testid={`traveler-${idx}-photo-guide-toggle`}
-                                                                    >
-                                                                        {photoGuideKeys.includes(t.key)
-                                                                            ? "Örnekleri gizle"
-                                                                            : "Doğru fotoğraf nasıl olmalı? Örneklere bak"}
-                                                                    </button>
-                                                                    {photoGuideKeys.includes(t.key) && (
-                                                                        <p className="mt-2 text-xs text-muted-foreground">
-                                                                            Örnekler aşağıda.
-                                                                        </p>
-                                                                    )}
-                                                                </div>
+                                                                <PhotoRetryHelper
+                                                                    testId={`traveler-${idx}-photo-check-warning`}
+                                                                    result={photoCheck[t.key]}
+                                                                    photoUrl={t.photoFile?.url}
+                                                                    onRetry={() => photoInputs.current[t.key]?.click()}
+                                                                />
                                                             )}
                                                             {te.photo && (
                                                                 <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive">
@@ -2352,9 +2311,6 @@ export default function Apply() {
                                                             )}
                                                         </div>
                                                     </div>
-                                                    {photoGuideKeys.includes(t.key) && (
-                                                        <PhotoGuide testId={`traveler-${idx}-photo-guide`} />
-                                                    )}
                                                 </div>
                                             );
                                         })}
