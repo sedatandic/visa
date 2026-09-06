@@ -1,5 +1,10 @@
 # ROADMAP (2026-06-10 itibarıyla · sepet turu sonrası)
 
+## P0 — Acil
+- [ ] **E-posta gönderimi kapalı**: Resend'de `dubaivizehatti.com` domaini doğrulanmalı ve
+      `SENDER_EMAIL` bu domaine geçmeli (şu an tüm e-postalar "domain is not verified"
+      hatası alıyor: giriş kodu, sipariş bildirimi, sepet hatırlatma).
+
 ## P0 — Kullanıcıdan bekleyen içerik- [ ] **Gerçek IBAN'lar**: `/vize-tipleri` ve ödeme adımındaki 3 banka kartında IBAN'lar hâlâ
       yer tutucu (`TR00 0000 …`). Admin → Banka sekmesinden gerçek TL/USD IBAN'lar girilecek.
       Banka listesi de değiştirilebilir (İş Bankası / Garanti BBVA / Ziraat varsayılan).
@@ -11,8 +16,8 @@
 - [ ] Sigorta poliçesini düzenleyen sigorta şirketi adı sayfada belirtilmiyor (istenirse eklenir).
 
 ## P1
-- [ ] Sepet ikinci tur: çöl safarisi (tarih/saat gerektiriyor) ve hazır paketler (bundle)
-      de sepetten satılabilir; sepette misafir kullanıcı için "siparişimi takip et" kısayolu.
+- [ ] Sepette misafir kullanıcı için "siparişimi takip et" kısayolu + sipariş e-postasına
+      sepet linki (turlar ve hazır paket sepete ekleme 2026-06-10'da tamamlandı).
 - [ ] Barchart kuru gerçekten istenirse: headless Chromium (playwright install chromium) ile
       günlük tek çekim denenebilir; Cloudflare engeli sürerse ücretli Barchart OnDemand API şart.
 - [ ] Fiyat/politika tutarlılığı: rakip içerikte olup bizde olmayan başlıklar — resmî harç ile

@@ -670,3 +670,56 @@ def order_delivered_html(order: dict, links: list, message: str = "") -> str:
     </p>
     """
     return _wrap("Siparişiniz hazır", body)
+
+
+def _snapshot_items_rows(snapshot: dict) -> str:
+    currency = snapshot.get("currency", "TRY")
+    rows = []
+    for item in snapshot.get("items") or []:
+        rows.append(
+            f'<tr><td style="padding:8px 0;font-size:13px;color:#3E2A14;">{item.get("name","")}'
+            f' <span style="color:#8A7355;">x{item.get("quantity",1)}</span></td>'
+            f'<td style="padding:8px 0;font-size:13px;text-align:right;color:#3E2A14;">'
+            f'{money(item.get("total", 0), currency)}</td></tr>'
+        )
+    return "".join(rows)
+
+
+def cart_reminder_html(snapshot: dict, cart_url: str, stage: int = 1) -> str:
+    """Terk edilmis sepet hatirlatmasi (2. ve 24. saat)."""
+    currency = snapshot.get("currency", "TRY")
+    name = (snapshot.get("full_name") or "").strip()
+    greeting = f"Sayın {name}," if name else "Merhaba,"
+    intro = (
+        "Sepetinizdeki Dubai hizmetleri hâlâ sizi bekliyor. Ödemenizi tamamladığınızda eSIM QR kodunuz, "
+        "poliçeniz ve tur kuponunuz e-postanıza gelir."
+        if stage == 1
+        else "Sepetinizi kaydettik ve hâlâ hazır. Fiyatlar güncel kurla hesaplanır; kur değişmeden "
+        "tamamlamak isterseniz aşağıdan devam edebilirsiniz."
+    )
+    discount_row = (
+        _row("Seyahat paketi indirimi (%10)", "- " + money(snapshot.get("bundle_discount", 0), currency))
+        if snapshot.get("bundle_discount")
+        else ""
+    )
+    body = f"""
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">{greeting}</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">{intro}</p>
+    <div style="margin-top:8px;border-top:1px solid #E2E8F0;padding-top:8px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        {_snapshot_items_rows(snapshot)}
+        {discount_row}
+        <tr><td style="padding:10px 0 0;font-size:14px;font-weight:bold;border-top:1px solid #E2E8F0;">Toplam</td>
+        <td style="padding:10px 0 0;font-size:14px;font-weight:bold;text-align:right;border-top:1px solid #E2E8F0;">{money(snapshot.get('price', 0), currency)}</td></tr>
+      </table>
+    </div>
+    <p style="margin:22px 0 0;">
+      <a href="{cart_url}" style="display:inline-block;background-color:#B06A29;color:#ffffff;text-decoration:none;
+      font-size:14px;font-weight:bold;padding:13px 26px;border-radius:999px;">Sepetime dön</a>
+    </p>
+    <p style="margin:18px 0 0;font-size:12px;line-height:20px;color:#8A7355;">
+      Sigorta ve eSIM'i birlikte aldığınızda %10 paket indirimi otomatik uygulanır. Bu e-postayı
+      yanıtlayarak bize soru da sorabilirsiniz.
+    </p>
+    """
+    return _wrap("Sepetiniz sizi bekliyor", body)

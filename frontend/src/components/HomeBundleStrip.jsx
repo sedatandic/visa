@@ -1,13 +1,34 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Plane, ShieldCheck, Signal, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Plane, ShieldCheck, ShoppingBag, Signal, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/site";
+import { useCart } from "../lib/cart";
 
 const PICKS = ["pack_standard", "pack_comfort", "pack_long"];
 
 export const HomeBundleStrip = () => {
     const [bundles, setBundles] = useState([]);
+    const cart = useCart();
+
+    /** Hazir paketin sigorta + eSIM urunlerini tek tikla sepete ekler. */
+    const addBundleToCart = (bundle) => {
+        const res = cart.addMany(
+            [
+                { product_id: bundle.insurance?.id, quantity: 1 },
+                { product_id: bundle.esim?.id, quantity: 1 },
+            ].filter((i) => i.product_id),
+            { bundleId: bundle.id }
+        );
+        if (!res.ok) {
+            toast.error("Sepete en fazla 6 farklı ürün ekleyebilirsiniz.");
+            return;
+        }
+        toast.success(`${bundle.name}: sigorta + eSIM sepete eklendi (%10 indirimli).`, {
+            action: { label: "Sepete git", onClick: () => window.location.assign("/sepet") },
+        });
+    };
 
     useEffect(() => {
         api.get("/bundles")
@@ -38,10 +59,9 @@ export const HomeBundleStrip = () => {
 
                 <div className="mt-7 grid gap-5 lg:grid-cols-3">
                     {bundles.map((b) => (
-                        <Link
+                        <div
                             key={b.id}
-                            to={`/basvuru?paket=${b.id}`}
-                            className={`group flex h-full flex-col rounded-2xl border-2 bg-card p-6 text-left transition-all duration-200 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                            className={`group flex h-full flex-col rounded-2xl border-2 bg-card p-6 text-left transition-all duration-200 hover:-translate-y-1 ${
                                 b.id === popularId ? "border-primary" : "border-border hover:border-primary/60"
                             }`}
                             style={{ boxShadow: b.id === popularId ? "var(--shadow-soft)" : "var(--shadow-card)" }}
@@ -112,14 +132,26 @@ export const HomeBundleStrip = () => {
                                 <p className="mt-1 text-xs text-muted-foreground">
                                     kişi başı · ekstralar {formatMoney(b.price, b.currency)}
                                 </p>
-                                <span
-                                    className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-transform duration-150 group-hover:-translate-y-0.5"
-                                    data-testid={`home-bundle-cta-${b.id}`}
-                                >
-                                    Bu paketle başvur <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                                </span>
+                                <div className="mt-4 flex flex-col gap-2.5">
+                                    <Link
+                                        to={`/basvuru?paket=${b.id}`}
+                                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                                        data-testid={`home-bundle-cta-${b.id}`}
+                                    >
+                                        Bu paketle başvur <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                                    </Link>
+                                    <button
+                                        type="button"
+                                        onClick={() => addBundleToCart(b)}
+                                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border-2 border-border px-6 text-sm font-semibold text-foreground transition-colors duration-150 hover:border-primary/60 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                                        data-testid={`home-bundle-add-to-cart-${b.id}`}
+                                    >
+                                        <ShoppingBag className="h-4 w-4" aria-hidden="true" /> Sigorta + eSIM'i
+                                        sepete ekle
+                                    </button>
+                                </div>
                             </div>
-                        </Link>
+                        </div>
                     ))}
                 </div>
             </div>

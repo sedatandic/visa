@@ -1,0 +1,29 @@
+{
+  "summary": "Iteration 95 (Safari Sepette + Sepeti Hatirlat + Paket Kutusu). Backend: 8/8 pytest passed (tours catalog, order tour-schedule validation, /cart/snapshot upsert + empty deactivation + order-close deactivation, cart_reminders due_stage() and run_cart_reminder_sweep()). Frontend: /dubai-turlari renders both tour cards; missing-date toast, add-with-schedule, navbar cart count and tour-in-cart badge all work. /sepet correctly pre-fills tour date+slot; missing-date warning + Turkish blocked-toast + happy-path bank-transfer order redirect all work. Home bundle strip pack_standard adds esim+insurance (cart count 2), 10% bundle discount applied, cart-bundle-strip + apply-button href=/basvuru?paket=pack_standard both correct. Old home-bundle-cta-pack_standard still present. Cart snapshot POST /api/cart/snapshot fires after debounced email input. Navbar 'Çöl Safarisi & Turlar' → /dubai-turlari and footer-tours-link both present.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "OrderStatus (customer /siparis/SV-... page)", "issue": "Tour lines do not display scheduled_date / scheduled_time on the customer-facing order detail page. Backend stores them (verified via test_tour_order_happy_path and DB), and AdminOrders/AdminApplicationDetail render them, but OrderStatus.jsx shows only the product name (`Çöl Safarisi · Akşam Turu x1`) with no date/time. Task spec explicitly requires: 'the order detail page shows the tour with its date and hour'.", "selector": "/app/frontend/src/pages/OrderStatus.jsx", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_95_tours_snapshot.py",
+    "/app/test_reports/pytest/iter95.xml"
+  ],
+  "action_items": [
+    "Update /app/frontend/src/pages/OrderStatus.jsx to render scheduled_date + scheduled_time for tour lines (mirror the pattern already used in Apply.jsx line ~3155 / AdminApplicationDetail.jsx line ~578)."
+  ],
+  "critical_code_review_comments": [
+    "Task description mentions testid `cart-pay-transfer` but actual code uses `cart-payment-transfer` (Cart.jsx line 525). Doc / task drift only — not a bug, but reviewers/tests should reference the real testids.",
+    "cart_reminders.send_cart_reminder() increments reminders_sent even when Resend delivery fails, which is the desired behaviour to prevent re-tries while the sender domain is unverified — good defensive design; consider gating on send_email result once Resend domain is verified so real failures can be retried."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration_95_tours_snapshot.py"],
+  "success_rate": {"backend": "100%", "frontend": "~92% (1 MEDIUM UI gap on OrderStatus)"},
+  "test_credentials": "delivered+it95_*@resend.dev synthetic emails (Resend delivered sandbox address). All created data cleaned up.",
+  "seed_data_creation": "None persisted (cleanup deleted 2 test orders and 3 cart snapshots).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend behaviour for tour schedule + cart snapshot + reminder sweep is solid. The one gap is customer-visible order detail page not showing scheduled tour date/time — verify after main agent patches OrderStatus.jsx by placing a tour order and confirming '20.10.2026' and '14:30' render. When testing snapshot email debounce, remember debounce is 1.5s and payload is POST /api/cart/snapshot; the actual reminder email delivery errors (Resend domain dubaivizeonline.com unverified) but reminders_sent still increments and outbox row is written — assert on those, not on delivery."
+}

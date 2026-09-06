@@ -95,7 +95,7 @@ export default function OrderStatus() {
             <PageHeader
                 eyebrow="Sipariş Takibi"
                 title={`Sipariş ${reference}`}
-                description="eSIM ve seyahat sigortası siparişinizin durumunu buradan görebilirsiniz."
+                description="eSIM, seyahat sigortası ve tur siparişinizin durumunu buradan görebilirsiniz."
             />
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
@@ -166,6 +166,15 @@ export default function OrderStatus() {
                                                     <span className="block text-xs">
                                                         {formatDate(i.starts_on)}
                                                         {i.ends_on ? ` – ${formatDate(i.ends_on)}` : " itibaren"} geçerli
+                                                    </span>
+                                                )}
+                                                {i.scheduled_date && (
+                                                    <span
+                                                        className="block text-xs font-semibold text-foreground"
+                                                        data-testid={`order-item-schedule-${i.product_id}`}
+                                                    >
+                                                        Tur tarihi: {formatDate(i.scheduled_date)}
+                                                        {i.scheduled_time ? ` · ${i.scheduled_time} otelden alınış` : ""}
                                                     </span>
                                                 )}
                                             </span>
@@ -272,6 +281,9 @@ export default function OrderStatus() {
                                 </Button>
                                 <Button asChild variant="secondary" className="h-11 border border-border">
                                     <Link to="/seyahat-sigortasi">Sigorta paketleri</Link>
+                                </Button>
+                                <Button asChild variant="secondary" className="h-11 border border-border">
+                                    <Link to="/dubai-turlari">Çöl safarisi turları</Link>
                                 </Button>
                             </div>
                         </div>

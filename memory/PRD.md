@@ -1093,3 +1093,13 @@ Detaylar CHANGELOG.md 2026-06-10 kaydında. Özet:
 - **Kur**: Barchart sunucudan erişilemediği için Yahoo Finance `USDTRY=X` birincil kaynak
   (aynı bankalar arası kotasyon), doviz.com yedek.
 - Test: iteration_94 backend %100 + frontend %100 (0 açık bulgu).
+
+## 2026-06-10 (2. tur) · Turlar, hazır paket, sepet hatırlatma
+- `/dubai-turlari` sayfası: çöl safarisi + VIP safari, tarih ve otelden alınış saati seçilerek
+  sepete eklenir; sepette düzenlenebilir, sipariş detayında görünür.
+- Ana sayfa hazır paket kartlarında "Sigorta + eSIM'i sepete ekle" (tek tık, %10 indirim);
+  sepette "Bu pakette vize de var → başvurunu başlat" şeridi.
+- Terk edilmiş sepet: `cart_snapshots` + 2. ve 24. saatte hatırlatma e-postası
+  (`cart_reminders.py`, 15 dk'lık sweep), sipariş verilince kayıt kapanır.
+- ⚠️ Resend gönderici domaini (`dubaivizeonline.com`) doğrulanmamış → e-postalar gitmiyor;
+  `dubaivizehatti.com` doğrulanmalı (ROADMAP P0).

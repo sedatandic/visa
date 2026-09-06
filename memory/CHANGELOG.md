@@ -492,3 +492,59 @@ kurulu değil). Aynı bankalar arası kotasyonu veren **Yahoo Finance `USDTRY=X`
 kaynak yapıldı (`fx.py` YAHOO_URL + `parse_yahoo_json`), doviz.com / open.er-api /
 exchangerate.host yedekte. Kur notu kaynağı "forex (USD/TRY)" olarak gösteriyor
 (48,41 × %2 marj = 49,38 ₺; eski doviz.com serbest piyasa satışı 49,46 ₺ idi).
+
+## 2026-06-10 (2. tur) · Turlar sepette, hazır paket sepete ekleme, sepet hatırlatma
+Kullanıcı onayı: tur sayfası + sepette tarih/saat (a), paket kartına "Sepete ekle" (a),
+hatırlatma 2 saat + 24 saat (b).
+
+### Çöl safarisi sepette
+- `pages/Tours.jsx` (yeni, `/dubai-turlari`): safari + VIP safari kartları, kart üzerinde
+  tarih (DateField) + otelden alınış saati (14:00-16:00 slotları) + kişi sayısı +
+  "Sepete ekle". Tarih/saat seçilmezse Türkçe hata toast'ı. Navbar "Bilgi & Hizmetler →
+  Çöl Safarisi & Turlar" ve footer linki eklendi.
+- `lib/cart.js`: satırlar artık `scheduled_date` / `scheduled_time` taşıyor; `setSchedule()`
+  ile sepette düzenlenebiliyor, `addMany()` ile çoklu ekleme, `linkBundle()` ile paket bağı.
+- `pages/Cart.jsx`: tur satırında düzenlenebilir tarih/saat bloğu (`TourSchedule`), eksikse
+  uyarı + ödeme engeli; sipariş yükünde tarih/saat gönderiliyor.
+- `pages/OrderStatus.jsx`: sipariş detayında tur tarihi + alınış saati gösteriliyor
+  (test raporu iteration_95 MEDIUM bulgusu düzeltildi), sayfa metni ve butonlara tur eklendi.
+- VIP safari görseli yanlıştı (yeşil kayalık manzara) → çöl kampı görseliyle değiştirildi
+  (`store_catalog.py` + DB).
+
+### Hazır paket → sepete ekleme
+- `HomeBundleStrip.jsx`: kart artık iki aksiyonlu — "Bu paketle başvur" (mevcut akış) ve
+  **"Sigorta + eSIM'i sepete ekle"** (tek tık, %10 indirim). Sepete `bundleId` yazılır.
+- `Cart.jsx`: paket sepetteyse "Bu pakette vize de var → Vize başvurusunu başlat" şeridi
+  (`/basvuru?paket=<id>`), çünkü vize ücreti başvuru formunda tahsil ediliyor.
+
+### Terk edilmiş sepet hatırlatması (2 saat + 24 saat)
+- `POST /api/cart/snapshot` (yeni): e-posta + kalemler + paket kimliği; e-posta başına tek
+  kayıt (`cart_snapshots`), fiyat ve %10 indirim sunucuda hesaplanıyor. Boş kalemle
+  gönderilirse kayıt pasife alınır. Sipariş oluşunca `create_order` kaydı kapatıyor
+  (`closed_reason: "ordered"`).
+- `cart_reminders.py` (yeni): `due_stage()` 2. saatte 1., 24. saatte 2. hatırlatmayı
+  tetikler; `run_cart_reminder_sweep()` 15 dakikada bir çalışır (server.py lifespan),
+  siparişi olan kaydı atlar. `emailer.cart_reminder_html()` Türkçe e-posta şablonu.
+- `Cart.jsx`: geçerli e-posta yazıldıktan 1,5 sn sonra sepet sunucuya kaydediliyor.
+
+### Anlatım illüstrasyonları (kullanıcı istekleri)
+- Zeminler saydam (`scripts/transparent_explainer_bg.py`), panel rengiyle birleşiyor;
+  yükseklik 386px, sol/sağ boşluklar eşitlendi (`sm:grid-cols-[46%_54%]`, `sm:pr-8`).
+- intro sahnesi yeniden üretildi: tek quad bike (jeep'e temas etmiyor), **Skydive Dubai**
+  paraşütü (kanopide "SKYDIVE DUBAI" yazısı), palmiyeler tam görünüyor, dolgu zemin/blok yok.
+- passport sahnesi: "PASAPORT" altında "PASSPORT", gerçekçi biyometrik kimlik sayfası
+  (örnek ad AYŞE YILMAZ, MRZ satırları, hologram portre).
+- upload sahnesi: yazılar Türkçe ("UÇAK BİLETİ", "OTEL REZERVASYONU", "GEREK YOK"),
+  öğeler ayrı bölgelerde, iç içe geçme yok.
+
+### Test
+- iteration_95: backend 8/8 pytest (tur kataloğu, tur tarih/saat doğrulaması,
+  `/cart/snapshot` upsert + pasife alma, hatırlatma sweep'i), frontend akışları geçti;
+  tek MEDIUM bulgu (sipariş detayında tur tarihi görünmüyor) düzeltildi ve doğrulandı.
+
+### ⚠️ Üretim uyarısı: Resend gönderici domaini doğrulanmamış
+`SENDER_EMAIL=info@dubaivizeonline.com` (eski marka) Resend'de doğrulanmadığı için
+**tüm e-postalar hata alıyor** (`email_outbox.status = "error"`: "The dubaivizeonline.com
+domain is not verified"). Yeni marka domaini `dubaivizehatti.com` resend.com/domains
+üzerinde doğrulanıp `SENDER_EMAIL` güncellenmeli; aksi halde giriş kodu, sipariş ve
+sepet hatırlatma e-postaları müşteriye ulaşmıyor.

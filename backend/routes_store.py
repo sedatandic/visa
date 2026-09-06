@@ -19,7 +19,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 
 from content import BANK_TRANSFER, BUNDLE_DISCOUNT, bundle_discount_amount
-from db import orders_col, serialize_doc, settings_col
+from db import cart_snapshots_col, orders_col, serialize_doc, settings_col
 from emailer import order_admin_html, order_received_html, send_email
 from fx import apply_fx_to_list, get_fx
 
@@ -330,11 +330,77 @@ async def create_order(payload: OrderCreateIn) -> dict:
         "updated_at": now,
     }
     await orders_col.insert_one(dict(doc))
+    await cart_snapshots_col.update_one(
+        {"email": payload.contact.email.lower()},
+        {"$set": {"active": False, "closed_reason": "ordered", "updated_at": now}},
+    )
 
     bank = await _bank_transfer_details(payload.payment_method)
     view = serialize_doc(doc)
     await _notify_new_order(doc, view, bank)
     return {"order": view, "bank": bank}
+
+
+class CartSnapshotIn(BaseModel):
+    """Terk edilmis sepet hatirlatmasi icin sepet kaydi."""
+
+    email: EmailStr
+    full_name: Optional[str] = Field(None, max_length=80)
+    items: List[OrderItemIn] = Field(default_factory=list, max_length=6)
+    bundle_id: Optional[str] = Field(None, max_length=32)
+
+
+@router.post("/cart/snapshot")
+async def save_cart_snapshot(payload: CartSnapshotIn) -> dict:
+    """Sepeti kaydeder; siparis verilmezse 2 ve 24 saat sonra hatirlatma gonderilir."""
+    email = payload.email.lower()
+    now = datetime.now(timezone.utc)
+    if not payload.items:
+        await cart_snapshots_col.update_one(
+            {"email": email}, {"$set": {"active": False, "closed_reason": "emptied", "updated_at": now}}
+        )
+        return {"saved": False, "active": False}
+
+    products = {p["id"]: p for p in await product_list()}
+    lines = []
+    for item in payload.items:
+        product = products.get(item.product_id)
+        if not product:
+            continue
+        unit_price = float(product["price"])
+        lines.append(
+            {
+                "product_id": product["id"],
+                "kind": product["kind"],
+                "name": product["name"],
+                "quantity": item.quantity,
+                "unit_price": unit_price,
+                "total": round(unit_price * item.quantity, 2),
+            }
+        )
+    if not lines:
+        raise HTTPException(400, "Sepette gecerli urun bulunamadi.")
+
+    pricing = _pricing_block(lines)
+    await cart_snapshots_col.update_one(
+        {"email": email},
+        {
+            "$set": {
+                "email": email,
+                "full_name": payload.full_name,
+                "items": lines,
+                "bundle_id": payload.bundle_id,
+                "currency": "TRY",
+                **pricing,
+                "active": True,
+                "updated_at": now,
+            },
+            "$setOnInsert": {"created_at": now, "reminders_sent": 0},
+            "$unset": {"closed_reason": ""},
+        },
+        upsert=True,
+    )
+    return {"saved": True, "price": pricing["price"]}
 
 
 def _application_order_items(lines: list) -> list[dict]:

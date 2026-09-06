@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+    Clock,
     CreditCard,
     Landmark,
     Loader2,
     Minus,
+    Plane,
     Plus,
     ShieldCheck,
     ShoppingBag,
@@ -25,6 +27,56 @@ import { Textarea } from "../components/ui/textarea";
 import { Skeleton } from "../components/ui/skeleton";
 
 const BUNDLE_RATE = 0.1;
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+const TourSchedule = ({ line, onChange }) => (
+    <div className="mt-3 w-full rounded-xl border border-border bg-muted/40 p-3.5">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <div className="space-y-1.5">
+                <Label htmlFor={`cart-tour-date-${line.product_id}`} className="text-xs">
+                    Tur tarihi
+                </Label>
+                <DateField
+                    id={`cart-tour-date-${line.product_id}`}
+                    value={line.scheduled_date || ""}
+                    onChange={(v) => onChange({ scheduled_date: v })}
+                    minDate={new Date()}
+                    data-testid={`cart-tour-date-${line.product_id}`}
+                />
+            </div>
+            <div className="space-y-1.5">
+                <Label className="text-xs">
+                    <Clock className="mr-1 inline h-3 w-3 text-primary" /> Alınış saati
+                </Label>
+                <div className="flex flex-wrap gap-1.5">
+                    {(line.product.time_slots || []).map((s) => (
+                        <button
+                            key={s}
+                            type="button"
+                            onClick={() => onChange({ scheduled_time: s })}
+                            className={`min-h-[38px] rounded-lg border-2 px-3 text-xs font-bold transition-colors duration-150 ${
+                                line.scheduled_time === s
+                                    ? "border-primary bg-primary/[0.08] text-foreground"
+                                    : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                            }`}
+                            data-testid={`cart-tour-slot-${line.product_id}-${s.replace(":", "")}`}
+                        >
+                            {s}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+        {(!line.scheduled_date || !line.scheduled_time) && (
+            <p
+                className="mt-2 text-xs font-semibold text-destructive"
+                data-testid={`cart-tour-warning-${line.product_id}`}
+            >
+                Bu tur için tarih ve saat seçmelisiniz.
+            </p>
+        )}
+    </div>
+);
 
 export default function Cart() {
     const navigate = useNavigate();
@@ -33,6 +85,7 @@ export default function Cart() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [method, setMethod] = useState("card");
+    const snapshotSig = useRef("");
     const [form, setForm] = useState({
         full_name: "",
         email: customerAuth.email || localStorage.getItem("dv_last_order_email") || "",
@@ -46,7 +99,7 @@ export default function Cart() {
     useEffect(() => {
         setMeta(
             "Sepetim | Dubai Vize Hattı",
-            "Seçtiğiniz Dubai eSIM ve seyahat sigortası paketlerini sepetinizde görüntüleyin, kart veya havale ile ödeyin.",
+            "Seçtiğiniz Dubai eSIM, seyahat sigortası ve tur paketlerini sepetinizde görüntüleyin, kart veya havale ile ödeyin.",
             { canonicalPath: "/sepet", noindex: true }
         );
     }, []);
@@ -70,11 +123,7 @@ export default function Cart() {
                 .map((item) => {
                     const product = products.find((p) => p.id === item.product_id);
                     if (!product) return null;
-                    return {
-                        ...item,
-                        product,
-                        total: Number(product.price) * item.quantity,
-                    };
+                    return { ...item, product, total: Number(product.price) * item.quantity };
                 })
                 .filter(Boolean),
         [cart.items, products]
@@ -85,6 +134,28 @@ export default function Cart() {
     const bundleDiscount =
         kinds.has("esim") && kinds.has("insurance") ? Math.round(itemsTotal * BUNDLE_RATE * 100) / 100 : 0;
     const total = itemsTotal - bundleDiscount;
+    const missingSchedule = lines.filter(
+        (l) => l.product.needs_schedule && (!l.scheduled_date || !l.scheduled_time)
+    );
+
+    // Sepeti sunucuya kaydet: e-posta bilindiginde 2 ve 24 saat sonra hatirlatma gonderilir.
+    useEffect(() => {
+        const email = form.email.trim().toLowerCase();
+        if (!EMAIL_RE.test(email) || !lines.length) return undefined;
+        const payload = {
+            email,
+            full_name: form.full_name.trim() || null,
+            items: lines.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
+            bundle_id: cart.bundleId || null,
+        };
+        const sig = JSON.stringify(payload);
+        if (sig === snapshotSig.current) return undefined;
+        const timer = setTimeout(() => {
+            snapshotSig.current = sig;
+            api.post("/cart/snapshot", payload).catch(() => {});
+        }, 1500);
+        return () => clearTimeout(timer);
+    }, [form.email, form.full_name, lines, cart.bundleId]);
 
     const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e?.target ? e.target.value : e }));
 
@@ -94,13 +165,21 @@ export default function Cart() {
         const email = form.email.trim();
         const phone = form.phone.trim();
         if (name.length < 3) return toast.error("Ad soyad girin.");
-        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return toast.error("Geçerli bir e-posta girin.");
+        if (!EMAIL_RE.test(email)) return toast.error("Geçerli bir e-posta girin.");
         if (phone.replace(/\D/g, "").length < 10) return toast.error("Geçerli bir telefon numarası girin.");
+        if (missingSchedule.length) {
+            return toast.error(`${missingSchedule[0].product.name} için tarih ve saat seçin.`);
+        }
 
         setSubmitting(true);
         try {
             const { data } = await api.post("/orders", {
-                items: lines.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
+                items: lines.map((l) => ({
+                    product_id: l.product_id,
+                    quantity: l.quantity,
+                    scheduled_date: l.scheduled_date || null,
+                    scheduled_time: l.scheduled_time || null,
+                })),
                 contact: { full_name: name, email, phone },
                 travel_start: form.travel_start || null,
                 travel_end: form.travel_end || null,
@@ -126,7 +205,7 @@ export default function Cart() {
         } finally {
             setSubmitting(false);
         }
-    }, [lines, form, method, cart, navigate]);
+    }, [lines, form, method, cart, navigate, missingSchedule]);
 
     const empty = !loading && lines.length === 0;
 
@@ -135,7 +214,7 @@ export default function Cart() {
             <PageHeader
                 eyebrow="Sepetim"
                 title="Seçtiğiniz ek hizmetler"
-                description="Dubai eSIM ve seyahat sigortası paketlerinizi burada görüp tek seferde ödeyebilirsiniz. Vize başvurunuz olsun ya da olmasın bu hizmetleri ayrı olarak alabilirsiniz."
+                description="Dubai eSIM, seyahat sigortası ve tur paketlerinizi burada görüp tek seferde ödeyebilirsiniz. Vize başvurunuz olsun ya da olmasın bu hizmetleri ayrı olarak alabilirsiniz."
             />
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
@@ -150,8 +229,9 @@ export default function Cart() {
                             <ShoppingBag className="mx-auto h-9 w-9 text-muted-foreground" />
                             <h2 className="mt-4 font-heading text-lg font-bold">Sepetiniz boş</h2>
                             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                Dubai eSIM ve seyahat sigortası paketlerini inceleyip sepetinize ekleyebilirsiniz.
-                                İkisini birlikte aldığınızda %10 paket indirimi uygulanır.
+                                Dubai eSIM, seyahat sigortası ve çöl safarisi paketlerini inceleyip sepetinize
+                                ekleyebilirsiniz. Sigorta ile eSIM'i birlikte aldığınızda %10 paket indirimi
+                                uygulanır.
                             </p>
                             <div className="mt-6 flex flex-wrap justify-center gap-3">
                                 <Button asChild className="h-11" data-testid="cart-empty-esim-button">
@@ -169,6 +249,14 @@ export default function Cart() {
                                         <ShieldCheck className="mr-2 h-4 w-4" /> Sigorta paketleri
                                     </Link>
                                 </Button>
+                                <Button
+                                    asChild
+                                    variant="secondary"
+                                    className="h-11 border border-border"
+                                    data-testid="cart-empty-tours-button"
+                                >
+                                    <Link to="/dubai-turlari">Çöl safarisi</Link>
+                                </Button>
                             </div>
                         </div>
                     ) : (
@@ -182,71 +270,96 @@ export default function Cart() {
                                     <FxNote />
                                 </div>
 
+                                {cart.bundleId && (
+                                    <div
+                                        className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/[0.06] p-4"
+                                        data-testid="cart-bundle-strip"
+                                    >
+                                        <p className="text-sm leading-6">
+                                            <span className="font-heading font-bold">
+                                                Bu pakette vize de var.
+                                            </span>{" "}
+                                            Vize ücreti başvuru formunda tahsil edilir; başvurunuzu şimdi
+                                            başlatın, sigorta ve eSIM sepetinizde hazır.
+                                        </p>
+                                        <Button asChild className="h-10" data-testid="cart-bundle-apply-button">
+                                            <Link to={`/basvuru?paket=${cart.bundleId}`}>
+                                                <Plane className="mr-2 h-4 w-4" /> Vize başvurusunu başlat
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                )}
+
                                 <div className="mt-5 divide-y divide-border">
                                     {lines.map((l) => (
-                                        <div
-                                            key={l.product_id}
-                                            className="flex flex-wrap items-center justify-between gap-4 py-4"
-                                            data-testid={`cart-line-${l.product_id}`}
-                                        >
-                                            <div className="min-w-[200px] flex-1">
-                                                <p className="font-heading text-base font-bold">{l.product.name}</p>
-                                                <p className="mt-1 text-xs text-muted-foreground">
-                                                    {l.product.kind_label} ·{" "}
-                                                    {formatMoney(l.product.price, l.product.currency)} /{" "}
-                                                    {l.product.kind === "esim" ? "paket" : "kişi"}
-                                                </p>
+                                        <div key={l.product_id} className="py-4" data-testid={`cart-line-${l.product_id}`}>
+                                            <div className="flex flex-wrap items-center justify-between gap-4">
+                                                <div className="min-w-[200px] flex-1">
+                                                    <p className="font-heading text-base font-bold">{l.product.name}</p>
+                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                        {l.product.kind_label} ·{" "}
+                                                        {formatMoney(l.product.price, l.product.currency)} /{" "}
+                                                        {l.product.kind === "esim" ? "paket" : "kişi"}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => cart.setQty(l.product_id, l.quantity - 1)}
+                                                        aria-label="Adedi azalt"
+                                                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card transition-colors duration-150 hover:border-primary/60 hover:text-primary"
+                                                        data-testid={`cart-minus-${l.product_id}`}
+                                                    >
+                                                        <Minus className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <span
+                                                        className="min-w-8 text-center font-heading text-base font-bold"
+                                                        data-testid={`cart-qty-${l.product_id}`}
+                                                    >
+                                                        {l.quantity}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            cart.setQty(
+                                                                l.product_id,
+                                                                Math.min(CART_MAX_QTY, l.quantity + 1)
+                                                            )
+                                                        }
+                                                        aria-label="Adedi artır"
+                                                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card transition-colors duration-150 hover:border-primary/60 hover:text-primary"
+                                                        data-testid={`cart-plus-${l.product_id}`}
+                                                    >
+                                                        <Plus className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex items-center gap-3">
+                                                    <span
+                                                        className="font-heading text-base font-extrabold"
+                                                        data-testid={`cart-line-total-${l.product_id}`}
+                                                    >
+                                                        {formatMoney(l.total, l.product.currency)}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => cart.remove(l.product_id)}
+                                                        aria-label="Sepetten çıkar"
+                                                        className="rounded-lg border border-border p-2 text-destructive transition-colors duration-150 hover:bg-destructive/10"
+                                                        data-testid={`cart-remove-${l.product_id}`}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                             </div>
 
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => cart.setQty(l.product_id, l.quantity - 1)}
-                                                    aria-label="Adedi azalt"
-                                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card transition-colors duration-150 hover:border-primary/60 hover:text-primary"
-                                                    data-testid={`cart-minus-${l.product_id}`}
-                                                >
-                                                    <Minus className="h-3.5 w-3.5" />
-                                                </button>
-                                                <span
-                                                    className="min-w-8 text-center font-heading text-base font-bold"
-                                                    data-testid={`cart-qty-${l.product_id}`}
-                                                >
-                                                    {l.quantity}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        cart.setQty(
-                                                            l.product_id,
-                                                            Math.min(CART_MAX_QTY, l.quantity + 1)
-                                                        )
-                                                    }
-                                                    aria-label="Adedi artır"
-                                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card transition-colors duration-150 hover:border-primary/60 hover:text-primary"
-                                                    data-testid={`cart-plus-${l.product_id}`}
-                                                >
-                                                    <Plus className="h-3.5 w-3.5" />
-                                                </button>
-                                            </div>
-
-                                            <div className="flex items-center gap-3">
-                                                <span
-                                                    className="font-heading text-base font-extrabold"
-                                                    data-testid={`cart-line-total-${l.product_id}`}
-                                                >
-                                                    {formatMoney(l.total, l.product.currency)}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => cart.remove(l.product_id)}
-                                                    aria-label="Sepetten çıkar"
-                                                    className="rounded-lg border border-border p-2 text-destructive transition-colors duration-150 hover:bg-destructive/10"
-                                                    data-testid={`cart-remove-${l.product_id}`}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </div>
+                                            {l.product.needs_schedule && (
+                                                <TourSchedule
+                                                    line={l}
+                                                    onChange={(patch) => cart.setSchedule(l.product_id, patch)}
+                                                />
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -257,6 +370,9 @@ export default function Cart() {
                                     </Button>
                                     <Button asChild variant="secondary" className="h-10 border border-border">
                                         <Link to="/seyahat-sigortasi">Sigorta ekle</Link>
+                                    </Button>
+                                    <Button asChild variant="secondary" className="h-10 border border-border">
+                                        <Link to="/dubai-turlari">Tur ekle</Link>
                                     </Button>
                                     <Button
                                         variant="secondary"
@@ -359,9 +475,7 @@ export default function Cart() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="cart-application">
-                                            Vize başvuru kodunuz (varsa)
-                                        </Label>
+                                        <Label htmlFor="cart-application">Vize başvuru kodunuz (varsa)</Label>
                                         <Input
                                             id="cart-application"
                                             value={form.application_reference}
@@ -387,7 +501,7 @@ export default function Cart() {
                                             rows={3}
                                             value={form.note}
                                             onChange={set("note")}
-                                            placeholder="Telefon modeli, poliçe için özel durum vb."
+                                            placeholder="Telefon modeli, poliçe için özel durum, otel adı vb."
                                             data-testid="cart-note-input"
                                         />
                                     </div>
@@ -440,8 +554,8 @@ export default function Cart() {
                                         )}
                                     </Button>
                                     <p className="text-xs leading-5 text-muted-foreground">
-                                        Ödemeniz onaylandığında eSIM QR kodunuz ve/veya poliçeniz e-posta
-                                        adresinize gönderilir. Siparişinizi{" "}
+                                        Ödemeniz onaylandığında eSIM QR kodunuz, poliçeniz ve tur kuponunuz
+                                        e-posta adresinize gönderilir. Siparişinizi{" "}
                                         <Link to="/hesabim" className="font-semibold text-primary hover:underline">
                                             Başvurularım
                                         </Link>{" "}

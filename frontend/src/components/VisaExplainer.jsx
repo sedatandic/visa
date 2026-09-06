@@ -210,7 +210,7 @@ export const VisaExplainer = () => {
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:order-2 sm:aspect-auto sm:h-full sm:min-h-[420px] sm:w-full">
+            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:order-2 sm:aspect-auto sm:h-[386px] sm:w-full">
                 <AnimatePresence initial={false}>
                     <motion.img
                         key={scene.key}
@@ -225,7 +225,7 @@ export const VisaExplainer = () => {
                             x: { duration: 0.7, ease: "easeOut" },
                             scale: { duration: paused ? 0.4 : sceneMs / 1000, ease: "linear" },
                         }}
-                        className="absolute inset-0 h-full w-full object-contain object-center p-1.5 sm:p-2"
+                        className="absolute inset-0 h-full w-full object-contain object-center p-1.5 sm:p-2 sm:pr-8"
                         data-testid={`explainer-image-${scene.key}`}
                     />
                 </AnimatePresence>
@@ -312,7 +312,7 @@ export const VisaExplainer = () => {
                     </AnimatePresence>
 
                     {captions && (
-                        <div className="mt-3 max-w-[400px]">
+                        <div className="mt-3 max-w-[420px]">
                             <Subtitle
                                 text={scene.subtitle}
                                 durationMs={sceneMs}
