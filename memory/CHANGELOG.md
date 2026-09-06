@@ -637,3 +637,10 @@ Kullanıcı notları doğrultusunda anlatım baştan üretildi (`scripts/generat
 - Kullanıcı geri bildirimi: jet ski kaldırıldı, intro sahnesi jet ski öncesi haline döndürüldü
   (`intro.desert.{jpg,png}` → `intro.{jpg,png}`; quad bike jeepin yanında). Jet ski'li sürüm
   `intro.quadjetski.{jpg,png}` olarak saklandı.
+- Kullanıcı referans görsel paylaştı → intro sahnesi o referansa göre yeniden üretildi:
+  köşelerden giren turkuaz palmiyeler, Burj Al Arab, semerli ve deri çantalı deve, gülümseyen
+  bej blazerli gezgin (başparmak yukarı + valiz), direkte büyük BAE bayrağı, Museum of the
+  Future halkası (dekoratif hat kıvrımları), Burj Khalifa, paraşütçü, kahverengi jeep, kum
+  tepeleri. İkinci turda jeep kadraja tam sığdırıldı (ilk üretimde sağ kenardan kesiliyordu).
+  Yedekler: `intro.refclipped.jpg` (jeep kesik ilk deneme), `intro.prevdesert.{jpg,png}`,
+  `intro.quadjetski.{jpg,png}`, `intro.palmoverlap.{jpg,png}`.
