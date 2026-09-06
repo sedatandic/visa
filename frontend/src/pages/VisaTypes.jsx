@@ -6,6 +6,7 @@ import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { PricingTabs } from "../components/PricingTabs";
 import { VisaGuideLinks } from "../components/VisaGuideLinks";
+import { VisaComparison } from "../components/VisaComparison";
 import { BankAccounts } from "../components/BankAccounts";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { FxNote } from "../components/FxNote";
@@ -29,6 +30,7 @@ const EXCLUDED = [
 
 export default function VisaTypes() {
     const [bank, setBank] = useState(null);
+    const [visaTypes, setVisaTypes] = useState([]);
 
     useEffect(() => {
         setMeta(
@@ -37,6 +39,9 @@ export default function VisaTypes() {
         );
         api.get("/content/site")
             .then(({ data }) => setBank(data.bank_transfer || null))
+            .catch(() => {});
+        api.get("/visa-types")
+            .then(({ data }) => setVisaTypes(data || []))
             .catch(() => {});
     }, []);
 
@@ -57,6 +62,20 @@ export default function VisaTypes() {
                         </span>
                     </div>
                     <PricingTabs />
+
+                    {visaTypes.length > 1 && (
+                        <div className="mt-14" data-testid="visa-comparison-section">
+                            <span className="eyebrow">Karar Verin</span>
+                            <h2 className="mt-3 text-2xl font-bold">30 gün mü 60 gün mü, tek giriş mi çok giriş mi?</h2>
+                            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                                Dört vizenin süresini, giriş hakkını, ücretini ve kimlere uygun olduğunu tek tabloda
+                                karşılaştırın. Tablodaki butondan seçtiğiniz vize başvuru formunda otomatik seçili gelir.
+                            </p>
+                            <div className="mt-6">
+                                <VisaComparison visas={visaTypes} />
+                            </div>
+                        </div>
+                    )}
 
                     {bank?.enabled && (bank.banks || []).length > 0 && (
                         <div className="mt-14" data-testid="visa-types-bank-section">

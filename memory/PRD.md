@@ -1154,3 +1154,8 @@ Sihirbaz Adım 1'de gidiş/dönüş tarihi soruluyor; hemen altında seyahat sü
 Safari tarihi gidişin ertesi günü 15:00 olarak ön seçili, kişi sayısı yolcu sayısı kadar.
 Tarih doğrulamaları Adım 1'e taşındı; Adım 2 yalnızca vize seçimi + tarih özeti gösteriyor.
 Test: Playwright ile masaüstü + mobil uçtan uca doğrulandı (bkz. CHANGELOG 2026-06-12).
+
+## 2026-09-06 · Vize karşılaştırma
+`/vize-tipleri` sayfasında ve başvuru Adım 1'deki "Vizeleri karşılaştır" penceresinde
+30/60 gün × tek/çok giriş vizeleri tek tabloda karşılaştırılıyor (süre, giriş hakkı, ücret,
+işlem süresi, kimlere uygun). Tablodan seçim forma otomatik işleniyor.

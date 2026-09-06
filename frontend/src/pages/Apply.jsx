@@ -24,6 +24,7 @@ import {
     Plane,
     Plus,
     Save,
+    Scale,
     ShieldCheck,
     Signal,
     Sparkles,
@@ -52,6 +53,14 @@ import { PhotoRetryHelper } from "../components/PhotoRetryHelper";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { BankTransferInfo } from "../components/BankTransferInfo";
 import { BankAccounts } from "../components/BankAccounts";
+import { VisaComparison } from "../components/VisaComparison";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -203,6 +212,8 @@ export default function Apply() {
     const preselectedVisa = useRef("");
     const [maxTravelers, setMaxTravelers] = useState(10);
     const [step, setStep] = useState(0);
+    const [compareOpen, setCompareOpen] = useState(false);
+
     const [contact, setContact] = useState({ full_name: "", email: "", phone: "+90 5", address_city: "", whatsapp_optin: false });
     const [travelers, setTravelers] = useState([newTraveler()]);
     const [openNationalId, setOpenNationalId] = useState({});
@@ -1036,8 +1047,7 @@ export default function Apply() {
     const primaryVisaOptions = visaOptionsFor(primaryApplicantType);
     const primaryVisa = visaById(primaryVisaId);
 
-    const setPrimaryVisa = (id) => {
-        const chosen = visaById(id);
+    const setPrimaryVisa = (id) => {        const chosen = visaById(id);
         if (!chosen) return;
         const childVisa = chosen.category === "child";
         preselectedVisa.current = id;
@@ -1772,25 +1782,36 @@ export default function Apply() {
                                             Bir vize kartından geldiyseniz otomatik seçilir. Yolcu bazında farklı vize
                                             seçmek isterseniz 2. adımda düzenleyebilirsiniz.
                                         </p>
-                                        <div className="mt-4 sm:max-w-md">
-                                            <Field label="Vize Türü" required>
-                                                <Select value={primaryVisaId} onValueChange={setPrimaryVisa}>
-                                                    <SelectTrigger data-testid="primary-visa-select">
-                                                        <SelectValue placeholder="Vize türü seçin" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {primaryVisaOptions.map((v) => (
-                                                            <SelectItem
-                                                                key={v.id}
-                                                                value={v.id}
-                                                                data-testid={`primary-visa-option-${v.id}`}
-                                                            >
-                                                                {v.name} · {formatMoney(v.price, v.currency)}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </Field>
+                                        <div className="mt-4 flex flex-wrap items-end gap-3 sm:max-w-xl">
+                                            <div className="min-w-[240px] flex-1">
+                                                <Field label="Vize Türü" required>
+                                                    <Select value={primaryVisaId} onValueChange={setPrimaryVisa}>
+                                                        <SelectTrigger data-testid="primary-visa-select">
+                                                            <SelectValue placeholder="Vize türü seçin" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {primaryVisaOptions.map((v) => (
+                                                                <SelectItem
+                                                                    key={v.id}
+                                                                    value={v.id}
+                                                                    data-testid={`primary-visa-option-${v.id}`}
+                                                                >
+                                                                    {v.name} · {formatMoney(v.price, v.currency)}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </Field>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                className="h-11 border border-border"
+                                                onClick={() => setCompareOpen(true)}
+                                                data-testid="open-visa-comparison-button"
+                                            >
+                                                <Scale className="mr-2 h-4 w-4" /> Vizeleri karşılaştır
+                                            </Button>
                                         </div>
                                         {primaryVisa && (
                                             <p
@@ -1818,6 +1839,30 @@ export default function Apply() {
                                             </p>
                                         )}
                                     </div>
+
+                                    <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+                                        <DialogContent
+                                            className="max-h-[88vh] max-w-4xl overflow-y-auto"
+                                            data-testid="visa-comparison-dialog"
+                                        >
+                                            <DialogHeader>
+                                                <DialogTitle>Vize türlerini karşılaştırın</DialogTitle>
+                                                <DialogDescription>
+                                                    Süre, giriş hakkı, ücret ve kimlere uygun olduğunu görün; uygun
+                                                    olanı seçtiğinizde form otomatik güncellenir.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <VisaComparison
+                                                visas={visaTypes}
+                                                selectedId={primaryVisaId}
+                                                onSelect={(v) => {
+                                                    setPrimaryVisa(v.id);
+                                                    setCompareOpen(false);
+                                                    toast.success(`${v.name} seçildi.`);
+                                                }}
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
 
                                     {/* SEYAHAT TARIHLERI: oneriler bu tarihlere gore hesaplanir */}
                                     <div

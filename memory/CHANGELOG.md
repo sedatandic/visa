@@ -744,3 +744,20 @@ kartı · safari kişi sayısı yolcu sayısı kadar).
   ve Home'daki vurgulu satır). Doğrulama: sayfada "yönetelim" ifadesi kalmadı.
 - Not: DateField'da geçmiş tarih girildiğinde çıkan "seçilebilir aralığın dışında" uyarısı
   doğru çalışıyor (pod tarihi 2026-09-06; test tarihleri buna göre seçilmeli).
+
+## 2026-09-06 · Vize karşılaştırma tablosu
+- Yeni bileşen `components/VisaComparison.jsx`: 30/60 gün × tek/çok giriş vizelerini tek
+  tabloda karşılaştırıyor. Satırlar: kalış süresi, giriş sayısı, ülke dışına çıkış davranışı,
+  kişi başı ücret (TL + ≈USD), işlem süresi, "kimler için uygun?" ve seçim/CTA satırı.
+  "En çok tercih edilen" kolonu vurgulu; ilk kolon yatay kaydırmada sabit (sticky),
+  mobilde kaydırma ipucu var (`visa-comparison-scroll-hint`).
+- **`/vize-tipleri`**: PricingTabs'in altına "30 gün mü 60 gün mü, tek giriş mi çok giriş mi?"
+  bölümü eklendi (`visa-comparison-section`); her kolonda "Başvuruya başla" →
+  `/basvuru?vize={id}` (form otomatik seçili açılır).
+- **Başvuru Adım 1**: vize dropdown'ının yanına "Vizeleri karşılaştır" düğmesi
+  (`open-visa-comparison-button`) → tabloyu Dialog içinde açıyor
+  (`visa-comparison-dialog`); "Bu vizeyi seç" seçimi dropdown'a ve tüm yetişkin yolculara
+  uyguluyor, pencere kapanıyor.
+- Doğrulama: masaüstünde 4 kolon, fiyatlar 5.190/9.880/9.880/14.810 ₺ ve çıkış davranışı
+  doğru; CTA linki `?vize=visa_60_multi`; Dialog'dan seçim sonrası dropdown "60 Günlük Çok
+  Girişli · 14.810 ₺" ve meta "60 gün · Çok girişli"; 414px'te tablo kaydırılabilir.
