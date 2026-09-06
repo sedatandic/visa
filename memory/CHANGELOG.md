@@ -833,3 +833,31 @@ kartı · safari kişi sayısı yolcu sayısı kadar).
 - Test: testing_agent iteration_102 → backend %100 (9/9 pytest, sipariş fiyat paritesi
   dahil), frontend %100. Rapor sonrası tek UX bulgusu (kart↔form tutar farkı) giderildi ve
   doğrulandı. Yeni test: `tests/test_iteration_102_family_quote.py`.
+
+## 2026-06-06 · Anlatımın MP4 reklam videosu (WhatsApp)
+Kullanıcı isteği: "Ana sayfadaki animasyonu mp4 formatında yap WhatsApp'ta reklam olarak
+gönderelim, en sonunda websitesini de göster".
+- `scripts/render_explainer_video.py`: PIL ile sahne kareleri üretip ffmpeg ile birleştiriyor.
+  Kaynaklar: `public/explainer/{key}.png` (7 sahne), `public/audio/explainer/full.mp3` +
+  `full.json` (sahne pencereleri), `scripts/fonts/Figtree.ttf` (variable font, ExtraBold/
+  Medium/SemiBold varyasyonları), `public/brand/logo-horizontal-gold-palm.png`.
+  Kare düzeni: üstte logo → beyaz kartta illüstrasyon (`object-contain` mantığı, kırpma yok) →
+  altın "ADIM X" rozeti → başlık → altyazı kutusu → sahne göstergesi + site adresi.
+  Her sahne kendi süresinde (full.json start/end) Ken Burns zoompan + 0.4 sn fade-in.
+  Kapanış (4,2 sn): logo + "Dubai vizeniz 2 iş gününde hazır" + www.dubaivizehatti.com
+  pili + WhatsApp/telefon + TÜRSAB satırı; içerik saydam katmana çizilip **dikeyde
+  ortalanıyor** (ilk denemede alt yarı boştu). Ses `apad` + `afade` ile kapanışa uzatılıyor.
+  Geçici klasör (`tempfile.mkdtemp`) her koşuda `shutil.rmtree` ile siliniyor.
+- Çıktılar: `public/reklam/dubai-vize-hatti-reklam-dikey.mp4` (1080x1920, 2,6 MB) ve
+  `...-kare.mp4` (1080x1080, 2,1 MB) — ikisi de 70,94 sn, h264 + AAC mono 128k,
+  `+faststart`. WhatsApp 16 MB sınırının çok altında.
+- `public/reklam/index.html` (noindex): iki videoyu önizleyip indirme sayfası
+  (telefonda uzun basıp kaydetme talimatı dahil).
+- ORTAM NOTU: fork sonrası `ffmpeg` kurulu değildi → `apt-get install -y ffmpeg`
+  (Debian 12, ffmpeg 5.1.9) ile kuruldu. Yeni pod/deploy'da script çalışmazsa ilk iş
+  ffmpeg kurulumudur.
+- Doğrulama: ffprobe (süre/çözünürlük/kodek/ses akışı), volumedetect (mean -15.4 dB,
+  max -1.3 dB → ses sessiz değil), 3/25/45/68. saniye kareleri (25. sn = "upload" sahnesi
+  20,95-30,85 penceresiyle uyumlu, 68. sn = kapanış karesi), preview URL'den
+  `http=200 · video/mp4` ve indirme sayfası ekran görüntüsü.
+

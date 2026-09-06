@@ -1180,3 +1180,16 @@ Aile Paketi kartında yetişkin/çocuk sayısı seçilebiliyor ve "Tam tatil" ku
 sayısı kadar çöl safarisi ekleniyor; fiyat/içerik `GET /api/bundles/quote` ile anında
 güncelleniyor. Kart, sepet ve başvuru formu aynı toplamı gösteriyor (tur tarihi otomatik
 öneriliyor). Doğrulama: iteration_102 (%100/%100) + sonrasında UX düzeltmesi.
+
+## 2026-06-06 · WhatsApp reklam videosu (MP4) TAMAMLANDI
+Ana sayfa anlatımının video sürümü üretildi ve siteden indirilebilir:
+- Dikey (Durum/Story): `/reklam/dubai-vize-hatti-reklam-dikey.mp4` · 1080x1920 · 70,9 sn · 2,6 MB
+- Kare (sohbet/akış): `/reklam/dubai-vize-hatti-reklam-kare.mp4` · 1080x1080 · 70,9 sn · 2,1 MB
+- İndirme/önizleme sayfası: `/reklam/` (noindex)
+- Üretim komutu: `python /app/scripts/render_explainer_video.py [all|dikey|kare]`
+  (ffmpeg gerekir; fork sonrası pod'da kurulu olmayabilir → `apt-get install -y ffmpeg`)
+- Seslendirme/metin değişirse önce `scripts/generate_narration_eleven.py`, ardından bu script
+  çalıştırılmalı (video full.mp3 + full.json'dan beslenir).
+Sıradaki açık işler değişmedi: WhatsApp botunu canlıya alma (Meta kimlik bilgileri kullanıcıdan),
+gerçek IBAN bilgileri, paylaşılabilir aile paketi linki (P2), İngilizce/global sürüm (P2).
+
