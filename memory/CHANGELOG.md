@@ -644,3 +644,6 @@ Kullanıcı notları doğrultusunda anlatım baştan üretildi (`scripts/generat
   tepeleri. İkinci turda jeep kadraja tam sığdırıldı (ilk üretimde sağ kenardan kesiliyordu).
   Yedekler: `intro.refclipped.jpg` (jeep kesik ilk deneme), `intro.prevdesert.{jpg,png}`,
   `intro.quadjetski.{jpg,png}`, `intro.palmoverlap.{jpg,png}`.
+- intro sahnesi son rötuşlar: jeepin tavan sepetine **quad bike** eklendi, BAE bayrağı Museum
+  of the Future halkasına **temas etmeyecek** şekilde yukarı-sola alındı, paraşütçü **tandem
+  (2 kişi)** yapıldı ve kanopiye **SKYDIVE DUBAI** yazıldı. Yedek: `intro.refnoquad.jpg`.
