@@ -67,8 +67,8 @@ class TestStoreCatalog:
         assert r.status_code == 200
         body = r.json()
         items = body["items"]
-        # 4 esim + 6 insurance + 1 tour = 11
-        assert len(items) == 11, f"expected 11 products, got {len(items)}"
+        # 4 esim + 6 insurance + 2 tour = 12
+        assert len(items) == 12, f"expected 12 products, got {len(items)}"
         for it in items:
             assert "price" in it and it["price"] > 0
             assert it["currency"] == "TRY"

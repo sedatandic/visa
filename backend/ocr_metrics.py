@@ -98,45 +98,62 @@ def _percentile(values: list, ratio: float) -> int:
     return int(ordered[index])
 
 
+EMPTY_SUMMARY = {
+    "total": 0,
+    "success_rate": 0,
+    "core_complete_rate": 0,
+    "avg_ms": 0,
+    "p50_ms": 0,
+    "p90_ms": 0,
+    "fields": [],
+    "top_missing": [],
+}
+
+
+def _rate(part: int, whole: int) -> int:
+    return round(part * 100 / whole) if whole else 0
+
+
+def _duration_stats(rows: list) -> dict:
+    durations = [r.get("duration_ms") or 0 for r in rows if r.get("duration_ms")]
+    return {
+        "avg_ms": int(sum(durations) / len(durations)) if durations else 0,
+        "p50_ms": _percentile(durations, 0.5),
+        "p90_ms": _percentile(durations, 0.9),
+    }
+
+
+def _field_rows(ok_rows: list) -> list:
+    """Her alan icin dolum oranini hesaplar."""
+    rows = []
+    for field in TRACKED_FIELDS:
+        hits = len([r for r in ok_rows if field in (r.get("filled") or [])])
+        rows.append(
+            {
+                "key": field,
+                "label": FIELD_LABELS.get(field, field),
+                "fill_rate": _rate(hits, len(ok_rows)),
+                "core": field in CORE_FIELDS,
+            }
+        )
+    return rows
+
+
 def summarize(rows: list) -> dict:
     """Kayitlardan rapor uretir (saf fonksiyon, test edilebilir)."""
     total = len(rows)
     if not total:
-        return {
-            "total": 0,
-            "success_rate": 0,
-            "core_complete_rate": 0,
-            "avg_ms": 0,
-            "p50_ms": 0,
-            "p90_ms": 0,
-            "fields": [],
-            "top_missing": [],
-        }
+        return dict(EMPTY_SUMMARY)
 
     ok_rows = [r for r in rows if r.get("ok")]
-    durations = [r.get("duration_ms") or 0 for r in rows if r.get("duration_ms")]
     core_ok = len([r for r in ok_rows if r.get("core_complete")])
-
-    fields = []
-    for field in TRACKED_FIELDS:
-        hits = len([r for r in ok_rows if field in (r.get("filled") or [])])
-        rate = round(hits * 100 / len(ok_rows)) if ok_rows else 0
-        fields.append(
-            {
-                "key": field,
-                "label": FIELD_LABELS.get(field, field),
-                "fill_rate": rate,
-                "core": field in CORE_FIELDS,
-            }
-        )
+    fields = _field_rows(ok_rows)
 
     return {
         "total": total,
-        "success_rate": round(len(ok_rows) * 100 / total),
-        "core_complete_rate": round(core_ok * 100 / len(ok_rows)) if ok_rows else 0,
-        "avg_ms": int(sum(durations) / len(durations)) if durations else 0,
-        "p50_ms": _percentile(durations, 0.5),
-        "p90_ms": _percentile(durations, 0.9),
+        "success_rate": _rate(len(ok_rows), total),
+        "core_complete_rate": _rate(core_ok, len(ok_rows)),
+        **_duration_stats(rows),
         "fields": fields,
         "top_missing": [f for f in sorted(fields, key=lambda x: x["fill_rate"]) if f["fill_rate"] < 100][:5],
     }

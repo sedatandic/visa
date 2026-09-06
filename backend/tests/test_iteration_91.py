@@ -12,7 +12,6 @@ Focus:
 import io
 import os
 import sys
-import time
 import requests
 import pytest
 from PIL import Image

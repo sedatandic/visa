@@ -14,7 +14,7 @@ import whatsapp
 import zami
 import zami_rpa
 from db import applications_col, serialize_doc, zami_logs_col
-from routes_admin import require_admin
+from admin_auth import require_admin
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

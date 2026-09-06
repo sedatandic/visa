@@ -81,7 +81,7 @@ def test_visa_types():
     assert r.status_code == 200
     items = r.json()
     assert isinstance(items, list)
-    assert len(items) == 8, f"expected 8 visa types, got {len(items)}"
+    assert len(items) == 7, f"expected 7 active visa types, got {len(items)}"
 
 
 def test_content_site_partners_no_24saat():

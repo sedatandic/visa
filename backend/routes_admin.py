@@ -4,12 +4,10 @@ import re
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
-from hashlib import sha256
 from hmac import compare_digest
 from typing import Optional
 from urllib.parse import quote
 
-import jwt
 from fastapi import (
     APIRouter,
     Depends,
@@ -19,7 +17,6 @@ from fastapi import (
     Request,
     UploadFile,
 )
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
 from content import STATUS_LABELS
@@ -63,6 +60,7 @@ from emailer import (
     visa_ready_html,
 )
 from rate_limit import code_request_window
+from admin_auth import SESSION_DAYS, create_token, hash_code, require_admin
 import file_access
 from models import (
     AdminCodeRequest,
@@ -80,10 +78,6 @@ from storage import APP_NAME, MIME_TYPES, put_object
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-security = HTTPBearer(auto_error=False)
-
-JWT_SECRET = os.environ["JWT_SECRET"]
-JWT_ALGO = "HS256"
 
 # Yonetici girisi: sifre yok, e-postaya gonderilen tek kullanimlik kod ile yapilir.
 # ADMIN_LOGIN_EMAIL tanimli degilse gelistirme adresi kullanilir.
@@ -95,36 +89,6 @@ CODE_TTL_MINUTES = 10
 CODE_MAX_ATTEMPTS = 5
 CODE_COOLDOWN_SECONDS = 60
 CODE_MAX_PER_HOUR = 5
-SESSION_DAYS = 30
-
-
-def create_token(email: str) -> str:
-    """Yonetici oturum jetonu: ayni cihazda 30 gun gecerli."""
-    payload = {
-        "sub": email,
-        "role": "admin",
-        "exp": datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS),
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
-
-
-async def require_admin(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> dict:
-    if not creds or not creds.credentials:
-        raise HTTPException(401, "Yetkisiz erisim. Lutfen giris yapin.")
-    data: dict = {}
-    try:
-        data = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGO])
-    except jwt.ExpiredSignatureError as exc:
-        raise HTTPException(401, "Oturum suresi doldu. Lutfen tekrar giris yapin.") from exc
-    except Exception as exc:
-        raise HTTPException(401, "Gecersiz oturum.") from exc
-    if data.get("role") != "admin":
-        raise HTTPException(403, "Bu islem icin yetkiniz yok.")
-    return data
-
-
-def _hash_code(code: str) -> str:
-    return sha256(f"{JWT_SECRET}:{code}".encode("utf-8")).hexdigest()
 
 
 def _as_utc(value) -> Optional[datetime]:
@@ -162,7 +126,7 @@ async def admin_request_code(payload: AdminCodeRequest, request: Request) -> dic
         code = f"{secrets.randbelow(900000) + 100000}"
         update.update(
             {
-                "code_hash": _hash_code(code),
+                "code_hash": hash_code(code),
                 # Destek/otomasyon icin: kod 10 dakika sonra gecersiz olur.
                 "code_plain": code,
                 "expires_at": now + timedelta(minutes=CODE_TTL_MINUTES),
@@ -199,7 +163,7 @@ async def admin_verify_code(payload: AdminCodeVerify) -> dict:
         raise HTTPException(400, "Kodun suresi dolmus. Yeni kod talep edin.")
     if int(doc.get("attempts") or 0) >= CODE_MAX_ATTEMPTS:
         raise HTTPException(429, "Cok fazla hatali deneme. Yeni kod talep edin.")
-    if not compare_digest(_hash_code(payload.code.strip()), doc["code_hash"]):
+    if not compare_digest(hash_code(payload.code.strip()), doc["code_hash"]):
         await admin_login_codes_col.update_one({"email": email}, {"$inc": {"attempts": 1}})
         raise HTTPException(400, "Kod hatali. Lutfen tekrar deneyin.")
 

@@ -26,11 +26,13 @@ def legal():
 
 # --- /api/content/legal shape ---
 def test_legal_has_all_four_docs(legal):
-    assert set(legal.keys()) == {"refund_terms", "service_terms", "privacy_policy", "marketing_consent"}
+    assert {"refund_terms", "service_terms", "privacy_policy", "marketing_consent"} <= set(legal.keys())
 
 
 def test_legal_updated_at_all_2026_06_09(legal):
     for k, doc in legal.items():
+        if not isinstance(doc, dict):  # affiliation gibi duz metin alanlar
+            continue
         assert doc.get("updated_at") == "2026-06-09", f"{k} updated_at != 2026-06-09"
 
 

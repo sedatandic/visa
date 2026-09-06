@@ -266,3 +266,39 @@ FamilyDiscountMeter'ın 2 yolcuda %10 / 5 yolcuda %15 göstermesi.
 - Doğrulama (Playwright, gerçek AI çağrısı): manzara görseli → uyarı + `photo-quality-block-warning`
   + adım 3'te kalındı; üretilmiş uygun vesikalık → `traveler-0-photo-check-ok` ve adım 4'e geçiş.
   Endpoint kontrolü: manzara `ok:false, score 0.08` · portre `ok:true, score 0.95`.
+
+## 2026-06-09 · Kod incelemesi turu 3 — 3 bulgu yanlış alarm, karmaşıklık düşürüldü
+
+### Doğrulanan yanlış pozitifler (kod değişikliği gerekmedi)
+- `zami_rpa.py:90` "exec() güvenlik açığı" → satır `await asyncio.create_subprocess_exec(
+  sys.executable, "-m", "playwright", "install", "chromium")`; sabit argv, kullanıcı girdisi yok.
+  Projede `exec(`/`eval(` hiç yok (tarama 0 sonuç). **3. kez** aynı yanlış alarm.
+- "7 yerde tanımsız değişken" → `ruff --select F821` = 0 hata.
+- "85 yerde `is` ile literal karşılaştırma" → `ruff --select F632,E711,E712` = 0 hata;
+  raporun verdiği 13 satırın tamamı `is None` / `is not None` / `is False` (doğru kullanım).
+
+### Uygulanan gerçek düzeltmeler
+- **Karmaşıklık** (radon): `passport_ai.apply_background_report` 21→4,
+  `passport_ai.background_report` 16→3 (`_load_rgb_thumb`, `_edge_samples`, `_luminance_stats`,
+  `_accept_background`, `_reject_background`, `_without_background_issues`);
+  `ocr_metrics.summarize` 18→6 (`EMPTY_SUMMARY`, `_field_rows`, `_duration_stats`, `_rate`);
+  `insurance_tasks.profit_report` 15→3 (`_sold_insurance_totals`, `_profit_row`).
+  Davranış birebir korundu; `/api/admin/insurance-report`, `/api/admin/ocr-report`,
+  `/api/admin/profit-monthly` 200.
+- **Ortak yardımcılar ayrıldı** (raporun "shared utilities to a common module" maddesi):
+  yeni `backend/admin_auth.py` → `JWT_SECRET`, `SESSION_DAYS`, `create_token`, `require_admin`,
+  `hash_code`. `routes_admin` ve `routes_zami` buradan alıyor (routes_zami artık routes_admin'e
+  bağımlı değil); routes_admin import sayısı 27→25 ve jwt/sha256/HTTPBearer importları düştü.
+  `routes_admin.py`'yi konu bazlı modüllere bölme (P2) YAPILMADI: tamamen kozmetik, panelin
+  tüm uç noktalarını taşıdığı için regresyon riski faydasından büyük.
+- **Bayat test beklentileri güncellendi** (katalog değişmişti): 7 aktif vize (8 değil),
+  12 ürün (11 değil), 2 tur ürünü, `visa_transit_48` beklentileri kaldırıldı (ürün pasif),
+  tur saatinde geçersiz değer artık ilk slota düşmüyor 400 dönüyor, `/api/content/legal`
+  yanıtındaki `affiliation` alanı tolere ediliyor.
+  Sonuç: **pytest 161 geçti / 0 hata** (tur başında 12 hata vardı). Not: müşteri OTP testleri
+  arka arkaya çalıştırılınca IP saatlik kod limitine (429) takılıyor — beklenen davranış,
+  backend yeniden başlatılınca geçiyor.
+- Doğrulama: yönetici OTP akışı (request-code → verify-code → korumalı uç noktalar 200,
+  jetonsuz/bozuk jeton 401, kod tek kullanımlık), Zami yönetici uç noktaları 401/200,
+  imzalı dosya erişimi (jetonsuz 403 · admin Bearer 200), `/admin` panosu 125 başvuruyu
+  listeliyor (ekran görüntüsü).

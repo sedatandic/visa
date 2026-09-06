@@ -25,9 +25,8 @@ def test_products_kind_tour(api):
     assert r.status_code == 200, r.text
     data = r.json()
     items = data.get("items", data) if isinstance(data, dict) else data
-    assert isinstance(items, list) and len(items) == 1
-    p = items[0]
-    assert p["id"] == "tour_desert_safari"
+    assert isinstance(items, list) and items
+    p = next(i for i in items if i["id"] == "tour_desert_safari")
     assert p["kind"] == "tour"
     assert p["kind_label"] == "Dubai turu"
     assert p["price_usd"] == 45.0
@@ -91,7 +90,12 @@ def test_pricing_quote_tour_only_no_bundle_discount(api):
     payload = {
         "visa_type_ids": ["visa_30_single"],
         "store_items": [
-            {"product_id": "tour_desert_safari", "quantity": 1, "scheduled_date": TOUR_DATE},
+            {
+                "product_id": "tour_desert_safari",
+                "quantity": 1,
+                "scheduled_date": TOUR_DATE,
+                "scheduled_time": "15:00",
+            },
             {"product_id": "ins_8d", "quantity": 1},
         ],
         "arrival_date": ARRIVAL,
@@ -132,11 +136,11 @@ def test_tour_date_must_be_inside_trip(api):
     assert r1.status_code == 400 and r2.status_code == 400
 
 
-def test_tour_invalid_time_falls_back_to_first_slot(api):
+def test_tour_invalid_time_rejected(api):
+    """Gecersiz saat artik ilk slota dusmez, 400 doner (siki dogrulama)."""
     r = _quote(
         api,
         {"product_id": "tour_desert_safari", "quantity": 1, "scheduled_date": TOUR_DATE, "scheduled_time": "03:00"},
     )
-    assert r.status_code == 200, r.text
-    line = next(l for l in r.json()["store_items"] if l["kind"] == "tour")
-    assert line["scheduled_time"] == "14:00"
+    assert r.status_code == 400, r.text
+    assert "saat" in r.json()["detail"].lower()

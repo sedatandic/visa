@@ -26,8 +26,8 @@ def test_visa_types_categories_and_auto_suggest():
     assert r.status_code == 200
     data = r.json()
     by_id = {v['id']: v for v in data}
-    # extension + transit belong to single, auto_suggest false
-    for vid in ['visa_extension_30', 'visa_transit_48']:
+    # extension belongs to single with auto_suggest false (transit visa retired)
+    for vid in ['visa_extension_30']:
         assert vid in by_id, f"{vid} missing"
         assert by_id[vid]['category'] == 'single', f"{vid} category {by_id[vid]['category']}"
         assert by_id[vid].get('auto_suggest') is False, f"{vid} auto_suggest not False"
@@ -38,10 +38,10 @@ def test_visa_types_categories_and_auto_suggest():
         assert by_id[vid].get('auto_suggest') is True, f"{vid} auto_suggest should be True"
 
 
-def test_single_category_has_four_visas():
+def test_single_category_has_three_visas():
     r = requests.get(f"{BASE_URL}/api/visa-types", timeout=15)
     data = r.json()
     single = [v for v in data if v.get('category') == 'single']
-    assert len(single) == 4
+    assert len(single) == 3
     ids = sorted([v['id'] for v in single])
-    assert ids == sorted(['visa_30_single', 'visa_60_single', 'visa_extension_30', 'visa_transit_48'])
+    assert ids == sorted(['visa_30_single', 'visa_60_single', 'visa_extension_30'])

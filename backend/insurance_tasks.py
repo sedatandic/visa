@@ -260,38 +260,44 @@ async def monthly_profit(months: int = 12) -> dict:
     }
 
 
-async def profit_report() -> dict:
-    """Poliçe basina maliyet / satis / kar tablosu."""
-    products = [p for p in await product_list(include_inactive=True) if p.get("kind") == "insurance"]
+async def _sold_insurance_totals() -> dict:
+    """Odenmis siparislerden urun bazli satilan adet ve ciroyu toplar."""
     sold: dict = {}
     async for order in orders_col.find({"payment.status": "paid"}):
         for line in _insurance_lines(order):
-            pid = line.get("product_id")
-            entry = sold.setdefault(pid, {"quantity": 0, "revenue": 0.0})
+            entry = sold.setdefault(line.get("product_id"), {"quantity": 0, "revenue": 0.0})
             entry["quantity"] += int(line.get("quantity") or 1)
             entry["revenue"] += float(line.get("total") or 0)
+    return sold
 
-    rows = []
-    for product in sorted(products, key=lambda p: p.get("order", 0)):
-        price = float(product.get("price") or 0)
-        cost = float(product.get("cost_try") or 0)
-        stats = sold.get(product["id"], {"quantity": 0, "revenue": 0.0})
-        rows.append(
-            {
-                "id": product["id"],
-                "name": product["name"],
-                "validity_days": product.get("validity_days"),
-                "active": product.get("active", True),
-                "cost_try": cost,
-                "price_try": price,
-                "profit_try": round(price - cost, 2),
-                "margin_pct": round((price - cost) / cost * 100) if cost else None,
-                "sold_quantity": stats["quantity"],
-                "revenue_try": round(stats["revenue"], 2),
-                "cost_total_try": round(cost * stats["quantity"], 2),
-                "profit_total_try": round(stats["revenue"] - cost * stats["quantity"], 2),
-            }
-        )
+
+def _profit_row(product: dict, stats: dict) -> dict:
+    price = float(product.get("price") or 0)
+    cost = float(product.get("cost_try") or 0)
+    return {
+        "id": product["id"],
+        "name": product["name"],
+        "validity_days": product.get("validity_days"),
+        "active": product.get("active", True),
+        "cost_try": cost,
+        "price_try": price,
+        "profit_try": round(price - cost, 2),
+        "margin_pct": round((price - cost) / cost * 100) if cost else None,
+        "sold_quantity": stats["quantity"],
+        "revenue_try": round(stats["revenue"], 2),
+        "cost_total_try": round(cost * stats["quantity"], 2),
+        "profit_total_try": round(stats["revenue"] - cost * stats["quantity"], 2),
+    }
+
+
+async def profit_report() -> dict:
+    """Poliçe basina maliyet / satis / kar tablosu."""
+    products = [p for p in await product_list(include_inactive=True) if p.get("kind") == "insurance"]
+    sold = await _sold_insurance_totals()
+    rows = [
+        _profit_row(product, sold.get(product["id"], {"quantity": 0, "revenue": 0.0}))
+        for product in sorted(products, key=lambda p: p.get("order", 0))
+    ]
 
     return {
         "provider": PROVIDER_NAME,

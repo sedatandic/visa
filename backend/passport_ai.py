@@ -279,40 +279,52 @@ BG_MIN_MEAN_LUM = 185
 BG_MAX_STD = 42
 
 
-def background_report(data: bytes) -> dict:
-    """Kenar piksellerinden arka planin beyaza yakinligini ve duzlugunu olcer."""
+def _load_rgb_thumb(data: bytes):
+    """Goruntuyu RGB'ye cevirip 360px'e kuculterek doner; okunamazsa None."""
     try:
         from PIL import Image
 
         img = Image.open(io.BytesIO(data)).convert("RGB")
     except Exception as exc:
         logger.warning("background analysis failed: %s", exc)
-        return {"checked": False}
-
+        return None
     img.thumbnail((360, 360))
-    width, height = img.size
-    if width < 40 or height < 40:
-        return {"checked": False}
+    return img
 
+
+def _edge_samples(img) -> list:
+    """Ust bant + sol/sag kenarlardan piksel toplar (alt kisim omuz/kiyafet)."""
+    width, height = img.size
     px = img.load()
     band = max(3, int(min(width, height) * 0.09))
-    upper_limit = int(height * 0.65)  # alt kisim omuz/kiyafet oldugu icin haric
-    samples = []
-    for x in range(0, width, 2):
-        for y in range(0, band):
-            samples.append(px[x, y])
+    upper_limit = int(height * 0.65)
+    samples = [px[x, y] for x in range(0, width, 2) for y in range(0, band)]
     for y in range(0, upper_limit, 2):
-        for x in range(0, band):
-            samples.append(px[x, y])
-        for x in range(width - band, width):
-            samples.append(px[x, y])
-    if not samples:
-        return {"checked": False}
+        samples.extend(px[x, y] for x in range(0, band))
+        samples.extend(px[x, y] for x in range(width - band, width))
+    return samples
 
+
+def _luminance_stats(samples: list) -> tuple[float, float, float]:
+    """(ortalama parlaklik, standart sapma, beyaza yakin piksel orani)."""
     lums = [0.299 * r + 0.587 * g + 0.114 * b for r, g, b in samples]
     mean_lum = sum(lums) / len(lums)
     std = (sum((v - mean_lum) ** 2 for v in lums) / len(lums)) ** 0.5
     white_ratio = sum(1 for r, g, b in samples if min(r, g, b) >= BG_NEAR_WHITE_CH) / len(samples)
+    return mean_lum, std, white_ratio
+
+
+def background_report(data: bytes) -> dict:
+    """Kenar piksellerinden arka planin beyaza yakinligini ve duzlugunu olcer."""
+    img = _load_rgb_thumb(data)
+    if img is None or min(img.size) < 40:
+        return {"checked": False}
+
+    samples = _edge_samples(img)
+    if not samples:
+        return {"checked": False}
+
+    mean_lum, std, white_ratio = _luminance_stats(samples)
     ok = (
         white_ratio >= BG_MIN_WHITE_RATIO
         and mean_lum >= BG_MIN_MEAN_LUM
@@ -335,29 +347,32 @@ def _background_issue(report: dict) -> str:
     return "Arka plan beyaza yakin degil. Duz beyaz veya cok acik gri zemin kullanin."
 
 
-def apply_background_report(result: dict, report: dict) -> dict:
-    """Olculen arka plan uygun degilse sonucu uyariya cevirir (LLM'i ezer)."""
-    if not report.get("checked"):
-        return result
-    out = dict(result)
-    out["background"] = report
-    if report.get("ok"):
-        # Olcum beyaz zemini dogruladiysa LLM'in arka plan itirazi dusurulur.
-        checks = dict(out.get("checks") or {})
-        if checks.get("background_ok") is False:
-            checks["background_ok"] = True
-            out["checks"] = checks
-        failed = [k for k in (out.get("failed") or []) if k != "background_ok"]
-        out["failed"] = failed
-        out["issues"] = [i for i in (out.get("issues") or []) if "arka plan" not in i.lower()]
-        out["ok"] = bool(out.get("is_photo", True)) and not failed
-        return out
+def _without_background_issues(out: dict) -> list:
+    return [i for i in (out.get("issues") or []) if "arka plan" not in i.lower()]
+
+
+def _accept_background(out: dict) -> dict:
+    """Olcum beyaz zemini dogruladiysa LLM'in arka plan itirazi dusurulur."""
+    checks = dict(out.get("checks") or {})
+    if checks.get("background_ok") is False:
+        checks["background_ok"] = True
+        out["checks"] = checks
+    failed = [k for k in (out.get("failed") or []) if k != "background_ok"]
+    out["failed"] = failed
+    out["issues"] = _without_background_issues(out)
+    out["ok"] = bool(out.get("is_photo", True)) and not failed
+    return out
+
+
+def _reject_background(out: dict, report: dict) -> dict:
+    """Olcum zemini uygunsuz buldu: sonucu uyariya cevirir ve skoru kisitlar."""
     checks = dict(out.get("checks") or {})
     checks["background_ok"] = False
     out["checks"] = checks
-    out["failed"] = ["background_ok"] + [k for k in (out.get("failed") or []) if k != "background_ok"]
-    issues = [i for i in (out.get("issues") or []) if "arka plan" not in i.lower()]
-    out["issues"] = [_background_issue(report)] + issues
+    out["failed"] = ["background_ok"] + [
+        k for k in (out.get("failed") or []) if k != "background_ok"
+    ]
+    out["issues"] = [_background_issue(report)] + _without_background_issues(out)
     out["ok"] = False
     out["advice"] = (
         out.get("advice")
@@ -366,6 +381,15 @@ def apply_background_report(result: dict, report: dict) -> dict:
     score = out.get("score")
     out["score"] = min(float(score) if isinstance(score, (int, float)) else 0.5, 0.45)
     return out
+
+
+def apply_background_report(result: dict, report: dict) -> dict:
+    """Olculen arka plan uygun degilse sonucu uyariya cevirir (LLM'i ezer)."""
+    if not report.get("checked"):
+        return result
+    out = dict(result)
+    out["background"] = report
+    return _accept_background(out) if report.get("ok") else _reject_background(out, report)
 
 
 async def read_passport(data: bytes, content_type: str) -> dict:

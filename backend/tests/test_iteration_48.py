@@ -28,7 +28,6 @@ EXPECTED_USD = {
     "visa_60_multi": 300,
     "visa_extension_30": 300,
     "visa_60_child": 105,
-    "visa_transit_48": 70,
 }
 
 
