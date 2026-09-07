@@ -3,6 +3,7 @@ import { Loader2, Mail, MailOpen } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
 import { formatDateTime } from "../lib/site";
+import { formatPhone } from "../lib/phone";
 import { AdminLayout } from "../components/AdminLayout";
 import { Button } from "../components/ui/button";
 
@@ -60,7 +61,8 @@ export default function AdminMessages() {
                                             )}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            {m.email} {m.phone ? `· ${m.phone}` : ""} · {formatDateTime(m.created_at)}
+                                            {m.email} {m.phone ? `· ${formatPhone(m.phone)}` : ""} ·{" "}
+                                            {formatDateTime(m.created_at)}
                                         </p>
                                     </div>
                                     {!m.is_read && (

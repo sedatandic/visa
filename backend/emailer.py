@@ -15,6 +15,7 @@ from urllib.parse import quote
 
 from content import COMPANY, VISA_TYPES
 from db import email_outbox_col
+from phone_format import format_phone
 
 logger = logging.getLogger(__name__)
 
@@ -455,7 +456,7 @@ def admin_notify_html(
       {_row('Takip Kodu', app_doc.get('reference_code',''))}
       {_row('İletişim', _contact_name(app_doc))}
       {_row('E-posta', esc(contact.get('email','')))}
-      {_row('Telefon', esc(contact.get('phone','')))}
+      {_row('Telefon', esc(format_phone(contact.get('phone',''))))}
       {_row('Yolcu sayısı', str(len(app_doc.get('travelers') or [])))}
       {_travel_date_rows(t)}
     </table>
@@ -744,7 +745,7 @@ def contact_admin_html(msg: dict) -> str:
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       {_row('Ad Soyad', esc(msg.get('name','')))}
       {_row('E-posta', esc(msg.get('email','')))}
-      {_row('Telefon', esc(msg.get('phone','-')))}
+      {_row('Telefon', esc(format_phone(msg.get('phone','-'))))}
       {_row('Konu', esc(msg.get('subject','-')))}
     </table>
     <p style="margin:16px 0 0;font-size:14px;line-height:22px;white-space:pre-wrap;">{esc(msg.get('message',''))}</p>
@@ -986,7 +987,7 @@ def order_admin_html(order: dict) -> str:
       {_row('Sipariş kodu', order.get('reference_code',''))}
       {_row('Müşteri', esc(order.get('contact',{}).get('full_name','')))}
       {_row('E-posta', esc(order.get('contact',{}).get('email','')))}
-      {_row('Telefon', esc(order.get('contact',{}).get('phone','')))}
+      {_row('Telefon', esc(format_phone(order.get('contact',{}).get('phone',''))))}
       {_row('Tutar', money(order.get('price', 0), order.get('currency', 'TRY')))}
       {_row('Ödeme', _payment_method_label(order))}
     </table>

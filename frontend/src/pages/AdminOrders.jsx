@@ -3,6 +3,7 @@ import { Loader2, PackageCheck, RefreshCw, Send, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
 import { formatDate, formatDateTime, formatMoney } from "../lib/site";
+import { formatPhone } from "../lib/phone";
 import { AdminLayout } from "../components/AdminLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { Button } from "../components/ui/button";
@@ -90,7 +91,8 @@ const OrderRow = ({ order, onUpdate }) => {
                         </p>
                     )}
                     <p className="mt-1 text-sm text-muted-foreground">
-                        {order.contact?.full_name} · {order.contact?.email} · {order.contact?.phone}
+                        {order.contact?.full_name} · {order.contact?.email} ·{" "}
+                        {formatPhone(order.contact?.phone)}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                         {formatDateTime(order.created_at)} ·{" "}

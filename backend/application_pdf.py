@@ -15,6 +15,7 @@ from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Tabl
 
 from content import COMPANY
 from emailer import BRAND, money as _money_html
+from phone_format import format_phone
 
 
 def money(amount: float, currency: str = "TRY") -> str:
@@ -189,7 +190,7 @@ def _contact_pairs(app_doc: dict) -> list:
     return [
         ("Ad Soyad", contact.get("full_name")),
         ("E-posta", contact.get("email")),
-        ("Telefon (WhatsApp)", contact.get("phone")),
+        ("Telefon (WhatsApp)", format_phone(contact.get("phone"))),
         ("Şehir", contact.get("address_city")),
     ]
 

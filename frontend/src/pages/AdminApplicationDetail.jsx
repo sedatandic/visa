@@ -30,6 +30,7 @@ import {
     formatMoney,
     setMeta,
 } from "../lib/site";
+import { formatPhone } from "../lib/phone";
 import { AdminLayout } from "../components/AdminLayout";
 import { PaymentBadge, StatusBadge } from "../components/StatusBadge";
 import { Button } from "../components/ui/button";
@@ -465,7 +466,7 @@ export default function AdminApplicationDetail() {
                             <div className="mt-3">
                                 <Row label="Ad Soyad" value={a.contact?.full_name} />
                                 <Row label="E-posta" value={a.contact?.email} />
-                                <Row label="Telefon" value={a.contact?.phone} />
+                                <Row label="Telefon" value={formatPhone(a.contact?.phone)} />
                                 <Row label="Şehir" value={a.contact?.address_city} />
                             </div>
                             <div className="mt-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4" data-testid="admin-consents">

@@ -1354,3 +1354,14 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
 - Doğrulama: uçtan uca (sipariş → ödendi → poliçe kesimi → müşteri girişi) `/account/policies`
   doğru dönüyor; `/hesabim` ekranında bölüm ve indirme bağlantısı çalışıyor (ekran görüntüsü),
   e-posta başlığında TÜRSAB satırı yok, pytest 310 passed. Test kayıtları temizlendi.
+
+## 2026-09-07 (9) · Telefon numarası okunur formatta
+
+- **Yeni** `backend/phone_format.py::format_phone()` ve `frontend/src/lib/phone.js::formatPhone()`:
+  `+905551110001`, `905551110001`, `05551110001`, `5551110001` → **`+90 555 111 00 01`**;
+  TR dışı/tanınmayan değer olduğu gibi kalır.
+- Kullanıldığı yerler: başvuru formu PDF'i (Telefon satırı), e-posta şablonlarındaki müşteri
+  telefonu (başvuru bildirimi, iletişim mesajı, sipariş bildirimi), Admin → Başvuru detayı,
+  Siparişler, Mesajlar ve Sigorta Poliçeleri ekranları.
+- Doğrulama: `format_phone` birim çıktıları kontrol edildi, PDF'te `pdftotext` ile
+  "+90 555 111 00 01" göründü, üç admin ekranı hatasız açıldı, pytest 310 passed.

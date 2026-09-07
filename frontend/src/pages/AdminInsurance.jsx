@@ -3,6 +3,7 @@ import { ExternalLink, Loader2, MessageCircle, RefreshCw, Send, ShieldCheck, Tre
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
 import { formatDateTime, formatMoney } from "../lib/site";
+import { formatPhone } from "../lib/phone";
 import { AdminLayout } from "../components/AdminLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { MonthlyProfitChart } from "../components/MonthlyProfitChart";
@@ -83,7 +84,7 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
                 </div>
                 <div>
                     <dt className="text-xs text-muted-foreground">Telefon</dt>
-                    <dd className="font-medium">{customer.phone || "-"}</dd>
+                    <dd className="font-medium">{formatPhone(customer.phone) || "-"}</dd>
                 </div>
             </dl>
 
