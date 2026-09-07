@@ -1307,3 +1307,22 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
   kesilecek; prova başarılı olursa otomatik kesim panelden açılacak (şu an KAPALI).
 - Doğrulama: masaüstü (1920) ve mobil (414px, yatay taşma 0) ekran görüntüleri; ins_7d sepete
   eklendi → "Sepetim (1)".
+
+## 2026-09-07 (6) · Poliçe hazır WhatsApp bildirimi
+
+- **Backend** `whatsapp.send_customer_text(phone, text, reason)` (yeni): müşteriye serbest metinli
+  WhatsApp mesajı. Sağlayıcı hazır + bildirim açıkken doğrudan gönderir
+  (`_send_twilio_text` veya yeni `_send_meta_text` → Meta Cloud API `type: text`, link ön izlemeli);
+  aksi halde **manuel mod**: tek dokunuşla gönderilebilen `wa.me` bağlantısı döner.
+- `insurance_tasks.issue_policy` artık poliçe e-postasından sonra `_policy_wa_text()` ile
+  "poliçeniz hazır + PDF bağlantısı + sipariş kodu" mesajını gönderiyor; sonuç görevin
+  `whatsapp` alanına (`status/link/phone/detail/at`) yazılıyor ve yanıtta `whatsapp` olarak dönüyor.
+  Hem manuel PDF yükleme hem Tamamliyo API akışı (issue_via_provider → issue_policy) kapsanır.
+- **Admin → Sigorta Poliçeleri**: kesilen poliçe kartında yeni blok (`insurance-whatsapp-<task>`);
+  API canlı değilse yeşil **"WhatsApp'tan poliçe mesajı gönder"** butonu (`insurance-whatsapp-send-*`)
+  hazır mesajı açar, API canlıysa "WhatsApp'tan gönderildi · <numara>" bilgisi görünür.
+- Doğrulama (uçtan uca, canlı sağlayıcı tetiklenmeden): sigorta siparişi → ödendi → görev kuyruğu →
+  manuel poliçe gönderimi; e-posta `status=sent`, `whatsapp.status=manual`, wa.me bağlantısında
+  PDF linki + `SV-…` sipariş kodu doğrulandı; panelde buton görünüyor ve doğru href taşıyor.
+- Test verisi temizliği: `scripts/wipe_test_data.py --apply` ile test başvuru/sipariş/poliçe
+  kayıtları silindi (yalnız gerçek kayıt DV-BJ930600 + ayarlar kaldı). pytest 310 passed.

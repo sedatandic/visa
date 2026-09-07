@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ExternalLink, Loader2, RefreshCw, Send, ShieldCheck, TrendingUp } from "lucide-react";
+import { ExternalLink, Loader2, MessageCircle, RefreshCw, Send, ShieldCheck, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
 import { formatDateTime, formatMoney } from "../lib/site";
@@ -108,6 +108,35 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
                 >
                     Tamamliyo hatası: {task.provider_error}
                 </p>
+            )}
+
+            {task.status === "issued" && task.whatsapp?.link && (
+                <div
+                    className="mt-4 rounded-xl border border-[hsl(var(--brand-green))]/30 bg-[hsl(var(--brand-green))]/[0.07] p-4"
+                    data-testid={`insurance-whatsapp-${task.id}`}
+                >
+                    <p className="text-sm font-semibold">
+                        {task.whatsapp.status === "sent"
+                            ? "WhatsApp'tan gönderildi"
+                            : "WhatsApp mesajı hazır"}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                        {task.whatsapp.status === "sent"
+                            ? `Poliçe bağlantısı ${task.whatsapp.phone} numarasına iletildi.`
+                            : `WhatsApp API canlı olmadığı için mesaj otomatik gitmedi. Butona dokunun, poliçe bağlantılı mesaj ${task.whatsapp.phone} için hazır açılır.`}
+                    </p>
+                    {task.whatsapp.status !== "sent" && (
+                        <Button
+                            asChild
+                            className="mt-3 h-11 bg-[hsl(var(--brand-green))] text-white hover:opacity-90"
+                            data-testid={`insurance-whatsapp-send-${task.id}`}
+                        >
+                            <a href={task.whatsapp.link} target="_blank" rel="noreferrer">
+                                <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp'tan poliçe mesajı gönder
+                            </a>
+                        </Button>
+                    )}
+                </div>
             )}
 
             {task.status !== "issued" && (

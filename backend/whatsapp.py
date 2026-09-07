@@ -321,6 +321,70 @@ async def _send_twilio_text(cfg: dict, phone: str, text: str) -> dict:
     return {"status": "sent", "detail": res.json().get("sid", "")}
 
 
+async def _send_meta_text(cfg: dict, phone: str, text: str) -> dict:
+    """Meta Cloud API uzerinden serbest metin (24 saatlik musteri hizmeti penceresi)."""
+    url = f"https://graph.facebook.com/{cfg['meta_api_version']}/{cfg['meta_phone_number_id']}/messages"
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": phone,
+        "type": "text",
+        "text": {"preview_url": True, "body": text},
+    }
+    async with httpx.AsyncClient(timeout=20) as client:
+        res = await client.post(
+            url,
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {cfg['meta_access_token']}",
+                "Content-Type": "application/json",
+            },
+        )
+    if res.is_error:
+        return {"status": "failed", "detail": f"Meta hatası: {res.status_code} {res.text[:200]}"}
+    return {"status": "sent", "detail": (res.json().get("messages") or [{}])[0].get("id", "")}
+
+
+_TEXT_SENDERS = {
+    "twilio": (_send_twilio_text, ("twilio_account_sid", "twilio_auth_token", "twilio_whatsapp_from")),
+    "meta": (_send_meta_text, ("meta_access_token", "meta_phone_number_id")),
+}
+
+
+async def send_customer_text(phone: str | None, text: str, reason: str = "policy_ready") -> dict:
+    """Musteriye serbest metinli WhatsApp mesaji.
+
+    Saglayici hazir ve bildirim acikken dogrudan gonderilir; aksi halde manuel modda
+    admin'in tek tikla gonderebilecegi `wa.me` baglantisi dondurulur.
+    """
+    cfg = await get_settings(masked=False)
+    number = normalize_phone(phone)
+    if not number:
+        return {
+            "status": "failed",
+            "reason": "Geçerli bir cep telefonu numarası bulunamadı.",
+            "message": text,
+        }
+
+    sender, required = _TEXT_SENDERS.get(cfg.get("provider"), (None, ()))
+    if sender and cfg.get("enabled") and all(cfg.get(key) for key in required):
+        try:
+            out = await sender(cfg, number, text)
+        except Exception as exc:
+            logger.error("customer whatsapp send failed: %s", exc)
+            out = {"status": "failed", "detail": str(exc)[:200]}
+        if out["status"] == "sent":
+            return {**out, "phone": number, "message": text, "link": wa_link(number, text)}
+
+    return {
+        "status": "manual",
+        "reason": reason,
+        "phone": number,
+        "message": text,
+        "link": wa_link(number, text),
+    }
+
+
 async def notify_result(app_doc: dict, status: str, base_url: str = "", force: bool = False) -> dict:
     """Vize sonucu icin WhatsApp bildirimi (moda gore API veya hazir baglanti)."""
     cfg = await get_settings(masked=False)

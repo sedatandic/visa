@@ -19,6 +19,7 @@ from db import insurance_tasks_col, notifications_col, orders_col, serialize_doc
 import file_access
 from store_catalog import product_list
 from emailer import send_email
+import whatsapp
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,21 @@ def _policy_html(order: dict, link: str, message: str) -> str:
         f"{extra}"
         f"<p>Sipariş kodu: <b>{order.get('reference_code','')}</b></p>"
         f"<p>İyi yolculuklar dileriz.<br>Dubai Vize Hattı</p>"
+    )
+
+
+def _policy_wa_text(task: dict, order: dict, link: str) -> str:
+    """Police hazir mesaji (WhatsApp, PDF baglantili)."""
+    full_name = (task.get("customer") or {}).get("full_name") or (order.get("contact") or {}).get(
+        "full_name"
+    ) or ""
+    first_name = full_name.split(" ")[0] if full_name else ""
+    greeting = f"Merhaba {first_name}," if first_name else "Merhaba,"
+    return (
+        f"{greeting} seyahat sağlık sigortası poliçeniz hazır. "
+        f"PDF olarak buradan indirebilirsiniz: {link}\n"
+        f"Sipariş kodu: {task.get('order_reference', '')}\n"
+        "İyi yolculuklar dileriz · Dubai Vize Hattı"
     )
 
 
@@ -223,6 +239,12 @@ async def issue_policy(task_id: str, policy_file_id: str, origin: str, message: 
             meta={"task_id": task_id, "order_id": task.get("order_id")},
         )
 
+    wa_result = await whatsapp.send_customer_text(
+        (task.get("customer") or {}).get("phone"),
+        _policy_wa_text(task, order or task, link),
+        reason="Poliçe hazır mesajı: WhatsApp API canlı değil, bağlantıya dokunup gönderin.",
+    )
+
     await insurance_tasks_col.update_one(
         {"id": task_id},
         {
@@ -231,6 +253,13 @@ async def issue_policy(task_id: str, policy_file_id: str, origin: str, message: 
                 "policy_file_id": policy_file_id,
                 "message": message[:1000],
                 "issued_at": now,
+                "whatsapp": {
+                    "status": wa_result.get("status"),
+                    "link": wa_result.get("link", ""),
+                    "phone": wa_result.get("phone", ""),
+                    "detail": wa_result.get("detail") or wa_result.get("reason") or "",
+                    "at": now,
+                },
             }
         },
     )
@@ -240,7 +269,7 @@ async def issue_policy(task_id: str, policy_file_id: str, origin: str, message: 
             {"$set": {"delivery.policy_file_id": policy_file_id, "delivery.sent_at": now}},
         )
     fresh = await insurance_tasks_col.find_one({"id": task_id})
-    return {"ok": True, "task": serialize_doc(fresh), "email": email_result}
+    return {"ok": True, "task": serialize_doc(fresh), "email": email_result, "whatsapp": wa_result}
 
 
 def _empty_bucket(key: str) -> dict:
