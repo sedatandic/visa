@@ -14,6 +14,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import tamamliyo
 from db import insurance_tasks_col, products_col, settings_col, uploads_col
+from insurance_delivery import issue_policy
 from storage import APP_NAME, put_object
 from store_catalog import INSURANCE_MARKUP, INSURANCE_PRODUCTS
 
@@ -122,7 +123,8 @@ async def provider_status() -> dict:
     value = (doc or {}).get("value") or {}
     last_sync = value.get("last_sync_at")
     products = await products_col.find(
-        {"kind": "insurance"}, {"_id": 0, "id": 1, "name": 1, "cost_try": 1, "price_try": 1, "active": 1}
+        {"kind": "insurance", "active": True},
+        {"_id": 0, "id": 1, "name": 1, "cost_try": 1, "price_try": 1, "active": 1},
     ).sort("order", 1).to_list(20)
     return {
         "configured": tamamliyo.configured(),
@@ -185,10 +187,79 @@ def _validate_task(task: dict) -> list:
     return insured
 
 
+async def _ensure_quote(task: dict, insured: list) -> str:
+    """Teklif yoksa olusturur; varsa mevcut teklif numarasini dondurur (idempotent)."""
+    task_id = task["id"]
+    quote_id = task.get("provider_quote_id")
+    if quote_id:
+        return quote_id
+
+    customer = task.get("customer") or {}
+    payload = await tamamliyo.create_quote(
+        insured,
+        task["starts_on"],
+        task["ends_on"],
+        customer.get("email", ""),
+        customer.get("phone", ""),
+    )
+    info = ((payload.get("data") or {}).get("teklifBilgileri")) or {}
+    quote_id = info.get("teklifId")
+    if not quote_id:
+        raise tamamliyo.TamamliyoError("Teklif numarası alınamadı.", payload=payload)
+    await insurance_tasks_col.update_one(
+        {"id": task_id, "provider_quote_id": None},
+        {
+            "$set": {
+                "provider_quote_id": quote_id,
+                "provider_quote_price": info.get("fiyat"),
+                "provider_steps.quote": "done",
+                "provider_error": None,
+            }
+        },
+    )
+    fresh = await insurance_tasks_col.find_one({"id": task_id})
+    return (fresh or {}).get("provider_quote_id") or quote_id
+
+
+async def _ensure_policy(task: dict, quote_id: str, steps: dict) -> None:
+    """Cari odeme onayi ve police olusturma adimlarini tamamlar."""
+    task_id = task["id"]
+    if steps.get("payment_confirm") != "done":
+        result = await tamamliyo.confirm_payment(
+            quote_id, {"partnerReference": task.get("order_reference", "")}
+        )
+        await _mark_step(task_id, "payment_confirm", {"success": bool(result.get("success", True))})
+
+    if steps.get("policy") != "done":
+        result = await tamamliyo.create_policy(quote_id)
+        await _mark_step(
+            task_id, "policy", {"police_no": str((result.get("data") or {}).get("policeNo", ""))}
+        )
+
+
+async def _ensure_policy_pdf(task: dict, quote_id: str) -> str:
+    """Police PDF'ini indirir, depolar ve dosya kimligini dondurur."""
+    pdf_payload = await tamamliyo.policy_pdf(quote_id)
+    pdf_bytes = await tamamliyo.fetch_policy_bytes(pdf_payload)
+    file_id = await _store_policy_pdf(task, pdf_bytes)
+    await _mark_step(task["id"], "policy_pdf", {"file_id": file_id, "size": len(pdf_bytes)})
+    return file_id
+
+
+async def _save_provider_error(task_id: str, message: str) -> None:
+    await insurance_tasks_col.update_one(
+        {"id": task_id},
+        {
+            "$set": {
+                "provider_error": message[:500],
+                "provider_updated_at": datetime.now(timezone.utc),
+            }
+        },
+    )
+
+
 async def issue_via_provider(task_id: str, origin: str, actor: str = "") -> dict:
     """Tamamliyo uzerinden policeyi keser; her adim tek sefer calisir (idempotent)."""
-    from insurance_tasks import issue_policy
-
     task = await insurance_tasks_col.find_one({"id": task_id})
     if not task:
         return {"ok": False, "error": "Görev bulunamadı."}
@@ -203,61 +274,20 @@ async def issue_via_provider(task_id: str, origin: str, actor: str = "") -> dict
         )
         return {"ok": False, "error": str(exc)}
 
-    customer = task.get("customer") or {}
-    steps = _steps(task)
     quote_id = task.get("provider_quote_id")
-
     try:
-        if not quote_id:
-            payload = await tamamliyo.create_quote(
-                insured,
-                task["starts_on"],
-                task["ends_on"],
-                customer.get("email", ""),
-                customer.get("phone", ""),
-            )
-            info = ((payload.get("data") or {}).get("teklifBilgileri")) or {}
-            quote_id = info.get("teklifId")
-            if not quote_id:
-                raise tamamliyo.TamamliyoError("Teklif numarası alınamadı.", payload=payload)
-            await insurance_tasks_col.update_one(
-                {"id": task_id, "provider_quote_id": None},
-                {
-                    "$set": {
-                        "provider_quote_id": quote_id,
-                        "provider_quote_price": info.get("fiyat"),
-                        "provider_steps.quote": "done",
-                        "provider_error": None,
-                    }
-                },
-            )
-            fresh = await insurance_tasks_col.find_one({"id": task_id})
-            quote_id = (fresh or {}).get("provider_quote_id") or quote_id
-
-        if steps.get("payment_confirm") != "done":
-            result = await tamamliyo.confirm_payment(
-                quote_id, {"partnerReference": task.get("order_reference", "")}
-            )
-            await _mark_step(task_id, "payment_confirm", {"success": bool(result.get("success", True))})
-
-        if steps.get("policy") != "done":
-            result = await tamamliyo.create_policy(quote_id)
-            await _mark_step(task_id, "policy", {"police_no": str((result.get("data") or {}).get("policeNo", ""))})
-
-        pdf_payload = await tamamliyo.policy_pdf(quote_id)
-        pdf_bytes = await tamamliyo.fetch_policy_bytes(pdf_payload)
-        file_id = await _store_policy_pdf(task, pdf_bytes)
-        await _mark_step(task_id, "policy_pdf", {"file_id": file_id, "size": len(pdf_bytes)})
+        quote_id = await _ensure_quote(task, insured)
+        await _ensure_policy(task, quote_id, _steps(task))
+        file_id = await _ensure_policy_pdf(task, quote_id)
     except Exception as exc:
         message = str(exc)
-        await insurance_tasks_col.update_one(
-            {"id": task_id},
-            {"$set": {"provider_error": message[:500], "provider_updated_at": datetime.now(timezone.utc)}},
-        )
+        await _save_provider_error(task_id, message)
         logger.error("tamamliyo police kesimi basarisiz (%s): %s", task_id, message)
         return {"ok": False, "error": message, "quote_id": quote_id}
 
-    sent = await issue_policy(task_id, file_id, origin, message="Poliçeniz Tamamliyo üzerinden düzenlendi.")
+    sent = await issue_policy(
+        task_id, file_id, origin, message="Poliçeniz Tamamliyo üzerinden düzenlendi."
+    )
     await insurance_tasks_col.update_one(
         {"id": task_id},
         {"$set": {"provider_error": None, "provider_issued_by": actor or "system"}},

@@ -1417,3 +1417,42 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
   gök mavisi olduğu için WhatsApp rengiyle karışıyordu).
 - Doğrulama: paylaşım bağlantısı (metin + PDF adresi) kontrol edildi; masaüstü ve mobil (414px,
   taşma 0) görünüm ekran görüntüleriyle teyit; test kayıtları temizlendi.
+
+## 2026-09-07 (14) · Kod incelemesi bulguları uygulandı
+
+**Yanlış pozitif olarak doğrulanıp değiştirilmeyenler**
+- "exec() ile kod enjeksiyonu (`zami_rpa.py:90`)": satır aslında sabit argümanlı
+  `asyncio.create_subprocess_exec(sys.executable, "-m", "playwright", "install", "chromium")`.
+  Dinamik kod çalıştırma yok, güvenlik açığı değil.
+- "156 yerde sabitlerle `is` karşılaştırması": `ruff --select F632` **0** bulgu; incelenen tüm
+  satırlar (`zami_rpa 150/169/583`, `whatsapp 119/396/401`, `zami 151/417/793`, `zami_status 204`)
+  doğru `is None` / `is not None` tekil nesne kontrolleri.
+- "15 tanımsız değişken": `ruff F821` + `pyflakes` temiz; tek gerçek vaka aşağıda düzeltildi.
+
+**Düzeltilenler**
+- **Dairesel bağımlılık kırıldı**: yeni `insurance_delivery.py` (police e-posta/WhatsApp gönderimi
+  + görev kapatma: `policy_html`, `policy_wa_text`, `_notify_customer`, `_close_task`,
+  `issue_policy`). Yön artık tek: `insurance_tasks → insurance_provider → insurance_delivery`.
+  Fonksiyon içi karşılıklı importlar kaldırıldı; `routes_admin` ve `routes_account` yeni modülü
+  kullanıyor.
+- **Gerçek tanımsız değişken hatası**: `server.py` lifespan içinde `insurance_task` yalnız `try`
+  bloğunda atanıyordu; sigorta fiyat senkronu başlatılamazsa kapanışta **NameError** oluşuyordu.
+  Lifespan tablo tabanlı yazıldı: `_init_startup_state()`, `_background_loops()`,
+  `_start_background_loops()` — her döngü tek tek izole, C901 uyarısı da düştü (13 → uyarısız).
+- **Karmaşıklık azaltıldı**: `insurance_provider.issue_via_provider` →
+  `_ensure_quote` / `_ensure_policy` / `_ensure_policy_pdf` / `_save_provider_error`;
+  `emailer.daily_digest_html` → `_digest_intro` / `_digest_apps_block` / `_digest_revenue_block` /
+  `_digest_attention_block` / `_digest_admin_button`; `emailer.send_email` → `_sender_identity()`;
+  `insurance_tasks._application_insurance_order` → `_insured_from_travelers` +
+  `_application_insurance_lines`. `routes_store.py`'daki kullanılmayan yeniden-ihraçlar
+  (`ESIM_PRODUCTS`, `INSURANCE_PRODUCTS`, `TOUR_PRODUCTS`) kaldırıldı.
+- `GET /api/admin/insurance/provider` artık yalnız **aktif** 4 poliçeyi döndürüyor
+  (eski pasif ins_8d/ins_30d_plus satırları panelde görünmüyor) — test ajanının notu.
+- Kalan bilinen C901: `zami_rpa.fill_application` (27) ve `_auto_relogin_locked` (11) —
+  canlı RPA akışı olduğu için bilinçli olarak dokunulmadı (regresyon riski), incelemede de yoktu.
+
+**Doğrulama**: testing agent iteration_116 → yeni `tests/test_iteration_116_refactor.py` ile
+16/16 PASS, kritik/minör bulgu yok; sipariş→ödeme→poliçe kesimi, hesap belgeleri + tekrar gönderim,
+sağlayıcı paneli, günlük özet e-postası ve 7 arka plan zamanlayıcısının başlaması doğrulandı
+(gerçek Tamamliyo poliçesi tetiklenmedi). Test dosyasındaki sınıflar arası sıra bağımlılığı
+`seeded_policy_doc_id` fixture'ı ile giderildi. Tam suit: **324 passed / 5 skipped**.

@@ -15,11 +15,10 @@ from datetime import datetime, timezone
 from typing import Optional
 from urllib.parse import urlencode
 
-from db import insurance_tasks_col, notifications_col, orders_col, serialize_doc
-import file_access
+from db import insurance_tasks_col, notifications_col, orders_col
 from store_catalog import product_list
 from emailer import send_email
-import whatsapp
+from insurance_provider import auto_issue_on, issue_via_provider
 
 logger = logging.getLogger(__name__)
 
@@ -39,47 +38,6 @@ def provider_link(line: dict, order: dict) -> str:
         "baslangic": line.get("starts_on") or travel.get("start") or "",
     }
     return f"{LEGACY_PROVIDER_BASE}?{urlencode({k: v for k, v in params.items() if v})}"
-
-
-def _policy_html(order: dict, link: str, message: str) -> str:
-    contact = order.get("contact") or {}
-    extra = f"<p>{message}</p>" if message else ""
-    return (
-        f"<p>Merhaba {contact.get('full_name') or ''},</p>"
-        f"<p>Seyahat sağlık sigortası poliçeniz hazır. Aşağıdaki bağlantıdan "
-        f"PDF olarak indirebilirsiniz.</p>"
-        f'<p><a href="{link}">Poliçenizi indir (PDF)</a></p>'
-        f"{extra}"
-        f"<p>Sipariş kodu: <b>{order.get('reference_code','')}</b></p>"
-        f"<p>İyi yolculuklar dileriz.<br>Dubai Vize Hattı</p>"
-    )
-
-
-def policy_email_html(task: dict, link: str) -> str:
-    """Police e-postasi (gorev kaydindan uretilir; tekrar gonderimlerde kullanilir)."""
-    return _policy_html(
-        {
-            "contact": {"full_name": (task.get("customer") or {}).get("full_name", "")},
-            "reference_code": task.get("order_reference", ""),
-        },
-        link,
-        "",
-    )
-
-
-def _policy_wa_text(task: dict, order: dict, link: str) -> str:
-    """Police hazir mesaji (WhatsApp, PDF baglantili)."""
-    full_name = (task.get("customer") or {}).get("full_name") or (order.get("contact") or {}).get(
-        "full_name"
-    ) or ""
-    first_name = full_name.split(" ")[0] if full_name else ""
-    greeting = f"Merhaba {first_name}," if first_name else "Merhaba,"
-    return (
-        f"{greeting} seyahat sağlık sigortası poliçeniz hazır. "
-        f"PDF olarak buradan indirebilirsiniz: {link}\n"
-        f"Sipariş kodu: {task.get('order_reference', '')}\n"
-        "İyi yolculuklar dileriz · Dubai Vize Hattı"
-    )
 
 
 def _pending_html(order: dict, lines: list) -> str:
@@ -179,10 +137,8 @@ async def queue_policy_tasks(order: dict) -> list:
 
 
 async def _maybe_auto_issue(tasks: list) -> None:
-    """TAMAMLIYO_AUTO_ISSUE acikken policeyi hemen keser (varsayilan kapali)."""
+    """Otomatik kesim acikken policeyi hemen keser (varsayilan kapali)."""
     import tamamliyo
-
-    from insurance_provider import auto_issue_on, issue_via_provider
 
     if not (tasks and tamamliyo.configured() and await auto_issue_on()):
         return
@@ -195,9 +151,20 @@ async def _maybe_auto_issue(tasks: list) -> None:
             logger.error("otomatik police kesimi basarisiz (%s): %s", task["id"], exc)
 
 
-def _application_insurance_order(app_doc: dict) -> dict:
-    """Basvurudaki sigorta kalemlerini `queue_policy_tasks` sozlesmesine cevirir."""
-    travel = app_doc.get("travel") or {}
+def _insured_from_travelers(travelers: list) -> list:
+    """Yolcu kayitlarini police sigortali formatina cevirir."""
+    return [
+        {
+            "full_name": f"{t.get('first_name', '')} {t.get('last_name', '')}".strip(),
+            "tc_kimlik_no": t.get("tc_kimlik_no") or "",
+            "birth_date": t.get("birth_date") or "",
+        }
+        for t in travelers or []
+    ]
+
+
+def _application_insurance_lines(app_doc: dict, travel: dict) -> list:
+    """Basvurudaki sigorta satirlarini police tarihleriyle birlikte dondurur."""
     lines = []
     for item in app_doc.get("store_items") or []:
         if (item.get("kind") or "") != "insurance":
@@ -206,21 +173,19 @@ def _application_insurance_order(app_doc: dict) -> dict:
         line.setdefault("starts_on", travel.get("arrival_date"))
         line.setdefault("ends_on", travel.get("departure_date"))
         lines.append(line)
-    insured = [
-        {
-            "full_name": f"{t.get('first_name', '')} {t.get('last_name', '')}".strip(),
-            "tc_kimlik_no": t.get("tc_kimlik_no") or "",
-            "birth_date": t.get("birth_date") or "",
-        }
-        for t in app_doc.get("travelers") or []
-    ]
+    return lines
+
+
+def _application_insurance_order(app_doc: dict) -> dict:
+    """Basvurudaki sigorta kalemlerini `queue_policy_tasks` sozlesmesine cevirir."""
+    travel = app_doc.get("travel") or {}
     return {
         "id": app_doc.get("id"),
         "reference_code": app_doc.get("reference_code", ""),
         "application_id": app_doc.get("id"),
-        "items": lines,
+        "items": _application_insurance_lines(app_doc, travel),
         "contact": app_doc.get("contact") or {},
-        "insured": insured,
+        "insured": _insured_from_travelers(app_doc.get("travelers") or []),
         "travel": {"start": travel.get("arrival_date")},
         "note": travel.get("notes", ""),
     }
@@ -229,59 +194,6 @@ def _application_insurance_order(app_doc: dict) -> dict:
 async def queue_application_policy_tasks(app_doc: dict) -> list:
     """Vize basvurusuna eklenen sigorta icin police kesim gorevi olusturur."""
     return await queue_policy_tasks(_application_insurance_order(app_doc))
-
-
-async def issue_policy(task_id: str, policy_file_id: str, origin: str, message: str = "") -> dict:
-    """Yuklenen police PDF'ini musteriye gonderir ve gorevi kapatir."""
-    task = await insurance_tasks_col.find_one({"id": task_id})
-    if not task:
-        return {"ok": False, "reason": "not_found"}
-
-    order = await orders_col.find_one({"id": task.get("order_id")}) or {}
-    link = file_access.file_url(origin, policy_file_id, file_access.TTL_EMAIL)
-    now = datetime.now(timezone.utc)
-    email_result = {"status": "skipped"}
-    to_email = (task.get("customer") or {}).get("email")
-    if to_email:
-        email_result = await send_email(
-            to_email,
-            f"Sigorta poliçeniz hazır - {task.get('order_reference','')}",
-            _policy_html(order or task, link, message),
-            kind="insurance_policy_sent",
-            meta={"task_id": task_id, "order_id": task.get("order_id")},
-        )
-
-    wa_result = await whatsapp.send_customer_text(
-        (task.get("customer") or {}).get("phone"),
-        _policy_wa_text(task, order or task, link),
-        reason="Poliçe hazır mesajı: WhatsApp API canlı değil, bağlantıya dokunup gönderin.",
-    )
-
-    await insurance_tasks_col.update_one(
-        {"id": task_id},
-        {
-            "$set": {
-                "status": "issued",
-                "policy_file_id": policy_file_id,
-                "message": message[:1000],
-                "issued_at": now,
-                "whatsapp": {
-                    "status": wa_result.get("status"),
-                    "link": wa_result.get("link", ""),
-                    "phone": wa_result.get("phone", ""),
-                    "detail": wa_result.get("detail") or wa_result.get("reason") or "",
-                    "at": now,
-                },
-            }
-        },
-    )
-    if order:
-        await orders_col.update_one(
-            {"id": order["id"]},
-            {"$set": {"delivery.policy_file_id": policy_file_id, "delivery.sent_at": now}},
-        )
-    fresh = await insurance_tasks_col.find_one({"id": task_id})
-    return {"ok": True, "task": serialize_doc(fresh), "email": email_result, "whatsapp": wa_result}
 
 
 def _empty_bucket(key: str) -> dict:

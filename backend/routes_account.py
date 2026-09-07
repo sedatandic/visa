@@ -323,7 +323,7 @@ async def account_document_resend(
     import file_access
     from db import insurance_tasks_col
     from emailer import send_email, subject_with_ref, visa_ready_html
-    from insurance_tasks import policy_email_html
+    from insurance_delivery import policy_html
 
     rate_check(
         f"doc-resend:{email.lower()}",
@@ -358,7 +358,7 @@ async def account_document_resend(
         result = await send_email(
             email,
             f"Sigorta poliçeniz - {task.get('order_reference', '')}",
-            policy_email_html(task, link),
+            policy_html(task, link),
             kind="insurance_policy_sent",
             meta={"task_id": task["id"], "resend": True},
         )

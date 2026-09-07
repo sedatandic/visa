@@ -34,14 +34,11 @@ router = APIRouter()
 
 ORDER_PREFIX = "SV-"
 
-from store_catalog import (  # noqa: F401
+from store_catalog import (  # noqa: F401 - tests/other modules re-import from here
     DEFAULT_PRODUCTS,
     tour_schedule,
     MAX_QTY,
-    ESIM_PRODUCTS,
-    INSURANCE_PRODUCTS,
     KIND_LABELS,
-    TOUR_PRODUCTS,
     product_list,
 )
 

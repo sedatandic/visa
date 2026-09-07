@@ -1321,7 +1321,7 @@ async def admin_insurance_tasks(status: str = "", admin: dict = Depends(require_
 
 @router.post("/admin/insurance-tasks/{task_id}/issue")
 async def admin_issue_policy(task_id: str, payload: dict, admin: dict = Depends(require_admin)) -> dict:
-    from insurance_tasks import issue_policy
+    from insurance_delivery import issue_policy
 
     policy_file_id = str(payload.get("policy_file_id") or "").strip()
     if not policy_file_id:

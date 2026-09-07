@@ -220,6 +220,19 @@ async def _record_attempt(
         logger.error("email_outbox insert failed: %s", exc)
 
 
+def _sender_identity() -> tuple[str, str, str]:
+    """Gonderim kimligi: api anahtari, gonderen adres, yanit adresi."""
+    api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
+    sender_email = (os.environ.get("SENDER_EMAIL") or "onboarding@resend.dev").strip()
+    reply_to = (os.environ.get("REPLY_TO_EMAIL") or os.environ.get("ADMIN_EMAIL") or "").strip()
+    if sender_email.endswith("@resend.dev"):
+        # Paylasimli test alan adi: SPF/DKIM markayla hizalanmadigi icin postalar spam'e duser.
+        logger.warning(
+            "SENDER_EMAIL paylasimli resend.dev alan adinda; dogrulanmis alan adi kullanin."
+        )
+    return api_key, sender_email, reply_to
+
+
 async def send_email(
     to: str,
     subject: str,
@@ -232,14 +245,7 @@ async def send_email(
 
     `attachments`: [{"filename", "content" (bytes), "content_type"}]
     """
-    api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
-    sender_email = (os.environ.get("SENDER_EMAIL") or "onboarding@resend.dev").strip()
-    reply_to = (os.environ.get("REPLY_TO_EMAIL") or os.environ.get("ADMIN_EMAIL") or "").strip()
-    if sender_email.endswith("@resend.dev"):
-        # Paylasimli test alan adi: SPF/DKIM markayla hizalanmadigi icin postalar spam'e duser.
-        logger.warning(
-            "SENDER_EMAIL paylasimli resend.dev alan adinda; dogrulanmis alan adi kullanin."
-        )
+    api_key, sender_email, reply_to = _sender_identity()
     if api_key and not api_key.startswith("re_placeholder"):
         params = _resend_params(
             to, subject, html, kind, f"{BRAND} <{sender_email}>", reply_to, attachments
@@ -635,14 +641,8 @@ def _digest_application_table(rows: list) -> str:
     )
 
 
-def daily_digest_html(data: dict) -> str:
-    """Yoneticiye giden gunluk ozet: basvurular, tahsilat, ekstralar, bekleyen isler."""
-    apps = data.get("applications") or {}
-    revenue = data.get("revenue") or {}
-    attention = data.get("attention") or {}
-    month = data.get("month") or {}
-    admin_url = data.get("admin_url") or ""
-
+def _digest_intro(data: dict, apps: dict, revenue: dict) -> str:
+    """Ozet basligi ve hareket yoksa aciklama."""
     headline = (
         f"{apps.get('count', 0)} yeni başvuru · {money(revenue.get('total', 0))} tahsilat"
         if data.get("has_activity")
@@ -657,8 +657,11 @@ def daily_digest_html(data: dict) -> str:
             f'<p style="margin:0;font-size:13px;line-height:21px;color:{MUTED};">'
             "Dün yeni başvuru, sipariş veya tahsilat kaydı oluşmadı. Bekleyen işler aşağıda.</p>"
         )
+    return intro
 
-    apps_block = _digest_rows(
+
+def _digest_apps_block(apps: dict) -> str:
+    return _digest_rows(
         [
             {"label": "Başvuru", "value": str(apps.get("count", 0))},
             {"label": "Yolcu", "value": str(apps.get("travelers", 0))},
@@ -667,7 +670,9 @@ def daily_digest_html(data: dict) -> str:
         + [{"label": v["label"], "value": f"{v['count']} yolcu"} for v in apps.get("by_visa") or []]
     ) + _digest_application_table(apps.get("rows") or [])
 
-    revenue_block = _digest_rows(
+
+def _digest_revenue_block(revenue: dict) -> str:
+    return _digest_rows(
         [
             {"label": "Tahsil edilen", "value": money(revenue.get("total", 0))},
             {"label": "Ödeme sayısı", "value": str(revenue.get("count", 0))},
@@ -678,32 +683,52 @@ def daily_digest_html(data: dict) -> str:
         ]
     )
 
+
+def _digest_attention_block(attention: dict) -> str:
+    def pair(key: str) -> dict:
+        return attention.get(key) or {}
+
+    return _digest_rows(
+        [
+            {"label": "Eksik belgeli başvuru", "value": str(pair("missing_documents").get("count", 0))},
+            {
+                "label": "Onay bekleyen havale",
+                "value": f"{pair('awaiting_transfer').get('count', 0)} · "
+                f"{money(pair('awaiting_transfer').get('amount', 0))}",
+            },
+            {
+                "label": "Yarım kalan sepet",
+                "value": f"{pair('abandoned_carts').get('count', 0)} · "
+                f"{money(pair('abandoned_carts').get('amount', 0))}",
+            },
+        ]
+    )
+
+
+def _digest_admin_button(admin_url: str) -> str:
+    if not admin_url:
+        return ""
+    return f"""
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0 4px;">
+      <tr><td style="background-color:{GOLD};border-radius:8px;">
+        <a href="{admin_url}" style="display:inline-block;padding:13px 24px;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;">Yönetim paneline git</a>
+      </td></tr>
+    </table>
+    """
+
+
+def daily_digest_html(data: dict) -> str:
+    """Yoneticiye giden gunluk ozet: basvurular, tahsilat, ekstralar, bekleyen isler."""
+    apps = data.get("applications") or {}
+    revenue = data.get("revenue") or {}
+    month = data.get("month") or {}
+
     extras_block = _digest_rows(
         [
             {"label": e["label"], "value": f"{e['quantity']} adet · {money(e['amount'])}"}
             for e in data.get("extras") or []
         ]
     )
-
-    attention_block = _digest_rows(
-        [
-            {
-                "label": "Eksik belgeli başvuru",
-                "value": str((attention.get("missing_documents") or {}).get("count", 0)),
-            },
-            {
-                "label": "Onay bekleyen havale",
-                "value": f"{(attention.get('awaiting_transfer') or {}).get('count', 0)} · "
-                f"{money((attention.get('awaiting_transfer') or {}).get('amount', 0))}",
-            },
-            {
-                "label": "Yarım kalan sepet",
-                "value": f"{(attention.get('abandoned_carts') or {}).get('count', 0)} · "
-                f"{money((attention.get('abandoned_carts') or {}).get('amount', 0))}",
-            },
-        ]
-    )
-
     month_block = _digest_rows(
         [
             {"label": f"{month.get('label', '')} başvuru", "value": str(month.get("applications", 0))},
@@ -711,31 +736,19 @@ def daily_digest_html(data: dict) -> str:
         ]
     )
 
-    button_html = (
-        f"""
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0 4px;">
-      <tr><td style="background-color:{GOLD};border-radius:8px;">
-        <a href="{admin_url}" style="display:inline-block;padding:13px 24px;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;">Yönetim paneline git</a>
-      </td></tr>
-    </table>
-    """
-        if admin_url
-        else ""
-    )
-
     body = f"""
-    {intro}
+    {_digest_intro(data, apps, revenue)}
     {_digest_heading("Dün gelen başvurular")}
-    {apps_block}
+    {_digest_apps_block(apps)}
     {_digest_heading("Tahsilat")}
-    {revenue_block}
+    {_digest_revenue_block(revenue)}
     {_digest_heading("Ekstra satışlar")}
     {extras_block}
     {_digest_heading("Dikkat gerektirenler")}
-    {attention_block}
+    {_digest_attention_block(data.get("attention") or {})}
     {_digest_heading("Ay başından bugüne")}
     {month_block}
-    {button_html}
+    {_digest_admin_button(data.get("admin_url") or "")}
     """
     return _wrap("Günlük özet", body)
 

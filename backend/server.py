@@ -208,8 +208,8 @@ async def seed_content_collections() -> None:
         logger.info("seeded review summary")
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+async def _init_startup_state() -> None:
+    """Veritabani seed'leri ve nesne depolama; hatalar servisi durdurmaz."""
     try:
         await ensure_indexes()
         await seed_visa_types()
@@ -225,88 +225,82 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.error("storage init failed: %s", exc)
 
-    reminder_task = None
-    zami_task = None
-    keepalive_task = None
-    otp_task = None
-    cart_task = None
-    retention_task = None
-    digest_task = None
-    try:
+
+def _background_loops() -> tuple:
+    """Arka plan dongulerini (ad, uretici) olarak dondurur; importlar tembel."""
+
+    def documents():
         from doc_reminders import default_origin, reminder_loop
 
-        reminder_task = asyncio.create_task(reminder_loop(default_origin()))
-        logger.info("document reminder scheduler started")
-    except Exception as exc:
-        logger.error("reminder scheduler failed to start: %s", exc)
+        return [reminder_loop(default_origin())]
 
-    try:
+    def zami():
         from zami_status import keepalive_loop, status_loop
 
-        zami_task = asyncio.create_task(status_loop())
-        keepalive_task = asyncio.create_task(keepalive_loop())
-        logger.info("zami status + session keepalive schedulers started")
-    except Exception as exc:
-        logger.error("zami status scheduler failed to start: %s", exc)
+        return [status_loop(), keepalive_loop()]
 
-    try:
+    def otp():
         from otp_reminders import reminder_loop as otp_reminder_loop
 
-        otp_task = asyncio.create_task(otp_reminder_loop())
-        logger.info("zami otp reminder scheduler started")
-    except Exception as exc:
-        logger.error("otp reminder scheduler failed to start: %s", exc)
+        return [otp_reminder_loop()]
 
-    try:
+    def carts():
         from cart_reminders import cart_reminder_loop, default_origin as cart_origin
 
-        cart_task = asyncio.create_task(cart_reminder_loop(cart_origin()))
-        logger.info("cart reminder scheduler started")
-    except Exception as exc:
-        logger.error("cart reminder scheduler failed to start: %s", exc)
+        return [cart_reminder_loop(cart_origin())]
 
-    try:
+    def retention():
         from retention import retention_loop
 
-        retention_task = asyncio.create_task(retention_loop())
-        logger.info("document retention scheduler started")
-    except Exception as exc:
-        logger.error("retention scheduler failed to start: %s", exc)
+        return [retention_loop()]
 
-    try:
+    def digest():
         from daily_digest import digest_loop
 
-        digest_task = asyncio.create_task(digest_loop())
-        logger.info("daily digest scheduler started")
-    except Exception as exc:
-        logger.error("daily digest scheduler failed to start: %s", exc)
+        return [digest_loop()]
 
-    try:
+    def insurance_prices():
         from insurance_provider import price_sync_loop
 
-        insurance_task = asyncio.create_task(price_sync_loop())
-        logger.info("insurance price sync scheduler started")
-    except Exception as exc:
-        logger.error("insurance price sync scheduler failed to start: %s", exc)
+        return [price_sync_loop()]
+
+    return (
+        ("document reminder", documents),
+        ("zami status + session keepalive", zami),
+        ("zami otp reminder", otp),
+        ("cart reminder", carts),
+        ("document retention", retention),
+        ("daily digest", digest),
+        ("insurance price sync", insurance_prices),
+    )
+
+
+def _start_background_loops() -> list:
+    """Her donguyu ayri ayri baslatir; biri patlarsa digerleri calismaya devam eder."""
+    tasks: list = []
+    for name, factory in _background_loops():
+        try:
+            tasks.extend(asyncio.create_task(coro) for coro in factory())
+            logger.info("%s scheduler started", name)
+        except Exception as exc:
+            logger.error("%s scheduler failed to start: %s", name, exc)
+    return tasks
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await _init_startup_state()
+    tasks = _start_background_loops()
 
     yield
 
-    for task in (
-        reminder_task,
-        zami_task,
-        keepalive_task,
-        otp_task,
-        cart_task,
-        retention_task,
-        digest_task,
-        insurance_task,
-    ):
-        if task:
-            task.cancel()
-            try:
-                await task
-            except (asyncio.CancelledError, Exception):
-                pass
+    for task in tasks:
+        task.cancel()
+    for task in tasks:
+        try:
+            await task
+        except (asyncio.CancelledError, Exception):
+            pass
     client.close()
 
 
