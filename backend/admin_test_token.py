@@ -15,7 +15,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 
 def admin_token(hours: int = 12) -> str:
-    email = (os.environ.get("ADMIN_LOGIN_EMAIL") or "info@dubaivizeonline.com").strip().lower()
+    email = (os.environ.get("ADMIN_LOGIN_EMAIL") or "info@dubaivizehatti.com").strip().lower()
     payload = {
         "sub": email,
         "role": "admin",

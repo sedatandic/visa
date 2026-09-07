@@ -99,7 +99,7 @@ export default function AdminLogin() {
                                 autoComplete="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="info@dubaivizeonline.com"
+                                placeholder="info@dubaivizehatti.com"
                                 data-testid="admin-email-input"
                             />
                         </div>

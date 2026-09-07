@@ -86,7 +86,7 @@ router = APIRouter()
 
 # Yonetici girisi: sifre yok, e-postaya gonderilen tek kullanimlik kod ile yapilir.
 # ADMIN_LOGIN_EMAIL tanimli degilse gelistirme adresi kullanilir.
-ADMIN_LOGIN_EMAIL = (os.environ.get("ADMIN_LOGIN_EMAIL") or "info@dubaivizeonline.com").strip().lower()
+ADMIN_LOGIN_EMAIL = (os.environ.get("ADMIN_LOGIN_EMAIL") or "info@dubaivizehatti.com").strip().lower()
 ADMIN_LOGIN_NAME = os.environ.get("ADMIN_LOGIN_NAME") or "Yonetici"
 
 # Tek kullanimlik kod kurallari

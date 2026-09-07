@@ -1156,3 +1156,15 @@ başvuru detaylarını tek sayfalık forma geçir, 'detaylarınızı ekte bulabi
   6 evrak + bilet + otel ekleniyor; PDF poppler ile tek sayfa doğrulandı. Test verileri silindi.
 - Not: reportlab (5.0.1) requirements.txt'e eklendi; PDF önizlemesi için `poppler-utils`
   kuruldu (yalnız geliştirme aracı, üretimde gerekli değil).
+
+### Mesaj temizliği + yönetici giriş yer tutucusu (2026-09-07)
+- Kullanıcı isteği: "yönetici panelindeki tüm mesajları silelim" → `contact_messages`
+  koleksiyonundaki **27 kayıt silindi** (tamamı regresyon testlerinden kalan TEST/example.com
+  kaydıydı; gerçek müşteri mesajı yoktu). `/admin/mesajlar` artık "Henüz mesaj yok" gösteriyor,
+  menüdeki okunmamış rozeti sıfırlandı (`/api/admin/stats → unread_messages: 0`).
+- Dokunulmayanlar: `email_outbox` (1602 gönderim arşivi), `notifications` (9 poliçe kesim
+  hatırlatması — hepsi hâlâ var olan SV- siparişlerine ait), `wa_conversations`/`wa_messages`
+  (1 konuşma / 16 mesaj).
+- Yan bulgu düzeltildi: `AdminLogin.jsx` e-posta yer tutucusu hâlâ eski markayı
+  (`info@dubaivizeonline.com`) gösteriyordu → `info@dubaivizehatti.com`. `routes_admin.py`
+  ve `admin_test_token.py` içindeki `ADMIN_LOGIN_EMAIL` yedek değerleri de yeni markaya çevrildi.
