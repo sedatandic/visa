@@ -1340,13 +1340,15 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
 
 ## 2026-09-07 (8) · Poliçelerim (müşteri arşivi) + e-posta başlığı sadeleşti
 
-- **Backend** `GET /api/account/policies` (yeni, `require_customer`): müşterinin e-postasına ait
-  **kesilmiş** poliçeler (plan adı, süre, kişi sayısı, başlangıç/bitiş, sipariş kodu, kesim zamanı,
-  sigortalı ad-soyad + doğum tarihi) ve imzalı **PDF indirme yolu** (`file_access.file_path`,
-  180 gün geçerli, `download=1`). TC kimlik no yanıtta paylaşılmaz.
-- **Frontend** `/hesabim` → yeni **"Poliçelerim"** bölümü (`account-policies`,
-  `account-policy-<id>`, `download-policy-<id>`): poliçe kartları ve "Poliçeyi indir" butonu
-  (`fileUrl()` ile tam adres). Poliçe yoksa bölüm gizli kalır.
+- **Backend** `GET /api/account/documents` (yeni, `require_customer`): müşterinin e-postasına ait
+  **onaylanan vize PDF'leri** (`visa_result`) + **kesilmiş sigorta poliçeleri`, her biri
+  `kind: visa|policy`, başlık, referans (başvuru/sipariş kodu), kişiler, tarih aralığı/dosya adı,
+  kesim/gönderim zamanı ve imzalı **PDF indirme yolu** (`file_access.file_path`, 180 gün,
+  `download=1`). TC kimlik no yanıtta paylaşılmaz.
+- **Frontend** `/hesabim` → yeni **"Belgelerim"** bölümü (`account-documents`,
+  `account-document-<id>`, `download-document-<id>`): vize (yeşil `FileCheck2`) ve poliçe
+  (altın `ShieldCheck`) kartları, "Vizeyi indir" / "Poliçeyi indir" butonları (`fileUrl()`).
+  Belge yoksa bölüm gizli kalır.
 - **E-posta başlığı**: logonun altındaki "TÜRSAB ÜYESİ A GRUBU SEYAHAT ACENTESİ" satırı
   kullanıcı isteğiyle kaldırıldı (künyede/alt bilgide bilgi olarak duruyor).
 - Doğrulama: uçtan uca (sipariş → ödendi → poliçe kesimi → müşteri girişi) `/account/policies`

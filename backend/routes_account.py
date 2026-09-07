@@ -259,42 +259,57 @@ async def account_orders(email: str = Depends(require_customer)) -> dict:
     return {"items": items}
 
 
-@router.get("/account/policies")
-async def account_policies(email: str = Depends(require_customer)) -> dict:
-    """Kesilen seyahat saglik sigortasi policeleri + imzali PDF indirme yollari."""
+@router.get("/account/documents")
+async def account_documents(email: str = Depends(require_customer)) -> dict:
+    """Musteriye ait belgeler: onaylanan vize PDF'leri + kesilen sigorta policeleri."""
     import re
 
     import file_access
     from db import insurance_tasks_col
 
-    cursor = insurance_tasks_col.find(
-        {
-            "status": "issued",
-            "customer.email": {"$regex": f"^{re.escape(email)}$", "$options": "i"},
-        }
-    ).sort("issued_at", -1)
+    pattern = {"$regex": f"^{re.escape(email)}$", "$options": "i"}
     items = []
-    async for doc in cursor:
-        view = serialize_doc(doc)
+
+    async for doc in applications_col.find({"contact.email": pattern}).sort("created_at", -1):
+        visa = doc.get("visa_result") or {}
+        if not visa.get("file_id"):
+            continue
+        travelers = doc.get("travelers") or []
         items.append(
             {
-                "id": view.get("id"),
-                "order_reference": view.get("order_reference", ""),
-                "plan_name": view.get("plan_name") or "Seyahat Sağlık Sigortası",
-                "validity_days": view.get("validity_days"),
-                "quantity": view.get("quantity") or 1,
-                "starts_on": view.get("starts_on"),
-                "ends_on": view.get("ends_on"),
-                "issued_at": view.get("issued_at"),
-                "insured": [
-                    {"full_name": person.get("full_name", ""), "birth_date": person.get("birth_date", "")}
-                    for person in view.get("insured") or []
+                "kind": "visa",
+                "id": f"visa-{doc.get('id')}",
+                "title": "Onaylanan vize belgesi",
+                "reference": doc.get("reference_code", ""),
+                "people": [
+                    f"{t.get('first_name', '')} {t.get('last_name', '')}".strip() for t in travelers
                 ],
+                "detail": visa.get("filename") or "vize.pdf",
+                "issued_at": visa.get("sent_at") or visa.get("uploaded_at"),
                 "download_url": file_access.file_path(
-                    view.get("policy_file_id") or "", file_access.TTL_EMAIL, download=True
+                    visa["file_id"], file_access.TTL_EMAIL, download=True
                 ),
             }
         )
+
+    async for doc in insurance_tasks_col.find({"status": "issued", "customer.email": pattern}).sort(
+        "issued_at", -1
+    ):
+        items.append(
+            {
+                "kind": "policy",
+                "id": f"policy-{doc.get('id')}",
+                "title": doc.get("plan_name") or "Seyahat Sağlık Sigortası",
+                "reference": doc.get("order_reference", ""),
+                "people": [p.get("full_name", "") for p in doc.get("insured") or []],
+                "detail": f"{doc.get('starts_on') or '-'} → {doc.get('ends_on') or '-'}",
+                "issued_at": doc.get("issued_at"),
+                "download_url": file_access.file_path(
+                    doc.get("policy_file_id") or "", file_access.TTL_EMAIL, download=True
+                ),
+            }
+        )
+
     return {"items": items}
 
 

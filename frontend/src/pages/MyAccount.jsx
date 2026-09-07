@@ -6,6 +6,7 @@ import {
     Baby,
     Copy,
     Download,
+    FileCheck2,
     FileText,
     KeyRound,
     Loader2,
@@ -36,7 +37,7 @@ export default function MyAccount() {
     const [data, setData] = useState(null);
     const [travelers, setTravelers] = useState([]);
     const [orders, setOrders] = useState([]);
-    const [policies, setPolicies] = useState([]);
+    const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -59,8 +60,8 @@ export default function MyAccount() {
             api.get("/account/orders")
                 .then(({ data: o }) => setOrders(o.items || []))
                 .catch(() => {});
-            api.get("/account/policies")
-                .then(({ data: p }) => setPolicies(p.items || []))
+            api.get("/account/documents")
+                .then(({ data: d }) => setDocuments(d.items || []))
                 .catch(() => {});
         } catch (err) {
             if (err?.response?.status === 401) {
@@ -91,7 +92,7 @@ export default function MyAccount() {
         setData(null);
         setTravelers([]);
         setOrders([]);
-        setPolicies([]);
+        setDocuments([]);
         toast.success("Çıkış yapıldı.");
     };
 
@@ -308,42 +309,62 @@ export default function MyAccount() {
                                 )}
                             </div>
 
-                            {/* POLICELERIM */}
-                            {policies.length > 0 && (
-                                <div className="mt-10" data-testid="account-policies">
-                                    <h2 className="font-heading text-lg font-bold">Poliçelerim</h2>
+                            {/* BELGELERIM: vize PDF'leri + sigorta policeleri */}
+                            {documents.length > 0 && (
+                                <div className="mt-10" data-testid="account-documents">
+                                    <h2 className="font-heading text-lg font-bold">Belgelerim</h2>
                                     <p className="mt-1 text-sm text-muted-foreground">
-                                        Kesilen seyahat sağlık sigortası poliçeleriniz. PDF'i istediğiniz zaman
-                                        indirebilir, sınırda veya hastanede gösterebilirsiniz.
+                                        Onaylanan vize belgeleriniz ve sigorta poliçeleriniz burada saklanır.
+                                        PDF'leri istediğiniz zaman indirebilirsiniz.
                                     </p>
                                     <div className="mt-4 space-y-3">
-                                        {policies.map((p) => (
+                                        {documents.map((d) => (
                                             <div
-                                                key={p.id}
+                                                key={d.id}
                                                 className="card-surface flex flex-wrap items-center justify-between gap-4 p-5"
-                                                data-testid={`account-policy-${p.id}`}
+                                                data-testid={`account-document-${d.id}`}
                                             >
-                                                <div>
-                                                    <p className="font-heading text-base font-extrabold">
-                                                        {p.plan_name}
-                                                    </p>
-                                                    <p className="mt-1 text-sm text-muted-foreground">
-                                                        {(p.insured || []).map((i) => i.full_name).join(", ") ||
-                                                            `${p.quantity} kişi`}
-                                                    </p>
-                                                    <p className="mt-1 text-xs text-muted-foreground">
-                                                        {p.starts_on} → {p.ends_on} · Sipariş: {p.order_reference}
-                                                        {p.issued_at ? ` · ${formatDateTime(p.issued_at)}` : ""}
-                                                    </p>
+                                                <div className="flex items-start gap-3">
+                                                    <span
+                                                        className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                                                            d.kind === "visa"
+                                                                ? "bg-[hsl(var(--brand-green))]/12"
+                                                                : "bg-primary/10"
+                                                        }`}
+                                                    >
+                                                        {d.kind === "visa" ? (
+                                                            <FileCheck2 className="h-5 w-5 text-[hsl(var(--brand-green))]" />
+                                                        ) : (
+                                                            <ShieldCheck className="h-5 w-5 text-primary" />
+                                                        )}
+                                                    </span>
+                                                    <div>
+                                                        <p className="font-heading text-base font-extrabold">
+                                                            {d.title}
+                                                        </p>
+                                                        <p className="mt-1 text-sm text-muted-foreground">
+                                                            {(d.people || []).filter(Boolean).join(", ") || d.detail}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-muted-foreground">
+                                                            {d.kind === "visa" ? "Başvuru" : "Sipariş"}: {d.reference}
+                                                            {d.kind === "policy" ? ` · ${d.detail}` : ""}
+                                                            {d.issued_at ? ` · ${formatDateTime(d.issued_at)}` : ""}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                {p.download_url ? (
+                                                {d.download_url ? (
                                                     <Button
                                                         asChild
                                                         className="h-10"
-                                                        data-testid={`download-policy-${p.id}`}
+                                                        data-testid={`download-document-${d.id}`}
                                                     >
-                                                        <a href={fileUrl(p.download_url, true)} target="_blank" rel="noreferrer">
-                                                            <Download className="mr-2 h-4 w-4" /> Poliçeyi indir
+                                                        <a
+                                                            href={fileUrl(d.download_url, true)}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                        >
+                                                            <Download className="mr-2 h-4 w-4" />
+                                                            {d.kind === "visa" ? "Vizeyi indir" : "Poliçeyi indir"}
                                                         </a>
                                                     </Button>
                                                 ) : (
