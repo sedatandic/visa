@@ -5,6 +5,7 @@ import { SiteLayout } from "./components/SiteLayout";
 import { RequireAdmin } from "./components/AdminLayout";
 import Home from "./pages/Home";
 import VisaTypes from "./pages/VisaTypes";
+import VisaFees from "./pages/VisaFees";
 import VisaGuide from "./pages/VisaGuide";
 import Documents from "./pages/Documents";
 import Services from "./pages/Services";
@@ -62,6 +63,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Site><Home /></Site>} />
                     <Route path="/vize-tipleri" element={<Site><VisaTypes /></Site>} />
+                    <Route path="/dubai-vize-ucreti" element={<Site><VisaFees /></Site>} />
                     <Route path="/dubai-vizesi/:slug" element={<Site><VisaGuide /></Site>} />
                     <Route path="/gerekli-belgeler" element={<Site><Documents /></Site>} />
                     <Route path="/hizmetler" element={<Site><Services /></Site>} />

@@ -3,5 +3,7 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/
 Disallow: /odeme/
+Disallow: /hesabim
+Disallow: /sepet
 
-Sitemap: https://dubaivizeonline.com/sitemap.xml
+Sitemap: https://dubaivizehatti.com/sitemap.xml

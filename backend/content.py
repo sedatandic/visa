@@ -569,12 +569,14 @@ COMPANY = {
     "dubai_address": "Level 27, Unit 2705, Marina Plaza, Dubai Marina, Dubai - United Arab Emirates",
     "dubai_phone": "+971 50 867 26 30",
     "working_hours": "Hafta içi 09:00 - 19:00, Cumartesi 10:00 - 16:00",
-    "tursab_no": "0000",
+    # Yasal kunye alanlari: gercek degerler admin -> Acente ekranindan girilir.
+    # Bos birakilan satirlar sitede hic gosterilmez; ornek/sifir deger yaziLMAZ.
+    "tursab_no": "",
     "tursab_type": "A Grubu Seyahat Acentesi",
     "tax_office": "Beşiktaş Vergi Dairesi",
-    "tax_no": "0000000000",
-    "mersis_no": "0000000000000000",
-    "trade_registry_no": "000000-0",
+    "tax_no": "",
+    "mersis_no": "",
+    "trade_registry_no": "",
     "founded_year": "2019",
 }
 

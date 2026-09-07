@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { ImportantNotice } from "../components/ImportantNotice";
+import { ContentByline } from "../components/ContentByline";
 import { useContact } from "../lib/contact";
 import { Button } from "../components/ui/button";
 import {
@@ -51,6 +52,7 @@ export default function Faq() {
                     <div className="mt-12">
                         <ImportantNotice compact />
                     </div>
+                    <ContentByline className="mt-6" />
 
                     <div className="mt-12 flex flex-col items-start gap-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-7 sm:flex-row sm:items-center sm:justify-between">
                         <div>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, MapPin, Phone, Clock, Instagram, Star } from "lucide-react";
 import { api } from "../lib/api";
-import { COMPANY } from "../lib/site";
+import { AGENCY_DISCLAIMER, COMPANY } from "../lib/site";
 import { TrFlag, UaeFlag } from "./FlagIcons";
 import { TursabBadge } from "./TursabBadge";
 import { GdrfaBadge } from "./GdrfaBadge";
@@ -63,6 +63,7 @@ export const Footer = () => {
                 </h3>
                 <ul className="mt-4 space-y-2.5 text-sm text-white/80">
                     <li><Link to="/vize-tipleri" className="transition-colors hover:text-primary">Hizmet Bedelleri</Link></li>
+                    <li><Link to="/dubai-vize-ucreti" className="transition-colors hover:text-primary" data-testid="footer-fees-link">Dubai Vize Ücretleri</Link></li>
                     <li><Link to="/gerekli-belgeler" className="transition-colors hover:text-primary">Gerekli Belgeler</Link></li>
                     <li><Link to="/hizmetler" className="transition-colors hover:text-primary">Hizmetlerimiz</Link></li>
                     <li><Link to="/esim" className="transition-colors hover:text-primary" data-testid="footer-esim-link">Dubai eSIM</Link></li>
@@ -193,6 +194,12 @@ export const Footer = () => {
                 </div>
             </div>
         )}
+
+        <div className="border-t border-white/10">
+            <div className="container-page py-5 text-xs leading-6 text-white/55" data-testid="footer-disclaimer">
+                {AGENCY_DISCLAIMER}
+            </div>
+        </div>
 
         <div className="border-t border-white/10">
             <div className="container-page flex flex-col gap-2 py-5 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">

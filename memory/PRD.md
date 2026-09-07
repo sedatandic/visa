@@ -1213,3 +1213,30 @@ gerçek IBAN bilgileri, paylaşılabilir aile paketi linki (P2), İngilizce/glob
 Kabul edilen P3 riskler: `email_outbox` posta günlüğü OTP kodunu HTML gövdede tutar;
 `.env` içindeki kullanılmayan `ADMIN_LOGIN_PASSWORD`; CORS alt alan adı regex'i.
 
+
+## 2026-06-06 · Rakip karşılaştırması + Paket 1 (Güven & Fiyat) TAMAMLANDI
+Rakip: dubaivize.com (Birtek Turizm). Analiz ve kullanıcı kararları CHANGELOG'da.
+Tamamlanan (testing_agent iteration_104, frontend %100):
+- Yeni SEO sayfası **`/dubai-vize-ucreti`** (fiyat tabloları, dahil/dahil değil, faktörler,
+  ödeme-güvenlik, iptal-iade, 7 soruluk SSS + FAQPage JSON-LD, çapraz satış)
+- `PaymentTrustStrip` (3D Secure + kart amblemleri + havale + kart saklanmaz)
+- `ContentByline` (hazırlayan / son güncelleme / resmî kaynak + yasal acente uyarısı)
+- Footer'da yasal uyarı bloğu, TÜRSAB/vergi/MERSİS placeholder "0000" değerleri kaldırıldı
+- sitemap.xml + robots.txt alan adı dubaivizehatti.com olarak düzeltildi
+
+### Sıradaki (kullanıcı onayı verilen sıra)
+- **P0 · E-posta teslimi**: `info@dubaivizehatti.com` kutusu Google Workspace'te YOK
+  (550-5.1.1). Kullanıcı ya kutuyu açacak ya da ADMIN_EMAIL değişecek. Ek: panelde
+  "teslim edilemedi" uyarısı + Resend teslim durumu yoklama.
+- **P1 · Paket 2 (İçerik & SEO)**: `/basvuru-rehberi` (7 adım ekran görüntülü), vize detay
+  sayfalarına 58 gün giriş kuralı, kimler başvurabilir/başvuramaz, süre aşımı cezası
+  (3.000 $ + günlük 150 $), tipe özel SSS, mobilde sabit fiyat+Başvur çubuğu,
+  belge bazlı örnek görseller + vize tipine göre belge filtresi.
+- **P1 · Paket 3 (Yabancı uyruklu başvuru)**: TC vatandaşı olmayanlara açılım
+  (farklı fiyat kademesi + Türkiye oturum/çalışma kartı belgesi).
+- **P1 · WhatsApp canlıya alma**: Meta App Secret ZORUNLU (imza doğrulaması fail-closed).
+- **P2**: gerçek IBAN, paylaşılabilir aile paketi linki, iletişim formuna captcha,
+  KVKK veri silme talebi akışı, İngilizce/global sürüm.
+Reddedilen/parkedilen: SMS bildirimi (WhatsApp yeterli), sigortayı "zorunlu" diye
+konumlandırma (yasal risk).
+

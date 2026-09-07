@@ -10,6 +10,8 @@ import { VisaComparison } from "../components/VisaComparison";
 import { BankAccounts } from "../components/BankAccounts";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { FxNote } from "../components/FxNote";
+import { PaymentTrustStrip } from "../components/PaymentTrustStrip";
+import { ContentByline } from "../components/ContentByline";
 import { Button } from "../components/ui/button";
 
 const INCLUDED = [
@@ -143,6 +145,9 @@ export default function VisaTypes() {
                     <div className="mt-6">
                         <ImportantNotice compact />
                     </div>
+
+                    <PaymentTrustStrip className="mt-6" />
+                    <ContentByline className="mt-6" />
 
                     <div className="mt-10 flex flex-col items-start gap-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-7 sm:flex-row sm:items-center sm:justify-between">
                         <div>

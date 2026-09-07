@@ -48,6 +48,19 @@ export const PURPOSE_LABELS = {
 
 export const PURPOSES = Object.entries(PURPOSE_LABELS).map(([value, label]) => ({ value, label }));
 
+/** Yasal konum uyarisi: her icerik sayfasinda ve alt bilgide gosterilir. */
+export const AGENCY_DISCLAIMER =
+    "Yetkili özel seyahat acentesiyiz; resmî bir devlet kurumu, konsolosluk ya da BAE göç idaresi değiliz. " +
+    "Başvurunuzu sizin adınıza hazırlayıp yetkili mercilere iletiriz.";
+
+/** Icerik kunyesi bilgileri (E-E-A-T sinyalleri). */
+export const CONTENT_AUTHOR = "Dubai Vize Hattı Vize Ekibi";
+export const CONTENT_UPDATED_AT = "Haziran 2026";
+export const OFFICIAL_SOURCES = [
+    { label: "gdrfad.gov.ae", href: "https://gdrfad.gov.ae/" },
+    { label: "icp.gov.ae", href: "https://icp.gov.ae/" },
+];
+
 export const COMPANY = {
     brand: "Dubai Vize",
     brandSuffix: "Hattı",

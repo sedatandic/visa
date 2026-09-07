@@ -291,7 +291,9 @@ def _agency_info(company: dict) -> dict:
         ("Acente Türü", company.get("tursab_type", "")),
         (
             "Vergi Dairesi / No",
-            f"{company.get('tax_office', '')} / {company.get('tax_no', '')}".strip(" /"),
+            f"{company.get('tax_office', '')} / {company.get('tax_no', '')}"
+            if company.get("tax_office") and company.get("tax_no")
+            else "",
         ),
         ("MERSİS No", company.get("mersis_no", "")),
         ("Ticaret Sicil No", company.get("trade_registry_no", "")),

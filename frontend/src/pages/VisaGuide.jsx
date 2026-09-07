@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { api } from "../lib/api";
 import { COMPANY, formatMoney, formatUsd, setJsonLd, setMeta } from "../lib/site";
+import { ContentByline } from "../components/ContentByline";
 import { FxNote } from "../components/FxNote";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
@@ -421,8 +422,13 @@ export default function VisaGuide() {
             )}
 
             {/* CLOSING CTA */}
-            <section className="border-t border-border bg-[hsl(var(--navy))]">
-                <div className="container-page flex flex-col items-start gap-5 py-12 sm:flex-row sm:items-center sm:justify-between">
+            <section className="pb-12">
+                <div className="container-page">
+                    <ContentByline />
+                </div>
+            </section>
+
+            <section className="border-t border-border bg-[hsl(var(--navy))]">                <div className="container-page flex flex-col items-start gap-5 py-12 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h2 className="font-heading text-2xl font-bold text-white">
                             {visa.short_name} başvurunuzu şimdi başlatın

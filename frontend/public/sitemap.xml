@@ -1,171 +1,195 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://dubaivizeonline.com/</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/vize-tipleri</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/dubai-vize-ucreti</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/gerekli-belgeler</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/vize-tipleri</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/basvuru</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/gerekli-belgeler</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/hizmetler</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/takip</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/hizmetler</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/gelismeler</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/sss</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/esim</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/seyahat-sigortasi</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/dubai-turlari</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/gelismeler</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>weekly</changefreq>
-        <priority>0.7</priority>
+        <priority>0.6</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/sss</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/hakkimizda</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/hakkimizda</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.5</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/iletisim</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/iletisim</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>yearly</changefreq>
-        <priority>0.6</priority>
+        <priority>0.5</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/basvuru</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/takip</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.6</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/kvkk</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/kvkk</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/iade-kosullari</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/gizlilik-politikasi</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/hizmet-sozlesmesi</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/iade-kosullari</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/dubai-vizesi/30-gun-tek-giris</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
+        <loc>https://dubaivizehatti.com/hizmet-sozlesmesi</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/dubai-vizesi/60-gun-tek-giris</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
+        <loc>https://dubaivizehatti.com/ticari-ileti-onami</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/dubai-vizesi/30-gun-cok-giris</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/dubai-vizesi/60-gun-cok-giris</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/dubai-vizesi/30-gun-cocuk-vizesi</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/dubai-vizesi/60-gun-cocuk-vizesi</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/dubai-vizesi/30-gun-vize-uzatma</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/dubai-vizesi/transit-vize</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/gelismeler/dubai-vizesi-hangi-emirliklerde-gecerli</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.6</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/gelismeler/dubai-vize-pasaport-suresi</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.6</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/gelismeler/dubai-seyahat-sigortasi</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.6</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/gelismeler/dubai-vize-uzatma</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.6</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/gelismeler/dubai-vize-reddi</loc>
-        <lastmod>2026-08-31</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.6</priority>
-    </url>
-    <url>
-        <loc>https://dubaivizeonline.com/esim</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/dubai-vizesi/30-gun-tek-giris</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://dubaivizeonline.com/seyahat-sigortasi</loc>
-        <lastmod>2026-08-31</lastmod>
+        <loc>https://dubaivizehatti.com/dubai-vizesi/60-gun-tek-giris</loc>
+        <lastmod>2026-06-06</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/dubai-vizesi/30-gun-cok-giris</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/dubai-vizesi/60-gun-cok-giris</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/dubai-vizesi/30-gun-cocuk-vizesi</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/dubai-vizesi/60-gun-cocuk-vizesi</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/dubai-vizesi/30-gun-vize-uzatma</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/dubai-vizesi/transit-vize</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/gelismeler/dubai-vizesi-hangi-emirliklerde-gecerli</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/gelismeler/dubai-vize-pasaport-suresi</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/gelismeler/dubai-seyahat-sigortasi</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/gelismeler/dubai-vize-uzatma</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://dubaivizehatti.com/gelismeler/dubai-vize-reddi</loc>
+        <lastmod>2026-06-06</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
     </url>
 </urlset>

@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { IMAGES, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { ImportantNotice } from "../components/ImportantNotice";
+import { ContentByline } from "../components/ContentByline";
 import { PhotoGuide } from "../components/PhotoGuide";
 import { VisaSpecimen } from "../components/VisaSpecimen";
 import { Button } from "../components/ui/button";
@@ -135,6 +136,12 @@ export default function Documents() {
             <VisaSpecimen />
 
             <ImportantNotice />
+
+            <section className="pb-14">
+                <div className="container-page">
+                    <ContentByline />
+                </div>
+            </section>
         </div>
     );
 }

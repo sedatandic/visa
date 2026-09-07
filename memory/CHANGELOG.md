@@ -913,3 +913,70 @@ takip 404 mesajları aynı, `pytest tests/test_emailer.py` 7/7.
 Bakım: eski `tests/test_bundles.py` ve `test_iteration_101` beklentileri `pack_family`
 eklendiğinden güncellendi (güvenlikle ilgisiz, bayat testler).
 
+
+## 2026-06-06 · Rakip analizi (dubaivize.com) + "Paket 1 – Güven & Fiyat"
+Kullanıcı isteği: "https://dubaivize.com/ incele ve bizim sitede olan eksikleri tespit et".
+Rakip sitesi (Birtek Turizm, TÜRSAB 6169) tarandı: `/`, `/dubai-vize-ucreti`,
+`/vize-tipleri/dubai-vizesi-30-gun-tek-giris`, `/basvuru-rehberi`, `/iletisim`.
+Fiyatları bizden yüksek ($130 vs $105) ve 7 belge istiyorlar (uçak bileti + otel + kimlik
+ön/arka + pasaport kapağı dahil); bizim "2 belge" avantajımız korunuyor.
+
+Tespit edilen eksikler (kullanıcıya sunuldu): TÜRSAB no "0000", yasal acente uyarısı,
+ödeme güven şeridi, içerik künyeleri, `/dubai-vize-ucreti` fiyat sayfası, `/basvuru-rehberi`,
+vize detayında 58 gün giriş kuralı + kimler başvuramaz + süre aşımı cezası + mobil sabit CTA,
+belge bazlı örnek görseller, yabancı uyruklu başvuru (Türkiye'de oturumlu expat pazarı),
+SMS bildirimi, iletişim formunda captcha, KVKK veri silme akışı.
+
+Kullanıcı kararları: **Paket 1** seçildi; sigorta konumlandırması "zorunlu değil ama şiddetle
+öneriyoruz" olarak KALACAK (yasal risk almıyoruz); SMS şimdilik YOK (WhatsApp botu yeterli);
+TÜRSAB/vergi bilgileri sorusunu atladı → numaralar sitede tamamen gizlendi.
+
+Yapılanlar:
+- `content.py` COMPANY: `tursab_no`, `tax_no`, `mersis_no`, `trade_registry_no` varsayılanları
+  "0000..." yerine **boş string**. `routes_public._agency_info`: "Vergi Dairesi / No" satırı
+  yalnız ikisi de doluysa gösteriliyor (önceden yalnız daire adı kalıyordu).
+  `TursabBadge` boş numarada zaten gizleniyor → sitede hiçbir yerde "Belge No: 0000" yok.
+- `lib/site.js`: `AGENCY_DISCLAIMER` ("Yetkili özel seyahat acentesiyiz; resmî bir devlet
+  kurumu, konsolosluk ya da BAE göç idaresi değiliz..."), `CONTENT_AUTHOR`,
+  `CONTENT_UPDATED_AT` (= "Haziran 2026", içerik güncellendikçe elle artırılır),
+  `OFFICIAL_SOURCES` (gdrfad.gov.ae, icp.gov.ae).
+- Yeni `components/PaymentTrustStrip.jsx`: 3D Secure + Visa/Mastercard/troy amblemleri
+  (inline SVG, marka dosyası indirilmedi) + Havale/EFT + "kart bilgileriniz saklanmaz".
+  `/dubai-vize-ucreti` ve `/vize-tipleri` sayfalarında.
+- Yeni `components/ContentByline.jsx`: hazırlayan + son güncelleme + resmî kaynak linkleri +
+  yasal uyarı. `/dubai-vize-ucreti`, `/gerekli-belgeler`, `/sss`, `/vize-tipleri`,
+  `/dubai-vizesi/:slug` sayfalarında (E-E-A-T sinyali).
+- `Footer.jsx`: yeni `footer-fees-link` ve alt bilgide `footer-disclaimer` bloğu.
+- Yeni sayfa **`/dubai-vize-ucreti`** (`pages/VisaFees.jsx`, `Navbar` PRIMARY_LINKS'te
+  "Vize Ücretleri"): 4 grup halinde fiyat tabloları (tek/çok giriş, çocuk, uzatma) TRY + ≈USD,
+  satır başına "Başvur" → `/basvuru?vize=<id>` (ön seçim çalışıyor), aile indirimi notu,
+  ekspres/anında ekspres kartları, sigorta-eSIM-tur çapraz satış "…'den başlayan" fiyatları
+  (`/api/products` içinden en ucuzu), ücrete dahil/dahil olmayanlar, ücreti belirleyen
+  faktörler, ödeme & güvenlik (fiyat kilidi vurgusu + banka hesapları), iptal-iade özeti,
+  7 soruluk SSS + **FAQPage JSON-LD**, içerik künyesi, kapanış CTA.
+  Başlangıç fiyatı **yetişkin** vizesinden hesaplanır (çocuk fiyatı yanıltıcı olurdu);
+  `popular` rozeti çocuk satırlarında gizlendi.
+- `public/sitemap.xml` ve `robots.txt`: alan adı **dubaivizeonline.com → dubaivizehatti.com**
+  (eski domain SEO'yu bölüyordu), `/dubai-vize-ucreti`, `/dubai-turlari`, `/basvuru`,
+  `/gizlilik-politikasi`, `/ticari-ileti-onami` eklendi; `/hesabim` ve `/sepet` disallow.
+- Doğrulama: `testing_agent` iteration_104 → frontend %100, backend spot check %100
+  (fiyatlar `/api/visa-types` ile birebir, JSON-LD geçerli, placeholder yok, 390px mobil düzen
+  bozulmuyor, konsol hatası yok).
+
+## 2026-06-06 · Başvuru e-postaları neden gelmiyordu (KÖK NEDEN BULUNDU, kullanıcı aksiyonu bekliyor)
+Şikayet: "basvurular emaille bana gelmiyor".
+Teşhis zinciri: `email_outbox` kayıtları `status=sent` görünüyordu → Resend API
+`GET /emails/{id}` ile teslim durumu sorgulandı → `last_event=**suppressed**` →
+suppression listesi çekildi: `info@dubaivizehatti.com`, `origin=bounce`, 2026-09-06 16:13 UTC.
+Adres listeden silindi, test postası atıldı → **anında `bounced`**;
+`bounce.diagnosticCode`: `550-5.1.1 The email account that you tried to reach does not exist`
+(gsmtp). DNS kontrolü: MX → SMTP.GOOGLE.com, DKIM `resend._domainkey` var, SPF/DMARC var,
+Resend'de domain `verified` → **eksik olan tek şey Google Workspace'te info@ kutusunun kendisi.**
+Her bounce sonrası Resend adresi tekrar suppression listesine ekliyor → tüm bildirimler sessiz
+kayboluyor. İkincil bulgu: son 24 saatte 76 gönderim "daily email sending quota" hatası
+(Resend ücretsiz plan 100/gün) — testler yüzünden dolmuş, gerçek trafikte de risk.
+Çözüm kullanıcıda: (a) `info@dubaivizehatti.com` kutusunu Google Workspace'te açmak veya
+(b) `ADMIN_EMAIL`'i gerçekten okunan bir adrese çevirmek. Kullanıcı henüz yanıtlamadı.
+Öneri (henüz yapılmadı): gönderim sonrası Resend `last_event` yoklayıp Admin → E-postalar
+ekranında "teslim edilemedi" uyarısı göstermek.
+
