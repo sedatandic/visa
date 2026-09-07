@@ -839,6 +839,59 @@ async def clear_session() -> dict:
     return {"ok": True}
 
 
+ROW_TEXT_JS = """(ref) => {
+    const needle = String(ref).toLowerCase();
+    const rows = Array.from(document.querySelectorAll('tr,li,div'));
+    const hit = rows.find(el => el.offsetParent
+        && (el.innerText || '').toLowerCase().includes(needle)
+        && (el.innerText || '').length < 400
+        && !el.querySelector('table'));
+    return hit ? (hit.innerText || '').replace(/\\s+/g, ' ').trim() : '';
+}"""
+
+
+async def _status_search(page, mapping: dict, ref) -> None:
+    """Durum sayfasindaki arama alanina referansi yazip sorgular."""
+    if not mapping.get("status_search_selector"):
+        return
+    try:
+        await page.locator(mapping["status_search_selector"]).first.fill(str(ref))
+        submit = mapping.get("status_submit_selector")
+        if not (submit and await _click_first(page, [submit])):
+            await page.keyboard.press("Enter")
+        await page.wait_for_load_state("domcontentloaded", timeout=30000)
+        await asyncio.sleep(2.0)
+    except Exception:
+        pass
+
+
+async def _read_status_text(page, mapping: dict, ref) -> str:
+    """Durum metnini sirasiyla eslenen secici, tablo satiri ve sayfa govdesinden okur."""
+    if mapping.get("status_result_selector"):
+        selector = (
+            mapping["status_result_selector"].replace("{ref}", str(ref)).replace("{reference}", str(ref))
+        )
+        try:
+            loc = page.locator(selector).first
+            if await loc.count() > 0:
+                text = (await loc.inner_text()).strip()
+                if text:
+                    return text
+        except Exception:
+            pass
+    try:
+        text = await page.evaluate(ROW_TEXT_JS, str(ref))
+        if text:
+            return text
+    except Exception:
+        pass
+    body = await page.inner_text("body")
+    for line in body.splitlines():
+        if str(ref).lower() in line.lower():
+            return line.strip()
+    return ""
+
+
 async def check_status(app_doc: dict) -> dict:
     """Zami portalinda basvurunun guncel durumunu okur.
 
@@ -879,53 +932,8 @@ async def check_status(app_doc: dict) -> dict:
         used_ref = ""
         for ref in candidates:
             used_ref = ref
-            if mapping.get("status_search_selector"):
-                try:
-                    box = page.locator(mapping["status_search_selector"]).first
-                    await box.fill(str(ref))
-                    if mapping.get("status_submit_selector"):
-                        if not await _click_first(page, [mapping["status_submit_selector"]]):
-                            await page.keyboard.press("Enter")
-                    else:
-                        await page.keyboard.press("Enter")
-                    await page.wait_for_load_state("domcontentloaded", timeout=30000)
-                    await asyncio.sleep(2.0)
-                except Exception:
-                    pass
-
-            if mapping.get("status_result_selector"):
-                selector = (
-                    mapping["status_result_selector"].replace("{ref}", str(ref)).replace("{reference}", str(ref))
-                )
-                try:
-                    loc = page.locator(selector).first
-                    if await loc.count() > 0:
-                        raw_text = (await loc.inner_text()).strip()
-                except Exception:
-                    raw_text = ""
-            if not raw_text:
-                # Referansi iceren tablo satirinin tamamini al (durum sutunu dahil)
-                try:
-                    raw_text = await page.evaluate(
-                        """(ref) => {
-                            const needle = String(ref).toLowerCase();
-                            const rows = Array.from(document.querySelectorAll('tr,li,div'));
-                            const hit = rows.find(el => el.offsetParent
-                                && (el.innerText || '').toLowerCase().includes(needle)
-                                && (el.innerText || '').length < 400
-                                && !el.querySelector('table'));
-                            return hit ? (hit.innerText || '').replace(/\\s+/g, ' ').trim() : '';
-                        }""",
-                        str(ref),
-                    )
-                except Exception:
-                    raw_text = ""
-            if not raw_text:
-                body = await page.inner_text("body")
-                for line in body.splitlines():
-                    if str(ref).lower() in line.lower():
-                        raw_text = line.strip()
-                        break
+            await _status_search(page, mapping, ref)
+            raw_text = await _read_status_text(page, mapping, ref)
             if raw_text:
                 break
 
@@ -1012,6 +1020,135 @@ async def _upload_documents(page, app_doc: dict, mapping: dict) -> dict:
     return result
 
 
+VALIDATION_TEXT_JS = """() => Array.from(document.querySelectorAll('div,span,p,li'))
+    .filter(el => el.offsetParent && /msg|error|alert|warn|invalid|required/i.test((el.className || '') + ' ' + (el.id || '')))
+    .map(el => (el.innerText || '').trim())
+    .filter(t => t && t.length < 240)
+    .slice(0, 8).join(' | ')"""
+
+
+async def _collect_manual_pending(page) -> list:
+    """Portalda zorunlu olup bizim doldurmadigimiz alanlari raporlar."""
+    pending = []
+    for item in MANUAL_FIELDS:
+        try:
+            loc = page.locator(item["selector"]).first
+            if await loc.count() == 0:
+                continue
+            if not ((await loc.input_value()) or "").strip():
+                pending.append(item["label"])
+        except Exception:
+            continue
+    return pending
+
+
+async def _run_portal_validation(page, mapping: dict, set_value, skipped: list, values: dict) -> tuple:
+    """Portal dogrulamasini tetikler, kilidi acilan alanlari tekrar dener; (mesaj, ekran) doner."""
+    if not mapping.get("validate_selector"):
+        return "", ""
+    try:
+        if not await _click_first(page, [mapping["validate_selector"]]):
+            return "", ""
+        await asyncio.sleep(2.5)
+        retry = [s for s in skipped if s in values]
+        if retry:
+            skipped.clear()
+            for selector in retry:
+                await set_value(selector, values[selector])
+            await _click_first(page, [mapping["validate_selector"]])
+            await asyncio.sleep(2.0)
+        return await page.evaluate(VALIDATION_TEXT_JS), await _shot(page)
+    except Exception as exc:
+        logger.warning("zami validate click failed: %s", exc)
+        return "", ""
+
+
+async def _submit_form(page, mapping: dict) -> dict:
+    """Gonder butonuna basar ve portalin verdigi basvuru numarasini yakalar."""
+    candidates = [s for s in [mapping.get("submit_selector") or "", *SUBMIT_FALLBACK_SELECTORS] if s]
+    if not await _click_first(page, candidates):
+        raise RuntimeError("Gönder/Kaydet butonu görünür durumda bulunamadı.")
+    await page.wait_for_load_state("domcontentloaded", timeout=45000)
+    await asyncio.sleep(2.5)
+    reference = ""
+    try:
+        # Portalin verdigi basvuru numarasi ("Visa Application VS-66059 inserted.")
+        match = re.search(r"\b(VS-?\d{3,})", await page.inner_text("body"))
+        if match:
+            reference = match.group(1).replace("VS", "VS-").replace("--", "-")
+    except Exception:
+        pass
+    return {"reference": reference, "screenshot": await _shot(page)}
+
+
+async def _is_editable(loc) -> bool:
+    """Alan portal tarafindan kilitli/gizli degil mi? (kontrol hata verirse doldurmayi dener)"""
+    try:
+        return not await loc.is_disabled() and await loc.is_visible()
+    except Exception:
+        return True
+
+
+async def _select_option(loc, value: str) -> bool:
+    """Select alaninda once etiketi, olmazsa degeri secer."""
+    try:
+        await loc.select_option(label=value)
+        return True
+    except Exception:
+        try:
+            await loc.select_option(value=value)
+            return True
+        except Exception:
+            return False
+
+
+async def _check_radio_group(page, selector: str, value: str) -> bool:
+    """Ayni isimli radiolar icinde degeri/etiketi eslesen secenegi isaretler."""
+    target = str(value).strip().lower()
+    try:
+        group = page.locator(selector)
+        for index in range(await group.count()):
+            item = group.nth(index)
+            raw_val = ((await item.evaluate("el => el.value || ''")) or "").strip()
+            label_txt = (
+                await item.evaluate(
+                    "el => (el.closest('label')?.innerText || el.parentElement?.innerText || '')"
+                )
+            ) or ""
+            if target in (raw_val.lower(), label_txt.strip().lower()) or (
+                target and target in label_txt.lower()
+            ):
+                await item.check(timeout=8000)
+                return True
+        return False
+    except Exception:
+        return False
+
+
+async def _check_box(loc, value: str) -> bool:
+    if str(value).strip().lower() not in {"1", "true", "yes", "evet", "on"}:
+        return False
+    await loc.check(timeout=8000)
+    return True
+
+
+async def _fill_text(page, loc, selector: str, value: str) -> bool:
+    """Metin alanini doldurur; jQuery UI autocomplete alanlarinda oneriden secer."""
+    class_name = ((await loc.evaluate("el => el.className || ''")) or "").lower()
+    if "ui-autocomplete-input" in class_name:
+        result = await page.evaluate(AUTOCOMPLETE_JS, {"selector": selector, "wanted": str(value)})
+        return bool((result or {}).get("ok"))
+    try:
+        await loc.fill(str(value), timeout=8000)
+    except Exception:
+        return False
+    try:
+        await loc.dispatch_event("input")
+    except Exception:
+        pass
+    return True
+
+
 async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, actor: str = "") -> dict:
     """Saklanan oturumla Zami basvuru formunu doldurur (ve dry_run kapaliysa gonderir)."""
     mapping = await get_mapping()
@@ -1043,6 +1180,7 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
             }
 
         async def set_value(selector: str, value: str):
+            """Eslenen alani tipine gore doldurur; sonucu filled/missing listelerine yazar."""
             if value in (None, ""):
                 return False
             values_by_selector[selector] = str(value)
@@ -1050,81 +1188,26 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
             if await loc.count() == 0:
                 missing.append(selector)
                 return False
-            try:
-                if await loc.is_disabled():
-                    # Portal bu alani kendisi yonetiyor (ornegin Medeni Hal, Group Membership)
-                    skipped_disabled.append(selector)
-                    return False
-                if not await loc.is_visible():
-                    # Alan o an gizli (katlanmis bolum vb.) - beklemeden atla
-                    skipped_disabled.append(selector)
-                    return False
-            except Exception:
-                pass
+            if not await _is_editable(loc):
+                # Portal bu alani kendisi yonetiyor ya da alan o an gizli - beklemeden atla
+                skipped_disabled.append(selector)
+                return False
+
             tag = (await loc.evaluate("el => el.tagName.toLowerCase()")) or ""
             input_type = ((await loc.evaluate("el => el.type || ''")) or "").lower()
             if tag == "select":
-                try:
-                    await loc.select_option(label=value)
-                except Exception:
-                    try:
-                        await loc.select_option(value=value)
-                    except Exception:
-                        missing.append(selector)
-                        return False
+                ok = await _select_option(loc, value)
             elif input_type == "radio":
-                # Ayni isimli radiolar icinde etiketi/degeri eslesen secilir
-                try:
-                    group = page.locator(selector)
-                    count = await group.count()
-                    chosen = False
-                    for i in range(count):
-                        item = group.nth(i)
-                        raw_val = ((await item.evaluate("el => el.value || ''")) or "").strip()
-                        label_txt = (
-                            await item.evaluate(
-                                "el => (el.closest('label')?.innerText || el.parentElement?.innerText || '')"
-                            )
-                        ) or ""
-                        target = str(value).strip().lower()
-                        if target in (raw_val.lower(), label_txt.strip().lower()) or (
-                            target and target in label_txt.lower()
-                        ):
-                            await item.check(timeout=8000)
-                            chosen = True
-                            break
-                    if not chosen:
-                        missing.append(selector)
-                        return False
-                except Exception:
-                    missing.append(selector)
-                    return False
+                ok = await _check_radio_group(page, selector, value)
             elif input_type == "checkbox":
-                truthy = str(value).strip().lower() in {"1", "true", "yes", "evet", "on"}
-                if truthy:
-                    await loc.check(timeout=8000)
-                else:
-                    return False
+                ok = await _check_box(loc, value)
             else:
-                class_name = ((await loc.evaluate("el => el.className || ''")) or "").lower()
-                if "ui-autocomplete-input" in class_name:
-                    # jQuery UI autocomplete: deger yazilip oneri listesinden secilmeli
-                    result = await page.evaluate(
-                        AUTOCOMPLETE_JS, {"selector": selector, "wanted": str(value)}
-                    )
-                    if not (result or {}).get("ok"):
-                        missing.append(selector)
-                        return False
-                else:
-                    try:
-                        await loc.fill(str(value), timeout=8000)
-                    except Exception:
-                        missing.append(selector)
-                        return False
-                    try:
-                        await loc.dispatch_event("input")
-                    except Exception:
-                        pass
+                ok = await _fill_text(page, loc, selector, value)
+
+            if not ok:
+                if input_type != "checkbox":  # kapatilmis checkbox eksik alan sayilmaz
+                    missing.append(selector)
+                return False
             filled.append(selector)
             return True
 
@@ -1141,18 +1224,7 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
                 await set_value(selector, traveler.get(our_key, ""))
 
         screenshot = await _shot(page)
-        # Portalda zorunlu olup bizim doldurmadigimiz alanlari raporla
-        manual_pending = []
-        for item in MANUAL_FIELDS:
-            try:
-                loc = page.locator(item["selector"]).first
-                if await loc.count() == 0:
-                    continue
-                value = ((await loc.input_value()) or "").strip()
-                if not value:
-                    manual_pending.append(item["label"])
-            except Exception:
-                continue
+        manual_pending = await _collect_manual_pending(page)
 
         # Belgeleri portaldaki gorsel alanlarina yukle (pasaport + vesikalik)
         upload_result = await _upload_documents(page, app_doc, mapping)
@@ -1169,49 +1241,20 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
 
         # Portalin kendi dogrulamasini calistir: eksik zorunlu alanlari acar.
         # Ardindan ilk gecişte kilitli olan alanlar tekrar denenir.
-        validation_text = ""
-        if mapping.get("validate_selector"):
-            try:
-                if await _click_first(page, [mapping["validate_selector"]]):
-                    await asyncio.sleep(2.5)
-                    retry = [s for s in skipped_disabled if s in values_by_selector]
-                    if retry:
-                        skipped_disabled.clear()
-                        for selector in retry:
-                            await set_value(selector, values_by_selector[selector])
-                        await _click_first(page, [mapping["validate_selector"]])
-                        await asyncio.sleep(2.0)
-                    validation_text = await page.evaluate(
-                        """() => Array.from(document.querySelectorAll('div,span,p,li'))
-                            .filter(el => el.offsetParent && /msg|error|alert|warn|invalid|required/i.test((el.className || '') + ' ' + (el.id || '')))
-                            .map(el => (el.innerText || '').trim())
-                            .filter(t => t && t.length < 240)
-                            .slice(0, 8).join(' | ')"""
-                    )
-                    screenshot = await _shot(page)
-            except Exception as exc:
-                logger.warning("zami validate click failed: %s", exc)
+        validation_text, validation_shot = await _run_portal_validation(
+            page, mapping, set_value, skipped_disabled, values_by_selector
+        )
+        if validation_shot:
+            screenshot = validation_shot
 
         submitted = False
         zami_reference = ""
         if not dry_run:
-            candidates = [mapping.get("submit_selector") or "", *SUBMIT_FALLBACK_SELECTORS]
             try:
-                clicked = await _click_first(page, [s for s in candidates if s])
-                if not clicked:
-                    raise RuntimeError("Gönder/Kaydet butonu görünür durumda bulunamadı.")
-                await page.wait_for_load_state("domcontentloaded", timeout=45000)
-                await asyncio.sleep(2.5)
+                result = await _submit_form(page, mapping)
                 submitted = True
-                # Portalin verdigi basvuru numarasini yakala ("Visa Application VS-66059 inserted.")
-                try:
-                    body_text = await page.inner_text("body")
-                    match = re.search(r"\b(VS-?\d{3,})", body_text)
-                    if match:
-                        zami_reference = match.group(1).replace("VS", "VS-").replace("--", "-")
-                except Exception:
-                    pass
-                screenshot = await _shot(page)
+                zami_reference = result["reference"]
+                screenshot = result["screenshot"]
             except Exception as exc:
                 return {
                     "ok": False,

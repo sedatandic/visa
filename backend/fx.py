@@ -117,6 +117,17 @@ def expected_bulletin_date(now: datetime | None = None) -> date:
     return day
 
 
+def _parse_source(source: str, url: str, res: httpx.Response) -> float | None:
+    """Kaynak tipine gore HTTP yanitini USD/TRY kuruna cevirir."""
+    if url == TCMB_URL:
+        return parse_tcmb_xml(res.text)
+    if source == "doviz.com":
+        return parse_doviz_html(res.text)
+    if url == YAHOO_URL:
+        return parse_yahoo_json(res.json())
+    return _extract_rate(source, res.json())
+
+
 async def fetch_live_rate() -> dict | None:
     """Canli kuru cekmeye calisir; basarisizsa None doner."""
     async with httpx.AsyncClient(
@@ -126,19 +137,14 @@ async def fetch_live_rate() -> dict | None:
             try:
                 res = await client.get(url)
                 res.raise_for_status()
-                if url == TCMB_URL:
-                    rate = parse_tcmb_xml(res.text)
-                elif source == "doviz.com":
-                    rate = parse_doviz_html(res.text)
-                elif url == YAHOO_URL:
-                    rate = parse_yahoo_json(res.json())
-                else:
-                    rate = _extract_rate(source, res.json())
-                if rate and rate > 0:
-                    bulletin = parse_tcmb_date(res.text) if url == TCMB_URL else None
-                    return {"rate": rate, "source": source, "bulletin_date": bulletin or ""}
+                rate = _parse_source(source, url, res)
             except Exception as exc:
                 logger.warning("fx fetch failed (%s): %s", source, exc)
+                continue
+            if not rate or rate <= 0:
+                continue
+            bulletin = parse_tcmb_date(res.text) if url == TCMB_URL else ""
+            return {"rate": rate, "source": source, "bulletin_date": bulletin or ""}
     return None
 
 

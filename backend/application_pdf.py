@@ -266,32 +266,52 @@ def _traveler_extra_pairs(app_doc: dict) -> list:
     ]
 
 
+def _discount_row(label: str, amount: float, rate: float | None, currency: str) -> tuple:
+    pct = int(round((rate or 0) * 100))
+    return (f"{label} (%{pct})", "- " + money(amount, currency))
+
+
+def _extras_rows(pricing: dict, currency: str) -> list:
+    """Ek hizmet ve magaza kalemlerini satirlara cevirir."""
+    rows = [
+        (f"{addon['name']} x{addon['quantity']}", money(addon["total"], currency))
+        for addon in pricing.get("addons") or []
+    ]
+    for item in pricing.get("store_items") or []:
+        label = f"{item['name']} x{item['quantity']}"
+        if item.get("scheduled_date"):
+            slot = f" {item['scheduled_time']}" if item.get("scheduled_time") else ""
+            label += f" ({_date(item['scheduled_date'])}{slot})"
+        rows.append((label, money(item["total"], currency)))
+    return rows
+
+
 def _pricing_rows(app_doc: dict) -> list:
-    p = app_doc.get("pricing") or {}
-    currency = p.get("currency") or app_doc.get("currency") or "TRY"
+    pricing = app_doc.get("pricing") or {}
+    currency = pricing.get("currency") or app_doc.get("currency") or "TRY"
     rows = []
-    if p:
-        rows.append(("Vize bedelleri", money(p.get("subtotal", 0), currency)))
-        if p.get("family_discount"):
-            pct = int(round((p.get("family_discount_rate") or 0) * 100))
-            rows.append((f"Aile indirimi (%{pct})", "- " + money(p["family_discount"], currency)))
-        for addon in p.get("addons") or []:
+    if pricing:
+        rows.append(("Vize bedelleri", money(pricing.get("subtotal", 0), currency)))
+        if pricing.get("family_discount"):
             rows.append(
-                (f"{addon['name']} x{addon['quantity']}", money(addon["total"], currency))
+                _discount_row(
+                    "Aile indirimi",
+                    pricing["family_discount"],
+                    pricing.get("family_discount_rate"),
+                    currency,
+                )
             )
-        for item in p.get("store_items") or []:
-            label = f"{item['name']} x{item['quantity']}"
-            if item.get("scheduled_date"):
-                slot = f" {item['scheduled_time']}" if item.get("scheduled_time") else ""
-                label += f" ({_date(item['scheduled_date'])}{slot})"
-            rows.append((label, money(item["total"], currency)))
-        if p.get("bundle_discount"):
-            pct = int(round((p.get("bundle_discount_rate") or 0) * 100))
-            title = p.get("bundle_discount_title") or "Paket indirimi"
-            rows.append((f"{title} (%{pct})", "- " + money(p["bundle_discount"], currency)))
-    rows.append(
-        ("TOPLAM", money(p.get("total", app_doc.get("price", 0)) or 0, currency))
-    )
+        rows += _extras_rows(pricing, currency)
+        if pricing.get("bundle_discount"):
+            rows.append(
+                _discount_row(
+                    pricing.get("bundle_discount_title") or "Paket indirimi",
+                    pricing["bundle_discount"],
+                    pricing.get("bundle_discount_rate"),
+                    currency,
+                )
+            )
+    rows.append(("TOPLAM", money(pricing.get("total", app_doc.get("price", 0)) or 0, currency)))
     return rows
 
 

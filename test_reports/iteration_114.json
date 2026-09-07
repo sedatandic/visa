@@ -1,0 +1,20 @@
+{
+  "summary": "Refactor-only regression validation after fx.py / application_pdf.py / zami_rpa.py changes. Ran full pytest suite serially (-n 0): 302 passed, 3 skipped, 0 failed (~173s). FX endpoint returns TCMB döviz satış / 2026-09-07 / 49.4023 (48.4336 * 1.02). Visa 30 Günlük Tek Girişli price still 5190 TRY. Zami admin endpoints respond healthily (config/logs/readiness 200, check-status 422 validation not 500). No ImportError/NameError in backend.err.log. Ruff F/E9 clean. Admin dashboard UI: welcome card, 4 metrics, 4 pending chips and all 6 quick actions render; 'Ödeme bekleyenler' shortcut switches payment filter to 'Ödeme bekliyor'. Application detail page loads at /admin/basvuru/:id and 'Başvuru formu (PDF)' button (data-testid=admin-download-form-button) downloads a valid 120KB PDF. Existing tests test_iteration_112_extras.py verify multi-traveler PDF price section (family discount, insurance, eSIM, tour bundle) and email attachments (form + 3 passports + 3 photos + ticket + hotel).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_fx_tcmb.py", "/app/backend/tests/test_iteration_112_application_form.py", "/app/backend/tests/test_iteration_112_extras.py", "/app/backend/tests/test_iteration_113_admin_today.py", "/app/test_reports/pytest/iteration_114.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "fill_application cyclomatic complexity remains 27 (mccabe 31) - accepted per request (linear orchestration).",
+    "check_status mccabe complexity = 12 (radon 16); set_value closure < 10 - meets refactor goals.",
+    "zami_rpa.py is ~1200+ lines; consider splitting into submodules (portal_helpers, form_fill, status_check) for maintainability in a future iteration."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin token via /app/backend/admin_test_token.py; DB has 1 real app DV-BJ930600 (id 44a24c4e-089c-43d8-a271-7a910d4a2937, Sedat Andic) - preserved.",
+  "seed_data_creation": "None. No test data created - pytest fixtures handle their own cleanup.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Route path for admin application detail is /admin/basvuru/:id (NOT /admin/basvurular/:id which is 404). Application collection name is `visa_applications`. Quick-action testids are admin-welcome-action-{payment,documents,whatsapp,insurance,orders,visitors}; payment filter testid is admin-payment-filter-select. Pytest suite (302 tests) fully green baseline.",
+  "rca of the issue": "N/A - no regressions found."
+}

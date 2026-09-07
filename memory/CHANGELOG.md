@@ -1186,7 +1186,37 @@ ve tüm ayar/içerik koleksiyonları korunur.
 - NOT: Regresyon suite'i (`test_iteration_105`, `test_travel_rules` vb.) çalıştırıldığında yeni
   TEST kayıtları oluşur; panel temiz kalsın diye test sonrası betik tekrar çalıştırılmalı.
 
+## 2026-09-07 (4) · Kod kalitesi raporu: doğrulama + karmaşıklık azaltma
+Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğrulandı:
+- **YANLIŞ POZİTİF · "exec() kritik güvenlik açığı" (`zami_rpa.py:90`)**: satır
+  `asyncio.create_subprocess_exec(sys.executable, "-m", "playwright", "install", "chromium")`
+  — sabit argv, `shell=True` yok, kullanıcı girdisi yok. Kodda hiçbir `exec()`/`eval()` yok.
+- **YANLIŞ POZİTİF · "12 tanımsız değişken"**: `ruff --select F` (F821 dahil) ve
+  `pylint E0601/E0602/E0606` sıfır bulgu veriyor.
+- **YANLIŞ POZİTİF · "151 yerde `==` yerine `is`"**: raporun işaret ettiği tüm satırlar
+  (`zami_rpa.py:150,169,519,583,623`, `zami.py:151,417,793`, `whatsapp.py:119,332,337`)
+  `is None` karşılaştırması; `ruff --select F632,E711,E712` temiz. Değişiklik yapılmadı.
+- **GEÇERLİ · Karmaşıklık** (davranış korunarak sadeleştirildi):
+  - `fx.fetch_live_rate`: yeni `_parse_source()` ile kaynak dağıtımı ayrıldı, guard clause'larla
+    iç içe yapı düzleştirildi.
+  - `application_pdf._pricing_rows`: `_discount_row()` + `_extras_rows()` olarak bölündü.
+  - `zami_rpa.check_status` (22 → <12): `_status_search()`, `_read_status_text()` +
+    `ROW_TEXT_JS` sabiti.
+  - `zami_rpa.set_value` (20 → <10): `_is_editable`, `_select_option`, `_check_radio_group`,
+    `_check_box`, `_fill_text` modül seviyesine çıkarıldı (checkbox kapalıysa "eksik alan"
+    sayılmama davranışı korundu).
+  - `zami_rpa.fill_application` (49 → 27): `_collect_manual_pending()`,
+    `_run_portal_validation()`, `_submit_form()` + `VALIDATION_TEXT_JS`. Kalan 27, doğrusal
+    akış (git → doldur → yükle → doğrula → gönder → logla) olduğu için kabul edildi.
+- **Yapılmayanlar (bilinçli)**: `emailer.daily_digest_html`/`send_email`,
+  `daily_digest._extras_breakdown` ve `backend_test.py` test fonksiyonlarının bölünmesi —
+  ruff/mccabe bunları 12'nin altında ölçüyor, çalışan ve testli kodda gereksiz churn.
+- Doğrulama: iteration_114 raporu → **302 passed / 3 skipped / 0 failed**, backend %100,
+  frontend %100, sıfır bulgu (FX TCMB 49,4023 · fiyatlar değişmedi · Zami uçları 200/422,
+  500 yok · panel karşılama kartı ve PDF indirme çalışıyor).
+
 ## 2026-09-07 (3) · Panel karşılama kartı (bugünün özeti + hızlı kısayollar)
+
 - **Backend** `daily_digest.today_overview()` (yeni): bugünün (Europe/Istanbul) başvuru/yolcu/
   sipariş sayısı, bugünkü tahsilat (`_revenue`), `_attention()` (eksik belge, havale onayı,
   terk edilmiş sepet) + yeni `policy_tasks` (bekleyen poliçe kesimi), `_upcoming_departures()`
