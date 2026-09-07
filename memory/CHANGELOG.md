@@ -1013,3 +1013,24 @@ Kullanıcı istekleri (onaylı seçenekler: tek sayfa birleştirme, otomatik dö
   sohbette render ediliyor, `/dubai-vize-ucreti` → `/vize-tipleri` yönleniyor, birleşik
   sayfada 7 bölüm test-id'si mevcut.
 
+
+### 2026-06-09 · Admin e-posta sorunu ÇÖZÜLDÜ + telefon maketi rötuşu
+- **Admin e-postası (P0, birden fazla oturum bekliyordu) çözüldü**: SMTP sondasıyla
+  doğrulandı — `smtp.google.com` artık `info@dubaivizehatti.com` için `250 2.1.5 OK`
+  dönüyor (uydurma adres hâlâ `550 5.1.1`), yani kullanıcı kutuyu açmış. Tek kalan engel
+  Resend'in **suppression** kaydıydı (06.09 20:26'daki hard bounce nedeniyle otomatik
+  eklenmişti) — `DELETE https://api.resend.com/suppressions/info@dubaivizehatti.com` ile
+  silindi. Doğrulama: doğrudan test postası `last_event: delivered`, ardından gerçek uygulama
+  akışı (`POST /api/contact` → `contact_message`) `email_outbox: sent` +
+  `Resend last_event: delivered`. Test kaydı DB'den silindi.
+  NOT: adres yeniden bounce/spam alırsa Resend tekrar suppress eder; aynı DELETE çağrısı yeterli.
+- **Telefon maketi (kullanıcı: "soldan sağa çok geniş, sağa doğru eğik olsun")**:
+  `WhatsAppPhoneMock` genişliği 368px → **304px**, çerçeve `border-[9px]` + köşeler 2.4rem,
+  gövde `motion.div` ile **6° sağa eğik** (`origin-bottom`), hover'da doğrulup hafif büyüyor
+  (rotate 0 + scale 1.015). Nokta kontrolleri ve etiket eğimden bağımsız, üst boşluk `mt-8`.
+
+- **Telefon boyu kısaltıldı (kullanıcı: "yukarıdan aşağıya çok uzun")**: sohbet alanı
+  `min-h` 452 → **330px**, pasaport görseli 136 → **100px**, dikey padding `py-2.5`;
+  4 senaryonun mesajları 5-6 kısa balona indirildi (uzun cümleler sadeleştirildi).
+  Ölçüm: senaryo yükseklikleri 622-690px arası (önce 736+), 304px genişlik + 6° eğim korunuyor.
+

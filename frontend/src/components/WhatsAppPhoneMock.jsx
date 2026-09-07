@@ -31,20 +31,12 @@ const SCENARIOS = [
         label: "Pasaport süresi",
         clock: "09:41",
         messages: [
-            { from: "out", time: "09:41", text: "Merhaba, pasaportumun süresi 7 ay sonra doluyor. Vize alabilir miyim?" },
-            {
-                from: "in",
-                time: "09:41",
-                text: "Merhaba! Alabilirsiniz. Dönüş tarihinizden itibaren 6 aydan fazla geçerli olması yeterli, sizde sorun yok.",
-            },
-            { from: "out", time: "09:42", image: "/chat/passport-tr.jpg", text: "Pasaport sayfamı gönderiyorum" },
-            { from: "in", time: "09:42", text: "Fotoğraf net geldi, bilgileri sisteme ben giriyorum. Kaç kişi olacaksınız?" },
+            { from: "out", time: "09:41", text: "Pasaportum 7 ay sonra doluyor, vize alabilir miyim?" },
+            { from: "in", time: "09:41", text: "Alabilirsiniz. Dönüşünüzden itibaren 6 ay geçerlilik yeterli." },
+            { from: "out", time: "09:42", image: "/chat/passport-tr.jpg", text: "Pasaport sayfam" },
+            { from: "in", time: "09:42", text: "Net geldi, formu ben doldururum. Kaç kişisiniz?" },
             { from: "out", time: "09:43", text: "2 yetişkin 1 çocuk" },
-            {
-                from: "in",
-                time: "09:43",
-                text: "3 yolcudan itibaren aile indirimi otomatik düşüyor, çocuk harcı da daha düşük. Toplamı birazdan yazıyorum.",
-            },
+            { from: "in", time: "09:43", text: "3 yolcudan itibaren aile indirimi otomatik düşüyor." },
         ],
     },
     {
@@ -52,24 +44,11 @@ const SCENARIOS = [
         label: "Yarın uçuşum var",
         clock: "22:07",
         messages: [
-            { from: "out", time: "22:06", text: "Yarın akşam 21:00 uçuşum var, vize bu süre içinde çıkar mı?" },
-            {
-                from: "in",
-                time: "22:06",
-                text: "Merhaba! Anında ekspres kademesiyle aynı gün içinde sonuçlanıyor, uçuşunuza rahat yetişir.",
-            },
-            { from: "out", time: "22:07", text: "Şu an başvursam gece işleme girer mi?" },
-            {
-                from: "in",
-                time: "22:07",
-                text: "Evet, dosyayı bu gece açıp sabah ilk sırada iletiyoruz. Ekspres farkı kişi başı ekleniyor, toplamı ödeme ekranında kalem kalem göreceksiniz.",
-            },
-            { from: "out", time: "22:08", text: "Tamam, ne göndermem gerekiyor?" },
-            {
-                from: "in",
-                time: "22:08",
-                text: "Pasaportunuzun kimlik sayfası ve bir vesikalık yeterli. Başvurunuzu ben oluşturup onay linkini buraya atacağım.",
-            },
+            { from: "out", time: "22:06", text: "Yarın 21:00 uçuşum var, vize yetişir mi?" },
+            { from: "in", time: "22:06", text: "Anında ekspres ile aynı gün içinde sonuçlanıyor, rahat yetişir." },
+            { from: "out", time: "22:07", text: "Ne göndermem gerekiyor?" },
+            { from: "in", time: "22:07", text: "Pasaport kimlik sayfası ve bir vesikalık. Başvuruyu ben açıyorum." },
+            { from: "out", time: "22:08", text: "Harika, başlıyoruz" },
         ],
     },
     {
@@ -77,23 +56,14 @@ const SCENARIOS = [
         label: "Bilet & otel şartı",
         clock: "14:12",
         messages: [
-            { from: "out", time: "14:11", text: "Vize için uçak bileti ve otel rezervasyonu istiyorlar mı?" },
-            {
-                from: "in",
-                time: "14:11",
-                text: "İstemiyorlar. Başvuru için pasaportunuzun kimlik sayfası ve vesikalık fotoğrafınız yeterli.",
-            },
-            { from: "out", time: "14:12", text: "Bileti vizem çıktıktan sonra alsam olur mu?" },
-            {
-                from: "in",
-                time: "14:12",
-                text: "Çoğu müşterimiz öyle yapıyor: önce vize, sonra bilet. Vizeniz onaylanmadan rezervasyon yapmanıza gerek yok.",
-            },
+            { from: "out", time: "14:11", text: "Vize için uçak bileti ve otel istiyorlar mı?" },
+            { from: "in", time: "14:11", text: "İstemiyorlar. Pasaport sayfanız ve vesikalığınız yeterli." },
+            { from: "out", time: "14:12", text: "Bileti vize çıkınca alsam olur mu?" },
             {
                 from: "in",
                 time: "14:13",
-                link: { title: "Ödeme linkiniz hazır", sub: "30 gün tek girişli vize · 2 yolcu", url: "dubaivizehatti.com/odeme" },
-                text: "Fiyatı kilitledim, linkten ödeyip devam edebilirsiniz.",
+                link: { title: "Ödeme linkiniz hazır", sub: "30 gün tek giriş · 2 yolcu", url: "dubaivizehatti.com/odeme" },
+                text: "Olur. Fiyatı kilitledim, linkten devam edin.",
             },
             { from: "out", time: "14:15", text: "Ödemeyi yaptım, teşekkürler" },
         ],
@@ -103,20 +73,15 @@ const SCENARIOS = [
         label: "Vize teslimi",
         clock: "11:18",
         messages: [
-            { from: "out", time: "11:17", text: "Merhaba, DV-8421 numaralı başvurumun vizesi çıktı mı?" },
-            { from: "in", time: "11:18", text: "Onaylandı! PDF'i şimdi gönderiyorum, havaalanında telefondan göstermeniz yeterli." },
+            { from: "out", time: "11:17", text: "DV-8421 başvurumun vizesi çıktı mı?" },
+            { from: "in", time: "11:18", text: "Onaylandı! PDF'i gönderiyorum, telefondan göstermeniz yeterli." },
             {
                 from: "in",
                 time: "11:18",
                 doc: { name: "Vize_Onay_DV-8421.pdf", size: "212 KB · 1 sayfa" },
-                text: "Yazdırmanıza gerek yok, aslı bu belgedir.",
+                text: "Yazdırmanıza gerek yok.",
             },
-            { from: "out", time: "11:19", text: "Çok hızlı oldu, sağ olun" },
-            {
-                from: "in",
-                time: "11:20",
-                text: "Rica ederiz. Dubai'de internet için eSIM ve seyahat sigortasını da ekleyebiliriz; ikisi aynı sepette indirimli.",
-            },
+            { from: "in", time: "11:20", text: "İsterseniz eSIM ve sigortayı da ekleyeyim, ikisi sepette indirimli." },
             { from: "out", time: "11:21", text: "eSIM'i ekleyelim" },
         ],
     },
@@ -149,7 +114,7 @@ const Bubble = ({ m, i }) => {
                     <img
                         src={m.image}
                         alt="Sohbette paylaşılan pasaport kimlik sayfası (bilgiler bulanıklaştırıldı)"
-                        className="mb-1.5 h-[136px] w-full rounded-md object-cover object-center"
+                        className="mb-1.5 h-[100px] w-full rounded-md object-cover object-center"
                         loading="lazy"
                         data-testid="wa-bubble-passport-image"
                     />
@@ -201,7 +166,7 @@ export const WhatsAppPhoneMock = ({ href }) => {
 
     return (
         <div
-            className="relative mx-auto w-full max-w-[368px]"
+            className="relative mx-auto w-full max-w-[304px]"
             data-testid="wa-phone-mock"
             onMouseEnter={() => {
                 paused.current = true;
@@ -215,8 +180,13 @@ export const WhatsAppPhoneMock = ({ href }) => {
                 style={{ background: "radial-gradient(60% 50% at 50% 30%, hsl(var(--gold)/0.28), transparent 70%)" }}
                 aria-hidden="true"
             />
-            <div className="rounded-[2.6rem] border-[10px] border-[#0B1B2B] bg-[#0B1B2B] shadow-[0_30px_70px_-25px_rgba(11,27,43,0.65)]">
-                <div className="overflow-hidden rounded-[2rem] bg-[#EFEAE2]">
+            <motion.div
+                initial={{ rotate: 6 }}
+                whileHover={{ rotate: 0, scale: 1.015 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="origin-bottom rounded-[2.4rem] border-[9px] border-[#0B1B2B] bg-[#0B1B2B] shadow-[0_34px_70px_-26px_rgba(11,27,43,0.7)]"
+            >
+                <div className="overflow-hidden rounded-[1.85rem] bg-[#EFEAE2]">
                     {/* durum cubugu */}
                     <div className="flex items-center justify-between bg-[#075E54] px-5 pb-1 pt-2 text-[10px] font-semibold text-white/90">
                         <span data-testid="wa-phone-clock">{scenario.clock}</span>
@@ -250,7 +220,7 @@ export const WhatsAppPhoneMock = ({ href }) => {
 
                     {/* sohbet alani */}
                     <div
-                        className="min-h-[452px] px-3 py-3"
+                        className="min-h-[330px] px-3 py-2.5"
                         style={{
                             backgroundColor: "#EFEAE2",
                             backgroundImage:
@@ -300,9 +270,9 @@ export const WhatsAppPhoneMock = ({ href }) => {
                         </a>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
-            <div className="mt-4 flex items-center justify-center gap-2" data-testid="wa-chat-dots">
+            <div className="mt-8 flex items-center justify-center gap-2" data-testid="wa-chat-dots">
                 {SCENARIOS.map((s, i) => (
                     <button
                         key={s.id}
