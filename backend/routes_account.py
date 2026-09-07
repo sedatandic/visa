@@ -313,6 +313,61 @@ async def account_documents(email: str = Depends(require_customer)) -> dict:
     return {"items": items}
 
 
+@router.post("/account/documents/{document_id}/resend")
+async def account_document_resend(
+    document_id: str, request: Request, email: str = Depends(require_customer)
+) -> dict:
+    """Vize belgesini veya police PDF'ini musterinin kendi e-postasina tekrar gonderir."""
+    import re
+
+    import file_access
+    from db import insurance_tasks_col
+    from emailer import send_email, subject_with_ref, visa_ready_html
+    from insurance_tasks import policy_email_html
+
+    rate_check(
+        f"doc-resend:{email.lower()}",
+        6,
+        3600,
+        "Saatte en fazla 6 belge gönderimi yapılabilir. Lütfen daha sonra deneyin.",
+    )
+    pattern = {"$regex": f"^{re.escape(email)}$", "$options": "i"}
+    kind, _, raw_id = document_id.partition("-")
+    origin = str(request.base_url).rstrip("/")
+
+    if kind == "visa":
+        app_doc = await applications_col.find_one({"id": raw_id, "contact.email": pattern})
+        visa = (app_doc or {}).get("visa_result") or {}
+        if not app_doc or not visa.get("file_id"):
+            raise HTTPException(404, "Belge bulunamadi.")
+        link = file_access.file_url(origin, visa["file_id"], file_access.TTL_EMAIL, download=True)
+        result = await send_email(
+            email,
+            subject_with_ref(app_doc.get("reference_code", ""), "vize belgeniz"),
+            visa_ready_html(serialize_doc(app_doc), link),
+            kind="visa_delivered",
+            meta={"reference_code": app_doc.get("reference_code", ""), "resend": True},
+        )
+    elif kind == "policy":
+        task = await insurance_tasks_col.find_one(
+            {"id": raw_id, "status": "issued", "customer.email": pattern}
+        )
+        if not task or not task.get("policy_file_id"):
+            raise HTTPException(404, "Belge bulunamadi.")
+        link = file_access.file_url(origin, task["policy_file_id"], file_access.TTL_EMAIL)
+        result = await send_email(
+            email,
+            f"Sigorta poliçeniz - {task.get('order_reference', '')}",
+            policy_email_html(task, link),
+            kind="insurance_policy_sent",
+            meta={"task_id": task["id"], "resend": True},
+        )
+    else:
+        raise HTTPException(404, "Belge bulunamadi.")
+
+    return {"ok": result.get("status") == "sent", "email": email, "status": result.get("status")}
+
+
 @router.get("/account/drafts/{draft_id}")
 async def account_draft_detail(draft_id: str, email: str = Depends(require_customer)):
     doc = await drafts_col.find_one({"id": draft_id, "email": email})

@@ -55,6 +55,18 @@ def _policy_html(order: dict, link: str, message: str) -> str:
     )
 
 
+def policy_email_html(task: dict, link: str) -> str:
+    """Police e-postasi (gorev kaydindan uretilir; tekrar gonderimlerde kullanilir)."""
+    return _policy_html(
+        {
+            "contact": {"full_name": (task.get("customer") or {}).get("full_name", "")},
+            "reference_code": task.get("order_reference", ""),
+        },
+        link,
+        "",
+    )
+
+
 def _policy_wa_text(task: dict, order: dict, link: str) -> str:
     """Police hazir mesaji (WhatsApp, PDF baglantili)."""
     full_name = (task.get("customer") or {}).get("full_name") or (order.get("contact") or {}).get(

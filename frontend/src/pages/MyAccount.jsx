@@ -38,6 +38,19 @@ export default function MyAccount() {
     const [travelers, setTravelers] = useState([]);
     const [orders, setOrders] = useState([]);
     const [documents, setDocuments] = useState([]);
+    const [resending, setResending] = useState("");
+
+    const resendDocument = async (docId) => {
+        setResending(docId);
+        try {
+            const { data } = await api.post(`/account/documents/${docId}/resend`);
+            toast.success(`Belge ${data.email} adresine gönderildi.`);
+        } catch (err) {
+            toast.error(apiError(err, "Belge gönderilemedi."));
+        } finally {
+            setResending("");
+        }
+    };
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -353,20 +366,36 @@ export default function MyAccount() {
                                                     </div>
                                                 </div>
                                                 {d.download_url ? (
-                                                    <Button
-                                                        asChild
-                                                        className="h-10"
-                                                        data-testid={`download-document-${d.id}`}
-                                                    >
-                                                        <a
-                                                            href={fileUrl(d.download_url, true)}
-                                                            target="_blank"
-                                                            rel="noreferrer"
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <Button
+                                                            asChild
+                                                            className="h-10"
+                                                            data-testid={`download-document-${d.id}`}
                                                         >
-                                                            <Download className="mr-2 h-4 w-4" />
-                                                            {d.kind === "visa" ? "Vizeyi indir" : "Poliçeyi indir"}
-                                                        </a>
-                                                    </Button>
+                                                            <a
+                                                                href={fileUrl(d.download_url, true)}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                            >
+                                                                <Download className="mr-2 h-4 w-4" />
+                                                                {d.kind === "visa" ? "Vizeyi indir" : "Poliçeyi indir"}
+                                                            </a>
+                                                        </Button>
+                                                        <Button
+                                                            variant="secondary"
+                                                            className="h-10 border border-border"
+                                                            disabled={resending === d.id}
+                                                            onClick={() => resendDocument(d.id)}
+                                                            data-testid={`resend-document-${d.id}`}
+                                                        >
+                                                            {resending === d.id ? (
+                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Mail className="mr-2 h-4 w-4" />
+                                                            )}
+                                                            E-postama tekrar gönder
+                                                        </Button>
+                                                    </div>
                                                 ) : (
                                                     <span className="text-xs font-semibold text-muted-foreground">
                                                         PDF hazırlanıyor

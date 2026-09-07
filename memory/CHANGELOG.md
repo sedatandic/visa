@@ -1389,3 +1389,18 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
   okunur formatta gösteriyor (`formatPhone`).
 - Doğrulama: `/api/content/site` → phone `+90 533 743 82 24`, whatsapp `905384838224`;
   sayfadaki tek wa.me hedefi `https://wa.me/905384838224`; kart metinleri ekran görüntüsüyle teyit.
+
+## 2026-09-07 (12) · Belgeyi e-postama tekrar gönder
+
+- **Backend** `POST /api/account/documents/{document_id}/resend` (yeni, `require_customer`):
+  `visa-<application_id>` veya `policy-<task_id>` kimliğini çözer, belgenin **giriş yapan
+  müşteriye ait olduğunu** e-posta eşleşmesiyle doğrular ve imzalı indirme bağlantısıyla
+  e-postayı tekrar gönderir. Vize için `emailer.visa_ready_html`, poliçe için yeni
+  `insurance_tasks.policy_email_html()` şablonu kullanılır; hız sınırı **saatte 6 gönderim**
+  (`rate_limit.check`), sahip olmayan/bulunamayan belge için 404.
+- **Frontend** `/hesabim` → Belgelerim kartlarında **"E-postama tekrar gönder"** butonu
+  (`resend-document-<id>`): tıklamada spinner, başarıda "Belge <e-posta> adresine gönderildi"
+  bildirimi.
+- Doğrulama: vize + poliçe için uç `status=sent` döndü, geçersiz kimlikte 404;
+  `/hesabim` ekranında buton tıklandı ve başarı bildirimi göründü (ekran görüntüsü);
+  pytest 310 passed, test kayıtları temizlendi.
