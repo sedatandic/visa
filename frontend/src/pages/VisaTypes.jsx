@@ -168,7 +168,7 @@ export default function VisaTypes() {
 
     return (
         <div data-testid="visa-types-page">
-            <PageHeader containerClass="container-wide"
+            <PageHeader
                 eyebrow="Hizmet Bedelleri"
                 title="Dubai vize hizmet bedelleri"
                 description="Kalış süreniz, giriş sayınız ve yolcuların yaşına göre bedel değişir. Aşağıdaki tutarlar kişi başıdır, tek seferliktir ve resmî harcı da içerir."
@@ -198,7 +198,7 @@ export default function VisaTypes() {
 
             {/* 01 - GUNCEL BEDELLER */}
             <section className="pb-14 pt-6 sm:pb-16 sm:pt-8">
-                <div className="container-wide">
+                <div className="container-page">
                     <span className="eyebrow">01 · Güncel bedeller</span>
                     <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Vize tipine göre kişi başı bedel</h2>
                     <div className="mb-6 mt-5 flex flex-wrap items-center gap-3">
@@ -227,7 +227,7 @@ export default function VisaTypes() {
 
             {/* 02 - BEDELIN KAPSAMI */}
             <section className="border-t border-border bg-[hsl(var(--cloud))] py-14 sm:py-16">
-                <div className="container-wide">
+                <div className="container-page">
                     <span className="eyebrow">02 · Bedelin kapsamı</span>
                     <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Ödediğiniz tutar karşılığında ne alıyorsunuz?</h2>
                     <div className="mt-7 grid gap-5 sm:grid-cols-2" data-testid="fees-included">
@@ -306,7 +306,7 @@ export default function VisaTypes() {
 
             {/* 03 - ODEME & GUVENLIK */}
             <section className="py-14 sm:py-16">
-                <div className="container-wide">
+                <div className="container-page">
                     <span className="eyebrow">03 · Ödeme & güvenlik</span>
                     <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Ödemeniz nasıl korunuyor?</h2>
                     <PaymentTrustStrip className="mt-6" />
@@ -374,7 +374,7 @@ export default function VisaTypes() {
 
             {/* 04 - REHBERLER + SSS */}
             <section className="border-t border-border bg-[hsl(var(--cloud))] py-14 sm:py-16">
-                <div className="container-wide">
+                <div className="container-page">
                     <div data-testid="visa-guides-index">
                         <span className="eyebrow">04 · Vize rehberi</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Her vize tipi için detaylı rehber</h2>
@@ -413,7 +413,7 @@ export default function VisaTypes() {
 
             {/* CTA */}
             <section className="border-t border-border bg-[hsl(var(--navy))]">
-                <div className="container-wide flex flex-col items-start gap-5 py-12 sm:flex-row sm:items-center sm:justify-between">
+                <div className="container-page flex flex-col items-start gap-5 py-12 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h2 className="font-heading text-2xl font-bold text-white">
                             Aileniz için tek başvuru yeterli

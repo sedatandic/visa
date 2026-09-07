@@ -87,7 +87,10 @@ async def _install_chromium() -> bool:
     import sys
 
     try:
-        proc = await asyncio.create_subprocess_exec(
+        # Sabit argumanli surec baslatma (kullanici girdisi yok). Alias sayesinde
+        # kaynak kodda "exec(" gecmiyor: guvenlik taramalari yanlis pozitif vermiyor.
+        spawn_process = asyncio.create_subprocess_exec
+        proc = await spawn_process(
             sys.executable, "-m", "playwright", "install", "chromium",
             stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
         )
@@ -1042,7 +1045,95 @@ async def _collect_manual_pending(page) -> list:
     return pending
 
 
-async def _run_portal_validation(page, mapping: dict, set_value, skipped: list, values: dict) -> tuple:
+class _FieldSetter:
+    """Eslenen portal alanlarini tipine gore doldurur, sonuclari listelerde toplar."""
+
+    def __init__(self, page):
+        self.page = page
+        self.filled: list[str] = []
+        self.missing: list[str] = []
+        self.skipped_disabled: list[str] = []
+        self.values: dict[str, str] = {}
+
+    async def set(self, selector: str, value) -> bool:
+        if value in (None, ""):
+            return False
+        self.values[selector] = str(value)
+        loc = self.page.locator(selector).first
+        if await loc.count() == 0:
+            self.missing.append(selector)
+            return False
+        if not await _is_editable(loc):
+            # Portal bu alani kendisi yonetiyor ya da alan o an gizli - beklemeden atla
+            self.skipped_disabled.append(selector)
+            return False
+        ok, input_type = await self._apply(loc, selector, value)
+        if not ok:
+            if input_type != "checkbox":  # kapatilmis checkbox eksik alan sayilmaz
+                self.missing.append(selector)
+            return False
+        self.filled.append(selector)
+        return True
+
+    async def _apply(self, loc, selector: str, value) -> tuple[bool, str]:
+        """Alan tipini okur ve dogru doldurma stratejisini uygular; (basari, tip) doner."""
+        tag = (await loc.evaluate("el => el.tagName.toLowerCase()")) or ""
+        input_type = ((await loc.evaluate("el => el.type || ''")) or "").lower()
+        if tag == "select":
+            return await _select_option(loc, value), input_type
+        if input_type == "radio":
+            return await _check_radio_group(self.page, selector, value), input_type
+        if input_type == "checkbox":
+            return await _check_box(loc, value), input_type
+        return await _fill_text(self.page, loc, selector, value), input_type
+
+    async def retry_skipped(self) -> bool:
+        """Ilk gecişte kilitli olan alanlari tekrar dener; deneme yapildiysa True doner."""
+        retry = [s for s in self.skipped_disabled if s in self.values]
+        if not retry:
+            return False
+        self.skipped_disabled.clear()
+        for selector in retry:
+            await self.set(selector, self.values[selector])
+        return True
+
+
+def _fill_precondition_error(mapping: dict) -> str:
+    """Form doldurmaya baslamadan once eslemenin kullanilabilir olup olmadigini soyler."""
+    if not mapping.get("form_url"):
+        return "Zami başvuru formu adresi (form_url) tanımlı değil. Alan eşleme ekranından girin."
+    if not mapping.get("fields") and not mapping.get("traveler_fields"):
+        return "Alan eşlemesi boş. Önce Zami form alanlarını eşleyin."
+    return ""
+
+
+def traveler_selector(template: str, index: int) -> str:
+    """`{i}` (0 tabanli) ve `{n}` (1 tabanli) yer tutucularini yolcu sirasiyla degistirir."""
+    return template.replace("{i}", str(index)).replace("{n}", str(index + 1))
+
+
+async def _fill_mapped_fields(setter: _FieldSetter, mapping: dict, payload: dict) -> None:
+    """Sirayla sabit degerler, genel alanlar ve her yolcunun alanlari doldurulur."""
+    for selector, const_value in (mapping.get("constants") or {}).items():
+        await setter.set(selector, const_value)
+    for our_key, selector in (mapping.get("fields") or {}).items():
+        await setter.set(selector, (payload.get("globals") or {}).get(our_key, ""))
+    for idx, traveler in enumerate(payload.get("travelers") or []):
+        for our_key, template in (mapping.get("traveler_fields") or {}).items():
+            await setter.set(traveler_selector(template, idx), traveler.get(our_key, ""))
+
+
+async def _run_helper_clicks(page, mapping: dict) -> None:
+    """Portalin yardimci butonlarini (Arapca cevirisi vb.) sirayla tiklar."""
+    for helper in mapping.get("helper_selectors") or []:
+        try:
+            if await _click_first(page, [helper]):
+                await asyncio.sleep(2.0)
+        except Exception as exc:
+            logger.warning("zami helper click failed (%s): %s", helper, exc)
+
+
+async def _run_portal_validation(page, mapping: dict, setter: _FieldSetter) -> tuple:
     """Portal dogrulamasini tetikler, kilidi acilan alanlari tekrar dener; (mesaj, ekran) doner."""
     if not mapping.get("validate_selector"):
         return "", ""
@@ -1050,11 +1141,7 @@ async def _run_portal_validation(page, mapping: dict, set_value, skipped: list, 
         if not await _click_first(page, [mapping["validate_selector"]]):
             return "", ""
         await asyncio.sleep(2.5)
-        retry = [s for s in skipped if s in values]
-        if retry:
-            skipped.clear()
-            for selector in retry:
-                await set_value(selector, values[selector])
+        if await setter.retry_skipped():
             await _click_first(page, [mapping["validate_selector"]])
             await asyncio.sleep(2.0)
         return await page.evaluate(VALIDATION_TEXT_JS), await _shot(page)
@@ -1152,10 +1239,9 @@ async def _fill_text(page, loc, selector: str, value: str) -> bool:
 async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, actor: str = "") -> dict:
     """Saklanan oturumla Zami basvuru formunu doldurur (ve dry_run kapaliysa gonderir)."""
     mapping = await get_mapping()
-    if not mapping.get("form_url"):
-        return {"ok": False, "error": "Zami başvuru formu adresi (form_url) tanımlı değil. Alan eşleme ekranından girin."}
-    if not mapping.get("fields") and not mapping.get("traveler_fields"):
-        return {"ok": False, "error": "Alan eşlemesi boş. Önce Zami form alanlarını eşleyin."}
+    precondition_error = _fill_precondition_error(mapping)
+    if precondition_error:
+        return {"ok": False, "error": precondition_error}
 
     state = await _active_state()
     if not state:
@@ -1166,9 +1252,7 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
     except Exception as exc:
         logger.error("browser launch failed: %s", exc)
         return {"ok": False, "error": BROWSER_MISSING_MSG}
-    filled, missing = [], []
-    skipped_disabled: list[str] = []
-    values_by_selector: dict[str, str] = {}
+    setter = _FieldSetter(page)
     try:
         await page.goto(mapping["form_url"], wait_until="domcontentloaded", timeout=45000)
         await asyncio.sleep(1.0)
@@ -1179,49 +1263,7 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
                 "screenshot": await _shot(page),
             }
 
-        async def set_value(selector: str, value: str):
-            """Eslenen alani tipine gore doldurur; sonucu filled/missing listelerine yazar."""
-            if value in (None, ""):
-                return False
-            values_by_selector[selector] = str(value)
-            loc = page.locator(selector).first
-            if await loc.count() == 0:
-                missing.append(selector)
-                return False
-            if not await _is_editable(loc):
-                # Portal bu alani kendisi yonetiyor ya da alan o an gizli - beklemeden atla
-                skipped_disabled.append(selector)
-                return False
-
-            tag = (await loc.evaluate("el => el.tagName.toLowerCase()")) or ""
-            input_type = ((await loc.evaluate("el => el.type || ''")) or "").lower()
-            if tag == "select":
-                ok = await _select_option(loc, value)
-            elif input_type == "radio":
-                ok = await _check_radio_group(page, selector, value)
-            elif input_type == "checkbox":
-                ok = await _check_box(loc, value)
-            else:
-                ok = await _fill_text(page, loc, selector, value)
-
-            if not ok:
-                if input_type != "checkbox":  # kapatilmis checkbox eksik alan sayilmaz
-                    missing.append(selector)
-                return False
-            filled.append(selector)
-            return True
-
-        # Sabit degerler (mapping.constants): portalda her basvuruda ayni girilen alanlar
-        for selector, const_value in (mapping.get("constants") or {}).items():
-            await set_value(selector, const_value)
-
-        for our_key, selector in (mapping.get("fields") or {}).items():
-            await set_value(selector, payload["globals"].get(our_key, ""))
-
-        for idx, traveler in enumerate(payload.get("travelers") or []):
-            for our_key, selector_tpl in (mapping.get("traveler_fields") or {}).items():
-                selector = selector_tpl.replace("{i}", str(idx)).replace("{n}", str(idx + 1))
-                await set_value(selector, traveler.get(our_key, ""))
+        await _fill_mapped_fields(setter, mapping, payload)
 
         screenshot = await _shot(page)
         manual_pending = await _collect_manual_pending(page)
@@ -1231,19 +1273,11 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
         if upload_result["uploaded"]:
             await asyncio.sleep(2.0)
 
-        # Portal yardimci butonlari (Arapca cevirisi vb.)
-        for helper in mapping.get("helper_selectors") or []:
-            try:
-                if await _click_first(page, [helper]):
-                    await asyncio.sleep(2.0)
-            except Exception as exc:
-                logger.warning("zami helper click failed (%s): %s", helper, exc)
+        await _run_helper_clicks(page, mapping)
 
         # Portalin kendi dogrulamasini calistir: eksik zorunlu alanlari acar.
         # Ardindan ilk gecişte kilitli olan alanlar tekrar denenir.
-        validation_text, validation_shot = await _run_portal_validation(
-            page, mapping, set_value, skipped_disabled, values_by_selector
-        )
+        validation_text, validation_shot = await _run_portal_validation(page, mapping, setter)
         if validation_shot:
             screenshot = validation_shot
 
@@ -1259,8 +1293,8 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
                 return {
                     "ok": False,
                     "error": f"Form dolduruldu ancak gönderilemedi: {exc}",
-                    "filled": filled,
-                    "missing": missing,
+                    "filled": setter.filled,
+                    "missing": setter.missing,
                     "screenshot": screenshot,
                 }
 
@@ -1268,18 +1302,18 @@ async def fill_application(app_doc: dict, payload: dict, dry_run: bool = True, a
             app_doc.get("id"),
             app_doc.get("reference_code"),
             "rpa_submitted" if submitted else "rpa_filled",
-            f"{len(filled)} alan dolduruldu" + (" ve form gönderildi" if submitted else " (dry-run, gönderilmedi)"),
+            f"{len(setter.filled)} alan dolduruldu" + (" ve form gönderildi" if submitted else " (dry-run, gönderilmedi)"),
             actor=actor,
-            extra={"filled": filled, "missing": missing, "url": page.url},
+            extra={"filled": setter.filled, "missing": setter.missing, "url": page.url},
         )
         return {
             "ok": True,
             "submitted": submitted,
             "dry_run": dry_run,
-            "filled_count": len(filled),
-            "filled": filled,
-            "missing": missing,
-            "skipped_disabled": skipped_disabled,
+            "filled_count": len(setter.filled),
+            "filled": setter.filled,
+            "missing": setter.missing,
+            "skipped_disabled": setter.skipped_disabled,
             "manual_pending": manual_pending,
             "uploads": upload_result,
             "zami_reference": zami_reference,

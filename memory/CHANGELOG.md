@@ -1456,3 +1456,35 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
 sağlayıcı paneli, günlük özet e-postası ve 7 arka plan zamanlayıcısının başlaması doğrulandı
 (gerçek Tamamliyo poliçesi tetiklenmedi). Test dosyasındaki sınıflar arası sıra bağımlılığı
 `seeded_policy_doc_id` fixture'ı ile giderildi. Tam suit: **324 passed / 5 skipped**.
+
+## 2026-06-13 · Zami RPA form doldurma adımlara bölündü (P1 refactor)
+
+### Kart genişliği doğrulaması (bekleyen iş kapatıldı)
+- `/vize-tipleri` "Hizmet bedelleri" kartları ile `/takip` kartları aynı kapta:
+  her iki sayfada da `.container-page` → 1152 px genişlik, 384 px sol kenar (1920 px viewport).
+  Kod değişikliği gerekmedi; önceki oturumda yapılan `container-wide → container-page`
+  değişikliği ekran görüntüsü + `getBoundingClientRect()` ile doğrulandı.
+
+### `zami_rpa.fill_application` sadeleştirmesi
+Kod incelemesinde P1 olarak işaretlenen tek büyük fonksiyon (C901 = 27, 143 satır, içinde
+64 satırlık `set_value` closure'ı) test edilebilir adımlara bölündü. Davranış birebir aynı.
+- **Yeni `_FieldSetter` sınıfı** (`page` + `filled` / `missing` / `skipped_disabled` / `values`):
+  - `set(selector, value)` → alan yok = `missing`, kilitli/gizli = `skipped_disabled`,
+    tipe göre select / radio / checkbox / metin doldurma (`_apply`).
+  - `retry_skipped()` → portal doğrulamasından sonra kilidi açılan alanları tekrar dener.
+- **Yeni adım fonksiyonları**: `_fill_precondition_error(mapping)` (form_url / eşleme kontrolü),
+  `traveler_selector(template, index)` (`{i}` 0 tabanlı, `{n}` 1 tabanlı),
+  `_fill_mapped_fields(setter, mapping, payload)` (sabitler → genel alanlar → yolcular),
+  `_run_helper_clicks(page, mapping)` (Arapça çeviri vb. yardımcı butonlar).
+- `_run_portal_validation(page, mapping, setter)` artık 5 yerine 3 parametre alıyor
+  (set_value + skipped + values yerine tek `setter`).
+- `fill_application` 143 → 90 satır, C901 uyarısı düştü. Kalan tek C901:
+  `_auto_relogin_locked` (11) — canlı OTP akışı, bilinçli dokunulmadı.
+
+**Doğrulama**: yeni `backend/tests/test_iteration_117_zami_fill_steps.py` → **32/32 PASS**
+(Playwright yerine sahte `FakePage` / `FakeLocator` / `FakeRadioGroup`; tarayıcı gerekmez).
+Kapsam: ön koşul hataları, selector şablonları, metin/select/radio/checkbox doldurma,
+eksik–kilitli–boş değer ayrımı, `retry_skipped`, eşleme sırası, yardımcı tık hataları,
+portal doğrulama akışı. `POST /api/admin/zami/bulk-transfer` (dry_run) gerçek tarayıcıyla
+çalıştırıldı → beklenen "portal oturumu sona ermiş" yanıtı (canlı Zami oturumu yok).
+Tam suit: **351 passed / 3 skipped**.

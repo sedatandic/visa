@@ -259,18 +259,12 @@ async def account_orders(email: str = Depends(require_customer)) -> dict:
     return {"items": items}
 
 
-@router.get("/account/documents")
-async def account_documents(email: str = Depends(require_customer)) -> dict:
-    """Musteriye ait belgeler: onaylanan vize PDF'leri + kesilen sigorta policeleri."""
-    import re
-
+async def _visa_documents(email_pattern: dict) -> list:
+    """Onaylanan vize PDF'leri."""
     import file_access
-    from db import insurance_tasks_col
 
-    pattern = {"$regex": f"^{re.escape(email)}$", "$options": "i"}
     items = []
-
-    async for doc in applications_col.find({"contact.email": pattern}).sort("created_at", -1):
+    async for doc in applications_col.find({"contact.email": email_pattern}).sort("created_at", -1):
         visa = doc.get("visa_result") or {}
         if not visa.get("file_id"):
             continue
@@ -291,10 +285,19 @@ async def account_documents(email: str = Depends(require_customer)) -> dict:
                 ),
             }
         )
+    return items
 
-    async for doc in insurance_tasks_col.find({"status": "issued", "customer.email": pattern}).sort(
+
+async def _policy_documents(email_pattern: dict) -> list:
+    """Kesilen sigorta policeleri."""
+    import file_access
+    from db import insurance_tasks_col
+
+    items = []
+    cursor = insurance_tasks_col.find({"status": "issued", "customer.email": email_pattern}).sort(
         "issued_at", -1
-    ):
+    )
+    async for doc in cursor:
         items.append(
             {
                 "kind": "policy",
@@ -309,8 +312,16 @@ async def account_documents(email: str = Depends(require_customer)) -> dict:
                 ),
             }
         )
+    return items
 
-    return {"items": items}
+
+@router.get("/account/documents")
+async def account_documents(email: str = Depends(require_customer)) -> dict:
+    """Musteriye ait belgeler: onaylanan vize PDF'leri + kesilen sigorta policeleri."""
+    import re
+
+    pattern = {"$regex": f"^{re.escape(email)}$", "$options": "i"}
+    return {"items": await _visa_documents(pattern) + await _policy_documents(pattern)}
 
 
 @router.post("/account/documents/{document_id}/resend")

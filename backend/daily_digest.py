@@ -108,22 +108,24 @@ def _revenue(paid_docs: list) -> dict:
     }
 
 
-def _extras_breakdown(orders: list, apps: list) -> list:
-    buckets: dict[str, dict] = {}
+def _extras_sources(orders: list, apps: list):
+    """Ekstra satislarin geldigi tum kalemler (siparisler + basvuru sepetleri)."""
+    for order in orders:
+        yield from order.get("items") or []
+    for app in apps:
+        yield from (app.get("pricing") or {}).get("store_items") or []
 
-    def add(kind: str, quantity: int, amount: float) -> None:
+
+def _extras_breakdown(orders: list, apps: list) -> list:
+    """Ekstra satislari urun turune gore toplar (adet + tutar)."""
+    buckets: dict[str, dict] = {}
+    for item in _extras_sources(orders, apps):
+        kind = item.get("kind") or "diger"
         bucket = buckets.setdefault(
             kind, {"kind": kind, "label": KIND_LABELS.get(kind, kind), "quantity": 0, "amount": 0.0}
         )
-        bucket["quantity"] += max(quantity, 0)
-        bucket["amount"] = round(bucket["amount"] + amount, 2)
-
-    for order in orders:
-        for item in order.get("items") or []:
-            add(item.get("kind") or "diger", int(item.get("quantity") or 0), float(item.get("total") or 0))
-    for app in apps:
-        for item in (app.get("pricing") or {}).get("store_items") or []:
-            add(item.get("kind") or "diger", int(item.get("quantity") or 0), float(item.get("total") or 0))
+        bucket["quantity"] += max(int(item.get("quantity") or 0), 0)
+        bucket["amount"] = round(bucket["amount"] + float(item.get("total") or 0), 2)
     return sorted(buckets.values(), key=lambda row: -row["amount"])
 
 

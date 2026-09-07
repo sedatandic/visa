@@ -1284,3 +1284,19 @@ Ayrıntılar CHANGELOG.md "2026-09-07 (4)" bölümünde. Özet:
 - Ekstra hizmet önerileri Adım 1'den **Adım 4 (ödeme öncesi)** "Ekstra hizmetler" bloğuna taşındı.
 - Telefon +90 533 743 82 24; son 5 hanenin altında D U B A I harfleri (`PhoneDubai`).
 - Test: pytest 310 passed / 3 skipped; iteration_115 frontend 10/10.
+
+## 2026-06-13 · Zami RPA sadeleştirmesi + kart genişliği doğrulandı
+Ayrıntılar CHANGELOG.md "2026-06-13" bölümünde. Özet:
+- `/vize-tipleri` hizmet bedeli kartları ile `/takip` kartları aynı genişlikte (1152 px,
+  `.container-page`) — bekleyen doğrulama işi kapandı, kod değişikliği gerekmedi.
+- `zami_rpa.fill_application` test edilebilir adımlara bölündü: `_FieldSetter` sınıfı +
+  `_fill_precondition_error` / `traveler_selector` / `_fill_mapped_fields` /
+  `_run_helper_clicks`. Davranış aynı, 143 → 90 satır, C901 uyarısı düştü.
+- Test: yeni `tests/test_iteration_117_zami_fill_steps.py` 32/32; tam suit 351 passed / 3 skipped.
+
+### Sıradaki açık işler (2026-06-13)
+- **P0** WhatsApp botu canlıya alma (Meta Cloud API bilgileri kullanıcıdan bekleniyor).
+- **P0** İlk sigorta poliçesini elle kesip otomatik kesimi açma.
+- **P0** Gerçek IBAN'lar + şirket unvanı + TÜRSAB belge no (kullanıcıdan bekleniyor).
+- **P2** Poliçe yenileme akışı, paylaşılabilir aile paketi linki, sepet 3 saat hatırlatması,
+  İngilizce/USD global sürüm.

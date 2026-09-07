@@ -45,6 +45,11 @@
 - [ ] Grup/aile başvurusunda yolcu bazlı evrak eksikliği özeti.
 - [ ] Ziyaretçi analitiği: günlük grafik, tarih aralığı seçimi ve CSV dışa aktarma.
 
+- [x] ~~Zami RPA form doldurma sadeleştirmesi~~ → 2026-06-13: `fill_application` içindeki
+      `set_value` closure'ı `_FieldSetter` sınıfına, akış `_fill_precondition_error` /
+      `traveler_selector` / `_fill_mapped_fields` / `_run_helper_clicks` adımlarına bölündü.
+      143 → 90 satır, C901 düştü, 32 birim testi (`test_iteration_117_zami_fill_steps.py`).
+
 ## P2
 - [ ] Eski test dosyalarındaki katalog beklentileri güncellenmeli: `test_visa_categories.py`,
       `test_tour_safari.py`, `test_iteration_48.py::TestVisaPrices`, `test_zami_otp_fix.py`.

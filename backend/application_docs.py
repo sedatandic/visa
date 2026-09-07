@@ -28,26 +28,36 @@ def _slug(text: str) -> str:
     return re.sub(r"-{2,}", "-", slug) or "belge"
 
 
-def _targets(app_doc: dict) -> list[tuple[str, str]]:
-    """(etiket, file_id) listesi: yolcu pasaport/vesikalik + seyahat evraklari."""
+def _traveler_targets(travelers: list) -> list[tuple[str, str]]:
+    """Her yolcunun pasaport ve vesikalik dosyalari."""
     out: list[tuple[str, str]] = []
-    for index, traveler in enumerate(app_doc.get("travelers") or [], start=1):
+    for index, traveler in enumerate(travelers or [], start=1):
         docs = traveler.get("documents") or {}
         name = f"{traveler.get('first_name', '')} {traveler.get('last_name', '')}".strip()
         name = name or f"{index}. yolcu"
-        if docs.get("passport_file_id"):
-            out.append((f"{name} - pasaport", docs["passport_file_id"]))
-        if docs.get("photo_file_id"):
-            out.append((f"{name} - vesikalık fotoğraf", docs["photo_file_id"]))
-    extra = app_doc.get("extra_documents") or {}
-    if extra.get("ticket_file_id"):
-        out.append(("Uçak bileti", extra["ticket_file_id"]))
-    if extra.get("hotel_file_id"):
-        out.append(("Otel rezervasyonu", extra["hotel_file_id"]))
+        for label, key in (("pasaport", "passport_file_id"), ("vesikalık fotoğraf", "photo_file_id")):
+            if docs.get(key):
+                out.append((f"{name} - {label}", docs[key]))
+    return out
+
+
+def _extra_targets(extra: dict) -> list[tuple[str, str]]:
+    """Seyahat evraklari: bilet, otel ve diger dosyalar."""
+    out: list[tuple[str, str]] = []
+    for label, key in (("Uçak bileti", "ticket_file_id"), ("Otel rezervasyonu", "hotel_file_id")):
+        if extra.get(key):
+            out.append((label, extra[key]))
     for index, file_id in enumerate(extra.get("other_file_ids") or [], start=1):
         if file_id:
             out.append((f"Diğer evrak {index}", file_id))
     return out
+
+
+def _targets(app_doc: dict) -> list[tuple[str, str]]:
+    """(etiket, file_id) listesi: yolcu pasaport/vesikalik + seyahat evraklari."""
+    return _traveler_targets(app_doc.get("travelers") or []) + _extra_targets(
+        app_doc.get("extra_documents") or {}
+    )
 
 
 def _extension(record: dict) -> str:

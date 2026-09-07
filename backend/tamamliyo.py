@@ -9,12 +9,15 @@ import asyncio
 import base64
 import logging
 import os
-import random
 import re
+import secrets
 
 import httpx
 
 logger = logging.getLogger(__name__)
+
+# Deneme araligindaki jitter icin kriptografik guvenli kaynak
+_jitter = secrets.SystemRandom()
 
 PATH = "/partner/v3/seyahat-saglik-sigortasi"
 PRODUCT = "yurtdisi-seyahat"
@@ -73,7 +76,7 @@ async def _request(method: str, path: str, payload: dict | None = None) -> dict:
             except (httpx.TimeoutException, httpx.NetworkError) as exc:
                 if attempt == MAX_ATTEMPTS - 1:
                     raise TamamliyoError(f"Tamamliyo servisine ulasilamadi: {exc}", retryable=True) from exc
-                await asyncio.sleep(0.5 * (2**attempt) + random.random() * 0.25)
+                await asyncio.sleep(0.5 * (2**attempt) + _jitter.random() * 0.25)
                 continue
             try:
                 data = res.json()
@@ -86,7 +89,7 @@ async def _request(method: str, path: str, payload: dict | None = None) -> dict:
             retryable = res.status_code in RETRYABLE_STATUS
             if not retryable or attempt == MAX_ATTEMPTS - 1:
                 raise TamamliyoError(_error_message(data), res.status_code, data, retryable)
-            await asyncio.sleep(0.5 * (2**attempt) + random.random() * 0.25)
+            await asyncio.sleep(0.5 * (2**attempt) + _jitter.random() * 0.25)
     raise TamamliyoError("Tamamliyo istegi tamamlanamadi.", retryable=True)
 
 
