@@ -142,7 +142,15 @@ def _row(label: str, value: str) -> str:
     )
 
 
-def _resend_params(to: str, subject: str, html: str, kind: str, sender: str, reply_to: str) -> dict:
+def _resend_params(
+    to: str,
+    subject: str,
+    html: str,
+    kind: str,
+    sender: str,
+    reply_to: str,
+    attachments: Optional[list] = None,
+) -> dict:
     params = {
         "from": sender,
         "to": [to],
@@ -157,16 +165,27 @@ def _resend_params(to: str, subject: str, html: str, kind: str, sender: str, rep
                 "List-Unsubscribe": f"<mailto:{reply_to}?subject=Listeden%20cikar>",
                 "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
             }
+    files = []
     logo = _logo_payload() if f"cid:{LOGO_CID}" in html else None
     if logo:
-        params["attachments"] = [
+        files.append(
             {
                 "content": list(logo),
                 "filename": "dubai-vize-hatti.png",
                 "content_type": "image/png",
                 "content_id": LOGO_CID,
             }
-        ]
+        )
+    for item in attachments or []:
+        files.append(
+            {
+                "content": list(item["content"]),
+                "filename": item["filename"],
+                "content_type": item.get("content_type") or "application/octet-stream",
+            }
+        )
+    if files:
+        params["attachments"] = files
     return params
 
 
@@ -203,8 +222,18 @@ async def _record_attempt(
         logger.error("email_outbox insert failed: %s", exc)
 
 
-async def send_email(to: str, subject: str, html: str, kind: str = "generic", meta: Optional[dict] = None) -> dict:
-    """Never raises. Always records the attempt in email_outbox."""
+async def send_email(
+    to: str,
+    subject: str,
+    html: str,
+    kind: str = "generic",
+    meta: Optional[dict] = None,
+    attachments: Optional[list] = None,
+) -> dict:
+    """Never raises. Always records the attempt in email_outbox.
+
+    `attachments`: [{"filename", "content" (bytes), "content_type"}]
+    """
     api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
     sender_email = (os.environ.get("SENDER_EMAIL") or "onboarding@resend.dev").strip()
     reply_to = (os.environ.get("REPLY_TO_EMAIL") or os.environ.get("ADMIN_EMAIL") or "").strip()
@@ -214,10 +243,14 @@ async def send_email(to: str, subject: str, html: str, kind: str = "generic", me
             "SENDER_EMAIL paylasimli resend.dev alan adinda; dogrulanmis alan adi kullanin."
         )
     if api_key and not api_key.startswith("re_placeholder"):
-        params = _resend_params(to, subject, html, kind, f"{BRAND} <{sender_email}>", reply_to)
+        params = _resend_params(
+            to, subject, html, kind, f"{BRAND} <{sender_email}>", reply_to, attachments
+        )
         result = await _send_via_resend(api_key, params)
     else:
         result = {"status": "skipped", "reason": "RESEND_API_KEY tanimli degil"}
+    if attachments:
+        meta = {**(meta or {}), "attachments": [a["filename"] for a in attachments]}
     await _record_attempt(to, subject, kind, meta, result, html)
     return result
 
@@ -343,10 +376,42 @@ def _pricing_block(app_doc: dict) -> str:
     return "".join(lines)
 
 
-def applicant_received_html(app_doc: dict) -> str:
+def _attachment_list_html(documents: Optional[list] = None, form_filename: str = "") -> str:
+    """E-postaya eklenen belgelerin listesi (ekleyemedigimiz dosyalar baglanti olur)."""
+    items = []
+    if form_filename:
+        items.append(
+            f'<li style="margin:4px 0;">Başvuru formu (özet PDF): <strong>{esc(form_filename)}</strong></li>'
+        )
+    for document in documents or []:
+        label = esc(document.get("label", ""))
+        if document.get("attached"):
+            items.append(f'<li style="margin:4px 0;">{label}</li>')
+        elif document.get("url"):
+            items.append(
+                f'<li style="margin:4px 0;">{label} — '
+                f'<a href="{esc(document["url"])}" style="color:{GOLD};font-weight:600;">'
+                "güvenli bağlantıdan indirin</a></li>"
+            )
+    if not items:
+        return ""
+    return (
+        f'<div style="margin:18px 0 0;background-color:#FBF6EC;border:1px solid {LINE};'
+        'border-radius:10px;padding:14px 16px;">'
+        f'<div style="font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:{MUTED};">'
+        "Ekteki belgeler</div>"
+        f'<ul style="margin:8px 0 0;padding-left:18px;font-size:13px;line-height:20px;color:{INK};">'
+        f"{''.join(items)}</ul></div>"
+    )
+
+
+def applicant_received_html(
+    app_doc: dict, documents: Optional[list] = None, form_filename: str = ""
+) -> str:
     body = f"""
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {_contact_name(app_doc)},</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Dubai (BAE) vize başvurunuz sistemimize başarıyla kaydedildi. Belgeleriniz danışmanlarımız tarafından kontrol edilecek ve süreç boyunca sizi bilgilendireceğiz.</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;"><strong>Başvuru detaylarınızı ve yüklediğiniz evrakları bu e-postanın ekinde bulabilirsiniz.</strong></p>
     <div style="background-color:#F4EBDD;border:1px solid #E4D6BF;border-radius:10px;padding:16px;margin:0 0 8px;">
       <div style="font-size:12px;color:#8A7355;margin-bottom:4px;">Takip Kodunuz</div>
       <div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:#3E2A14;">{app_doc.get('reference_code','')}</div>
@@ -357,7 +422,8 @@ def applicant_received_html(app_doc: dict) -> str:
       {_row('Ödeme Durumu', 'Ödendi' if (app_doc.get('payment') or {}).get('status') == 'paid' else 'Bekliyor')}
       {_row('Tahmini Sonuçlanma', app_doc.get('processing_days', ''))}
     </table>
-    <p style="margin:20px 0 0;font-size:13px;line-height:21px;color:#8A7355;">Takip kodunuz ve soyadınızla başvurunuzu sitemizin "Başvuru Takip" sayfasından her an görüntüleyebilirsiniz.</p>
+    {_attachment_list_html(documents, form_filename)}
+    <p style="margin:20px 0 0;font-size:13px;line-height:21px;color:#8A7355;">Takip kodunuz ve soyadınızla başvurunuzu sitemizin "Başvuru Takip" sayfasından her an görüntüleyebilir, başvuru formunuzu yeniden indirebilirsiniz.</p>
     """
     return _wrap("Başvurunuz alındı", body)
 
@@ -381,11 +447,13 @@ def _travel_date_rows(travel: dict) -> str:
     )
 
 
-def admin_notify_html(app_doc: dict) -> str:
+def admin_notify_html(
+    app_doc: dict, documents: Optional[list] = None, form_filename: str = ""
+) -> str:
     t = app_doc.get("travel") or {}
     contact = app_doc.get("contact") or {}
     body = f"""
-    <p style="margin:0 0 16px;font-size:14px;">Yeni bir vize başvurusu alındı.</p>
+    <p style="margin:0 0 16px;font-size:14px;">Yeni bir vize başvurusu alındı. Başvuru formu ve müşterinin yüklediği evraklar ekte.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       {_row('Takip Kodu', app_doc.get('reference_code',''))}
       {_row('İletişim', _contact_name(app_doc))}
@@ -398,6 +466,7 @@ def admin_notify_html(app_doc: dict) -> str:
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       {_pricing_block(app_doc)}
     </table>
+    {_attachment_list_html(documents, form_filename)}
     """
     return _wrap("Yeni başvuru", body)
 

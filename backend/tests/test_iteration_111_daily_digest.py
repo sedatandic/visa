@@ -9,7 +9,7 @@ Kapsam:
 
 import os
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta, timezone
 
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient

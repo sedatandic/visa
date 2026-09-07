@@ -17,6 +17,11 @@
 - [ ] Sigorta poliçesini düzenleyen sigorta şirketi adı sayfada belirtilmiyor (istenirse eklenir).
 
 ## P1
+- [x] ~~Başvuru formu PDF'i + evrak ekleri~~ → 2026-09-07: başvuru alındığında müşteriye ve
+      sisteme tek sayfalık form PDF'i + yüklenen tüm evraklar ek olarak gidiyor;
+      `/takip` ve yönetici detayında "Başvuru formu (PDF)" indirme butonu var.
+- [ ] Ödeme alındığında (kart/havale onayı) güncel form PDF'inin ikinci kez eklenmesi (P2 tercih
+      edilebilir; şu an yalnız başvuru anında gönderiliyor).
 - [x] ~~Sepette misafir "siparişimi takip et" kısayolu + sipariş e-postasına takip linki~~
       → 2026-06-12 tamamlandı (`cart-last-order-shortcut`, `/siparis/{kod}?email=`,
       e-postalarda "Siparişimi takip et" butonu).

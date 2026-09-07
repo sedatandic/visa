@@ -1,0 +1,24 @@
+{
+  "summary": "Iteration 112 (application-form PDF + email attachments) verified end-to-end. Ran the existing 9 pytest cases in test_iteration_112_application_form.py (all pass) and added 6 new pytest cases in test_iteration_112_extras.py covering: 400/422 for missing params, 404 for unknown code, poppler-verified PDF for a 3-traveler application (2 adults + 1 child, insurance + eSIM), admin PDF endpoint on multi-traveler app (401 without token, 200 with admin JWT), and email_outbox attachment names for all travelers (3 passports, 3 photos, ticket, hotel) on both customer and admin copies. Also ran test_fx_tcmb.py to confirm the TCMB source regression and hit /api/fx (source=\"TCMB döviz satış\"). Frontend UI verified with Playwright: /takip renders the tracking-download-form-button with correct href pointing at /api/applications/form.pdf?code=...&last_name=... which returns 200 application/pdf; /admin/basvuru/{id} exposes admin-download-form-button which triggers a network call to /api/admin/applications/{id}/form.pdf returning 200 application/pdf (verified via page.expect_response). All 15 new/existing pytest cases pass with -n 0. Seed application, order, email_outbox rows and 3 uploads created for the UI test were deleted afterwards.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_112_application_form.py",
+    "/app/backend/tests/test_iteration_112_extras.py",
+    "/app/test_reports/pytest/iter112_run.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Public /applications/form.pdf currently returns 422 (FastAPI default) when params are missing rather than 400 spec'd in the request. Semantically fine (no info leak) but if the product spec wants strict 400, consider explicit Query(..., regex=...) + HTTPException(400).",
+    "application_pdf.money() replaces the ₺ glyph with 'TL' because Liberation Sans lacks U+20BA. If a font with the lira glyph is later bundled, remove the workaround for prettier output."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_112_extras.py (new)"
+  ],
+  "success_rate": {"backend": "100% (15/15 iter-112 pytest + fx regression 11/11)", "frontend": "100% (2/2 UI flows)"},
+  "test_credentials": "admin JWT via /app/backend/admin_test_token.py; UI customer email delivered@resend.dev",
+  "seed_data_creation": "Created + fully deleted: visa_applications ref=DV-GR760056, its email_outbox rows and 3 uploads. pytest module fixture also self-cleans multi-traveler app and its uploads. No residual data in DB.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Two pytest files cover this feature: tests/test_iteration_112_application_form.py (9 tests, original) and tests/test_iteration_112_extras.py (6 tests, multi-traveler + endpoint semantics + poppler PDF check). Run with pytest -n 0 to avoid Resend rate limits. Both fixtures clean up via reference_code + upload ids. Admin token helper: from admin_test_token import admin_token."
+}

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { AlertTriangle, ArrowRight, CheckCircle2, Clock, CreditCard, Download, FileCheck2, Loader2, Search, UploadCloud, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Clock, CreditCard, Download, FileCheck2, FileDown, Loader2, Search, UploadCloud, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { api, apiError, fileUrl, customerAuth } from "../lib/api";
+import { api, apiError, fileUrl, customerAuth, API } from "../lib/api";
 import { STATUS_META, formatDate, formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { PaymentBadge, StatusBadge } from "../components/StatusBadge";
@@ -293,6 +293,20 @@ export default function Track() {    const [searchParams] = useSearchParams();
                                     <div className="flex flex-col items-start gap-2 sm:items-end">
                                         <StatusBadge status={result.status} />
                                         <PaymentBadge status={result.payment?.status} />
+                                        <Button
+                                            asChild
+                                            variant="secondary"
+                                            className="mt-1 h-10 border border-border"
+                                            data-testid="tracking-download-form-button"
+                                        >
+                                            <a
+                                                href={`${API}/applications/form.pdf?code=${encodeURIComponent(result.reference_code)}&last_name=${encodeURIComponent(lastName)}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                <FileDown className="mr-2 h-4 w-4" /> Başvuru formu (PDF)
+                                            </a>
+                                        </Button>
                                     </div>
                                 </div>
 

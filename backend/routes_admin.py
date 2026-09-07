@@ -15,10 +15,12 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
+    Response,
     UploadFile,
 )
 from pydantic import BaseModel, Field
 
+from application_docs import application_form_bytes, form_filename
 from content import STATUS_LABELS
 from db import (
     applications_col,
@@ -942,6 +944,20 @@ async def admin_update_visa_type(visa_type_id: str, payload: dict, admin: dict =
 
 
 # ------------------------------------------------- eksik belge hatirlatmalari
+@router.get("/admin/applications/{application_id}/form.pdf")
+async def admin_application_form_pdf(application_id: str, admin: dict = Depends(require_admin)):
+    """Basvurunun tek sayfalik PDF formu (yonetici indirmesi)."""
+    doc = await applications_col.find_one({"id": application_id})
+    if not doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    pdf = await application_form_bytes(doc)
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{form_filename(doc)}"'},
+    )
+
+
 @router.get("/admin/applications/{application_id}/missing-documents")
 async def admin_missing_documents(application_id: str, admin: dict = Depends(require_admin)) -> dict:
     doc = await applications_col.find_one({"id": application_id})

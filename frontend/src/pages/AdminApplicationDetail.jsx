@@ -9,6 +9,7 @@ import {
     Download,
     ExternalLink,
     FileCheck2,
+    FileDown,
     Loader2,
     Mail,
     MessageCircle,
@@ -417,12 +418,31 @@ export default function AdminApplicationDetail() {
     const extra = a.extra_documents || {};
     const visa = a.visa_result;
 
+    const downloadForm = async () => {
+        try {
+            const res = await api.get(`/admin/applications/${id}/form.pdf`, { responseType: "blob" });
+            const url = URL.createObjectURL(res.data);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `Basvuru-Formu-${a.reference_code}.pdf`;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            toast.error(apiError(e, "Başvuru formu indirilemedi."));
+        }
+    };
+
     return (
         <AdminLayout>
             <div data-testid="admin-application-detail">
-                <Button variant="secondary" className="h-10 border border-border" onClick={() => navigate("/admin")} data-testid="admin-back-to-list">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Başvurular
-                </Button>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Button variant="secondary" className="h-10 border border-border" onClick={() => navigate("/admin")} data-testid="admin-back-to-list">
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Başvurular
+                    </Button>
+                    <Button variant="secondary" className="h-10 border border-border" onClick={downloadForm} data-testid="admin-download-form-button">
+                        <FileDown className="mr-2 h-4 w-4" /> Başvuru formu (PDF)
+                    </Button>
+                </div>
 
                 <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
                     <div>

@@ -1124,3 +1124,35 @@ USD döviz satış kuru olacak".
   canlı `/api/fx` yanıtı) + fiyat regresyonu `test_iteration_48`, `test_bundles`,
   `test_insurance_catalog`, `test_iteration_101/102` → 35 passed. Ekran görüntüsüyle
   `/vize-tipleri` kur notu doğrulandı.
+
+## 2026-09-07 (2) · Başvuru formu PDF'i + e-postaya evrak ekleri
+Kullanıcı isteği: "Yüklenen evrakları müşteriye e-postayla gönder, sisteme de gönder;
+başvuru detaylarını tek sayfalık forma geçir, 'detaylarınızı ekte bulabilirsiniz' diyelim."
+- **`backend/application_pdf.py` (yeni)**: reportlab ile **tek sayfalık "Vize Başvuru Formu"**
+  (logo + altın çizgi, takip kodu/ödeme durumu/sonuçlanma bandı, iletişim, seyahat bilgileri,
+  yolcu tablosu (ad, doğum t., pasaport no, geçerlilik, vize, tutar), hizmet bedeli dökümü,
+  yüklenen belgeler, künye). Türkçe glifler için Liberation Sans TTF kaydedilir; yazı tipinde
+  ₺ glifi olmadığı için tutarlar "5.190,00 TL" olarak yazılır (`money()` sarmalayıcı).
+- **`backend/application_docs.py` (yeni)**: `_targets()` her yolcunun pasaport + vesikalığını,
+  uçak bileti/otel/diğer evrakları etiketleyerek toplar; `collect_application_documents()`
+  içerikleri object storage'dan okur (**18 MB bütçe**; aşan dosya eke girmez, e-postada
+  imzalı indirme bağlantısı olarak listelenir); `application_email_bundle()` ek listesini +
+  gövde dökümünü, `application_form_bytes()` indirme için PDF üretir.
+- **`emailer.py`**: `send_email(..., attachments=[{filename, content, content_type}])` desteği
+  (Resend; inline logo ile birlikte gönderilir), `_attachment_list_html()` → gövdede
+  **"Ekteki belgeler"** kutusu, `applicant_received_html` / `admin_notify_html` artık belge
+  listesi alıyor. Müşteri metni: "Başvuru detaylarınızı ve yüklediğiniz evrakları bu
+  e-postanın ekinde bulabilirsiniz." `email_outbox.meta.attachments` ek adlarını saklıyor.
+- **Akış**: `routes_public._send_application_emails()` başvuru oluşunca hem müşteriye hem
+  `ADMIN_EMAIL`e (sisteme) aynı PDF + evrakları ekliyor. Ekler hazırlanamazsa e-posta yine
+  gidiyor (try/except).
+- **İndirme uçları**: `GET /api/applications/form.pdf?code=&last_name=` (takip kodu + soyad
+  doğrulaması, yanlışta 404) ve `GET /api/admin/applications/{id}/form.pdf` (`require_admin`,
+  jetonsuz 401). UI: `/takip` sonuç kartında `tracking-download-form-button`, yönetici
+  başvuru detayında `admin-download-form-button` (blob indirme).
+- Test: `tests/test_iteration_112_application_form.py` (9) + testing_agent'ın eklediği
+  `tests/test_iteration_112_extras.py` (6) → **15/15 PASS**, iteration_112 raporu
+  backend %100 / frontend %100, sıfır bulgu. 3 yolculu (2 yetişkin + 1 çocuk) başvuruda
+  6 evrak + bilet + otel ekleniyor; PDF poppler ile tek sayfa doğrulandı. Test verileri silindi.
+- Not: reportlab (5.0.1) requirements.txt'e eklendi; PDF önizlemesi için `poppler-utils`
+  kuruldu (yalnız geliştirme aracı, üretimde gerekli değil).

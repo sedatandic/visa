@@ -20,6 +20,8 @@ from fastapi import (
 )
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from application_docs import application_email_bundle, application_form_bytes, form_filename
+
 from content import (
     MARKETING_CONSENT,
     PRIVACY_POLICY,
@@ -1035,26 +1037,48 @@ async def _after_application_created(doc: dict, travelers: list) -> None:
 
 
 async def _send_application_emails(doc: dict, traveler_count: int) -> dict:
-    """Basvuru sahibine ve admine bilgilendirme e-postalari gonderir."""
+    """Basvuru sahibine ve admine bilgilendirme e-postalari gonderir (form PDF + evraklar ekli)."""
     reference_code = doc["reference_code"]
     view = serialize_doc(doc)
+    try:
+        bundle = await application_email_bundle(doc)
+    except Exception as exc:  # pragma: no cover - ekler hazirlanamazsa posta yine gider
+        logger.error("basvuru ekleri hazirlanamadi: %s", exc)
+        bundle = {"attachments": [], "documents": [], "form_filename": ""}
     email_result = await send_email(
         doc["contact"]["email"],
         subject_with_ref(reference_code, "alındı"),
-        applicant_received_html(view),
+        applicant_received_html(view, bundle["documents"], bundle["form_filename"]),
         kind="application_received",
         meta={"reference_code": reference_code},
+        attachments=bundle["attachments"],
     )
     admin_email = os.environ.get("ADMIN_EMAIL") or ""
     if admin_email:
         await send_email(
             admin_email,
             f"Yeni başvuru: {reference_code} ({traveler_count} yolcu)",
-            admin_notify_html(view),
+            admin_notify_html(view, bundle["documents"], bundle["form_filename"]),
             kind="admin_new_application",
             meta={"reference_code": reference_code},
+            attachments=bundle["attachments"],
         )
     return email_result
+
+
+def pdf_response(pdf: bytes, filename: str) -> Response:
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/applications/form.pdf")
+async def application_form_pdf(code: str, last_name: str):
+    """Takip kodu + soyad ile tek sayfalik basvuru formunu indirir."""
+    doc = await _find_application_for_tracking(code, last_name)
+    return pdf_response(await application_form_bytes(doc), form_filename(doc))
 
 
 @router.post("/applications")
