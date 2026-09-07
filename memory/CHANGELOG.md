@@ -1291,3 +1291,19 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
   `aria-label="Telefon: +90 533 743 82 24"`, harf katmanı `aria-hidden`.
 - Doğrulama: iteration_115 → frontend 10/10 madde %100, backend %100 (kapsam içi),
   pytest 310 passed. Not: `/api/contact` testleri tam suite'te IP hız sınırından (429) atabiliyor.
+
+## 2026-09-07 (5) · Ana sayfa "sadece sigorta" vitrini + CTA metni
+
+- **Yeni** `components/HomeInsuranceStrip.jsx` (`home-insurance-strip`), ana sayfada
+  `HomeBundleStrip`'in hemen altında: "Sadece sigorta" şeridi. Canlı tarifeden 4 poliçe
+  (7/15/30/60 gün · 490/560/590/740 ₺) kart olarak listelenir, her kart tek tıkla sepete ekler
+  (`home-insurance-add-<id>`, mobilde 2 kolon, masaüstünde 4), toast'ta "Sepete git" aksiyonu var.
+  Teminat maddeleri (7 emirlik · 30.000 €, TC kimlikle e-poliçe PDF, vize şartı yok), CTA'lar
+  `home-insurance-cta` (→ /seyahat-sigortasi) ve `home-insurance-cart-link` (sepet adedi ile).
+  Görsel: `IMAGES.travelInsurance` (yeni) + fiyat rozeti.
+- `/seyahat-sigortasi` sayfasındaki "30 günlük süre" maddesi **"7, 15, 30 veya 60 gün"** oldu.
+- `EasyCompare` CTA metni kullanıcı isteğiyle "Pasaportunuzla başlayın" → **"Hemen başvurun"**.
+- Kullanıcı kararı: ilk poliçe provası yapılmayacak, **ilk gerçek müşteri siparişinde** elle
+  kesilecek; prova başarılı olursa otomatik kesim panelden açılacak (şu an KAPALI).
+- Doğrulama: masaüstü (1920) ve mobil (414px, yatay taşma 0) ekran görüntüleri; ins_7d sepete
+  eklendi → "Sepetim (1)".

@@ -105,7 +105,7 @@ export const EasyCompare = () => (
             <div className="mt-6 flex flex-wrap items-center gap-4">
                 <Button asChild size="lg" data-testid="compare-apply-button">
                     <Link to="/basvuru">
-                        Pasaportunuzla başlayın <ArrowRight className="ml-1 h-4 w-4" />
+                        Hemen başvurun <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                 </Button>
                 <p className="text-xs leading-5 text-muted-foreground">

@@ -40,9 +40,9 @@ const COVERS = [
     },
     {
         icon: CalendarClock,
-        title: "30 günlük süre",
+        title: "7, 15, 30 veya 60 gün",
         detail:
-            "Poliçe 30 günlük kalış için hazırlanır; daha uzun programlarda süreyi başvuru öncesinde birlikte planlarız.",
+            "Poliçe süresini kalışınıza göre seçersiniz; teminat gidiş tarihinizde başlar ve seçtiğiniz gün sayısı kadar sürer.",
     },
 ];
 

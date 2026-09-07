@@ -1,10 +1,11 @@
 # ROADMAP (2026-09-07 itibarıyla · Tamamliyo sigorta entegrasyonu sonrası)
 
 ## P0 — Acil
-- [ ] **İlk poliçeyi elle kes**: Tamamliyo canlı bağlı ve fiyatlar senkron; otomatik kesim
-      KAPALI. İlk gerçek sigorta siparişinde Admin → Sigorta Poliçeleri → "Tamamliyo'dan
-      poliçeyi kes ve gönder" ile tek poliçe kesilip PDF/e-posta doğrulanacak, sonra
-      panelden "Otomatik poliçe kesimi" açılacak.
+- [ ] **İlk poliçeyi elle kes** (kullanıcı kararı: prova yok, ilk gerçek müşteri siparişinde):
+      Tamamliyo canlı bağlı, fiyatlar senkron, otomatik kesim KAPALI. İlk sigorta siparişinde
+      Admin → Sigorta Poliçeleri → "Tamamliyo'dan poliçeyi kes ve gönder" ile poliçe kesilip
+      PDF/e-posta doğrulanacak; **başarılıysa aynı ekrandaki "Otomatik poliçe kesimi"
+      anahtarı açılacak** (kullanıcı onayı alındı).
 - [ ] **WhatsApp numarası teyidi**: telefon +90 533 743 82 24 olarak güncellendi ve WhatsApp
       linki de bu numaraya alındı; numaranın WhatsApp'ta açık olduğu kullanıcıdan teyit edilmeli.
 - [x] ~~E-posta gönderimi kapalı~~ → 2026-06-11: kullanıcı tam yetkili Resend anahtarı verdi,
