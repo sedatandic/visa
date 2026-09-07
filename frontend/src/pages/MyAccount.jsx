@@ -12,6 +12,7 @@ import {
     Loader2,
     LogOut,
     Mail,
+    MessageCircle,
     RefreshCw,
     ShieldCheck,
     ShoppingBag,
@@ -328,7 +329,8 @@ export default function MyAccount() {
                                     <h2 className="font-heading text-lg font-bold">Belgelerim</h2>
                                     <p className="mt-1 text-sm text-muted-foreground">
                                         Onaylanan vize belgeleriniz ve sigorta poliçeleriniz burada saklanır.
-                                        PDF'leri istediğiniz zaman indirebilirsiniz.
+                                        PDF'i indirebilir, WhatsApp'tan paylaşabilir veya e-postanıza tekrar
+                                        gönderebilirsiniz.
                                     </p>
                                     <div className="mt-4 space-y-3">
                                         {documents.map((d) => (
@@ -379,6 +381,26 @@ export default function MyAccount() {
                                                             >
                                                                 <Download className="mr-2 h-4 w-4" />
                                                                 {d.kind === "visa" ? "Vizeyi indir" : "Poliçeyi indir"}
+                                                            </a>
+                                                        </Button>
+                                                        <Button
+                                                            asChild
+                                                            className="h-10 text-white hover:opacity-90"
+                                                            style={{ backgroundColor: "#25D366" }}
+                                                            data-testid={`whatsapp-document-${d.id}`}
+                                                        >
+                                                            <a
+                                                                href={`https://wa.me/?text=${encodeURIComponent(
+                                                                    `${d.title} · ${d.reference}\n${fileUrl(
+                                                                        d.download_url,
+                                                                        true
+                                                                    )}`
+                                                                )}`}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                            >
+                                                                <MessageCircle className="mr-2 h-4 w-4" />
+                                                                WhatsApp'tan gönder
                                                             </a>
                                                         </Button>
                                                         <Button

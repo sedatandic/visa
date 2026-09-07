@@ -1404,3 +1404,16 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
 - Doğrulama: vize + poliçe için uç `status=sent` döndü, geçersiz kimlikte 404;
   `/hesabim` ekranında buton tıklandı ve başarı bildirimi göründü (ekran görüntüsü);
   pytest 310 passed, test kayıtları temizlendi.
+
+## 2026-09-07 (13) · Belgeyi WhatsApp'tan gönder
+
+- `/hesabim` → Belgelerim kartlarına **"WhatsApp'tan gönder"** butonu (`whatsapp-document-<id>`,
+  WhatsApp yeşili #25D366): tıklamada `https://wa.me/?text=…` paylaşım ekranı açılır; mesajda
+  belge adı + referans kodu + imzalı PDF bağlantısı hazır gelir. Müşteri kendi sohbetine,
+  eşine/arkadaşına ya da bize tek dokunuşla iletebilir (API canlı olmadan da çalışır).
+- Bölüm açıklaması güncellendi: "PDF'i indirebilir, WhatsApp'tan paylaşabilir veya e-postanıza
+  tekrar gönderebilirsiniz."
+- Admin poliçe kartındaki WhatsApp butonu da aynı yeşile alındı (tema `--brand-green`
+  gök mavisi olduğu için WhatsApp rengiyle karışıyordu).
+- Doğrulama: paylaşım bağlantısı (metin + PDF adresi) kontrol edildi; masaüstü ve mobil (414px,
+  taşma 0) görünüm ekran görüntüleriyle teyit; test kayıtları temizlendi.

@@ -129,7 +129,8 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
                     {task.whatsapp.status !== "sent" && (
                         <Button
                             asChild
-                            className="mt-3 h-11 bg-[hsl(var(--brand-green))] text-white hover:opacity-90"
+                            className="mt-3 h-11 text-white hover:opacity-90"
+                            style={{ backgroundColor: "#25D366" }}
                             data-testid={`insurance-whatsapp-send-${task.id}`}
                         >
                             <a href={task.whatsapp.link} target="_blank" rel="noreferrer">
