@@ -45,15 +45,18 @@ async def _notify_status_email(app_id: str, matched: str) -> str:
     return res.get("status", "skipped")
 
 
+def _public_base_url() -> str:
+    """Musteriye gonderilen baglantilarin kok adresi (ortam degiskeninden)."""
+    return (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("PUBLIC_SITE_URL") or "").rstrip("/")
+
+
 async def _notify_status_whatsapp(app_id: str, matched: str) -> str:
     """Sonuc bildirimini WhatsApp uzerinden gonderir (hata akisi kesmez)."""
     try:
         import whatsapp
 
         fresh = await applications_col.find_one({"id": app_id})
-        out = await whatsapp.notify_result(
-            fresh, matched, os.environ.get("PUBLIC_BASE_URL") or "https://dubaivizeonline.com"
-        )
+        out = await whatsapp.notify_result(fresh, matched, _public_base_url())
         return out.get("status", "skipped")
     except Exception as exc:  # pragma: no cover
         logger.error("whatsapp notify failed: %s", exc)
@@ -66,8 +69,7 @@ async def _auto_deliver_visa(app_id: str) -> str:
         from visa_delivery import deliver_visa_document
 
         fresh = await applications_col.find_one({"id": app_id})
-        origin = os.environ.get("PUBLIC_BASE_URL") or "https://dubaivizeonline.com"
-        out = await deliver_visa_document(fresh, origin)
+        out = await deliver_visa_document(fresh, _public_base_url())
         return "sent" if out.get("ok") else (out.get("reason") or "failed")
     except Exception as exc:  # pragma: no cover
         logger.error("visa auto delivery failed: %s", exc)

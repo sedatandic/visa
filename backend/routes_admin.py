@@ -266,6 +266,16 @@ async def admin_application_detail(application_id: str, admin: dict = Depends(re
     return {"application": serialize_doc(doc), "transactions": serialize_doc(txs)}
 
 
+async def _notify_result_whatsapp(fresh: dict, status: str) -> None:
+    """Onay/ret sonucunu WhatsApp'tan bildirir; hata basvuru akisini kesmez."""
+    try:
+        import whatsapp
+
+        await whatsapp.notify_result(fresh, status, _public_base_url())
+    except Exception as exc:  # pragma: no cover - bildirim akisi kritik degil
+        logger.error("whatsapp notify failed: %s", exc)
+
+
 async def _notify_status_change(fresh: dict, previous_status: str, payload: StatusUpdate):
     """Durum degistiyse musteriye bilgilendirme e-postasi (ve sonucta WhatsApp) gonderir."""
     to_email = (fresh.get("contact") or {}).get("email") or (fresh.get("applicant") or {}).get("email")
@@ -279,14 +289,7 @@ async def _notify_status_change(fresh: dict, previous_status: str, payload: Stat
         meta={"reference_code": fresh["reference_code"], "status": payload.status},
     )
     if payload.status in {"approved", "rejected"}:
-        try:
-            import whatsapp
-
-            await whatsapp.notify_result(
-                fresh, payload.status, os.environ.get("PUBLIC_BASE_URL") or "https://dubaivizeonline.com"
-            )
-        except Exception as exc:  # pragma: no cover
-            logger.error("whatsapp notify failed: %s", exc)
+        await _notify_result_whatsapp(fresh, payload.status)
     return res.get("status")
 
 
@@ -448,6 +451,11 @@ async def admin_delete_visa_document(application_id: str, admin: dict = Depends(
     return {"application": serialize_doc(fresh)}
 
 
+def _public_base_url() -> str:
+    """Musteriye gonderilen baglantilarin kok adresi (ortam degiskeninden)."""
+    return (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("PUBLIC_SITE_URL") or "").rstrip("/")
+
+
 def _resolve_origin(origin_url: Optional[str], request: Optional[Request]) -> str:
     """Istemciden gelen origin degerini dogrular, gecersizse sunucu adresini kullanir."""
     origin = (origin_url or "").rstrip("/")
@@ -455,7 +463,7 @@ def _resolve_origin(origin_url: Optional[str], request: Optional[Request]) -> st
         if request is not None:
             origin = str(request.base_url).rstrip("/")
         else:
-            origin = (os.environ.get("PUBLIC_SITE_URL") or "").rstrip("/")
+            origin = _public_base_url()
     return origin
 
 
@@ -1245,6 +1253,16 @@ async def admin_insurance_report(admin: dict = Depends(require_admin)) -> dict:
     return await profit_report()
 
 
+def _delivery_links(origin: str, esim_file_id: Optional[str], policy_file_id: Optional[str]) -> list[dict]:
+    """Teslim e-postasina konacak imzali indirme baglantilari."""
+    labels = (("eSIM QR kodunuz", esim_file_id), ("Sigorta policeniz (PDF)", policy_file_id))
+    return [
+        {"label": label, "url": file_access.file_url(origin, file_id, file_access.TTL_EMAIL)}
+        for label, file_id in labels
+        if file_id
+    ]
+
+
 @router.post("/admin/orders/{order_id}/deliver")
 async def admin_deliver_order(order_id: str, payload: dict, admin: dict = Depends(require_admin)) -> dict:
     """eSIM QR kodu / police PDF'ini musteriye e-posta ile gonderir."""
@@ -1259,21 +1277,7 @@ async def admin_deliver_order(order_id: str, payload: dict, admin: dict = Depend
         raise HTTPException(400, "En az bir belge (eSIM QR veya police) yuklemelisiniz.")
 
     origin = _resolve_origin(payload.get("origin_url"), None)
-    links = []
-    if esim_file_id:
-        links.append(
-            {
-                "label": "eSIM QR kodunuz",
-                "url": file_access.file_url(origin, esim_file_id, file_access.TTL_EMAIL),
-            }
-        )
-    if policy_file_id:
-        links.append(
-            {
-                "label": "Sigorta policeniz (PDF)",
-                "url": file_access.file_url(origin, policy_file_id, file_access.TTL_EMAIL),
-            }
-        )
+    links = _delivery_links(origin, esim_file_id, policy_file_id)
 
     now = datetime.now(timezone.utc)
     await orders_col.update_one(

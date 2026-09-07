@@ -1,0 +1,32 @@
+{
+  "summary": "Iteration 105 regression: verified helper-function refactors in routes_admin.py (_public_base_url, _notify_result_whatsapp, _delivery_links), routes_public.py (_photo_background_fallback), and zami_status.py (_public_base_url) did not regress touched endpoints, and that the stale https://dubaivizeonline.com URL fallback is gone from all production backend modules. Created new pytest file with 18 tests covering: general regression (visa-types, content/site, bundles?visa_days=30 with pack_family, contact, admin apps/orders lists), application lifecycle (create + track + PATCH status reviewing with note+notify=true + PATCH status approved exercising WhatsApp simulate-mode swallow), order delivery (400 when no files, single-file, both-files with 2 signed /api/files/ links + PUBLIC_BASE_URL host + no stale domain), photo/check (happy path, PDF early return, 404 nonexistent), and stale-domain grep across production modules. 18/18 passed. Backend logs contain zero 500s / tracebacks during the run (only the expected 'photo ai failed' logged.error for the dummy JPG which is the designed fallback branch).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_105_refactor_regression.py",
+    "/app/test_reports/pytest/iter105.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_admin.py::admin_deliver_order calls _resolve_origin(payload.get('origin_url'), None) with request=None, so the origin falls back to os.environ.get('PUBLIC_SITE_URL'). Consider also honoring PUBLIC_BASE_URL to align with the new _public_base_url() helper (currently PUBLIC_SITE_URL and PUBLIC_BASE_URL are both set to the same value in .env, so no observable bug, but the two helpers diverge in fallback precedence).",
+    "routes_admin.py is 1311 lines; still exceeds the 700-line guideline. Owner has explicitly deferred further splitting due to risk - documented and acknowledged.",
+    "The email 'sent' status only means Resend accepted the API call - admin mailbox info@dubaivizehatti.com is currently hard-bouncing (known open issue, not a regression)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_105_refactor_regression.py (new)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "not tested (backend-only per request)"},
+  "test_credentials": "Admin token via /app/backend/admin_test_token.py (JWT signed with JWT_SECRET). ADMIN_LOGIN_EMAIL=info@dubaivizeonline.com.",
+  "seed_data_creation": "Test data prefixed TEST_ / delivered@resend.dev: 1 application, 2 orders, ~6 uploads, 1 contact message. Left in DB for audit; naming allows cleanup via TEST_ prefix.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Refactor verified. New test file /app/backend/tests/test_iteration_105_refactor_regression.py is 18 tests, all green, reusable as regression suite. Note the /api/admin/emails list endpoint strips the html field (has_preview only); use /api/admin/emails/{id} to inspect full body. Signed file links use ?t=<token> not ?token=. _resolve_origin(None-request) uses PUBLIC_SITE_URL fallback while _public_base_url() uses PUBLIC_BASE_URL - both currently point to the same preview URL.",
+  "rca of the issue": "N/A - no regressions found. Initial test failure was in the test script itself (wrong outbox field name and token query param); corrected and all pass."
+}

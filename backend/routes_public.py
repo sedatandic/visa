@@ -587,6 +587,29 @@ async def _store_photo_check(file_id: str, result: dict) -> None:
     )
 
 
+async def _photo_background_fallback(file_id: str, background: dict) -> dict:
+    """AI cevap vermezse en az beyaz zemin sartini raporlar."""
+    fallback = apply_background_report(
+        {
+            "ok": True,
+            "is_photo": True,
+            "checks": {},
+            "failed": [],
+            "issues": [],
+            "advice": "",
+            "score": 0.5,
+        },
+        background,
+    )
+    await _store_photo_check(file_id, fallback)
+    return {
+        "checked": True,
+        "reason": "background_only",
+        "message": _photo_check_message(fallback),
+        **fallback,
+    }
+
+
 @router.post("/photo/check")
 async def check_photo_document(request: Request, file_id: str = Form(...)) -> dict:
     """Yuklenen vesikalik fotografi yapay zeka ile denetler (uyari amacli, engellemez)."""
@@ -619,26 +642,7 @@ async def check_photo_document(request: Request, file_id: str = Form(...)) -> di
     except Exception as exc:
         logger.error("photo ai failed: %s", exc)
         if background.get("checked") and not background.get("ok"):
-            # AI cevap vermese bile beyaz zemin sarti kontrol edilir.
-            fallback = apply_background_report(
-                {
-                    "ok": True,
-                    "is_photo": True,
-                    "checks": {},
-                    "failed": [],
-                    "issues": [],
-                    "advice": "",
-                    "score": 0.5,
-                },
-                background,
-            )
-            await _store_photo_check(file_id, fallback)
-            return {
-                "checked": True,
-                "reason": "background_only",
-                "message": _photo_check_message(fallback),
-                **fallback,
-            }
+            return await _photo_background_fallback(file_id, background)
         return {
             "ok": True,
             "checked": False,
