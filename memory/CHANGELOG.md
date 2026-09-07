@@ -1183,3 +1183,28 @@ ve tüm ayar/içerik koleksiyonları korunur.
 - Doğrulama: `/api/admin/stats` → `total: 1`, bugün 0, okunmamış mesaj 0, WhatsApp sayaçları 0;
   panel ekran görüntüsünde tek başvuru listeleniyor, "Pasaport okuma performansı" ve
   Mesajlar/Ziyaretçiler boş durum metinlerine düştü.
+- NOT: Regresyon suite'i (`test_iteration_105`, `test_travel_rules` vb.) çalıştırıldığında yeni
+  TEST kayıtları oluşur; panel temiz kalsın diye test sonrası betik tekrar çalıştırılmalı.
+
+## 2026-09-07 (3) · Panel karşılama kartı (bugünün özeti + hızlı kısayollar)
+- **Backend** `daily_digest.today_overview()` (yeni): bugünün (Europe/Istanbul) başvuru/yolcu/
+  sipariş sayısı, bugünkü tahsilat (`_revenue`), `_attention()` (eksik belge, havale onayı,
+  terk edilmiş sepet) + yeni `policy_tasks` (bekleyen poliçe kesimi), `_upcoming_departures()`
+  (7 gün içinde gidişi olan açık başvurular), `pending_total`, `has_activity`, Türkçe
+  `day_label` ve saate göre `greeting` (Günaydın/İyi günler/İyi akşamlar).
+  Uç nokta: `GET /api/admin/today` (`require_admin`, jetonsuz 401).
+- **Frontend** `components/AdminWelcomeCard.jsx` (yeni), `/admin` sayfasının en üstünde:
+  tarih + selamlama, tek satır özet ("Bugün henüz yeni başvuru yok · 3 iş sizi bekliyor."),
+  4 metrik (bugün gelen, bugünkü yolcu, bugünkü tahsilat, bekleyen iş), tıklanabilir bekleyen
+  iş rozetleri (havale onayı → ödeme filtresi, eksik belge → durum filtresi, okunmamış mesaj,
+  WhatsApp işlemi, poliçe kesimi; sepet ve uçuş rozetleri bilgi amaçlı) ve 6 hızlı kısayol
+  (Ödeme bekleyenler, Eksik belgeliler, WhatsApp, Sigorta poliçeleri, eSIM & Sigorta,
+  Ziyaretçiler). Sakin günde metin "Bugün panel sakin…" olur.
+  test-id'ler: `admin-welcome-card|greeting|summary`, `admin-welcome-metric-{key}`,
+  `admin-welcome-pending-{key}`, `admin-welcome-action-{key}`.
+- KPI şeridindeki "Bugün gelen" kartı kaldırıldı (karşılama kartıyla tekrar ediyordu),
+  yerine **Toplam başvuru** geldi.
+- Doğrulama: `tests/test_iteration_113_admin_today.py` 5/5 PASS (selamlama saatleri, Türkçe
+  gün etiketi, yerel gün sınırları, 401, alan/uyum kontrolleri); masaüstü (1600px) ve mobil
+  (414px, yatay taşma yok, kart 604px) ekran görüntüleri; "Ödeme bekleyenler" kısayolu ödeme
+  filtresini "Ödeme bekliyor"a çeviriyor.

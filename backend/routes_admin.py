@@ -217,6 +217,14 @@ async def admin_stats(admin: dict = Depends(require_admin)) -> dict:
     }
 
 
+@router.get("/admin/today")
+async def admin_today_overview(admin: dict = Depends(require_admin)) -> dict:
+    """Panel karsilama karti: bugunun ozeti + bekleyen isler."""
+    from daily_digest import today_overview
+
+    return await today_overview()
+
+
 @router.get("/admin/applications")
 async def admin_applications(
     admin: dict = Depends(require_admin),

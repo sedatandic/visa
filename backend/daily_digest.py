@@ -11,7 +11,7 @@ import os
 from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from db import applications_col, cart_snapshots_col, orders_col, settings_col
+from db import applications_col, cart_snapshots_col, insurance_tasks_col, orders_col, settings_col
 from doc_reminders import missing_documents
 from emailer import daily_digest_html, money, send_email
 
@@ -198,6 +198,70 @@ async def collect_digest(day: date | None = None) -> dict:
         },
         "has_activity": bool(apps or orders or revenue["count"]),
         "admin_url": f"{(os.environ.get('PUBLIC_SITE_URL') or '').rstrip('/')}/admin",
+    }
+
+
+def _greeting(hour: int) -> str:
+    if hour < 11:
+        return "Günaydın"
+    return "İyi günler" if hour < 18 else "İyi akşamlar"
+
+
+async def _upcoming_departures(today: date, days: int = 7) -> dict:
+    """Onumuzdeki 7 gun icinde gidisi olan ve hala acik olan basvurular."""
+    docs = await applications_col.find(
+        {
+            "status": {"$in": OPEN_STATUSES},
+            "travel.arrival_date": {
+                "$gte": today.isoformat(),
+                "$lte": (today + timedelta(days=days)).isoformat(),
+            },
+        }
+    ).to_list(200)
+    return {
+        "count": len(docs),
+        "references": [d.get("reference_code") or "" for d in docs[:10]],
+    }
+
+
+async def today_overview() -> dict:
+    """Panel karsilama karti: bugunun ozeti + su an bekleyen isler."""
+    now = local_now()
+    today = now.date()
+    start, end = day_bounds(today)
+    window = {"$gte": start, "$lt": end}
+
+    apps = await applications_col.find({"created_at": window}).to_list(500)
+    orders = await orders_col.find({"created_at": window, "source": "store"}).to_list(500)
+    paid_apps = await applications_col.find(
+        {"payment.status": "paid", "payment.paid_at": window}
+    ).to_list(500)
+    paid_orders = await orders_col.find(
+        {"payment.status": "paid", "payment.paid_at": window}
+    ).to_list(500)
+
+    attention = await _attention()
+    attention["policy_tasks"] = {"count": await insurance_tasks_col.count_documents({"status": "pending"})}
+    upcoming = await _upcoming_departures(today)
+    revenue = _revenue(paid_apps + paid_orders)
+    pending_total = (
+        attention["missing_documents"]["count"]
+        + attention["awaiting_transfer"]["count"]
+        + attention["abandoned_carts"]["count"]
+        + attention["policy_tasks"]["count"]
+    )
+    return {
+        "day": today.isoformat(),
+        "day_label": day_label(today),
+        "greeting": _greeting(now.hour),
+        "applications_today": len(apps),
+        "travelers_today": sum(len(a.get("travelers") or []) for a in apps),
+        "orders_today": len(orders),
+        "revenue_today": revenue,
+        "attention": attention,
+        "upcoming_departures": upcoming,
+        "pending_total": pending_total,
+        "has_activity": bool(apps or orders or revenue["count"]),
     }
 
 

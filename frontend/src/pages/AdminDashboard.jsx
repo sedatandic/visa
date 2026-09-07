@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
+import { AdminWelcomeCard } from "../components/AdminWelcomeCard";
 import { OcrReportCard } from "../components/OcrReportCard";
 import { STATUS_OPTIONS, STATUS_META, formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { AdminLayout } from "../components/AdminLayout";
@@ -27,7 +28,7 @@ import {
 } from "../components/ui/select";
 
 const KPI = [
-    { key: "today", label: "Bugün gelen", icon: FileText },
+    { key: "total", label: "Toplam başvuru", icon: FileText },
     { key: "payment_pending", label: "Ödeme bekleyen", icon: Clock },
     { key: "reviewing", label: "İnceleniyor", icon: Loader2 },
     { key: "approved", label: "Onaylanan", icon: ThumbsUp },
@@ -86,8 +87,22 @@ export default function AdminDashboard() {
     return (
         <AdminLayout title="Başvurular" description="Tüm vize başvurularını filtreleyin, detaylarını görüntüleyin ve durumlarını güncelleyin.">
             <div data-testid="admin-dashboard">
+                <AdminWelcomeCard
+                    stats={stats}
+                    onShowPaymentPending={() => {
+                        setPage(1);
+                        setStatus("all");
+                        setPaymentStatus("pending");
+                    }}
+                    onShowDocumentsPending={() => {
+                        setPage(1);
+                        setPaymentStatus("all");
+                        setStatus("documents_pending");
+                    }}
+                />
+
                 {/* KPI */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                     {KPI.map(({ key, label, icon: Icon }) => (
                         <div key={key} className="card-surface p-5" data-testid={`admin-kpi-${key}`}>
                             <div className="flex items-center justify-between">
