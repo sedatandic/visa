@@ -1168,3 +1168,18 @@ başvuru detaylarını tek sayfalık forma geçir, 'detaylarınızı ekte bulabi
 - Yan bulgu düzeltildi: `AdminLogin.jsx` e-posta yer tutucusu hâlâ eski markayı
   (`info@dubaivizeonline.com`) gösteriyordu → `info@dubaivizehatti.com`. `routes_admin.py`
   ve `admin_test_token.py` içindeki `ADMIN_LOGIN_EMAIL` yedek değerleri de yeni markaya çevrildi.
+
+### Tam test verisi temizliği (2026-09-07)
+Kullanıcı: "tamamen silelim içini · tüm test kayıtlarını sil" → yeni betik
+`scripts/wipe_test_data.py` (dry-run varsayılan, `--apply` ile siler). `KEEP_REFS` içindeki
+gerçek kayıt zinciri (başvuru + bağlı sipariş + dosyaları + e-postaları + kayıtlı yolcusu)
+ve tüm ayar/içerik koleksiyonları korunur.
+- Silinen: 193 başvuru, 103 sipariş, 699 dosya kaydı, 1.596 e-posta arşivi,
+  15 ödeme kaydı, 9 sigorta görevi, 88 kayıtlı yolcu, 9 bildirim, 1 iletişim mesajı,
+  4 taslak, 96 müşteri + 1 yönetici giriş kodu, 28 OCR ölçümü, 131 Zami logu,
+  1 WhatsApp konuşması + 16 mesaj + 24 olay + 14 gönderim logu, 695 ziyaret, 11 IP geo.
+- Korunan: **DV-BJ930600 (Sedat Andic)** + siparişi SV-4GOGK7CT, 2 dosyası, 17 e-posta kaydı;
+  site_settings (12), visa_types (10), store_products (12), articles (5), testimonials (6).
+- Doğrulama: `/api/admin/stats` → `total: 1`, bugün 0, okunmamış mesaj 0, WhatsApp sayaçları 0;
+  panel ekran görüntüsünde tek başvuru listeleniyor, "Pasaport okuma performansı" ve
+  Mesajlar/Ziyaretçiler boş durum metinlerine düştü.
