@@ -62,8 +62,7 @@ export const Footer = () => {
                     Hızlı Bağlantılar
                 </h3>
                 <ul className="mt-4 space-y-2.5 text-sm text-white/80">
-                    <li><Link to="/vize-tipleri" className="transition-colors hover:text-primary">Hizmet Bedelleri</Link></li>
-                    <li><Link to="/dubai-vize-ucreti" className="transition-colors hover:text-primary" data-testid="footer-fees-link">Dubai Vize Ücretleri</Link></li>
+                    <li><Link to="/vize-tipleri" className="transition-colors hover:text-primary" data-testid="footer-fees-link">Hizmet Bedelleri</Link></li>
                     <li><Link to="/gerekli-belgeler" className="transition-colors hover:text-primary">Gerekli Belgeler</Link></li>
                     <li><Link to="/hizmetler" className="transition-colors hover:text-primary">Hizmetlerimiz</Link></li>
                     <li><Link to="/esim" className="transition-colors hover:text-primary" data-testid="footer-esim-link">Dubai eSIM</Link></li>

@@ -655,6 +655,37 @@ async def check_photo_document(request: Request, file_id: str = Form(...)) -> di
     return {"checked": True, "message": _photo_check_message(result), **result}
 
 
+async def _ocr_failure(
+    file_id: str, duration_ms: int, reason: str, message: str, data: dict | None = None
+) -> dict:
+    """Basarisiz OCR denemesini olcume yazar ve istemciye ayni bicimde yanit dondurur."""
+    await ocr_metrics.record_attempt(
+        file_id=file_id, duration_ms=duration_ms, ok=False, reason=reason, data=data or {}
+    )
+    payload = {"ok": False, "reason": reason, "message": message}
+    if data is not None:
+        payload["data"] = data
+    return payload
+
+
+async def _ocr_success(file_id: str, result: dict, duration_ms: int) -> dict:
+    """Okunan pasaport verisini olcume ve dosya kaydina isler."""
+    coverage = await ocr_metrics.record_attempt(
+        file_id=file_id, duration_ms=duration_ms, ok=True, data=result
+    )
+    await uploads_col.update_one(
+        {"id": file_id},
+        {"$set": {"ocr": {"at": datetime.now(timezone.utc), "confidence": result.get("confidence")}}},
+    )
+    return {
+        "ok": True,
+        "data": result,
+        "duration_ms": duration_ms,
+        "filled_count": len(coverage["filled"]),
+        "missing_fields": [ocr_metrics.FIELD_LABELS.get(m, m) for m in coverage["missing"]],
+    }
+
+
 @router.post("/passport/read")
 async def read_passport_document(request: Request, file_id: str = Form(...)) -> dict:
     """Yuklenen pasaport goruntusunu yapay zeka ile okuyup form alanlarini doldurur.
@@ -678,58 +709,39 @@ async def read_passport_document(request: Request, file_id: str = Form(...)) -> 
         return int((time.perf_counter() - started) * 1000)
 
     if content_type == "application/pdf":
-        await ocr_metrics.record_attempt(file_id=file_id, duration_ms=elapsed_ms(), ok=False, reason="pdf")
-        return {
-            "ok": False,
-            "reason": "pdf",
-            "message": "PDF dosyalari otomatik okunamiyor. Lutfen bilgileri elle girin.",
-        }
-    data: bytes = b""
-    ct = ""
+        return await _ocr_failure(
+            file_id,
+            elapsed_ms(),
+            "pdf",
+            "PDF dosyalari otomatik okunamiyor. Lutfen bilgileri elle girin.",
+        )
     try:
         data, ct = get_object(record["storage_path"])
     except Exception as exc:
         logger.error("passport fetch failed: %s", exc)
         raise HTTPException(502, "Dosya okunamadi.") from exc
 
-    result: dict = {}
     try:
         result = await read_passport(data, content_type or ct)
     except Exception as exc:
         logger.error("passport ai failed: %s", exc)
-        await ocr_metrics.record_attempt(file_id=file_id, duration_ms=elapsed_ms(), ok=False, reason="ai_error")
-        return {
-            "ok": False,
-            "reason": "ai_error",
-            "message": "Pasaport otomatik okunamadi. Bilgileri elle girebilirsiniz.",
-        }
+        return await _ocr_failure(
+            file_id,
+            elapsed_ms(),
+            "ai_error",
+            "Pasaport otomatik okunamadi. Bilgileri elle girebilirsiniz.",
+        )
 
     if not result.get("is_passport") or not (result.get("passport_no") or result.get("last_name")):
-        await ocr_metrics.record_attempt(
-            file_id=file_id, duration_ms=elapsed_ms(), ok=False, reason="not_readable", data=result
+        return await _ocr_failure(
+            file_id,
+            elapsed_ms(),
+            "not_readable",
+            "Goruntuden bilgiler okunamadi. Daha net bir fotograf yukleyin veya elle girin.",
+            data=result,
         )
-        return {
-            "ok": False,
-            "reason": "not_readable",
-            "message": "Goruntuden bilgiler okunamadi. Daha net bir fotograf yukleyin veya elle girin.",
-            "data": result,
-        }
 
-    duration_ms = elapsed_ms()
-    coverage = await ocr_metrics.record_attempt(
-        file_id=file_id, duration_ms=duration_ms, ok=True, data=result
-    )
-    await uploads_col.update_one(
-        {"id": file_id},
-        {"$set": {"ocr": {"at": datetime.now(timezone.utc), "confidence": result.get("confidence")}}},
-    )
-    return {
-        "ok": True,
-        "data": result,
-        "duration_ms": duration_ms,
-        "filled_count": len(coverage["filled"]),
-        "missing_fields": [ocr_metrics.FIELD_LABELS.get(m, m) for m in coverage["missing"]],
-    }
+    return await _ocr_success(file_id, result, elapsed_ms())
 
 
 @router.get("/files/{file_id}")
@@ -846,22 +858,54 @@ def _age_on(birth_date, reference) -> float | None:
     return (reference - birth_date).days / 365.25
 
 
-def _validate_travel_rules(travel, travelers: list) -> None:
-    """Vize suresi, yas ve pasaport gecerliligi kurallarini sunucu tarafinda dogrular."""
+def _travel_window(travel) -> tuple:
+    """Gidis/donus tarihlerini dogrular; tarih belli degilse kalis suresi None doner."""
     arrival = _parse_iso_date(travel.arrival_date)
     departure = _parse_iso_date(travel.departure_date)
-    flexible = bool(getattr(travel, "dates_unknown", False))
+    if bool(getattr(travel, "dates_unknown", False)):
+        return arrival, departure, None
+    if not arrival or not departure:
+        raise HTTPException(400, "Gidis ve donus tarihlerini gecerli bir formatta gonderin.")
+    if departure < arrival:
+        raise HTTPException(400, "Donus tarihi gidis tarihinden once olamaz.")
+    if arrival < date.today():
+        raise HTTPException(400, "Gidis tarihi bugunden once olamaz.")
+    return arrival, departure, (departure - arrival).days + 1
 
-    if flexible:
-        stay_days = None
-    else:
-        if not arrival or not departure:
-            raise HTTPException(400, "Gidis ve donus tarihlerini gecerli bir formatta gonderin.")
-        if departure < arrival:
-            raise HTTPException(400, "Donus tarihi gidis tarihinden once olamaz.")
-        if arrival < date.today():
-            raise HTTPException(400, "Gidis tarihi bugunden once olamaz.")
-        stay_days = (departure - arrival).days + 1
+
+def _validate_child_traveler(name: str, age: float | None, has_adult: bool) -> None:
+    """Cocuk vizesi yas siniri ve refakatci yetiskin sarti."""
+    if age is not None and age >= 18:
+        raise HTTPException(400, f"{name}: cocuk vizesi yalnizca 18 yasindan kucuk yolcular icindir.")
+    if not has_adult:
+        raise HTTPException(
+            400,
+            "18 yas alti yolcular, ayni basvuruda en az bir yetiskin yolcu ile birlikte basvurmalidir.",
+        )
+
+
+def _validate_stay_within_visa(name: str, traveler: dict, stay_days: int | None) -> None:
+    """Planlanan kalis, secilen vizenin verdigi kalis hakkini asamaz."""
+    duration = int(traveler.get("visa_duration_days") or 0)
+    if duration and stay_days and stay_days > duration:
+        raise HTTPException(
+            400,
+            f"{name}: secilen vize {duration} gun kalis hakki veriyor; planlanan kalis {stay_days} gun. "
+            "Daha uzun sureli bir vize secin veya tarihlerinizi guncelleyin.",
+        )
+
+
+def _validate_passport_validity(name: str, traveler: dict, reference, has_departure: bool) -> None:
+    """Pasaport, donus (ya da tarih yoksa bugun) itibariyla en az 6 ay gecerli olmalidir."""
+    expiry = _parse_iso_date(traveler.get("passport_expiry"))
+    if expiry and (expiry - reference).days < PASSPORT_MIN_VALID_DAYS:
+        basis = "donus tarihinden" if has_departure else "bugunden"
+        raise HTTPException(400, f"{name}: pasaportunuz {basis} itibaren en az 6 ay gecerli olmalidir.")
+
+
+def _validate_travel_rules(travel, travelers: list) -> None:
+    """Vize suresi, yas ve pasaport gecerliligi kurallarini sunucu tarafinda dogrular."""
+    arrival, departure, stay_days = _travel_window(travel)
 
     # Tarih belli degilse yas ve pasaport kontrolleri bugunun tarihine gore yapilir
     age_reference = arrival or date.today()
@@ -870,35 +914,11 @@ def _validate_travel_rules(travel, travelers: list) -> None:
 
     for traveler in travelers:
         name = f"{traveler.get('first_name', '')} {traveler.get('last_name', '')}".strip()
-        birth = _parse_iso_date(traveler.get("birth_date"))
-        age = _age_on(birth, age_reference)
-
         if traveler.get("applicant_type") == "child":
-            if age is not None and age >= 18:
-                raise HTTPException(
-                    400, f"{name}: cocuk vizesi yalnizca 18 yasindan kucuk yolcular icindir."
-                )
-            if not has_adult:
-                raise HTTPException(
-                    400,
-                    "18 yas alti yolcular, ayni basvuruda en az bir yetiskin yolcu ile birlikte basvurmalidir.",
-                )
-
-        duration = int(traveler.get("visa_duration_days") or 0)
-        if duration and stay_days and stay_days > duration:
-            raise HTTPException(
-                400,
-                f"{name}: secilen vize {duration} gun kalis hakki veriyor; planlanan kalis {stay_days} gun. "
-                "Daha uzun sureli bir vize secin veya tarihlerinizi guncelleyin.",
-            )
-
-        expiry = _parse_iso_date(traveler.get("passport_expiry"))
-        if expiry and (expiry - expiry_reference).days < PASSPORT_MIN_VALID_DAYS:
-            basis = "donus tarihinden" if departure else "bugunden"
-            raise HTTPException(
-                400,
-                f"{name}: pasaportunuz {basis} itibaren en az 6 ay gecerli olmalidir.",
-            )
+            age = _age_on(_parse_iso_date(traveler.get("birth_date")), age_reference)
+            _validate_child_traveler(name, age, has_adult)
+        _validate_stay_within_visa(name, traveler, stay_days)
+        _validate_passport_validity(name, traveler, expiry_reference, bool(departure))
 
 
 

@@ -980,3 +980,36 @@ kayboluyor. İkincil bulgu: son 24 saatte 76 gönderim "daily email sending quot
 Öneri (henüz yapılmadı): gönderim sonrası Resend `last_event` yoklayıp Admin → E-postalar
 ekranında "teslim edilemedi" uyarısı göstermek.
 
+
+## 2026-06-09 · Hizmet Bedelleri birleştirme + dönen WhatsApp sohbetleri + blurlu Türk pasaportu
+Kullanıcı istekleri (onaylı seçenekler: tek sayfa birleştirme, otomatik dönen sohbetler,
+4 senaryo, bordo Türk pasaportu blurlu):
+- **Sayfa birleştirme (SEO)**: `pages/VisaFees.jsx` SİLİNDİ; içeriği yeniden yazılarak
+  `pages/VisaTypes.jsx` ("Hizmet Bedelleri") altına taşındı — 01 Güncel bedeller
+  (PricingTabs + VisaComparison) · 02 Bedelin kapsamı (dahil / dahil olmayan / bedeli
+  belirleyen 4 unsur / sepete eklenebilir hizmetler) · 03 Ödeme & güvenlik
+  (PaymentTrustStrip, kartla ödeme, havale, tutar kilidi, iade özeti) · 04 Rehberler ·
+  05 SSS (7 yeni soru + FAQPage JSON-LD). Metinlerin tamamı yeniden yazıldı (kopya değil).
+  `/dubai-vize-ucreti` artık `<Navigate to="/vize-tipleri" replace />`; Navbar'daki
+  "Vize Ücretleri" kaydı ve `Receipt` importu kaldırıldı, Footer tek "Hizmet Bedelleri"
+  linkine indi (`footer-fees-link`), `public/sitemap.xml`'den eski URL çıkarıldı.
+- **WhatsAppPhoneMock: 4 dönen senaryo**: passport (pasaport süresi + aile indirimi,
+  blurlu Türk pasaportu fotoğrafı), express (yarın uçuş → anında ekspres), ticket
+  (bilet/otel şartı yok + ödeme linki kartı), delivery (vize PDF teslimi + eSIM önerisi).
+  6.8 sn'de otomatik geçiş, hover'da durur, açılışta **rastgele** senaryo, altta nokta
+  kontrolleri (`wa-chat-dot-{i}`), senaryo etiketi (`wa-chat-label`), sohbet alanı
+  `min-h-[452px]` ile zıplama engellendi. Yeni mesaj tipleri: `image`, `doc`, `link`.
+- **Görsel**: `public/chat/passport-tr.jpg` — Gemini 3.1 Flash Image ile üretilen bordo
+  "TÜRKİYE CUMHURİYETİ / PASAPORT" kapağı + açık kimlik sayfası; isim, numara ve MRZ
+  satırları okunamayacak şekilde bulanık.
+- **BUG FIX (kullanıcı: "bunu kaldır" + dev WhatsApp ikonu ekran görüntüsü)**: Kök neden
+  Tailwind'de `4.5` spacing tanımlı olmaması — lucide ikonları width/height attribute'una
+  düştüğü için etkilenmiyordu, ancak `WhatsAppIcon` gibi yalnız viewBox içeren özel SVG'ler
+  kapsayıcıyı doldurup 472px'e büyüyordu (`AskFirstSection` not kutusu). Çözüm: ikon
+  `h-5 w-5` yapıldı **ve** `tailwind.config.js` → `theme.extend.spacing["4.5"] = 1.125rem`
+  eklendi (koddaki ~24 `h-4.5/w-4.5` kullanımı artık gerçekten 18px).
+- Doğrulama (self-test, screenshot + DOM ölçümü): sayfadaki en büyük SVG 92px (bayraklar),
+  dot-2 → "Bilet & otel şartı", 8 sn sonra otomatik "Vize teslimi", pasaport görseli
+  sohbette render ediliyor, `/dubai-vize-ucreti` → `/vize-tipleri` yönleniyor, birleşik
+  sayfada 7 bölüm test-id'si mevcut.
+

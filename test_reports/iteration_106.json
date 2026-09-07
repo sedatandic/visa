@@ -1,0 +1,30 @@
+{
+  "summary": "Iteration 106 backend-only regression for behaviour-preserving refactors in routes_public.py (_validate_travel_rules split into _travel_window/_validate_child_traveler/_validate_stay_within_visa/_validate_passport_validity, and read_passport_document split into _ocr_failure/_ocr_success). Wrote 23 new pytest cases in /app/backend/tests/test_iteration_106_refactor_regression.py covering all 8 travel-rule branches (a-h) with exact Turkish message matches, happy-path single-adult + 2-adult+1-child family with family discount, passport OCR PDF/nonexistent/non-passport image with ocr_metrics row growth assertion (verified via pymongo before/after counts), and regression on neighbouring endpoints (visa-types, content/site, bundles pack_family, products, photo/check happy/pdf/404, applications/track correct+wrong-surname, contact). Ran alongside existing test_travel_rules.py: 32/32 passed. Backend logs show only expected 'photo ai failed' / 'passport ai failed' litellm BadRequest lines from the synthetic JPEG stub - these are caught and mapped to reason='ai_error' with HTTP 200, no 500s / tracebacks.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_106_refactor_regression.py",
+    "/app/test_reports/pytest/iteration_106.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Refactor is clean and safe: each helper has a single responsibility, raises the exact same HTTPException message as before, and _validate_travel_rules is now a small orchestrator. Confirms the automated report's 'code injection' / 'is-vs-==' / 'undefined variables' findings are false positives as E1 said.",
+    "Minor suggestion (not a bug): the non_passport image path currently returns reason='ai_error' when the AI vision model rejects the stub JPEG, which is technically a provider-side upload error, not an AI reasoning failure. Behaviour is unchanged from before the refactor, so nothing to fix in this iteration."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_106_refactor_regression.py"
+  ],
+  "success_rate": {"backend": "100% (32/32)", "frontend": "n/a (skipped per request)"},
+  "test_credentials": "N/A - endpoints tested are public; admin_test_token available but not required for this scope",
+  "seed_data_creation": "Applications created via POST /api/applications and uploads via POST /api/uploads with TEST_ prefixed names and delivered@resend.dev email. No manual DB writes.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_iteration_106_refactor_regression.py is a permanent regression suite. It uses pymongo (sync) for ocr_metrics row-count assertions to avoid motor's async event-loop closure issue when called from pytest-xdist workers. If future iterations refactor these helpers again, this file (plus test_travel_rules.py) is the go-to sanity check. Emergent LLM key remains rate-limited per-IP-per-hour on /passport/read and /photo/check - tests pytest.skip on 429."
+}

@@ -1,0 +1,40 @@
+{
+  "summary": "Frontend-only verification of the redesigned WhatsApp phone mockup on the homepage 'Önce sorun' section plus the commitments copy update. The phone mockup renders inside data-testid='landing-ask-first' with an authentic WhatsApp look (green header #075E54, wallpaper #EFEAE2 with subtle dotted pattern, right-aligned #D9FDD3 outgoing bubbles with blue double-tick, left-aligned white incoming bubbles with tails, 'Bugün' date divider, 'Mesaj yazın' input, round green mic FAB linking to wa.me/905325882630). All 7 bubbles (wa-bubble-0..6) render with opacity 1 after scroll+wait, all required dialogue content is present (7-ay pasaport, 6-ay geçerlilik, image bubble with '/chat/passport-shot.jpg' returning 200, '2 yetişkin 1 çocuk', 58 gün + aile indirimi, PDF card 'Vize_Onay_DV-8421.pdf 212 KB · 1 sayfa'). Alignment (out=flex-end, in=flex-start) verified; phone bounding box 368x860 on desktop with last bubble fully inside. ask-first-note, 3 timeline badges, WhatsApp+Başvuru CTAs, and CommitmentsStrip copy ('90 gün, sonra içerik imha edilir', 'Belgelerinizin içeriği 90 gün sonra imha ediliyor', no 'otomatik silinir') all pass. HOWEVER: a critical UI bug - the WhatsAppIcon inside data-testid='ask-first-note' is being sized with invalid Tailwind class 'h-4.5 w-4.5', which Tailwind does not recognize, so the SVG has no width/height and expands to fill its parent (472x472px on desktop, dominating the note card on mobile/tablet). This also causes horizontal scroll overflow on both 390 (scrollWidth 453) and 768 (scrollWidth 823) viewports - the mobile-no-h-overflow acceptance criterion FAILS as a direct consequence.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "AskFirstSection / WhatsAppIcon in ask-first-note",
+        "issue": "Invalid Tailwind class 'h-4.5 w-4.5' on <WhatsAppIcon>. WhatsAppIcon.jsx's inline <svg> has no intrinsic width/height attributes, so the icon expands to fill the flex container and renders at ~472x472px on desktop, and takes up the full width of the note box on mobile/tablet (see screenshots). Also causes horizontal page overflow at 390px (scrollWidth 453) and 768px (scrollWidth 823).",
+        "selector": "[data-testid='ask-first-note'] svg",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Homepage / Önce sorun note",
+        "issues": [
+          "Because of the giant WhatsApp icon (see ui bug above), the note text is squeezed to the right on desktop and appears below a huge black glyph on mobile - looks broken.",
+          "Subjective read on the phone mock itself: authenticity is good - header colour (#075E54), bubble tails, ticks (blue double-check), wallpaper dots, and input bar with mic FAB read as a genuine WhatsApp chat. Nothing off-brand inside the phone."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix WhatsAppIcon sizing in AskFirstSection.jsx line 88: replace 'h-4.5 w-4.5' with a valid Tailwind size (e.g. 'h-5 w-5' or 'h-4 w-4'). This alone will also resolve the mobile/tablet horizontal-overflow failure.",
+    "Grep for any other 'h-4.5' / 'w-4.5' classes; the WhatsAppPhoneMock uses them on lucide-react icons which happen to work because lucide sets intrinsic width=24 height=24, but they still don't apply Tailwind sizing - consider standardising to h-4/h-5."
+  ],
+  "critical_code_review_comments": [
+    "h-4.5 / w-4.5 are not valid stock Tailwind utilities and are silently dropped; use h-4/h-5 or extend theme.spacing in tailwind.config.js.",
+    "WhatsAppIcon SVG lacks default width/height attributes - safer to add width='1em' height='1em' as a fallback so a bad className cannot blow it up."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "86% (12/14 checks; mobile+tablet overflow failing)"},
+  "seed_data_creation": "",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Everything about the phone mockup itself (structure, content, bubbles, animation, alignment, PDF card, wa.me href, image asset 200) is correct. Only the sibling 'ask-first-note' icon sizing is broken. Re-run the mobile 390 and tablet 768 no-horizontal-overflow assertion after the fix - it should then pass. The 3 steps, CTAs, and CommitmentsStrip copy already pass and don't need re-verification.",
+  "rca of the issue": "AskFirstSection.jsx sets <WhatsAppIcon className='mt-0.5 h-4.5 w-4.5 shrink-0' />. Tailwind v3 does not ship an h-4.5/w-4.5 utility and no such value is added to tailwind.config.js theme.extend.spacing. The classes are therefore ignored at build time. Because WhatsAppIcon's inline SVG has no fallback width/height attribute, it renders at its default block-flex size and stretches to the note's row height (472px). The oversized icon in turn pushes the flex row past the viewport width, producing the mobile/tablet horizontal-scroll failure."
+}

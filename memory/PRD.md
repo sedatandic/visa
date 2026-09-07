@@ -1240,3 +1240,15 @@ Tamamlanan (testing_agent iteration_104, frontend %100):
 Reddedilen/parkedilen: SMS bildirimi (WhatsApp yeterli), sigortayı "zorunlu" diye
 konumlandırma (yasal risk).
 
+
+## 2026-06-09 · Fiyat sayfası tekilleştirildi + dinamik WhatsApp vitrini
+- `/vize-tipleri` tek fiyat sayfası oldu ("Hizmet Bedelleri"); `/dubai-vize-ucreti`
+  buraya 301 mantığıyla yönleniyor (`Navigate replace`), `VisaFees.jsx` silindi.
+  Menü/footer/sitemap güncellendi. Ayrıntı: CHANGELOG 2026-06-09.
+- Ana sayfa "Önce sorun" bölümündeki telefon maketi artık 4 farklı sohbeti (pasaport
+  süresi, ekspres, bilet/otel şartı, vize teslimi) 6.8 sn'de döndürüyor; sohbette
+  bilgileri bulanıklaştırılmış gerçekçi Türk pasaportu görseli var.
+- Tailwind'e `spacing["4.5"]` eklendi (özel SVG'lerin dev boyutta render olma hatası).
+- Açık kalan: admin e-postası `info@dubaivizehatti.com` Google Workspace'te yok →
+  kullanıcı kutuyu açmalı veya alternatif adres vermeli (P0, kullanıcı aksiyonu).
+

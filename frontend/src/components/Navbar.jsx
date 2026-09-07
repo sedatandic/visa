@@ -13,7 +13,6 @@ import {
     Newspaper,
     Palmtree,
     Phone,
-    Receipt,
     Search,
     ShieldCheck,
     Smartphone,
@@ -38,7 +37,6 @@ import { useContact } from "../lib/contact";
 /** Ust seviyede gorunen ana linkler (donusum odakli). */
 const PRIMARY_LINKS = [
     { to: "/vize-tipleri", label: "Hizmet Bedelleri", icon: FileCheck2 },
-    { to: "/dubai-vize-ucreti", label: "Vize Ücretleri", icon: Receipt },
     { to: "/takip", label: "Başvuru Takip", icon: Search },
 ];
 

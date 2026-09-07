@@ -16,6 +16,7 @@ import {
     Search,
     ShieldCheck,
     Radar,
+    X,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "../lib/api";
@@ -32,6 +33,8 @@ import { HeroHeadline } from "../components/HeroHeadline";
 import { HomeBundleStrip } from "../components/HomeBundleStrip";
 import { HomeTourStrip } from "../components/HomeTourStrip";
 import { EasyCompare } from "../components/EasyCompare";
+import { AskFirstSection } from "../components/AskFirstSection";
+import { CommitmentsStrip } from "../components/CommitmentsStrip";
 import { FxNote } from "../components/FxNote";
 import {
     Accordion,
@@ -200,6 +203,8 @@ export default function Home() {
 
             <EasyCompare />
 
+            <AskFirstSection />
+
             {/* DUBAI VIZE TURLERI (fiyatli kartlar) */}
             <VisaShowcase />
 
@@ -228,6 +233,22 @@ export default function Home() {
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
                             Pasaportunuzun kimlik sayfası ve beyaz fonlu bir vesikalık yeterli. Uçak bileti ve
                             otel rezervasyonu zorunlu değildir.
+                        </p>
+                        <div className="mt-5 flex flex-wrap gap-2.5" data-testid="documents-not-required-chips">
+                            {["Uçak bileti gerekmiyor", "Otel rezervasyonu gerekmiyor", "Banka dökümü gerekmiyor"].map(
+                                (chip) => (
+                                    <span
+                                        key={chip}
+                                        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground"
+                                    >
+                                        <X className="h-3.5 w-3.5 text-[hsl(var(--brand-red))]" aria-hidden="true" />
+                                        {chip}
+                                    </span>
+                                )
+                            )}
+                        </div>
+                        <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                            Vize çıkmadan bilet almanızı önermiyoruz: önce vizeniz onaylansın, planı sonra yapın.
                         </p>
                     </div>
                     <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -265,6 +286,8 @@ export default function Home() {
 
             {/* BASVURU TAKIBI */}
             <VisaSpecimen compact />
+
+            <CommitmentsStrip />
 
             <section className="section" data-testid="landing-tracking">
                 <div className="container-page grid items-center gap-10 lg:grid-cols-[1fr_0.9fr]">

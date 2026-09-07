@@ -1,0 +1,44 @@
+{
+  "summary": "Frontend UX-simplification regression for /basvuru wizard (iteration 107). Verified all 5 simplifications requested by the user plus mobile responsiveness and console-error freedom. Backend contract not re-tested (already covered in iteration 106); the full-submit regression was reduced to a UI-only navigation check since POST /api/passport/read and /api/photo/check are LLM-rate-limited and iteration 106 already asserted the applications-create + travel-rule contract end-to-end.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_verifications": {
+    "S1_no_applicant_type_select": "PASS - [data-testid=select-applicant-type] absent",
+    "S1_auto_child_from_DOB": "PASS - DOB 10.05.2015 -> applicant-type-auto-note appears with text 'Doğum tarihine göre çocuk vizesi seçildi (18 yaş altı).', chip switches to Çocuk, primary-visa-select shows '30 Günlük Tek Girişli Çocuk Vizesi · 2.470 ₺', child-application-notice renders",
+    "S1_auto_adult_from_DOB": "PASS - DOB 10.05.1990 -> auto-note disappears, chip switches back to Yetişkin, price returns to 5.190 ₺",
+    "S1_no_infinite_rerender": "PASS - 0 console errors captured across all interactions; useEffect that syncs applicant_type from birth_date properly no-ops via `return changed ? next : list`",
+    "S2_five_fields_hidden_on_load": "PASS - traveler-0-first-name/-last-name/-birth-date/-passport-no/-passport-expiry absent from DOM on fresh load",
+    "S2_upload_and_manual_link_visible": "PASS - traveler-0-passport-ai-input and traveler-0-manual-entry-button rendered",
+    "S2_manual_click_reveals_fields": "PASS - clicking manual-entry-button reveals all 5 fields",
+    "S2_auto_reveal_on_empty_next": "PASS - clicking wizard-next-step-button with empty traveller data auto-reveals fields AND shows Turkish errors ('Doğum tarihi zorunlu.', 'Pasaport numarası zorunlu.', 'Pasaport geçerlilik tarihi zorunlu.', 'Gidiş/Dönüş tarihinizi seçin.')",
+    "S3_contact_prefill": "PASS - input-contact-name='AHMET YILMAZ' -> traveler-0-first-name='AHMET', last-name='YILMAZ' after manual open",
+    "S3_no_overwrite_after_edit": "PASS - after manually editing first-name to 'MEHMET', changing contact-name to 'ALI VELI' does NOT overwrite (still 'MEHMET')",
+    "S4_single_traveller_step2": "PASS - heading = 'Vizenizi onaylayın', visa-step-selected-summary + visa-step-change-visa-button present, traveler-0-visa-type ABSENT",
+    "S4_two_traveller_step2": "PASS - heading = 'Vize seçimi', visa-select-card-0/1 + traveler-0/1-visa-type present, visa-step-selected-summary absent",
+    "S5_no_birth_country_field": "PASS - [data-testid=select-birth-country] absent; step 1 no longer blocks progress on birth-country. (Backend default travel.birth_country='TR' already covered by iteration 106 create+get tests.)",
+    "mobile_390px_layout": "PASS - traveler-card-0 width 308px, manual-entry-button 266px, no horizontal overflow (docW==viewportW==390), 0 console errors",
+    "console_error_free": "PASS - 0 console errors / 0 pageerrors across all interactions including rapid DOB toggling"
+  },
+  "test_report_links": [
+    "Ad-hoc playwright scripts executed via mcp_browser_automation (see console logs in /root/.emergent/automation_output/20260907_092432/)"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx is now 3787 lines — still exceeds the 700-line guideline. Not a regression from this iteration but worth splitting the traveller-card, visa-step and summary blocks into sub-components in a future refactor.",
+    "The useEffect at Apply.jsx:1186 lists `travelers` in its dep-array while calling setTravelers. It correctly returns the same reference when nothing changes (`return changed ? next : list`), so no infinite loop. Confirmed empirically: 0 render-loop console warnings. Leave as is.",
+    "Contact-name prefill useEffect at line 1171 only fires for single-traveller applications and only when both first/last name are empty. Behaviour matches the spec (does not overwrite user edits). Good.",
+    "The `manualFieldsVisible` gate at line 2294 correctly ORs in `hasFieldErrors` so validation errors never remain hidden — matches the reviewer's explicit warning."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (out of scope this iteration)", "frontend": "100% (16/16 UI checks pass)"},
+  "test_credentials": "Not needed for /basvuru (public route)",
+  "seed_data_creation": "No applications submitted this iteration (LLM rate limits; iteration 106 already covered POST /api/applications). Only ephemeral form input.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 5 UX simplifications for /basvuru wizard verified working. Testids used: select-applicant-type (must be absent), select-birth-country (must be absent), applicant-type-auto-note, traveler-0-manual-entry-button, traveler-0-first-name..passport-expiry, input-contact-name, visa-step-selected-summary, visa-step-change-visa-button, visa-select-card-N, traveler-N-visa-type, wizard-next-step-button. Note: the birth-date field IS itself an <input> (not a wrapper) — use page.fill('[data-testid=traveler-0-birth-date]', '10.05.2015') directly rather than a nested selector. Format is Turkish gg.aa.yyyy. Full submit path with real POST /api/passport/read + /api/photo/check + /api/applications is heavily LLM-rate-limited (429 per IP per hour with Turkish message) and was validated in iteration 106.",
+  "rca of the issue": "N/A - no bugs found"
+}

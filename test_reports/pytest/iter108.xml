@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="6" time="1.129" timestamp="2026-09-07T09:40:15.391601+00:00" hostname="agent-env-2b6e9e28-d8b5-43c2-8486-5b83857d1b72"><testcase classname="tests.test_iteration_108_retention" name="test_purge_expired_uploads_marks_old_ignores_recent" time="0.000"><failure message="Failed: async def functions are not natively supported.&#10;You need to install a suitable plugin for your async framework, for example:&#10;  - anyio&#10;  - pytest-asyncio&#10;  - pytest-tornasync&#10;  - pytest-trio&#10;  - pytest-twisted">async def functions are not natively supported.
+You need to install a suitable plugin for your async framework, for example:
+  - anyio
+  - pytest-asyncio
+  - pytest-tornasync
+  - pytest-trio
+  - pytest-twisted</failure></testcase><testcase classname="tests.test_iteration_108_retention.TestBackendRegression" name="test_content_site" time="0.268" /><testcase classname="tests.test_iteration_108_retention.TestBackendRegression" name="test_visa_types" time="0.076" /><testcase classname="tests.test_iteration_108_retention.TestBackendRegression" name="test_bundles" time="0.151" /><testcase classname="tests.test_iteration_108_retention.TestBackendRegression" name="test_products" time="0.104" /><testcase classname="tests.test_iteration_108_retention.TestBackendRegression" name="test_create_application_still_works" time="0.193" /></testsuite></testsuites>

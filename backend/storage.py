@@ -60,3 +60,28 @@ def get_object(path: str):
         resp = requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)
     resp.raise_for_status()
     return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+
+
+def delete_object(path: str) -> str:
+    """Nesne icerigini yok eder ve ne yapildigini dondurur.
+
+    Emergent Object Storage DELETE'i desteklemiyor (405; yalniz PUT/GET/HEAD).
+    Bu yuzden silme denemesi basarisiz olursa nesneyi 0 baytlik veriyle uzerine
+    yazarak icerigi imha ederiz ("wiped"). Kayit tarafindaki tombstone islemi
+    cagirana aittir.
+    """
+    key = init_storage()
+    try:
+        resp = requests.delete(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)
+        if resp.status_code == 404:
+            return "missing"
+        if resp.status_code == 403:
+            key = init_storage(force=True)
+            resp = requests.delete(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)
+        if resp.ok:
+            return "deleted"
+    except requests.RequestException as exc:
+        logger.warning("storage delete istegi basarisiz (%s): %s", path, exc)
+
+    put_object(path, b"", "application/octet-stream")
+    return "wiped"

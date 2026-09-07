@@ -6,6 +6,7 @@ import {
     ArrowLeft,
     ArrowRight,
     Baby,
+    BadgeCheck,
     BookUser,
     Building2,
     CalendarDays,
@@ -14,6 +15,7 @@ import {
     CheckCircle2,
     CreditCard,
     FileText,
+    FileCheck2,
     FileUp,
     Info,
     Loader2,
@@ -1110,6 +1112,29 @@ export default function Apply() {
 
     const visaById = (id) => visaTypes.find((v) => v.id === id);
 
+    // Yolcunun yasi 18'in altindaysa cocuk vizesi gerekir; kullaniciya ayrica sorulmaz.
+    const applicantTypeFor = (birthDate, referenceDate) => {
+        if (!birthDate) return null;
+        const birth = new Date(birthDate);
+        if (Number.isNaN(birth.getTime())) return null;
+        const ref = referenceDate ? new Date(referenceDate) : new Date();
+        if (Number.isNaN(ref.getTime())) return null;
+        return (ref - birth) / (365.25 * 86400000) < 18 ? "child" : "adult";
+    };
+
+    // Yetiskin <-> cocuk gecisinde ayni sure/giris tipindeki vizeye esler.
+    const matchingVisaFor = (currentId, type) => {
+        const options = visaOptionsFor(type);
+        const current = visaById(currentId);
+        if (!current) return options.find((v) => v.popular)?.id || options[0]?.id || "";
+        const same = options.find(
+            (v) =>
+                Number(v.duration_days) === Number(current.duration_days) &&
+                v.entry_type === current.entry_type
+        );
+        return (same || options[0])?.id || "";
+    };
+
     // Kalisi karsilayan en kisa (ve en ucuz) vizeyi bulur; mevcut giris tipini korumaya calisir.
     const pickVisaFor = (days, traveler) => {
         const current = visaById(traveler.visa_type_id);
@@ -1142,15 +1167,36 @@ export default function Apply() {
         setErrors((p) => ({ ...p, stay_length: undefined }));
     };
 
-    const setPrimaryApplicantType = (value) => {
-        const first = travelers[0];
-        if (!first) return;
-        updateTraveler(first.key, {
-            applicant_type: value,
-            visa_type_id: "",
-            ...(value === "child" ? { marital_status: "single", profession: "Student" } : {}),
+    // Bireysel basvuruda yolcunun adi iletisim adiyla ayni olur; iki kez yazdirmayiz.
+    useEffect(() => {
+        const name = contact.full_name.trim();
+        if (travelers.length !== 1 || name.split(/\s+/).length < 2) return;
+        const parts = name.split(/\s+/);
+        const last = parts.pop();
+        const first = parts.join(" ");
+        setTravelers((list) => {
+            const t = list[0];
+            if (!t || t.first_name || t.last_name) return list;
+            return [{ ...t, first_name: first, last_name: last }];
         });
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [contact.full_name, travelers.length]);
+
+    // Dogum tarihi girildiginde/okundugunda yetiskin-cocuk ayrimi kendiliginden guncellenir.
+    useEffect(() => {
+        if (!visaTypes.length) return;
+        setTravelers((list) => {
+            let changed = false;
+            const next = list.map((t) => {
+                const type = applicantTypeFor(t.birth_date, travel.arrival_date);
+                if (!type || type === t.applicant_type) return t;
+                changed = true;
+                return { ...t, applicant_type: type, visa_type_id: matchingVisaFor(t.visa_type_id, type) };
+            });
+            return changed ? next : list;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [travelers, travel.arrival_date, visaTypes]);
 
     const toggleDatesUnknown = (checked) => {        const on = !!checked;
         setTravel((t) => ({
@@ -1403,8 +1449,6 @@ export default function Apply() {
             travelers.forEach((t) => {
                 if (!t.visa_type_id) e[t.key] = { ...(e[t.key] || {}), visa_type_id: "Vize türü seçin." };
             });
-            if (travel.birth_country !== "TR")
-                e.birth_country = "Üzgünüz, başvuru şu an yalnızca Türkiye doğumlu kişiler için yapılabilmektedir.";
             if (!travel.dates_unknown && travel.arrival_date && travel.departure_date) {
                 const stayDays =
                     Math.round(
@@ -1806,21 +1850,15 @@ export default function Apply() {
                                                     Başvurunuzla ilgili dönüş bu numaraya WhatsApp üzerinden yapılacaktır.
                                                 </p>
                                             </Field>
-                                            <Field label="Başvuru Türü" required htmlFor="c-applicant-type">
-                                                <Select value={primaryApplicantType} onValueChange={setPrimaryApplicantType}>
-                                                    <SelectTrigger id="c-applicant-type" data-testid="select-applicant-type">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="adult" data-testid="applicant-option-adult">
-                                                            Yetişkin
-                                                        </SelectItem>
-                                                        <SelectItem value="child" data-testid="applicant-option-child">
-                                                            Çocuk (18 yaş altı)
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </Field>
+                                            {hasChildApplicant && (
+                                                <div
+                                                    className="flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/[0.05] px-4 py-3 text-sm font-semibold text-foreground/85 sm:col-span-2"
+                                                    data-testid="applicant-type-auto-note"
+                                                >
+                                                    <BadgeCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                                                    Doğum tarihine göre çocuk vizesi seçildi (18 yaş altı).
+                                                </div>
+                                            )}
                                         </div>
                                         {hasChildApplicant && (
                                             <div
@@ -2241,14 +2279,21 @@ export default function Apply() {
                                     <div className="mt-5 space-y-6">
                                         {travelers.map((t, idx) => {
                                             const te = errors[t.key] || {};
+                                            const hasFieldErrors = Object.keys(te).length > 0;
                                             const passportRead = ocr[t.key]?.status === "done";
+                                            const ocrAttempted = !!ocr[t.key] && ocr[t.key].status !== "loading";
                                             // Cinsiyet artik formda sorulmuyor; pasaport MRZ'sinden okunur.
                                             const passportComplete =
                                                 !!t.first_name && !!t.last_name && !!t.birth_date && !!t.passport_no && !!t.passport_expiry;
                                             // OCR bilgileri eksiksiz doldurduysa alanlari ozet karta cevir;
                                             // hata varsa veya kullanici "Duzenle"ye bastiysa formu geri ac.
                                             const passportSummaryVisible =
-                                                passportRead && passportComplete && !fieldsOpen[t.key] && Object.keys(te).length === 0;
+                                                passportRead && passportComplete && !fieldsOpen[t.key] && !hasFieldErrors;
+                                            // Pasaport daha yuklenmediyse bes alani bastan gostermeyiz; yukleme
+                                            // kutusu yeter. Elle girmek isteyen tek dokunusla alanlari acar.
+                                            const manualFieldsVisible =
+                                                !passportSummaryVisible &&
+                                                (fieldsOpen[t.key] || hasFieldErrors || ocrAttempted || passportComplete);
                                             return (
                                                 <div key={t.key} className="rounded-xl border border-border p-5" data-testid={`traveler-card-${idx}`}>
                                                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -2371,7 +2416,7 @@ export default function Apply() {
                                                                 dokunun.
                                                             </p>
                                                         </div>
-                                                    ) : (
+                                                    ) : manualFieldsVisible ? (
                                                     <div className="mt-5 grid gap-5 sm:grid-cols-2">
                                                         <Field label="Ad" required error={te.first_name}>
                                                             <Input value={t.first_name} onChange={(e) => updateTraveler(t.key, { first_name: e.target.value })} placeholder="AHMET" data-testid={`traveler-${idx}-first-name`} />
@@ -2421,6 +2466,15 @@ export default function Apply() {
                                                             </div>
                                                         )}
                                                     </div>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setFieldsOpen((o) => ({ ...o, [t.key]: true }))}
+                                                            className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none"
+                                                            data-testid={`traveler-${idx}-manual-entry-button`}
+                                                        >
+                                                            <Pencil className="h-3.5 w-3.5" /> Pasaportum yanımda değil, bilgileri elle gireyim
+                                                        </button>
                                                     )}
 
                                                 </div>
@@ -2441,10 +2495,13 @@ export default function Apply() {
                             {/* STEP 1 */}
                             {step === 1 && (
                                 <div data-testid="wizard-visa-details-form">
-                                    <h2 className="font-heading text-xl font-bold">Vize seçimi</h2>
+                                    <h2 className="font-heading text-xl font-bold">
+                                        {travelers.length > 1 ? "Vize seçimi" : "Vizenizi onaylayın"}
+                                    </h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        Yolcularınız için vize türünü seçin; seyahat tarihlerinizi 1. adımda
-                                        güncelleyebilirsiniz.
+                                        {travelers.length > 1
+                                            ? "Yolcularınız için vize türünü seçin; seyahat tarihlerinizi 1. adımda güncelleyebilirsiniz."
+                                            : "Seçiminizi kontrol edin, istersen yanına ek hizmet ekleyin."}
                                     </p>
 
                                     <div className="mt-6">
@@ -2452,58 +2509,73 @@ export default function Apply() {
                                     </div>
 
 
-                                    <div className="mt-6 space-y-4">
-                                        {travelers.map((t, idx) => {
-                                            const te = errors[t.key] || {};
-                                            const options = visaOptionsFor(t.applicant_type);
-                                            const selected = visaById(t.visa_type_id);
-                                            return (
-                                                <div key={t.key} className="rounded-xl border border-border p-5" data-testid={`visa-select-card-${idx}`}>
-                                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                                        <p className="font-heading text-sm font-bold">
-                                                            {t.first_name || `${idx + 1}. Yolcu`} {t.last_name}
-                                                            <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                                                                {t.applicant_type === "child" ? "Çocuk" : "Yetişkin"}
-                                                            </span>
-                                                        </p>
-                                                        {selected && (
-                                                            <span className="font-heading text-base font-bold">{formatMoney(selected.price, selected.currency)}</span>
-                                                        )}
+                                    {travelers.length > 1 ? (
+                                        <div className="mt-6 space-y-4">
+                                            {travelers.map((t, idx) => {
+                                                const te = errors[t.key] || {};
+                                                const options = visaOptionsFor(t.applicant_type);
+                                                const selected = visaById(t.visa_type_id);
+                                                return (
+                                                    <div key={t.key} className="rounded-xl border border-border p-5" data-testid={`visa-select-card-${idx}`}>
+                                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                                            <p className="font-heading text-sm font-bold">
+                                                                {t.first_name || `${idx + 1}. Yolcu`} {t.last_name}
+                                                                <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                                    {t.applicant_type === "child" ? "Çocuk" : "Yetişkin"}
+                                                                </span>
+                                                            </p>
+                                                            {selected && (
+                                                                <span className="font-heading text-base font-bold">{formatMoney(selected.price, selected.currency)}</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="mt-4">
+                                                            <Field label="Vize Türü" required error={te.visa_type_id}>
+                                                                <Select value={t.visa_type_id} onValueChange={(v) => updateTraveler(t.key, { visa_type_id: v })}>
+                                                                    <SelectTrigger data-testid={`traveler-${idx}-visa-type`}>
+                                                                        <SelectValue placeholder="Seçiniz" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {options.map((v) => (
+                                                                            <SelectItem key={v.id} value={v.id}>
+                                                                                {v.name} – {formatMoney(v.price, v.currency)}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </Field>
+                                                        </div>
                                                     </div>
-                                                    <div className="mt-4">
-                                                        <Field label="Vize Türü" required error={te.visa_type_id}>
-                                                            <Select value={t.visa_type_id} onValueChange={(v) => updateTraveler(t.key, { visa_type_id: v })}>
-                                                                <SelectTrigger data-testid={`traveler-${idx}-visa-type`}>
-                                                                    <SelectValue placeholder="Seçiniz" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {options.map((v) => (
-                                                                        <SelectItem key={v.id} value={v.id}>
-                                                                            {v.name} – {formatMoney(v.price, v.currency)}
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </Field>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <div className="mt-7 grid gap-5 sm:grid-cols-2">
-                                        <Field label="Doğum Ülkesi" required error={errors.birth_country}>
-                                            <Select value={travel.birth_country} onValueChange={(v) => { setTravel((f) => ({ ...f, birth_country: v })); setErrors((p) => ({ ...p, birth_country: undefined })); }}>
-                                                <SelectTrigger data-testid="select-birth-country">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="TR">Türkiye</SelectItem>
-                                                    <SelectItem value="OTHER">Diğer ülkeler</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </Field>
-                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4 text-sm"
+                                            data-testid="visa-step-selected-summary"
+                                        >
+                                            <FileCheck2 className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                                            <span className="text-muted-foreground">Seçtiğiniz vize:</span>
+                                            <strong data-testid="visa-step-selected-value">
+                                                {primaryVisa ? primaryVisa.name : "Seçilmedi"}
+                                            </strong>
+                                            {primaryVisa && (
+                                                <span className="font-heading font-bold">
+                                                    {formatMoney(primaryVisa.price, primaryVisa.currency)}
+                                                </span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setStep(0);
+                                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                                }}
+                                                className="ml-auto text-xs font-semibold text-primary hover:underline"
+                                                data-testid="visa-step-change-visa-button"
+                                            >
+                                                Değiştir
+                                            </button>
+                                        </div>
+                                    )}
 
                                     <div
                                         className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4 text-sm"

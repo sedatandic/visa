@@ -1,0 +1,55 @@
+{
+  "summary": "Iteration 108: Verified two new homepage sections (Ask-First + Commitments), documents 'gerekmiyor' chips, homepage regression, and the new 90-day retention purge. Frontend: 100% pass (all data-testids, correct WhatsApp number from /api/content/site, correct working_hours propagated, 0 console errors, no 390px overflow). Backend regression: /api/content/site, /api/visa-types, /api/bundles, /api/products, POST /api/applications all pass. CRITICAL: purge_expired_uploads() is BROKEN in production because the underlying Emergent Object Storage service does NOT accept HTTP DELETE (returns 405 Method Not Allowed; only PUT/GET/HEAD are allowed). Every purge attempt raises inside storage.delete_object() -> retention.py catches it, increments 'failed', and NEVER marks the DB record is_deleted=true. The '90 gün sonra otomatik silinir' promise is therefore not honoured.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "storage.delete_object / retention.purge_expired_uploads",
+        "issue": "Emergent Object Storage responds 405 Method Not Allowed to DELETE (Allow: PUT, GET, HEAD). Result: purge_expired_uploads() returned {purged:0, failed:1} on the fake old doc, DB record was NEVER marked is_deleted=True and storage_path was NOT unset. In production nothing will ever be purged. Reproduced via requests.delete on /objstore/api/v1/storage/objects/<path> -> 405, allow header 'PUT, GET, HEAD'.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_verifications": {
+    "landing-ask-first": "PASS - section renders below EasyCompare",
+    "ask-first-chat + 6 bubbles": "PASS - ask-first-bubble-0..5 all present, alternating user/agent",
+    "ask-first-steps badges": "PASS - '2 dakika', 'Aynı gün', 'Ortalama 2 iş günü' all present",
+    "ask-first-whatsapp-button href": "PASS - href=https://wa.me/905325882630?text=Merhaba%2C%20Dubai%20vizesi%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum. Number sourced from /api/content/site company.whatsapp, NOT placeholder 908500000000.",
+    "ask-first-apply-button": "PASS - href=/basvuru",
+    "landing-commitments 5 rows": "PASS - Ofis, Başvuru takibi, Belge saklama '90 gün, sonra otomatik silinir', Çalışma saatleri, Destek dili",
+    "commitment working_hours match": "PASS - row text 'Hafta içi 09:00 - 19:00 · Cumartesi 10:00 - 16:00' == company.working_hours from GET /api/content/site",
+    "commitment-highlight count": "PASS - 3 (90-day, express, price lock)",
+    "documents-not-required-chips": "PASS - three chips + explanatory line 'Vize çıkmadan bilet almanızı önermiyoruz: önce vizeniz onaylansın, planı sonra yapın.' visible",
+    "homepage regression": "PASS - landing-hero, landing-advantages, landing-documents, landing-tracking all present; no console/page errors",
+    "mobile 390px": "PASS - landing-ask-first width=390, landing-commitments width=390, ask-first-chat width=358, documentElement scrollWidth=390 (no horizontal overflow)",
+    "backend /api/content/site": "PASS 200",
+    "backend /api/visa-types": "PASS 200 (list>0)",
+    "backend /api/bundles?visa_days=30": "PASS 200",
+    "backend /api/products": "PASS 200",
+    "backend POST /api/applications": "PASS <500",
+    "retention scheduler boot": "PASS - log line 'document retention scheduler started' present",
+    "retention purge behaviour": "FAIL - purged=0/failed=1 on old fake doc due to storage 405; recent doc correctly untouched; /api/files/{old_id}?t=... returned 404 only because DB access filter is_deleted=False AND the storage lookup raised, but the doc was never actually flagged is_deleted (still False), meaning any future storage repair would resurrect the file"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_108_retention.py",
+    "/app/test_reports/pytest/iter108.xml"
+  ],
+  "action_items": [
+    "CRITICAL: Fix retention purge. The Emergent Object Storage endpoint /objstore/api/v1/storage/objects/{path} does NOT support DELETE (405, Allow: PUT, GET, HEAD). Options: (a) contact platform team to enable DELETE; (b) treat retention as DB-only tombstone: catch the 405/HTTPError inside storage.delete_object and still proceed to mark is_deleted=true + unset storage_path + set purge_reason (accept that the object may linger in object storage); (c) overwrite the object with a zero-byte PUT before marking deleted, so contents are wiped even though the object stub remains. Whatever path is chosen, the current code silently no-ops on every real document — the '90 gün otomatik silinir' commitment on the homepage is currently not truthful.",
+    "Add a metric/log alert when purge_expired_uploads() returns failed>0 so this class of storage regression is not silent."
+  ],
+  "critical_code_review_comments": [
+    "retention.py:32-35 — on delete_object failure the loop 'continue's WITHOUT marking the DB doc. Combined with the storage 405 above this means production purges have never worked. Even if the storage layer is later fixed, consider: for retention purposes a 405/permanent-error from storage should still trigger the DB tombstone, otherwise files stay flagged 'active' forever.",
+    "storage.py:65-75 delete_object() only retries on 403 with a refreshed key. It doesn't distinguish 405 (method not supported by service) which is what happens here; the resp.raise_for_status() propagates. Consider mapping 405 to a soft-failure and logging once per interval instead of per-doc.",
+    "AskFirstSection.jsx guards the WhatsApp button behind `if (href)` — if company.whatsapp is ever unset, the CTA silently disappears. Acceptable but worth an admin-panel warning."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "83% (5/6 - retention purge fails)", "frontend": "100% (all checks pass)"},
+  "test_credentials": "Not needed (public homepage + direct MongoDB via backend env)",
+  "seed_data_creation": "Inserted 2 fake docs into uploads collection with id prefix TEST_RETENTION_ (one old @100d, one recent). BOTH cleaned up via delete_one in the test teardown regardless of pass/fail. Pre-check reported total_matching count=1 (only our own fake doc); no real customer files matched the 90-day cutoff, so nothing customer-owned would have been touched even if the purge had worked.",
+  "retest_needed": true,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "The frontend changes are stable and fully covered. The only outstanding issue is the retention purge relying on an HTTP DELETE that the Emergent Object Storage service rejects with 405. When main agent fixes storage.delete_object / retention.purge_expired_uploads, re-run: python -m pytest /app/backend/tests/test_iteration_108_retention.py::test_purge_expired_uploads_marks_old_ignores_recent -v — it should show purged>=1, and the old doc should have is_deleted=True + purge_reason='retention_90d' + no storage_path. Note pytest-asyncio is not installed in this venv; the file uses asyncio.run inside a sync test to work around that.",
+  "rca of the issue": "storage.delete_object() calls DELETE {STORAGE_URL}/objects/{path}. That URL returns 405 with header 'Allow: PUT, GET, HEAD'. resp.raise_for_status() raises requests.HTTPError. retention.py catches the exception, logs 'silinemedi', increments failed, and 'continue's — bypassing the uploads_col.update_one that would have set is_deleted=True. Every scheduled 24h run therefore no-ops. Verified reproducibly against the live INTEGRATION_PROXY_URL."
+}
