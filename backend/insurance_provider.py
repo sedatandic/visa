@@ -221,13 +221,30 @@ async def _ensure_quote(task: dict, insured: list) -> str:
     return (fresh or {}).get("provider_quote_id") or quote_id
 
 
+def _payment_parameters(task: dict) -> dict:
+    """odeme-onay'in zorunlu tuttugu bilet alanlari.
+
+    Bilet satmiyoruz; servis bu alanlari bos gecmedigi icin siparis referansi ve
+    seyahat bilgisiyle dolduruluyor (policeyi etkilemez, sadece kayit amacli).
+    """
+    reference = task.get("order_reference") or "-"
+    return {
+        "pnrNo": reference,
+        "ticketNumber": reference,
+        "ticketType": "1",  # 0 otobus, 1 ucak, 2 vapur
+        "flightNumber": "-",
+        "company": "-",
+        "departureLocation": "Türkiye",
+        "arrivalLocation": "Dubai",
+        "departureDateTime": f"{task.get('starts_on') or ''} 00:00:00".strip(),
+    }
+
+
 async def _ensure_policy(task: dict, quote_id: str, steps: dict) -> None:
     """Cari odeme onayi ve police olusturma adimlarini tamamlar."""
     task_id = task["id"]
     if steps.get("payment_confirm") != "done":
-        result = await tamamliyo.confirm_payment(
-            quote_id, {"partnerReference": task.get("order_reference", "")}
-        )
+        result = await tamamliyo.confirm_payment(quote_id, _payment_parameters(task))
         await _mark_step(task_id, "payment_confirm", {"success": bool(result.get("success", True))})
 
     if steps.get("policy") != "done":

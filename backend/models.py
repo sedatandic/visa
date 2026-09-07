@@ -1,3 +1,4 @@
+import re
 from datetime import date
 from typing import List, Optional
 
@@ -13,8 +14,13 @@ class ContactIn(BaseModel):
 
 
 def _iso_date_or_error(value: str, label: str) -> str:
-    """ISO (YYYY-MM-DD) tarih dogrulamasi: bozuk deger sessizce gecmesin."""
-    text = (value or "").strip()[:10]
+    """Tarih dogrulamasi: ISO (YYYY-MM-DD) ve GG.AA.YYYY kabul edilir, ISO'ya cevrilir."""
+    text = (value or "").strip()
+    dotted = re.fullmatch(r"(\d{2})[.\-/](\d{2})[.\-/](\d{4})", text)
+    if dotted:
+        day, month, year = dotted.groups()
+        text = f"{year}-{month}-{day}"
+    text = text[:10]
     try:
         date.fromisoformat(text)
     except ValueError:

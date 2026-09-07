@@ -1,7 +1,13 @@
 # ROADMAP (2026-09-07 itibarıyla · Tamamliyo sigorta entegrasyonu sonrası)
 
 ## P0 — Acil
-- [ ] **İlk poliçeyi elle kes** (kullanıcı kararı: prova yok, ilk gerçek müşteri siparişinde):
+- [ ] **Tamamliyo ödeme yetkisi (2026-09-08 canlı test bulgusu)**: partner hesabında açık
+      tahsilat kapalı — `odeme-onay` → "Bu teklif için açık tahsilat işlemi yapılamaz."
+      Kod tarafı hazır ve test edildi (fiyat + teklif çalışıyor, `ulkeKodu` ve
+      `odeme-onay parameters` hataları düzeltildi). Tamamliyo'dan istenecek:
+      (a) açık tahsilat/cari yetkisi [önerilen], (b) bakiye yüklemesi → `odemeTipi=3`,
+      (c) şirket kartıyla `odeme-yap` (`odemeTipi=2`) entegrasyonu.
+- [ ] **İlk poliçeyi elle kes** (yukarıdaki yetki açıldıktan sonra):
       Tamamliyo canlı bağlı, fiyatlar senkron, otomatik kesim KAPALI. İlk sigorta siparişinde
       Admin → Sigorta Poliçeleri → "Tamamliyo'dan poliçeyi kes ve gönder" ile poliçe kesilip
       PDF/e-posta doğrulanacak; **başarılıysa aynı ekrandaki "Otomatik poliçe kesimi"

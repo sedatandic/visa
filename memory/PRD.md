@@ -1300,3 +1300,14 @@ Ayrıntılar CHANGELOG.md "2026-06-13" bölümünde. Özet:
 - **P0** Gerçek IBAN'lar + şirket unvanı + TÜRSAB belge no (kullanıcıdan bekleniyor).
 - **P2** Poliçe yenileme akışı, paylaşılabilir aile paketi linki, sepet 3 saat hatırlatması,
   İngilizce/USD global sürüm.
+
+## 2026-09-08 · Tamamliyo canlı test: kod tarafı hazır, ödeme yetkisi bekleniyor
+Ayrıntı: CHANGELOG.md "2026-09-08". Özet:
+- Canlı API'de fiyat + teklif adımları çalışıyor (gerçek TCKN ile MERNIS geçti).
+- 3 kod hatası bulundu ve düzeltildi: eksik `ulkeKodu`, eksik `odeme-onay parameters`,
+  sağlayıcı hata mesajının panele ulaşmaması. 13 yeni regresyon testi.
+- **P0 ENGEL (Tamamliyo tarafı)**: Partner hesabında ödeme yöntemi kapalı —
+  "Bu teklif için açık tahsilat işlemi yapılamaz." Poliçe kesimi bu açılmadan mümkün değil.
+  Tamamliyo'dan istenecek: açık tahsilat/cari yetkisi VEYA bakiye yüklemesi (odemeTipi=3)
+  VEYA kart ile `odeme-yap` (odemeTipi=2) entegrasyonu.
+- Test verisi: sipariş `SV-XFG87WZW`, teklifler 2135824 / 2135825 (ödenmedi, ücret yok).

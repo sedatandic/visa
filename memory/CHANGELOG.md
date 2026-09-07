@@ -1488,3 +1488,50 @@ eksik–kilitli–boş değer ayrımı, `retry_skipped`, eşleme sırası, yard�
 portal doğrulama akışı. `POST /api/admin/zami/bulk-transfer` (dry_run) gerçek tarayıcıyla
 çalıştırıldı → beklenen "portal oturumu sona ermiş" yanıtı (canlı Zami oturumu yok).
 Tam suit: **351 passed / 3 skipped**.
+
+## 2026-09-08 · Tamamliyo canlı poliçe testi: 3 gerçek hata bulundu ve düzeltildi
+
+Kullanıcının gerçek kimlik bilgisiyle canlı API'de adım adım test yapıldı (TCKN MERNIS'ten
+doğrulandı). **Poliçe kesilemedi, ücret oluşmadı** — engel Tamamliyo hesap yetkisinde.
+
+### Canlı test sonuçları
+| Adım | Sonuç |
+|---|---|
+| `urun-kodlari` | ✅ |
+| `fiyat-al` | ✅ 7 gün / 1 kişi = 244,85 ₺ |
+| `teklif-olustur` | ✅ (düzeltmeden sonra) `teklifId` 2135824 / 2135825 |
+| `odeme-onay` (cari tahsilat) | ❌ **"Bu teklif için açık tahsilat işlemi yapılamaz."** |
+| `police-olustur` | ⛔ ödeme onaylanmadığı için çalıştırılamadı (HATA_7) |
+
+### Düzeltilen hatalar
+1. **`teklif-olustur` → HATA_2 "ulkeKodu gönderilmesi zorunludur"**
+   `tamamliyo.create_quote` bu alanı hiç göndermiyordu; ilk gerçek siparişte poliçe kesimi
+   hata verecekti. `ULKE_KODU_BAE = 784` (Birleşik Arap Emirlikleri) eklendi — kod
+   Tamamliyo'nun kendi `/partner/v1/countries` listesinden doğrulandı.
+   `fiyat-al` bu alanı istemiyor ve gönderilse de fiyat değişmiyor (244,85 ₺ = 244,85 ₺),
+   bu yüzden fiyat senkronuna dokunulmadı.
+2. **`odeme-onay` → HATA_3 "parameters içinde pnrNo/flightNumber/ticketNumber zorunludur"**
+   Kod `parameters` içinde sadece `partnerReference` gönderiyordu. Servis 8 bilet alanını
+   zorunlu tutuyor. Yeni `insurance_provider._payment_parameters(task)` bunları sipariş
+   referansı + poliçe başlangıcından üretiyor (pnrNo/ticketNumber = sipariş referansı,
+   ticketType "1", departureLocation "Türkiye", arrivalLocation "Dubai").
+3. **Sağlayıcı hata mesajı panele ulaşmıyordu**
+   Tamamliyo hataları `data.errorMessage` altında dönüyor; `_error_message` sadece kök
+   seviyeye bakıyordu, bu yüzden admin "Tamamliyo servisi beklenmeyen yanıt döndürdü"
+   görüyordu. Artık gerçek mesaj görünüyor (ör. "Bu teklif için açık tahsilat işlemi
+   yapılamaz.").
+4. **Bonus**: `models._iso_date_or_error` hata mesajında "GG.AA.YYYY" diyip sadece ISO
+   kabul ediyordu. Artık `01.08.1981`, `01/08/1981` ve `1981-08-01` hepsi kabul edilip
+   ISO'ya çevriliyor.
+
+### Kalan engel — Tamamliyo'dan istenmesi gerekenler
+`odeme-yap` denemeleri: `odemeTipi=1/2` → kredi kartı zorunlu, `odemeTipi=3` →
+"Yetersiz puan bakiyesi", `odeme-onay` → açık tahsilat kapalı. Yani ödeme yöntemi
+hesap tarafında açılmadan poliçe kesilemiyor. Seçenekler:
+(a) partner token için "açık tahsilat / cari hesap" yetkisi açılması (önerilen),
+(b) Tamamliyo bakiyesi yüklenip `odemeTipi=3` kullanılması,
+(c) şirket kredi kartıyla `odeme-yap` (`odemeTipi=2`) entegrasyonu.
+
+**Test**: yeni `backend/tests/test_iteration_118_tamamliyo_payment.py` → 13/13 PASS.
+Tam suit: **362 passed / 5 skipped**.
+Test siparişi: `SV-XFG87WZW` (490 ₺, ödendi işaretli), poliçe görevi `pending` durumda.
