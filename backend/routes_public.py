@@ -274,6 +274,7 @@ async def public_fx() -> dict:
         "currency_pair": fx["currency_pair"],
         "fetched_at": fx["fetched_at"],
         "source": fx["source"] if fx["mode"] == "live" else "sabit kur",
+        "bulletin_date": fx.get("bulletin_date", "") if fx["mode"] == "live" else "",
     }
 
 

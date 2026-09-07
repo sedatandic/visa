@@ -9,7 +9,7 @@ import sys
 import time
 from datetime import datetime
 
-BASE_URL = "https://whatsapp-ai-test.preview.emergentagent.com/api"
+BASE_URL = "https://whatsapp-bot-test-2.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@vizeatlas.com"
 ADMIN_PASSWORD = "Dubai2026!"
 
@@ -340,7 +340,7 @@ class StoreAPITester:
                 "POST",
                 f"/orders/{order_id}/checkout",
                 200,
-                data={"origin_url": "https://whatsapp-ai-test.preview.emergentagent.com"}
+                data={"origin_url": "https://whatsapp-bot-test-2.preview.emergentagent.com"}
             )
             
             if success:
@@ -373,7 +373,7 @@ class StoreAPITester:
                     "POST",
                     f"/orders/{order_id}/checkout",
                     400,
-                    data={"origin_url": "https://whatsapp-ai-test.preview.emergentagent.com"}
+                    data={"origin_url": "https://whatsapp-bot-test-2.preview.emergentagent.com"}
                 )
 
     def test_get_order(self):

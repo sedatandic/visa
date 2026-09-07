@@ -22,8 +22,9 @@
       e-postalarda "Siparişimi takip et" butonu).
 - [x] ~~WhatsApp bekleyen belge/temsilci sayacı~~ → 2026-06-12: admin menüsünde rozet
       (Mesajlar + WhatsApp) ve Başvurular sayfasında uyarı bandı.
-- [ ] Barchart kuru gerçekten istenirse: headless Chromium ile günlük tek çekim denenebilir;
-      Cloudflare engeli sürerse ücretli Barchart OnDemand API şart.
+- [x] ~~Kur kaynağı~~ → 2026-09-07: kullanıcı isteğiyle **TCMB günlük bülteni (USD döviz
+      satış)** birincil kaynak oldu (`fx.py`, bülten tarihine göre günlük tazeleme).
+      Barchart/Cloudflare denemesi gerekmedi.
 - [ ] Fiyat/politika tutarlılığı: resmî harç ile hizmet bedeli ayrımı, TL ödemede kur
       açıklaması, vizeden sonra 60 gün içinde giriş şartı, yeşil/gri pasaportta 90 gün
       vizesiz giriş, uzatmanın en fazla 2 kez yapılabilmesi, vize iptal ücreti.

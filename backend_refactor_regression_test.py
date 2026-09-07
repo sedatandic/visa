@@ -10,7 +10,7 @@ import time
 import uuid
 from datetime import datetime, timedelta
 
-BASE_URL = "https://whatsapp-ai-test.preview.emergentagent.com/api"
+BASE_URL = "https://whatsapp-bot-test-2.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@vizeatlas.com"
 ADMIN_PASSWORD = "Dubai2026!"
 

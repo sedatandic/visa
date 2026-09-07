@@ -1,17 +1,17 @@
 """USD -> TRY canli kur yonetimi.
 
-- Birincil kaynak: Yahoo Finance USDTRY=X (Barchart ^USDTRY ile ayni bankalar arasi
-  kur). Barchart kendi sitesinden sunucu tarafi erisimi engelliyor (bot korumasi,
-  HTTP 202 + bos govde), bu yuzden ayni kotasyonu veren Yahoo kullanilir.
-  Yedekler: doviz.com serbest piyasa satisi, open.er-api.com, exchangerate.host;
-  hicbiri olmazsa son bilinen kur.
+- Birincil kaynak: TCMB gunluk kur bulteni (`kurlar/today.xml`) USD **ForexSelling**
+  (doviz satis) degeri. TCMB bulteni is gunleri 15:30'da yayinlanir; hafta sonu ve
+  resmi tatillerde son bulten gecerli kalir.
+  Yedekler: Yahoo Finance USDTRY=X, doviz.com serbest piyasa satisi, open.er-api.com,
+  exchangerate.host; hicbiri olmazsa son bilinen kur.
 - Admin panelinden manuel kur ve kur payi (marj %) girilebilir.
 - Kur 24 saatte bir tazelenir (lazy refresh: ilk istekte suresi gecmisse guncellenir).
 """
 
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import httpx
 
@@ -24,6 +24,9 @@ REFRESH_AFTER_HOURS = 24
 FALLBACK_RATE = 41.0  # son cikis noktasi; ilk canli cagri ile guncellenir
 DEFAULT_MARGIN_PCT = 2.0
 
+TCMB_URL = "https://www.tcmb.gov.tr/kurlar/today.xml"
+TCMB_LABEL = "TCMB döviz satış"
+IST = timezone(timedelta(hours=3))  # TCMB bulten saati (TRT)
 DOVIZ_URL = "https://kur.doviz.com/serbest-piyasa/amerikan-dolari"
 YAHOO_URL = "https://query1.finance.yahoo.com/v8/finance/chart/USDTRY=X?interval=1d&range=1d"
 BROWSER_UA = (
@@ -32,11 +35,39 @@ BROWSER_UA = (
 )
 
 SOURCES = [
+    (TCMB_LABEL, TCMB_URL),
     ("forex (USD/TRY)", YAHOO_URL),
     ("doviz.com", DOVIZ_URL),
     ("open.er-api.com", "https://open.er-api.com/v6/latest/USD"),
     ("exchangerate.host", "https://api.exchangerate.host/latest?base=USD&symbols=TRY"),
 ]
+
+
+def parse_tcmb_xml(xml: str) -> float | None:
+    """TCMB gunluk bulteninden USD doviz satis (ForexSelling) kurunu okur."""
+    block = re.search(r'<Currency[^>]*Kod="USD".*?</Currency>', xml, re.S)
+    if not block:
+        return None
+    for tag in ("ForexSelling", "BanknoteSelling"):
+        found = re.search(rf"<{tag}>\s*([\d.]+)\s*</{tag}>", block.group(0))
+        if not found:
+            continue
+        try:
+            value = float(found.group(1))
+        except ValueError:
+            continue
+        if 5 < value < 500:
+            return value
+    return None
+
+
+def parse_tcmb_date(xml: str) -> str | None:
+    """Bultenin tarihini ISO (YYYY-MM-DD) olarak dondurur."""
+    found = re.search(r'Tarih="(\d{2})\.(\d{2})\.(\d{4})"', xml)
+    if not found:
+        return None
+    day, month, year = found.groups()
+    return f"{year}-{month}-{day}"
 
 
 def parse_yahoo_json(payload: dict) -> float | None:
@@ -75,6 +106,17 @@ def _extract_rate(source: str, payload: dict) -> float | None:
         return None
 
 
+def expected_bulletin_date(now: datetime | None = None) -> date:
+    """O an gecerli olmasi gereken TCMB bulten tarihi (is gunu 15:30'da yayinlanir)."""
+    now = now or datetime.now(IST)
+    day = now.date()
+    if now.hour < 16:
+        day -= timedelta(days=1)
+    while day.weekday() >= 5:  # cumartesi/pazar bulten yok
+        day -= timedelta(days=1)
+    return day
+
+
 async def fetch_live_rate() -> dict | None:
     """Canli kuru cekmeye calisir; basarisizsa None doner."""
     async with httpx.AsyncClient(
@@ -84,14 +126,17 @@ async def fetch_live_rate() -> dict | None:
             try:
                 res = await client.get(url)
                 res.raise_for_status()
-                if source == "doviz.com":
+                if url == TCMB_URL:
+                    rate = parse_tcmb_xml(res.text)
+                elif source == "doviz.com":
                     rate = parse_doviz_html(res.text)
                 elif url == YAHOO_URL:
                     rate = parse_yahoo_json(res.json())
                 else:
                     rate = _extract_rate(source, res.json())
                 if rate and rate > 0:
-                    return {"rate": rate, "source": source}
+                    bulletin = parse_tcmb_date(res.text) if url == TCMB_URL else None
+                    return {"rate": rate, "source": source, "bulletin_date": bulletin or ""}
             except Exception as exc:
                 logger.warning("fx fetch failed (%s): %s", source, exc)
     return None
@@ -105,6 +150,7 @@ async def _load_state() -> dict:
         "manual_rate": value.get("manual_rate"),
         "margin_pct": float(value.get("margin_pct", DEFAULT_MARGIN_PCT)),
         "source": value.get("source", ""),
+        "bulletin_date": value.get("bulletin_date", ""),
         "fetched_at": value.get("fetched_at"),
         "updated_at": value.get("updated_at"),
     }
@@ -117,21 +163,30 @@ async def _save_state(state: dict) -> None:
     )
 
 
-def _is_stale(fetched_at) -> bool:
+def _is_stale(state: dict) -> bool:
+    """Gunluk TCMB bulteni degistiyse (ya da 24 saat gectiyse) kur tazelenir."""
+    fetched_at = state.get("fetched_at")
     if not isinstance(fetched_at, datetime):
         return True
     ts = fetched_at if fetched_at.tzinfo else fetched_at.replace(tzinfo=timezone.utc)
-    return datetime.now(timezone.utc) - ts > timedelta(hours=REFRESH_AFTER_HOURS)
+    age = datetime.now(timezone.utc) - ts
+    if age > timedelta(hours=REFRESH_AFTER_HOURS):
+        return True
+    # yedek kaynaktan gelmisse ya da yeni bulten yayinlanmissa saatte bir yeniden dene
+    return age > timedelta(hours=1) and str(
+        state.get("bulletin_date") or ""
+    ) < expected_bulletin_date().isoformat()
 
 
 async def get_fx(force_refresh: bool = False) -> dict:
     """Etkin kur bilgisini dondurur (gerekirse canli kuru tazeler)."""
     state = await _load_state()
-    if force_refresh or state["base_rate"] is None or _is_stale(state["fetched_at"]):
+    if force_refresh or state["base_rate"] is None or _is_stale(state):
         live = await fetch_live_rate()
         if live:
             state["base_rate"] = live["rate"]
             state["source"] = live["source"]
+            state["bulletin_date"] = live.get("bulletin_date", "")
             state["fetched_at"] = datetime.now(timezone.utc)
             await _save_state(state)
         elif state["base_rate"] is None:
@@ -153,6 +208,7 @@ async def get_fx(force_refresh: bool = False) -> dict:
         "effective_rate": round(effective, 4),
         "mode": mode,
         "source": state["source"],
+        "bulletin_date": state.get("bulletin_date", ""),
         "fetched_at": state["fetched_at"].isoformat()
         if isinstance(state["fetched_at"], datetime)
         else state["fetched_at"],

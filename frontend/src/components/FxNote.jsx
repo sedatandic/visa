@@ -46,10 +46,14 @@ export const FxNote = ({ variant = "badge", className = "" }) => {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
+    const bulletin = fx.bulletin_date
+        ? new Date(fx.bulletin_date).toLocaleDateString("tr-TR")
+        : "";
     const sourceLabel = fx.mode === "manual" ? "acente kuru" : (fx.source || "").replace("www.", "");
-    const text = `1 $ = ${rate} ₺ · ${freshnessLabel(fx.fetched_at)}${
-        sourceLabel ? ` · ${sourceLabel}` : ""
-    }`;
+    const detail = bulletin
+        ? `${sourceLabel} · ${bulletin} bülteni`
+        : `${freshnessLabel(fx.fetched_at)}${sourceLabel ? ` · ${sourceLabel}` : ""}`;
+    const text = `1 $ = ${rate} ₺ · ${detail}`;
 
     if (variant === "inline") {
         return (

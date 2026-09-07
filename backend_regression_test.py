@@ -9,7 +9,7 @@ import sys
 import io
 from datetime import datetime
 
-BASE_URL = "https://whatsapp-ai-test.preview.emergentagent.com/api"
+BASE_URL = "https://whatsapp-bot-test-2.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@vizeatlas.com"
 ADMIN_PASSWORD = "Dubai2026!"
 
@@ -862,7 +862,7 @@ class RegressionTester:
             404,
             data={
                 'application_id': 'non-existent-id',
-                'origin_url': 'https://whatsapp-ai-test.preview.emergentagent.com'
+                'origin_url': 'https://whatsapp-bot-test-2.preview.emergentagent.com'
             }
         )
         
@@ -877,7 +877,7 @@ class RegressionTester:
             (200, 502),  # Accept both 200 and 502
             data={
                 'application_id': app_id,
-                'origin_url': 'https://whatsapp-ai-test.preview.emergentagent.com'
+                'origin_url': 'https://whatsapp-bot-test-2.preview.emergentagent.com'
             }
         )
         

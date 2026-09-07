@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv("/app/backend/.env")
 
-BASE_URL = (os.environ.get("REACT_APP_BACKEND_URL") or "https://whatsapp-ai-test.preview.emergentagent.com").rstrip("/")
+BASE_URL = (os.environ.get("REACT_APP_BACKEND_URL") or "https://whatsapp-bot-test-2.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
 sys.path.insert(0, "/app/backend")

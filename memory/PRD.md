@@ -220,6 +220,10 @@ Devralınan "kritik" iki bulgu YANLIŞ POZİTİF: `zami_rpa.py`'de `exec()` yok
 importu fonksiyon içi lazy import (insurance_tasks.py:232,257 · routes_store.py:544).
 
 ## Sıradaki açık işler
+- **Kur kaynağı (2026-09-07 güncel)**: birincil kaynak **TCMB günlük bülteni**
+  (`kurlar/today.xml`, USD `ForexSelling` = döviz satış). Bülten iş günü 15:30'da
+  yayınlanır; `fx.expected_bulletin_date()` buna göre günlük tazeleme yapar.
+  Yedekler: Yahoo `USDTRY=X`, doviz.com, open.er-api, exchangerate.host.
 - **P0 Zami Bookmarklet "Gönder/Submit" butonu yakalama** (2 oturumdur bekliyor, kullanıcı
   detay/ekran görüntüsü paylaşmadı)
 - **P1 Gerçek havale bilgileri** (`site_settings.bank_transfer` hâlâ örnek: VizeAtlas Turizm /

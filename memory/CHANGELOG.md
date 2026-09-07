@@ -1102,3 +1102,25 @@ başlık taşmasın diye görüntülü/sesli arama ikonları küçük ekranlarda
   - `test_iteration_94_cart.py` artık `os.environ["MONGO_URL"]` kullanıyor (conftest dotenv).
 - **Sonuç**: `pytest tests -q` → **271 passed, 3 skipped, 0 failed** (izole grup
   çalıştırıldıktan hemen sonra tekrar çalıştırılıp doğrulandı).
+
+## 2026-09-07 · Kur kaynağı TCMB günlük bülteni (USD döviz satış)
+Kullanıcı isteği: "https://www.tcmb.gov.tr/... döviz kurunu buradan günlük çek,
+USD döviz satış kuru olacak".
+- `fx.py`: **birincil kaynak TCMB** `kurlar/today.xml` → `parse_tcmb_xml()` USD bloğundaki
+  **`<ForexSelling>`** (döviz satış) değerini okur (yoksa `BanknoteSelling`),
+  `parse_tcmb_date()` bülten tarihini ISO olarak döndürür. Kaynak etiketi
+  **"TCMB döviz satış"**. Yedekler sırayla: Yahoo `USDTRY=X`, doviz.com, open.er-api,
+  exchangerate.host.
+- **Günlük tazeleme**: `expected_bulletin_date()` — bülten iş günü 15:30'da yayınlandığı için
+  16:00'dan önce önceki iş gününü, hafta sonunda cumayı döndürür. `_is_stale(state)` artık
+  24 saatlik yaşın yanında **bülten tarihini** de kontrol ediyor: kayıtlı bülten beklenenden
+  eskiyse (veya kur yedek kaynaktan geldiyse) saatte bir yeniden denenir → yeni bülten
+  yayınlandığı gün otomatik yakalanır. Kayıtta yeni `bulletin_date` alanı tutuluyor.
+- `GET /api/fx` yanıtına `bulletin_date` eklendi; `components/FxNote.jsx` artık
+  "1 $ = 49,40 ₺ · TCMB döviz satış · 07.09.2026 bülteni" yazıyor (manuel kurda eski metin).
+- Marj (%2, admin panelinden) aynen korundu: 48,4336 × 1,02 = **49,4023 ₺**
+  (eski Yahoo kuruyla 49,38 ₺ idi; vize fiyatları 10 ₺'ye yuvarlandığı için değişmedi).
+- Test: `backend/tests/test_fx_tcmb.py` (11 test: parse, bülten takvimi, tazeleme kuralı,
+  canlı `/api/fx` yanıtı) + fiyat regresyonu `test_iteration_48`, `test_bundles`,
+  `test_insurance_catalog`, `test_iteration_101/102` → 35 passed. Ekran görüntüsüyle
+  `/vize-tipleri` kur notu doğrulandı.

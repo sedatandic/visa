@@ -9,7 +9,7 @@ Covers:
 import os
 import requests
 
-BASE_URL = (os.environ.get("REACT_APP_BACKEND_URL") or "").rstrip("/") or "https://whatsapp-ai-test.preview.emergentagent.com"
+BASE_URL = (os.environ.get("REACT_APP_BACKEND_URL") or "").rstrip("/") or "https://whatsapp-bot-test-2.preview.emergentagent.com"
 API = f"{BASE_URL}/api"
 
 
