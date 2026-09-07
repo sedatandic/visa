@@ -1377,3 +1377,15 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
   bu orana geçirildi (oranlar korundu).
 - Doğrulama: `pdftotext -bbox` ile tüm sol kenarlar 48,52 pt; PNG render görsel kontrol;
   `tests/test_iteration_112_application_form.py` 9/9 PASS.
+
+## 2026-09-07 (11) · WhatsApp numarası ayrıldı
+
+- WhatsApp hattı **+90 538 483 82 24** (`905384838224`) olarak güncellendi
+  (DB `site_settings.company_info.value.whatsapp` + `content.COMPANY['whatsapp']`).
+  Telefon hattı ayrı kaldı: **+90 533 743 82 24**.
+- Tüm `wa.me` bağlantıları (SocialDock, ana sayfa, Hizmetler, Sigorta, İletişim, e-postalar,
+  poliçe bildirimi) artık yeni WhatsApp numarasına gidiyor.
+- `/iletisim` WhatsApp kartı önceden telefon numarasını yazıyordu; artık **WhatsApp numarasını**
+  okunur formatta gösteriyor (`formatPhone`).
+- Doğrulama: `/api/content/site` → phone `+90 533 743 82 24`, whatsapp `905384838224`;
+  sayfadaki tek wa.me hedefi `https://wa.me/905384838224`; kart metinleri ekran görüntüsüyle teyit.

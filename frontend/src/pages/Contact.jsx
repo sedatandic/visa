@@ -16,6 +16,7 @@ import {
     SelectValue,
 } from "../components/ui/select";
 import { useContact } from "../lib/contact";
+import { formatPhone } from "../lib/phone";
 
 const EMPTY = { name: "", email: "", phone: "", subject: "", message: "" };
 
@@ -218,7 +219,7 @@ export default function Contact() {
                                 icon={MessageCircle}
                                 title="WhatsApp"
                                 detail="Belge ve fiyat sorularınız için en hızlı kanal."
-                                value={contact.phone || `+${contact.whatsapp}`}
+                                value={formatPhone(contact.whatsapp) || contact.phone}
                                 href={contact.whatsappHref}
                                 testId="contact-channel-whatsapp"
                                 external
