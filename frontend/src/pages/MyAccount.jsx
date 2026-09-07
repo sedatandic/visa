@@ -5,6 +5,7 @@ import {
     ArrowRight,
     Baby,
     Copy,
+    Download,
     FileText,
     KeyRound,
     Loader2,
@@ -19,7 +20,7 @@ import {
     UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, apiError, customerAuth } from "../lib/api";
+import { api, apiError, customerAuth, fileUrl } from "../lib/api";
 import { formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
 import { StatusBadge, PaymentBadge } from "../components/StatusBadge";
@@ -35,6 +36,7 @@ export default function MyAccount() {
     const [data, setData] = useState(null);
     const [travelers, setTravelers] = useState([]);
     const [orders, setOrders] = useState([]);
+    const [policies, setPolicies] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -56,6 +58,9 @@ export default function MyAccount() {
                 .catch(() => {});
             api.get("/account/orders")
                 .then(({ data: o }) => setOrders(o.items || []))
+                .catch(() => {});
+            api.get("/account/policies")
+                .then(({ data: p }) => setPolicies(p.items || []))
                 .catch(() => {});
         } catch (err) {
             if (err?.response?.status === 401) {
@@ -86,6 +91,7 @@ export default function MyAccount() {
         setData(null);
         setTravelers([]);
         setOrders([]);
+        setPolicies([]);
         toast.success("Çıkış yapıldı.");
     };
 
@@ -301,6 +307,55 @@ export default function MyAccount() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* POLICELERIM */}
+                            {policies.length > 0 && (
+                                <div className="mt-10" data-testid="account-policies">
+                                    <h2 className="font-heading text-lg font-bold">Poliçelerim</h2>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Kesilen seyahat sağlık sigortası poliçeleriniz. PDF'i istediğiniz zaman
+                                        indirebilir, sınırda veya hastanede gösterebilirsiniz.
+                                    </p>
+                                    <div className="mt-4 space-y-3">
+                                        {policies.map((p) => (
+                                            <div
+                                                key={p.id}
+                                                className="card-surface flex flex-wrap items-center justify-between gap-4 p-5"
+                                                data-testid={`account-policy-${p.id}`}
+                                            >
+                                                <div>
+                                                    <p className="font-heading text-base font-extrabold">
+                                                        {p.plan_name}
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-muted-foreground">
+                                                        {(p.insured || []).map((i) => i.full_name).join(", ") ||
+                                                            `${p.quantity} kişi`}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                        {p.starts_on} → {p.ends_on} · Sipariş: {p.order_reference}
+                                                        {p.issued_at ? ` · ${formatDateTime(p.issued_at)}` : ""}
+                                                    </p>
+                                                </div>
+                                                {p.download_url ? (
+                                                    <Button
+                                                        asChild
+                                                        className="h-10"
+                                                        data-testid={`download-policy-${p.id}`}
+                                                    >
+                                                        <a href={fileUrl(p.download_url, true)} target="_blank" rel="noreferrer">
+                                                            <Download className="mr-2 h-4 w-4" /> Poliçeyi indir
+                                                        </a>
+                                                    </Button>
+                                                ) : (
+                                                    <span className="text-xs font-semibold text-muted-foreground">
+                                                        PDF hazırlanıyor
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* SAVED TRAVELERS */}
                             <div className="mt-10" data-testid="account-saved-travelers">

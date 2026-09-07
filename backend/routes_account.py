@@ -259,6 +259,45 @@ async def account_orders(email: str = Depends(require_customer)) -> dict:
     return {"items": items}
 
 
+@router.get("/account/policies")
+async def account_policies(email: str = Depends(require_customer)) -> dict:
+    """Kesilen seyahat saglik sigortasi policeleri + imzali PDF indirme yollari."""
+    import re
+
+    import file_access
+    from db import insurance_tasks_col
+
+    cursor = insurance_tasks_col.find(
+        {
+            "status": "issued",
+            "customer.email": {"$regex": f"^{re.escape(email)}$", "$options": "i"},
+        }
+    ).sort("issued_at", -1)
+    items = []
+    async for doc in cursor:
+        view = serialize_doc(doc)
+        items.append(
+            {
+                "id": view.get("id"),
+                "order_reference": view.get("order_reference", ""),
+                "plan_name": view.get("plan_name") or "Seyahat Sağlık Sigortası",
+                "validity_days": view.get("validity_days"),
+                "quantity": view.get("quantity") or 1,
+                "starts_on": view.get("starts_on"),
+                "ends_on": view.get("ends_on"),
+                "issued_at": view.get("issued_at"),
+                "insured": [
+                    {"full_name": person.get("full_name", ""), "birth_date": person.get("birth_date", "")}
+                    for person in view.get("insured") or []
+                ],
+                "download_url": file_access.file_path(
+                    view.get("policy_file_id") or "", file_access.TTL_EMAIL, download=True
+                ),
+            }
+        )
+    return {"items": items}
+
+
 @router.get("/account/drafts/{draft_id}")
 async def account_draft_detail(draft_id: str, email: str = Depends(require_customer)):
     doc = await drafts_col.find_one({"id": draft_id, "email": email})

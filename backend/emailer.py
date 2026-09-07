@@ -111,11 +111,8 @@ def _wrap(title: str, body_html: str) -> str:
     return f"""
 <div style="margin:0;padding:28px 16px;background-color:#F4EBDD;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background-color:#ffffff;border:1px solid {LINE};border-radius:16px;">
-    <tr><td align="center" style="padding:26px 24px 16px;background-color:#FDF8F0;border-radius:16px 16px 0 0;">
+    <tr><td align="center" style="padding:26px 24px 20px;background-color:#FDF8F0;border-radius:16px 16px 0 0;">
       <img src="{'cid:' + LOGO_CID if _logo_payload() else LOGO_URL}" width="230" alt="{BRAND}" style="display:block;width:230px;max-width:78%;height:auto;border:0;outline:none;text-decoration:none;" />
-      <div style="margin-top:12px;font-size:10px;letter-spacing:2.2px;text-transform:uppercase;color:{FAINT};">
-        TÜRSAB Üyesi {COMPANY['tursab_type']}
-      </div>
     </td></tr>
     <tr><td style="height:3px;background-color:{GOLD};line-height:3px;font-size:0;">&nbsp;</td></tr>
     <tr><td style="padding:30px 26px 26px;color:{INK};">
