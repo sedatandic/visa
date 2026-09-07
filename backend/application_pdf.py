@@ -111,7 +111,7 @@ def _header(app_doc: dict, st: dict) -> Table:
     else:
         cells.append(Paragraph(BRAND, st["title"]))
     cells.append(right)
-    table = Table([cells], colWidths=[56 * mm, 124 * mm])
+    table = Table([cells], colWidths=_cols(56, 124))
     table.setStyle(
         TableStyle(
             [
@@ -142,7 +142,7 @@ def _reference_band(app_doc: dict, st: dict) -> Table:
             ],
         ]
     ]
-    table = Table(rows, colWidths=[66 * mm, 52 * mm, 62 * mm])
+    table = Table(rows, colWidths=_cols(66, 52, 62))
     table.setStyle(
         TableStyle(
             [
@@ -169,7 +169,7 @@ def _pairs_table(pairs: list, st: dict) -> Table:
         if len(chunk) == 1:
             row += ["", ""]
         rows.append(row)
-    table = Table(rows, colWidths=[26 * mm, 64 * mm, 26 * mm, 64 * mm])
+    table = Table(rows, colWidths=_cols(26, 64, 26, 64))
     table.setStyle(
         TableStyle(
             [
@@ -233,7 +233,7 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
         )
     table = Table(
         rows,
-        colWidths=[6 * mm, 44 * mm, 20 * mm, 26 * mm, 20 * mm, 38 * mm, 26 * mm],
+        colWidths=_cols(6, 44, 20, 26, 20, 38, 26),
         repeatRows=1,
     )
     table.setStyle(
@@ -321,7 +321,7 @@ def _price_table(app_doc: dict, st: dict) -> Table:
         [Paragraph(label, st["body"]), Paragraph(value, st["value"])]
         for label, value in _pricing_rows(app_doc)
     ]
-    table = Table(rows, colWidths=[140 * mm, 40 * mm])
+    table = Table(rows, colWidths=_cols(140, 40))
     table.setStyle(
         TableStyle(
             [
@@ -351,6 +351,17 @@ def _documents_paragraph(documents: list, st: dict) -> Paragraph:
 
 
 FRAME_INSET = 8 * mm
+
+# Tasarim 180 mm genisliginde kurulu; cerceve ici kullanilabilir alana oranlanir
+# (SimpleDocTemplate frame'i 6 pt sag/sol padding uygular).
+DESIGN_W = 180 * mm
+CONTENT_W = A4[0] - 2 * (15 * mm) - 12
+
+
+def _cols(*widths_mm: float) -> list:
+    """Kolon genisliklerini kullanilabilir alana oranlar (sol kenarlar hizali kalir)."""
+    scale = CONTENT_W / DESIGN_W
+    return [w * mm * scale for w in widths_mm]
 
 
 def _draw_frame(canvas, doc) -> None:

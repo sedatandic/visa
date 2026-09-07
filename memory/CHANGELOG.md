@@ -1365,3 +1365,15 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
   Siparişler, Mesajlar ve Sigorta Poliçeleri ekranları.
 - Doğrulama: `format_phone` birim çıktıları kontrol edildi, PDF'te `pdftotext` ile
   "+90 555 111 00 01" göründü, üç admin ekranı hatasız açıldı, pytest 310 passed.
+
+## 2026-09-07 (10) · PDF hizalama düzeltmesi
+
+- Bölüm başlıkları ("BAŞVURU SAHİBİ / İLETİŞİM", "SEYAHAT BİLGİLERİ", …) ile alan etiketleri
+  ("Ad Soyad", "Gidiş tarihi") artık **aynı sol hizada** (48,52 pt). Kök neden: tablolar 180 mm
+  ile çiziliyordu, kullanılabilir alan ise 175,8 mm (ReportLab frame'i 6 pt sağ/sol padding
+  uyguluyor) → tablolar `hAlign=CENTER` ile 6 pt sola kayıyordu.
+- Çözüm: `application_pdf._cols()` yardımcısı — 180 mm'lik tasarım genişliği
+  `CONTENT_W = A4 genişliği − 2×15 mm − 12 pt`e oranlanıyor; beş tablonun kolon genişlikleri
+  bu orana geçirildi (oranlar korundu).
+- Doğrulama: `pdftotext -bbox` ile tüm sol kenarlar 48,52 pt; PNG render görsel kontrol;
+  `tests/test_iteration_112_application_form.py` 9/9 PASS.
