@@ -22,7 +22,7 @@ class CriticalRegressionTester:
         symbols = {"PASS": "✅", "FAIL": "❌", "INFO": "🔍", "WARN": "⚠️"}
         print(f"{symbols.get(status, '•')} {message}")
     
-    def test_admin_login(self):
+    def test_admin_login(self) -> None:
         """Get admin token for subsequent tests"""
         self.tests_run += 1
         self.log("Testing admin login...", "INFO")
@@ -45,7 +45,7 @@ class CriticalRegressionTester:
             self.log(f"Admin login error: {str(e)}", "FAIL")
             return False
     
-    def test_photo_check_no_body(self):
+    def test_photo_check_no_body(self) -> None:
         """CRITICAL: Test POST /api/photo/check without body -> 422"""
         self.tests_run += 1
         self.log("Testing POST /api/photo/check without body (should return 422)...", "INFO")
@@ -68,7 +68,7 @@ class CriticalRegressionTester:
             self.log(f"Photo check no body test error: {str(e)}", "FAIL")
             return False
     
-    def test_passport_read_invalid_id(self):
+    def test_passport_read_invalid_id(self) -> None:
         """CRITICAL: Test POST /api/passport/read with non-existent id -> 404"""
         self.tests_run += 1
         self.log("Testing POST /api/passport/read with invalid file_id (should return 404)...", "INFO")
@@ -99,7 +99,7 @@ class CriticalRegressionTester:
             self.log(f"Passport read invalid id test error: {str(e)}", "FAIL")
             return False
     
-    def test_zami_suggestions_structure(self):
+    def test_zami_suggestions_structure(self) -> None:
         """CRITICAL: Test GET /api/admin/zami/config suggestions block structure"""
         self.tests_run += 1
         self.log("Testing Zami suggestions block structure (fields ~6, traveler_fields ~1, notes [])...", "INFO")
@@ -153,7 +153,7 @@ class CriticalRegressionTester:
             self.log(f"Zami suggestions test error: {str(e)}", "FAIL")
             return False
     
-    def test_zami_mapping_verification(self):
+    def test_zami_mapping_verification(self) -> None:
         """CRITICAL: Verify Zami mapping has expected field counts"""
         self.tests_run += 1
         self.log("Testing Zami mapping field counts (fields=8, traveler_fields=16, constants=7, upload_targets=2)...", "INFO")
@@ -245,7 +245,7 @@ class CriticalRegressionTester:
             self.log(f"Zami mapping verification error: {str(e)}", "FAIL")
             return False
     
-    def test_zami_check_status_all(self):
+    def test_zami_check_status_all(self) -> None:
         """CRITICAL: Test POST /api/admin/zami/check-status-all (portal session DOWN is expected)"""
         self.tests_run += 1
         self.log("Testing POST /api/admin/zami/check-status-all (portal session DOWN is EXPECTED)...", "INFO")
@@ -306,7 +306,7 @@ class CriticalRegressionTester:
             self.log(f"Check status all test error: {str(e)}", "FAIL")
             return False
     
-    def test_zami_session_submit_invalid(self):
+    def test_zami_session_submit_invalid(self) -> None:
         """REGRESSION: Test POST /api/admin/zami/session/submit with invalid session_id"""
         self.tests_run += 1
         self.log("Testing POST /api/admin/zami/session/submit with invalid session_id...", "INFO")
@@ -351,7 +351,7 @@ class CriticalRegressionTester:
             self.log(f"Session submit test error: {str(e)}", "FAIL")
             return False
     
-    def test_admin_endpoints_200(self):
+    def test_admin_endpoints_200(self) -> None:
         """REGRESSION: Test all admin endpoints return 200"""
         self.tests_run += 1
         self.log("Testing admin endpoints return 200...", "INFO")

@@ -21,7 +21,7 @@ def _get(session, url, **params):
 
 
 class TestBundles:
-    def test_all_bundles(self, session):
+    def test_all_bundles(self, session) -> None:
         data = _get(session, f"{API}/bundles")
         items = data["items"]
         assert len(items) == 6
@@ -41,7 +41,7 @@ class TestBundles:
             assert b["insurance"]["name"]
             assert b["esim"]["name"]
 
-    def test_visa_30_bundles(self, session):
+    def test_visa_30_bundles(self, session) -> None:
         data = _get(session, f"{API}/bundles", visa_days=30)
         items = {b["id"]: b for b in data["items"]}
         assert set(items.keys()) == {"pack_short", "pack_standard", "pack_comfort", "pack_family"}
@@ -66,7 +66,7 @@ class TestBundles:
             expected_price = round(expected_list - expected_disc, 2)
             assert abs(b["price"] - expected_price) < 0.05, f"price mismatch {b}"
 
-    def test_visa_60_bundles(self, session):
+    def test_visa_60_bundles(self, session) -> None:
         data = _get(session, f"{API}/bundles", visa_days=60)
         items = {b["id"]: b for b in data["items"]}
         assert set(items.keys()) == {"pack_long", "pack_long_plus"}
@@ -79,7 +79,7 @@ class TestBundles:
 class TestOrderBundleDiscount:
     """Create a store order matching a bundle and verify 10% discount applies and equals bundle price."""
 
-    def test_pack_standard_order_price_matches_bundle(self, session):
+    def test_pack_standard_order_price_matches_bundle(self, session) -> None:
         bundles = _get(session, f"{API}/bundles", visa_days=30)["items"]
         pack = next(b for b in bundles if b["id"] == "pack_standard")
 

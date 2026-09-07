@@ -1034,3 +1034,43 @@ Kullanıcı istekleri (onaylı seçenekler: tek sayfa birleştirme, otomatik dö
   4 senaryonun mesajları 5-6 kısa balona indirildi (uzun cümleler sadeleştirildi).
   Ölçüm: senaryo yükseklikleri 622-690px arası (önce 736+), 304px genişlik + 6° eğim korunuyor.
 
+
+## 2026-06-09 · Kod inceleme raporu turu (uygulananlar + doğrulanan yanlış pozitifler)
+**Uygulananlar**
+- `routes_store._bundle_item` (karmaşıklık 33, ~120 satır) **4 yardımcıya bölündü**:
+  `_bundle_counts` (yolcu sayıları), `_pick_bundle_visas` (yetişkin/çocuk vize seçimi,
+  tek `cheapest` yardımcısı), `_bundle_totals` (ek hizmet + vize tutarları, paket ve aile
+  indirimi), `_bundle_family_block` (aile kırılımı). Ana fonksiyon artık yalnız birleştiriyor.
+  **Regresyon: çıktı bire bir aynı** — `/api/bundles`, `?visa_days=30`, `?visa_days=60` ve
+  3 `/api/bundles/quote` yanıtı refactor öncesi/sonrası JSON olarak karşılaştırıldı (6/6 IDENTICAL);
+  ayrıca `pack_family` (2 yetişkin + 2 çocuk + tur) tutarları elle doğrulandı
+  (12.600 liste → %10 paket indirimi → 11.340; vize 15.320 → %15 aile indirimi → 24.362 toplam).
+- `routes_public`: `/passport/read` ve `/files/{id}` içindeki tekrarlanan upload
+  arama + object storage okuma bloğu `_get_upload_record()` ve `_read_upload_bytes()`
+  yardımcılarına çıkarıldı (DRY + `read_passport_document` kısaldı). Davranış aynı:
+  bogus id → `/passport/read` 404, `/files/{id}` 403 (jeton kontrolü önce) doğrulandı.
+- `ruff --select F401 --fix`: 10 kullanılmayan import silindi (9 test dosyası + `wa_bot.py`).
+- Tip ipucu kapsamı: `regression_critical_tests.py`, `tests/test_insurance_automation.py`,
+  `tests/test_bundles.py`, `tests/test_emailer.py` içindeki **27 test fonksiyonuna `-> None`**
+  eklendi (değer döndüren fixture'lara dokunulmadı).
+**Yanlış pozitifler (ruff + grep ile doğrulandı, kod değişikliği gerekmedi)**
+- "zami_rpa.py:90 exec() güvenlik açığı" → satır `await asyncio.create_subprocess_exec(...)`;
+  projede hiçbir yerde `exec(`/`eval(` yok (grep temiz).
+- "11 tanımsız değişken" → `ruff --select F821` = 0.
+- "141 `is` ile literal karşılaştırma" → `ruff --select F632,E711,E712` = 0; rapordaki tüm
+  satırlar `is None` / `is not None` (doğru kullanım).
+- `_build_application_doc` (51 satır) → dallanması olmayan düz sözlük eşlemesi; bölmek
+  yalnız dolaylılık ekler, risk azaltmaz → değiştirilmedi.
+- `routes_admin.py` 33 import / modül bölme → çalışan yönetici uçlarını riske atacağı ve
+  kullanıcıya değer katmayacağı için yapılmadı (istenirse ayrı bir tur olarak planlanabilir).
+**Test durumu**: `pytest tests -q -n0` → 263 passed, 1 skipped; 4 failed + 1 error
+(retention tombstone, tours snapshot, 2 zami session alert, stripe cart) — bunlar
+**refactor öncesinde de** başarısız (git stash ile doğrulandı), tek tek çalıştırıldığında
+geçiyorlar; kök neden test izolasyonu/paylaşılan event loop (mevcut teknik borç).
+
+### Telefon maketi mobil incelik (kullanıcı: "cep telefonundan kalın gözüküyor")
+`WhatsAppPhoneMock` genişliği mobilde **244px**, `sm:` üstünde 300px oldu; 244px'te
+başlık taşmasın diye görüntülü/sesli arama ikonları küçük ekranlarda gizlendi
+(`hidden sm:block` / `min-[380px]:block`) ve "Mesaj yazın" tek satıra sabitlendi.
+390px'te ölçüldü: kart genişliği 244px, düzen bozulmuyor.
+

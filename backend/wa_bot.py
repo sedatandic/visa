@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 from dotenv import load_dotenv
 
-from db import applications_col, conversations_col, db
+from db import applications_col, conversations_col
 from content import COMPANY, FAQ, STATUS_LABELS
 
 load_dotenv()

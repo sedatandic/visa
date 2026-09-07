@@ -62,7 +62,7 @@ def admin(api, admin_token):
 
 
 # 1) katalog
-def test_insurance_products(api):
+def test_insurance_products(api) -> None:
     r = api.get(f"{BASE_URL}/api/products?kind=insurance")
     assert r.status_code == 200
     items = {p["id"]: p for p in r.json()["items"]}
@@ -75,7 +75,7 @@ def test_insurance_products(api):
 
 
 # 2) kar raporu
-def test_insurance_report(admin):
+def test_insurance_report(admin) -> None:
     r = admin.get(f"{BASE_URL}/api/admin/insurance-report")
     assert r.status_code == 200, r.text
     body = r.json()
@@ -93,7 +93,7 @@ def test_insurance_report(admin):
 
 
 # 3) urun fiyat/maliyet update -> report yeniden hesapliyor
-def test_update_product_recomputes_margin(admin):
+def test_update_product_recomputes_margin(admin) -> None:
     # snapshot orig
     r = admin.get(f"{BASE_URL}/api/admin/insurance-report")
     row0 = next(x for x in r.json()["items"] if x["id"] == "ins_30d")
@@ -139,7 +139,7 @@ def paid_order(api, admin):
     return order
 
 
-def test_task_created_on_paid(admin, paid_order):
+def test_task_created_on_paid(admin, paid_order) -> None:
     r = admin.get(f"{BASE_URL}/api/admin/insurance-tasks?status=pending")
     assert r.status_code == 200
     tasks = [t for t in r.json()["items"] if t.get("order_id") == paid_order["id"]]
@@ -155,7 +155,7 @@ def test_task_created_on_paid(admin, paid_order):
     assert t["customer"]["phone"]
 
 
-def test_paid_idempotent(admin, paid_order):
+def test_paid_idempotent(admin, paid_order) -> None:
     # ikinci paid ikinci task olusturmamali
     admin.patch(f"{BASE_URL}/api/admin/orders/{paid_order['id']}", json={"payment_status": "paid"})
     time.sleep(0.3)
@@ -165,7 +165,7 @@ def test_paid_idempotent(admin, paid_order):
 
 
 # 6) pending mail + notification
-def test_pending_email_and_notification(admin, paid_order):
+def test_pending_email_and_notification(admin, paid_order) -> None:
     # email_outbox
     r = admin.get(f"{BASE_URL}/api/admin/emails?limit=100")
     assert r.status_code == 200
@@ -178,7 +178,7 @@ def test_pending_email_and_notification(admin, paid_order):
 
 
 # 7) issue policy -> status issued, insurance_policy_sent email kaydi
-def test_issue_policy(api, admin, paid_order):
+def test_issue_policy(api, admin, paid_order) -> None:
     r = admin.get(f"{BASE_URL}/api/admin/insurance-tasks?status=pending")
     tasks = [t for t in r.json()["items"] if t.get("order_id") == paid_order["id"]]
     task = tasks[0]
@@ -217,7 +217,7 @@ def test_issue_policy(api, admin, paid_order):
 
 
 # 8) yalniz eSIM siparis -> hic task olusmamali
-def test_esim_only_no_task(api, admin):
+def test_esim_only_no_task(api, admin) -> None:
     payload = {
         "items": [{"product_id": "esim_3gb", "quantity": 1}],
         "contact": {

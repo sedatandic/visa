@@ -686,6 +686,23 @@ async def _ocr_success(file_id: str, result: dict, duration_ms: int) -> dict:
     }
 
 
+async def _get_upload_record(file_id: str) -> dict:
+    """Silinmemis upload kaydini dondurur, yoksa 404 atar."""
+    record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
+    if not record:
+        raise HTTPException(404, "Dosya bulunamadi.")
+    return record
+
+
+def _read_upload_bytes(record: dict) -> tuple[bytes, str]:
+    """Upload kaydinin icerigini object storage'dan okur."""
+    try:
+        return get_object(record["storage_path"])
+    except Exception as exc:
+        logger.error("file fetch failed: %s", exc)
+        raise HTTPException(502, "Dosya okunamadi.") from exc
+
+
 @router.post("/passport/read")
 async def read_passport_document(request: Request, file_id: str = Form(...)) -> dict:
     """Yuklenen pasaport goruntusunu yapay zeka ile okuyup form alanlarini doldurur.
@@ -699,9 +716,7 @@ async def read_passport_document(request: Request, file_id: str = Form(...)) -> 
         3600,
         "Cok fazla pasaport okuma denemesi. Lutfen bir sure sonra tekrar deneyin.",
     )
-    record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
-    if not record:
-        raise HTTPException(404, "Dosya bulunamadi.")
+    record = await _get_upload_record(file_id)
     content_type = record.get("content_type") or ""
     started = time.perf_counter()
 
@@ -715,11 +730,7 @@ async def read_passport_document(request: Request, file_id: str = Form(...)) -> 
             "pdf",
             "PDF dosyalari otomatik okunamiyor. Lutfen bilgileri elle girin.",
         )
-    try:
-        data, ct = get_object(record["storage_path"])
-    except Exception as exc:
-        logger.error("passport fetch failed: %s", exc)
-        raise HTTPException(502, "Dosya okunamadi.") from exc
+    data, ct = _read_upload_bytes(record)
 
     try:
         result = await read_passport(data, content_type or ct)
@@ -757,16 +768,8 @@ async def get_file(
         raise HTTPException(
             403, "Bu belgeye erisim izniniz yok veya baglantinin suresi doldu."
         )
-    record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
-    if not record:
-        raise HTTPException(404, "Dosya bulunamadi.")
-    data: bytes = b""
-    content_type = ""
-    try:
-        data, content_type = get_object(record["storage_path"])
-    except Exception as exc:
-        logger.error("file fetch failed: %s", exc)
-        raise HTTPException(502, "Dosya okunamadi.") from exc
+    record = await _get_upload_record(file_id)
+    data, content_type = _read_upload_bytes(record)
     headers = {"Cache-Control": "private, max-age=300"}
     if download:
         name = record.get("original_filename") or f"{file_id}"

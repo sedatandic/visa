@@ -13,7 +13,7 @@ import os
 import re
 import sys
 import time
-from datetime import date, datetime, timezone
+from datetime import date
 
 import pytest
 import requests

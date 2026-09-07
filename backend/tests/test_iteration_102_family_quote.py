@@ -7,7 +7,6 @@ Covers:
 - Order pricing parity: POST /api/orders with the same lines yields the same bundle_discount as the quote
 """
 import os
-import pytest
 import requests
 
 BASE_URL = (os.environ.get("REACT_APP_BACKEND_URL") or "").rstrip("/") or "https://whatsapp-ai-test.preview.emergentagent.com"

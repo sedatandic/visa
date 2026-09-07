@@ -111,6 +111,81 @@ BUNDLE_TEMPLATES = [
 ]
 
 
+def _bundle_counts(tpl: dict, adults: Optional[int], children: Optional[int]) -> dict:
+    """Sablon ve istekteki yolcu sayilarini tek sozlukte cozer."""
+    family = tpl.get("family") or None
+    adult_count = max(1, int(adults if adults is not None else (family or {}).get("adults", 1)))
+    child_count = max(0, int(children if children is not None else (family or {}).get("children", 0)))
+    return {
+        "family": family,
+        "adults": adult_count,
+        "children": child_count,
+        "travelers": adult_count + child_count,
+    }
+
+
+def _pick_bundle_visas(tpl: dict, visas: list, child_count: int) -> tuple:
+    """Paket suresine uyan en uygun yetiskin ve (gerekiyorsa) cocuk vizesini secer."""
+
+    def cheapest(items: list) -> Optional[dict]:
+        return min(items, key=lambda v: float(v["price"])) if items else None
+
+    same_days = [v for v in visas if int(v.get("duration_days") or 0) == tpl["visa_days"]]
+    visa = cheapest(
+        [v for v in same_days if v.get("applicant_type") == "adult" and v.get("category") == "single"]
+    )
+    child_visa = cheapest([v for v in same_days if v.get("category") == "child"]) if child_count else None
+    return visa, child_visa
+
+
+def _bundle_totals(prices: dict, quantities: dict, counts: dict) -> dict:
+    """Ek hizmet ve vize tutarlarini paket + aile indirimleriyle hesaplar."""
+    extras_list = round(
+        prices["insurance"] * quantities["insurance"] + prices["esim"] * quantities["esim"], 2
+    )
+    tour_total = round(prices["tour"] * quantities["tour"], 2) if quantities["tour"] else 0.0
+    # Paket indirimi siparis fiyatlamasiyla ayni: sigorta+eSIM varsa tum ek hizmetlere %10
+    discount = round((extras_list + tour_total) * float(BUNDLE_DISCOUNT["rate"]), 2)
+    visa_subtotal = round(
+        prices["visa"] * counts["adults"] + prices["child_visa"] * counts["children"], 2
+    )
+    family_rate = family_discount_rate(counts["travelers"]) if counts["family"] else 0.0
+    return {
+        "extras_list": extras_list,
+        "tour_total": tour_total,
+        "discount": discount,
+        "price": round(extras_list + tour_total - discount, 2),
+        "visa_subtotal": visa_subtotal,
+        "family_rate": family_rate,
+        "visa_discount": round(visa_subtotal * family_rate, 2),
+    }
+
+
+def _bundle_family_block(counts: dict, child_visa: Optional[dict], totals: dict) -> Optional[dict]:
+    """Aile paketleri icin yolcu/indirim kirilimini dondurur."""
+    if not counts["family"]:
+        return None
+    return {
+        "adults": counts["adults"],
+        "children": counts["children"],
+        "child_visa": (
+            {
+                "id": child_visa["id"],
+                "name": child_visa["name"],
+                "price": float(child_visa["price"]),
+            }
+            if child_visa
+            else None
+        ),
+        "visa_subtotal": totals["visa_subtotal"],
+        "visa_discount": totals["visa_discount"],
+        "visa_discount_rate": totals["family_rate"],
+        "traveler_count": counts["travelers"],
+        "max_adults": 6,
+        "max_children": 4,
+    }
+
+
 def _bundle_item(
     tpl: dict,
     products: dict,
@@ -124,45 +199,25 @@ def _bundle_item(
     esim = products.get(tpl["esim_id"])
     if not insurance or not esim:
         return None
-    rate = float(BUNDLE_DISCOUNT["rate"])
-    family = tpl.get("family") or None
-    adult_count = max(1, int(adults if adults is not None else (family or {}).get("adults", 1)))
-    child_count = max(0, int(children if children is not None else (family or {}).get("children", 0)))
-    travelers = adult_count + child_count
-    candidates = [
-        v
-        for v in visas
-        if int(v.get("duration_days") or 0) == tpl["visa_days"]
-        and v.get("applicant_type") == "adult"
-        and v.get("category") == "single"
-    ]
-    visa = min(candidates, key=lambda v: float(v["price"])) if candidates else None
-    child_visa = None
-    if child_count:
-        child_candidates = [
-            v
-            for v in visas
-            if int(v.get("duration_days") or 0) == tpl["visa_days"] and v.get("category") == "child"
-        ]
-        child_visa = min(child_candidates, key=lambda v: float(v["price"])) if child_candidates else None
-
-    ins_qty = travelers if family else 1
-    esim_qty = adult_count if family else 1
-    tour = products.get(tpl.get("tour_id") or "") if family else None
-    tour_qty = travelers if (with_tour and tour) else 0
-
-    extras_list = round(float(insurance["price"]) * ins_qty + float(esim["price"]) * esim_qty, 2)
-    tour_total = round(float(tour["price"]) * tour_qty, 2) if tour_qty else 0.0
-    # Paket indirimi siparis fiyatlamasiyla ayni: sigorta+eSIM varsa tum ek hizmetlere %10
-    discount = round((extras_list + tour_total) * rate, 2)
-    price = round(extras_list + tour_total - discount, 2)
-    visa_subtotal = round(
-        (float(visa["price"]) * adult_count if visa else 0.0)
-        + (float(child_visa["price"]) * child_count if child_visa else 0.0),
-        2,
+    counts = _bundle_counts(tpl, adults, children)
+    visa, child_visa = _pick_bundle_visas(tpl, visas, counts["children"])
+    tour = products.get(tpl.get("tour_id") or "") if counts["family"] else None
+    quantities = {
+        "insurance": counts["travelers"] if counts["family"] else 1,
+        "esim": counts["adults"] if counts["family"] else 1,
+        "tour": counts["travelers"] if (with_tour and tour) else 0,
+    }
+    totals = _bundle_totals(
+        {
+            "insurance": float(insurance["price"]),
+            "esim": float(esim["price"]),
+            "tour": float(tour["price"]) if tour else 0.0,
+            "visa": float(visa["price"]) if visa else 0.0,
+            "child_visa": float(child_visa["price"]) if child_visa else 0.0,
+        },
+        quantities,
+        counts,
     )
-    family_rate = family_discount_rate(travelers) if family else 0.0
-    visa_discount = round(visa_subtotal * family_rate, 2)
 
     return {
         "id": tpl["id"],
@@ -193,40 +248,22 @@ def _bundle_item(
                 "name": tour["name"],
                 "price": tour["price"],
                 "duration": tour.get("summary"),
-                "selected": bool(tour_qty),
-                "total": tour_total,
+                "selected": bool(quantities["tour"]),
+                "total": totals["tour_total"],
             }
             if tour
             else None
         ),
-        "list_total": round(extras_list + tour_total, 2),
-        "discount": discount,
-        "price": price,
-        "quantities": {"insurance": ins_qty, "esim": esim_qty, "tour": tour_qty},
-        "family": (
-            {
-                "adults": adult_count,
-                "children": child_count,
-                "child_visa": (
-                    {
-                        "id": child_visa["id"],
-                        "name": child_visa["name"],
-                        "price": float(child_visa["price"]),
-                    }
-                    if child_visa
-                    else None
-                ),
-                "visa_subtotal": visa_subtotal,
-                "visa_discount": visa_discount,
-                "visa_discount_rate": family_rate,
-                "traveler_count": travelers,
-                "max_adults": 6,
-                "max_children": 4,
-            }
-            if family
+        "list_total": round(totals["extras_list"] + totals["tour_total"], 2),
+        "discount": totals["discount"],
+        "price": totals["price"],
+        "quantities": quantities,
+        "family": _bundle_family_block(counts, child_visa, totals),
+        "total_with_visa": (
+            round(totals["price"] + totals["visa_subtotal"] - totals["visa_discount"], 2)
+            if visa
             else None
         ),
-        "total_with_visa": (round(price + visa_subtotal - visa_discount, 2) if visa else None),
         "currency": "TRY",
     }
 

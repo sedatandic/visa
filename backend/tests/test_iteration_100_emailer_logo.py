@@ -12,7 +12,6 @@ Covers:
 import os
 import sys
 import asyncio
-import re
 from pathlib import Path
 
 import pytest

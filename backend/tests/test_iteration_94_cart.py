@@ -1,6 +1,5 @@
 """Iteration 94: Shopping cart (sepet), FX, products, checkout tests."""
 import os
-import re
 import pytest
 import requests
 

@@ -59,7 +59,7 @@ def _run(coro):
 
 
 # --- send_email params: text, reply_to, headers ---
-def test_send_email_marketing_kind_has_all_deliverability_fields(captured_params, monkeypatch):
+def test_send_email_marketing_kind_has_all_deliverability_fields(captured_params, monkeypatch) -> None:
     monkeypatch.setenv("REPLY_TO_EMAIL", "info@dubaivizeonline.com")
     html = "<p>Merhaba <strong>Ali</strong>&nbsp;bey</p><div>Yarim basvurunuz</div>"
     result = asyncio.run(
@@ -81,7 +81,7 @@ def test_send_email_marketing_kind_has_all_deliverability_fields(captured_params
     assert params["headers"]["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
 
 
-def test_send_email_transactional_kind_has_no_list_unsubscribe(captured_params, monkeypatch):
+def test_send_email_transactional_kind_has_no_list_unsubscribe(captured_params, monkeypatch) -> None:
     monkeypatch.setenv("REPLY_TO_EMAIL", "info@dubaivizeonline.com")
     html = "<p>Basvurunuz alindi</p>"
     result = asyncio.run(
@@ -95,7 +95,7 @@ def test_send_email_transactional_kind_has_no_list_unsubscribe(captured_params, 
 
 
 # --- _html_to_text helper ---
-def test_html_to_text_strips_tags_and_entities():
+def test_html_to_text_strips_tags_and_entities() -> None:
     html = "<p>Merhaba&nbsp;Ali</p><br/><div>Fiyat &amp; koşullar</div><script>bad()</script>"
     txt = emailer._html_to_text(html)
     assert "<" not in txt
@@ -104,7 +104,7 @@ def test_html_to_text_strips_tags_and_entities():
     assert "Fiyat & koşullar" in txt
 
 
-def test_html_to_text_real_template_turkish():
+def test_html_to_text_real_template_turkish() -> None:
     app_doc = {
         "reference_code": "DV-2026-1234",
         "contact": {"full_name": "Ayşe Yılmaz", "email": "a@example.com"},
@@ -126,7 +126,7 @@ def test_html_to_text_real_template_turkish():
 
 
 # --- warning log when SENDER_EMAIL is @resend.dev ---
-def test_warning_logged_for_resend_dev_sender(captured_params, caplog, _stub_outbox, monkeypatch):
+def test_warning_logged_for_resend_dev_sender(captured_params, caplog, _stub_outbox, monkeypatch) -> None:
     monkeypatch.setenv("SENDER_EMAIL", "onboarding@resend.dev")
     caplog.set_level(logging.WARNING, logger=emailer.logger.name)
     result = asyncio.run(
@@ -141,7 +141,7 @@ def test_warning_logged_for_resend_dev_sender(captured_params, caplog, _stub_out
 
 
 # --- regression: never raises; outbox always written ---
-def test_send_email_skipped_when_placeholder_key(_stub_outbox, monkeypatch):
+def test_send_email_skipped_when_placeholder_key(_stub_outbox, monkeypatch) -> None:
     monkeypatch.setenv("RESEND_API_KEY", "re_placeholder_xxx")
     result = asyncio.run(
         emailer.send_email("u@example.com", "s", "<p>hi</p>", kind="application_received")
@@ -151,7 +151,7 @@ def test_send_email_skipped_when_placeholder_key(_stub_outbox, monkeypatch):
     assert _stub_outbox.docs[0]["status"] == "skipped"
 
 
-def test_send_email_error_status_when_resend_raises(_stub_outbox, monkeypatch):
+def test_send_email_error_status_when_resend_raises(_stub_outbox, monkeypatch) -> None:
     monkeypatch.setenv("RESEND_API_KEY", "re_valid_looking")
 
     class FakeEmails:

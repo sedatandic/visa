@@ -166,7 +166,7 @@ export const WhatsAppPhoneMock = ({ href }) => {
 
     return (
         <div
-            className="relative mx-auto w-full max-w-[304px]"
+            className="relative mx-auto w-full max-w-[244px] sm:max-w-[300px]"
             data-testid="wa-phone-mock"
             onMouseEnter={() => {
                 paused.current = true;
@@ -213,8 +213,8 @@ export const WhatsAppPhoneMock = ({ href }) => {
                             <p className="truncate text-[13px] font-semibold text-white">Dubai Vize Hattı</p>
                             <p className="text-[11px] text-white/70">çevrimiçi</p>
                         </div>
-                        <Video className="h-5 w-5 shrink-0 text-white/85" aria-hidden="true" />
-                        <Phone className="h-4 w-4 shrink-0 text-white/85" aria-hidden="true" />
+                        <Video className="hidden h-5 w-5 shrink-0 text-white/85 sm:block" aria-hidden="true" />
+                        <Phone className="hidden h-4 w-4 shrink-0 text-white/85 min-[380px]:block" aria-hidden="true" />
                         <MoreVertical className="h-4 w-4 shrink-0 text-white/85" aria-hidden="true" />
                     </div>
 
@@ -254,7 +254,7 @@ export const WhatsAppPhoneMock = ({ href }) => {
                     <div className="flex items-center gap-2 bg-[#F0F2F5] px-2.5 py-2">
                         <div className="flex flex-1 items-center gap-2 rounded-full bg-white px-3 py-2">
                             <Smile className="h-5 w-5 shrink-0 text-[#8696A0]" aria-hidden="true" />
-                            <span className="flex-1 text-[12px] text-[#8696A0]">Mesaj yazın</span>
+                            <span className="flex-1 truncate whitespace-nowrap text-[12px] text-[#8696A0]">Mesaj yazın</span>
                             <Plus className="h-4 w-4 shrink-0 text-[#8696A0]" aria-hidden="true" />
                             <Camera className="h-4 w-4 shrink-0 text-[#8696A0]" aria-hidden="true" />
                         </div>

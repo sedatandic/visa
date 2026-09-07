@@ -12,7 +12,6 @@ import sys
 import uuid
 from datetime import datetime, timedelta, timezone
 
-import pytest
 import requests
 from dotenv import load_dotenv
 
