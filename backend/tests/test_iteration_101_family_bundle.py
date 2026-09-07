@@ -3,6 +3,8 @@ import os
 import pytest
 import requests
 
+from insured_data import insured_people
+
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or "https://whatsapp-bot-test-2.preview.emergentagent.com"
 
 
@@ -81,15 +83,20 @@ class TestOrderMultiQty:
                 "phone": "05325882630",
             },
             "payment_method": "transfer",
+            "insured": insured_people(3),
+            "travel_start": "2026-10-10",
             "note": "TEST_iteration_101",
         }
         r = requests.post(f"{BASE_URL}/api/orders", json=payload, timeout=45)
         assert r.status_code == 200, r.text
         data = r.json()
         order = data["order"]
-        # items_total = 3*560 + 2*740 = 3160 ; bundle discount 10% = 316 ; price 2844
-        assert order["items_total"] == 3160.0
-        assert order["bundle_discount"] == 316.0
+        catalog = {p["id"]: p for p in requests.get(f"{BASE_URL}/api/products", timeout=30).json()["items"]}
+        expected_total = round(
+            3 * float(catalog["ins_15d"]["price"]) + 2 * float(catalog["esim_3gb"]["price"]), 2
+        )
+        assert order["items_total"] == expected_total
+        assert order["bundle_discount"] == round(expected_total * 0.1, 2)
         assert order["bundle_discount_rate"] == 0.1
-        assert order["price"] == 2844.0
+        assert order["price"] == round(expected_total - order["bundle_discount"], 2)
         assert data.get("bank") is not None

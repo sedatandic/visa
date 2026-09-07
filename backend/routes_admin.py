@@ -1268,6 +1268,48 @@ async def admin_update_order(order_id: str, payload: dict, admin: dict = Depends
     return serialize_doc(fresh)
 
 
+@router.get("/admin/insurance/provider")
+async def admin_insurance_provider(admin: dict = Depends(require_admin)) -> dict:
+    """Tamamliyo baglanti durumu + guncel maliyet/satis fiyatlari."""
+    from insurance_provider import provider_status
+
+    return await provider_status()
+
+
+@router.post("/admin/insurance/sync-prices")
+async def admin_insurance_sync_prices(admin: dict = Depends(require_admin)) -> dict:
+    """Canli tarifeden maliyetleri ceker, satis fiyatlarini %100 marj ile guncelller."""
+    from insurance_provider import sync_prices
+
+    return await sync_prices()
+
+
+@router.post("/admin/insurance/auto-issue")
+async def admin_insurance_auto_issue(payload: dict, admin: dict = Depends(require_admin)) -> dict:
+    """Otomatik police kesimini panelden acar/kapatir (varsayilan kapali)."""
+    from insurance_provider import set_auto_issue
+
+    return await set_auto_issue(bool(payload.get("enabled")))
+
+
+@router.post("/admin/insurance-tasks/{task_id}/issue-provider")
+async def admin_issue_policy_via_provider(
+    task_id: str, request: Request, admin: dict = Depends(require_admin)
+) -> dict:
+    """Policeyi Tamamliyo API'si uzerinden keser ve musteriye gonderir."""
+    from insurance_provider import issue_via_provider
+
+    result = await issue_via_provider(
+        task_id, _resolve_origin(None, request), actor=admin.get("email", "")
+    )
+    if not result.get("ok"):
+        raise HTTPException(502, result.get("error") or "Poliçe kesilemedi.")
+    from db import insurance_tasks_col
+
+    task = await insurance_tasks_col.find_one({"id": task_id})
+    return {**result, "task": serialize_doc(task)}
+
+
 @router.get("/admin/insurance-tasks")
 async def admin_insurance_tasks(status: str = "", admin: dict = Depends(require_admin)) -> dict:
     from db import insurance_tasks_col

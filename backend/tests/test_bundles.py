@@ -1,7 +1,11 @@
 """Tests for /api/bundles + bundle discount applied to orders."""
 import os
+from datetime import date, timedelta
+
 import pytest
 import requests
+
+from insured_data import insured_people
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or "https://whatsapp-bot-test-2.preview.emergentagent.com"
 API = f"{BASE_URL}/api"
@@ -48,11 +52,11 @@ class TestBundles:
         # pack_standard is popular
         assert items["pack_standard"]["popular"] is True
         # Check pairing
-        assert items["pack_short"]["insurance"]["id"] == "ins_8d"
+        assert items["pack_short"]["insurance"]["id"] == "ins_7d"
         assert items["pack_short"]["esim"]["id"] == "esim_1gb"
         assert items["pack_standard"]["insurance"]["id"] == "ins_15d"
         assert items["pack_standard"]["esim"]["id"] == "esim_3gb"
-        assert items["pack_comfort"]["insurance"]["id"] == "ins_30d_plus"
+        assert items["pack_comfort"]["insurance"]["id"] == "ins_30d"
         assert items["pack_comfort"]["esim"]["id"] == "esim_10gb"
         # Verify math: list_total = ins.price + esim.price; discount = 10%; price = list - discount
         # (pack_family adet bazli hesaplanir, bu dogrulamadan haric tutulur)
@@ -72,7 +76,7 @@ class TestBundles:
         assert set(items.keys()) == {"pack_long", "pack_long_plus"}
         assert items["pack_long"]["insurance"]["id"] == "ins_60d"
         assert items["pack_long"]["esim"]["id"] == "esim_10gb"
-        assert items["pack_long_plus"]["insurance"]["id"] == "ins_60d_plus"
+        assert items["pack_long_plus"]["insurance"]["id"] == "ins_60d"
         assert items["pack_long_plus"]["esim"]["id"] == "esim_unlimited"
 
 
@@ -94,6 +98,8 @@ class TestOrderBundleDiscount:
                 "phone": "+905551112233",
             },
             "payment_method": "card",
+            "insured": insured_people(1),
+            "travel_start": (date.today() + timedelta(days=14)).isoformat(),
         }
         r = session.post(f"{API}/orders", json=payload, timeout=30)
         assert r.status_code == 200, r.text[:300]

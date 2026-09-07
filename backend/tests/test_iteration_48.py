@@ -86,7 +86,7 @@ class TestContent:
         express = next((a for a in addons if a["id"] == "express"), None)
         assert express is not None
         assert float(express["price_usd"]) == 50.0
-        assert "8 mesai" in express.get("description", "") or "8 mesai" in " ".join(
+        assert "12 saat" in express.get("description", "") or "12 saat" in " ".join(
             express.get("features", [])
         )
 

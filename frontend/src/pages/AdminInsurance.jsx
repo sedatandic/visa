@@ -7,12 +7,14 @@ import { AdminLayout } from "../components/AdminLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { MonthlyProfitChart } from "../components/MonthlyProfitChart";
 import { Button } from "../components/ui/button";
+import { Switch } from "../components/ui/switch";
 import { Textarea } from "../components/ui/textarea";
 
-const TaskRow = ({ task, onIssued }) => {
+const TaskRow = ({ task, onIssued, providerReady }) => {
     const [file, setFile] = useState(null);
     const [message, setMessage] = useState("");
     const [busy, setBusy] = useState(false);
+    const [apiBusy, setApiBusy] = useState(false);
 
     const issue = async () => {
         if (!file?.file_id) return toast.error("Poliçe PDF'ini yükleyin.");
@@ -32,7 +34,21 @@ const TaskRow = ({ task, onIssued }) => {
         }
     };
 
+    const issueViaProvider = async () => {
+        setApiBusy(true);
+        try {
+            const { data } = await api.post(`/admin/insurance-tasks/${task.id}/issue-provider`);
+            toast.success("Poliçe Tamamliyo üzerinden kesildi ve müşteriye gönderildi.");
+            onIssued(data.task);
+        } catch (err) {
+            toast.error(apiError(err, "Poliçe kesilemedi."));
+        } finally {
+            setApiBusy(false);
+        }
+    };
+
     const customer = task.customer || {};
+    const insured = task.insured || [];
 
     return (
         <div className="card-surface p-5" data-testid={`insurance-task-${task.id}`}>
@@ -71,8 +87,54 @@ const TaskRow = ({ task, onIssued }) => {
                 </div>
             </dl>
 
+            {insured.length > 0 && (
+                <div className="mt-3 rounded-xl border border-border bg-muted/40 p-3" data-testid={`insurance-insured-${task.id}`}>
+                    <p className="text-xs font-semibold text-muted-foreground">Sigortalılar</p>
+                    <ul className="mt-1.5 space-y-1 text-sm">
+                        {insured.map((person, i) => (
+                            <li key={`${task.id}-ins-${i}`} className="font-medium">
+                                {person.full_name || "-"} · {person.tc_kimlik_no || "TC yok"} ·{" "}
+                                {person.birth_date || "-"}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {task.provider_error && (
+                <p
+                    className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs font-semibold text-destructive"
+                    data-testid={`insurance-provider-error-${task.id}`}
+                >
+                    Tamamliyo hatası: {task.provider_error}
+                </p>
+            )}
+
             {task.status !== "issued" && (
                 <div className="mt-4 space-y-3">
+                    {providerReady && (
+                        <div className="rounded-xl border border-primary/30 bg-primary/[0.05] p-4">
+                            <p className="text-sm font-semibold">Tamamliyo API ile otomatik kes</p>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                Teklif → cari ödeme onayı → poliçe → PDF adımları tek tıkla çalışır; poliçe
+                                müşteriye e-postalanır. Yarıda kalan adımlar tekrar denendiğinde kaldığı yerden
+                                devam eder.
+                            </p>
+                            <Button
+                                onClick={issueViaProvider}
+                                disabled={apiBusy}
+                                className="mt-3 h-11"
+                                data-testid={`insurance-issue-provider-${task.id}`}
+                            >
+                                {apiBusy ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <ShieldCheck className="mr-2 h-4 w-4" />
+                                )}
+                                Tamamliyo'dan poliçeyi kes ve gönder
+                            </Button>
+                        </div>
+                    )}
                     <a
                         href={task.provider_link}
                         target="_blank"
@@ -116,23 +178,138 @@ const TaskRow = ({ task, onIssued }) => {
     );
 };
 
+const ProviderPanel = ({ status, onChange }) => {
+    const [syncing, setSyncing] = useState(false);
+    const [toggling, setToggling] = useState(false);
+
+    const sync = async () => {
+        setSyncing(true);
+        try {
+            const { data } = await api.post("/admin/insurance/sync-prices");
+            const failed = (data.errors || []).length;
+            toast[failed ? "warning" : "success"](
+                `${(data.rows || []).length} poliçe fiyatı güncellendi${failed ? `, ${failed} hata` : ""}.`
+            );
+            onChange();
+        } catch (err) {
+            toast.error(apiError(err, "Fiyatlar güncellenemedi."));
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    const toggleAuto = async (enabled) => {
+        setToggling(true);
+        try {
+            await api.post("/admin/insurance/auto-issue", { enabled });
+            toast.success(
+                enabled
+                    ? "Otomatik poliçe kesimi açıldı: ödeme alındığında poliçe kendiliğinden kesilir."
+                    : "Otomatik poliçe kesimi kapatıldı: poliçeleri panelden keseceksiniz."
+            );
+            onChange();
+        } catch (err) {
+            toast.error(apiError(err, "Ayar kaydedilemedi."));
+        } finally {
+            setToggling(false);
+        }
+    };
+
+    return (
+        <div className="card-surface mt-6 p-5" data-testid="insurance-provider-panel">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 className="flex items-center gap-2 font-heading text-sm font-bold">
+                        <ShieldCheck className="h-4 w-4 text-primary" /> Tamamliyo bağlantısı
+                    </h2>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                        Maliyetler günlük çekilir, satış fiyatı %{Math.round((status.markup - 1) * 100)} kâr
+                        marjıyla hesaplanır. Ödeme bizde kalır (cari tahsilat), poliçe API ile kesilir.
+                    </p>
+                </div>
+                <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        status.configured ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"
+                    }`}
+                    data-testid="insurance-provider-state"
+                >
+                    {status.configured ? "Bağlı" : "API bilgisi yok"}
+                </span>
+            </div>
+
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                <div>
+                    <dt className="text-xs text-muted-foreground">Son fiyat senkronu</dt>
+                    <dd className="font-medium" data-testid="insurance-last-sync">
+                        {status.last_sync_at ? formatDateTime(status.last_sync_at) : "Henüz yapılmadı"}
+                    </dd>
+                </div>
+                <div>
+                    <dt className="text-xs text-muted-foreground">Ürün kodu</dt>
+                    <dd className="font-medium">{status.urun_id}</dd>
+                </div>
+                <div>
+                    <dt className="text-xs text-muted-foreground">Otomatik poliçe kesimi</dt>
+                    <dd className="mt-1 flex items-center gap-2">
+                        <Switch
+                            checked={!!status.auto_issue}
+                            disabled={toggling || !status.configured}
+                            onCheckedChange={toggleAuto}
+                            data-testid="insurance-auto-issue-switch"
+                        />
+                        <span className="text-xs font-semibold">
+                            {status.auto_issue ? "Açık" : "Kapalı (elle kesilir)"}
+                        </span>
+                    </dd>
+                </div>
+            </dl>
+
+            {(status.last_errors || []).length > 0 && (
+                <p
+                    className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs font-semibold text-destructive"
+                    data-testid="insurance-provider-errors"
+                >
+                    Son senkron hataları: {status.last_errors.map((e) => `${e.product_id}: ${e.error}`).join(" · ")}
+                </p>
+            )}
+
+            <Button
+                onClick={sync}
+                disabled={syncing || !status.configured}
+                className="mt-4 h-10"
+                data-testid="insurance-sync-prices"
+            >
+                {syncing ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Fiyatları Tamamliyo'dan güncelle
+            </Button>
+        </div>
+    );
+};
+
 export default function AdminInsurance() {
     const [tasks, setTasks] = useState([]);
     const [report, setReport] = useState(null);
     const [monthly, setMonthly] = useState(null);
+    const [provider, setProvider] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const load = async () => {
         setLoading(true);
         try {
-            const [tasksRes, reportRes, monthlyRes] = await Promise.all([
+            const [tasksRes, reportRes, monthlyRes, providerRes] = await Promise.all([
                 api.get("/admin/insurance-tasks"),
                 api.get("/admin/insurance-report"),
                 api.get("/admin/profit-monthly?months=12"),
+                api.get("/admin/insurance/provider"),
             ]);
             setTasks(tasksRes.data.items || []);
             setReport(reportRes.data);
             setMonthly(monthlyRes.data);
+            setProvider(providerRes.data);
         } catch (err) {
             toast.error(apiError(err, "Veriler yüklenemedi."));
         } finally {
@@ -166,6 +343,8 @@ export default function AdminInsurance() {
                     <RefreshCw className="mr-2 h-4 w-4" /> Yenile
                 </Button>
             </div>
+
+            {provider && <ProviderPanel status={provider} onChange={load} />}
 
             {monthly && (
                 <div className="mt-6">
@@ -255,7 +434,12 @@ export default function AdminInsurance() {
             ) : (
                 <div className="mt-4 space-y-4">
                     {pending.map((task) => (
-                        <TaskRow key={task.id} task={task} onIssued={onIssued} />
+                        <TaskRow
+                            key={task.id}
+                            task={task}
+                            onIssued={onIssued}
+                            providerReady={!!provider?.configured}
+                        />
                     ))}
                 </div>
             )}

@@ -281,9 +281,26 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.error("daily digest scheduler failed to start: %s", exc)
 
+    try:
+        from insurance_provider import price_sync_loop
+
+        insurance_task = asyncio.create_task(price_sync_loop())
+        logger.info("insurance price sync scheduler started")
+    except Exception as exc:
+        logger.error("insurance price sync scheduler failed to start: %s", exc)
+
     yield
 
-    for task in (reminder_task, zami_task, keepalive_task, otp_task, cart_task, retention_task, digest_task):
+    for task in (
+        reminder_task,
+        zami_task,
+        keepalive_task,
+        otp_task,
+        cart_task,
+        retention_task,
+        digest_task,
+        insurance_task,
+    ):
         if task:
             task.cancel()
             try:

@@ -9,6 +9,8 @@ Covers:
 import os
 import requests
 
+from insured_data import insured_people
+
 BASE_URL = (os.environ.get("REACT_APP_BACKEND_URL") or "").rstrip("/") or "https://whatsapp-bot-test-2.preview.emergentagent.com"
 API = f"{BASE_URL}/api"
 
@@ -95,25 +97,27 @@ class TestQuoteFamily:
 
 
 # --- /api/bundles regression ---------------------------------------------------
-EXPECTED = {
-    "pack_short": (837.9, 6027.9),
-    "pack_standard": (1170.0, 6360.0),
-    "pack_comfort": (3765.6, 8955.6),
-    "pack_family": (2844.0, 14409.0),  # default 2+1 no tour
-    "pack_long": (1948.5, 11828.5),
-    "pack_long_plus": (5768.1, 15648.1),
+EXPECTED_BUNDLE_IDS = {
+    "pack_short",
+    "pack_standard",
+    "pack_comfort",
+    "pack_family",
+    "pack_long",
+    "pack_long_plus",
 }
 
 
 class TestBundlesList:
     def test_all_bundles(self):
+        """Fiyatlar canli tarifeden geldigi icin tutarlilik dogrulanir, sabit tutar degil."""
         r = requests.get(f"{API}/bundles", timeout=30)
         assert r.status_code == 200
         items = {b["id"]: b for b in r.json()["items"]}
-        assert set(items.keys()) == set(EXPECTED.keys())
-        for bid, (price, tot) in EXPECTED.items():
-            assert items[bid]["price"] == price, bid
-            assert items[bid]["total_with_visa"] == tot, bid
+        assert set(items.keys()) == EXPECTED_BUNDLE_IDS
+        for bid, item in items.items():
+            assert item["price"] == round(item["list_total"] - item["discount"], 2), bid
+            assert item["total_with_visa"] > item["price"], bid
+            assert item["insurance"]["price"] > 0 and item["esim"]["price"] > 0, bid
         # family default tour qty must be 0
         assert items["pack_family"]["quantities"]["tour"] == 0
 
@@ -140,12 +144,14 @@ class TestOrderParity:
                 "phone": "05325882630",
             },
             "payment_method": "transfer",
+            "insured": insured_people(3),
+            "travel_start": "2026-10-10",
             "note": "TEST_iteration_102",
         }
         r = requests.post(f"{API}/orders", json=payload, timeout=45)
         assert r.status_code == 200, r.text
         order = r.json()["order"]
-        # Match quote: list 9820 ; discount 982 ; price 8838
-        assert order["items_total"] == 9820.0
-        assert order["bundle_discount"] == 982.0
-        assert order["price"] == 8838.0
+        expected_total = round(sum(float(l["unit_price"]) * l["quantity"] for l in order["items"]), 2)
+        assert order["items_total"] == expected_total
+        assert order["bundle_discount"] == round(expected_total * 0.1, 2)
+        assert order["price"] == round(expected_total - order["bundle_discount"], 2)

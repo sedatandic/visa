@@ -88,55 +88,47 @@ ESIM_PRODUCTS = [
     },
 ]
 
-# Seyahat sagligi policeleri: BAE (Schengen disi "Diger Ulkeler") tarifesi
-# seyahatpolicesi.com'dan alinir; satis fiyati %100 marj ile TL olarak sabitlenir.
+# Seyahat sagligi policeleri: maliyet Tamamliyo Travel API'sinden (urun_id 141,
+# "Yurt Disi Saglik Destek Paketi") gunluk cekilir; satis fiyati %100 marj ile TL olarak
+# hesaplanir (`insurance_provider.sync_prices`). Buradaki degerler ilk kurulum/yedek tarifedir.
 INSURANCE_MARKUP = 2.0
 
 _BASIC_FEATURES = [
     "30.000 € acil sağlık teminatı",
-    "BAE (Dubai, Abu Dabi, Şarja) dahil tüm dünya geçerli",
-    "QR kodlu, Türkçe + İngilizce poliçe",
-    "Tıbbi tedavi, nakil ve cenaze nakli teminatı",
+    "Vize başvurusu için geçerli, BAE dahil tüm dünya",
+    "Tıbbi tedavi, tıbbi nakil ve cenaze nakli teminatı",
+    "Sınırsız tıbbi bilgi ve danışma hattı",
     "Poliçe PDF olarak e-postanıza gelir",
 ]
 
-_PLUS_FEATURES = [
-    "30.000 € tıbbi tedavi + tıbbi nakil teminatı",
-    "Bagaj kaybı (350 €) ve bagaj gecikmesi (100 €)",
-    "Yaralanma/hastalıkta konaklama uzatma desteği",
-    "Aile üyesinin seyahati ve konaklaması",
-    "Seyahatin kesilmesi teminatı",
-]
 
-
-def _insurance(pid, days, base_try, plus=False, popular=False, order=1):
-    kind_name = "Geniş Kapsam" if plus else "Temel"
+def _insurance(pid, days, base_try, popular=False, order=1):
     return {
         "id": pid,
         "kind": "insurance",
-        "name": f"Seyahat Sigortası · {days} Gün · {kind_name}",
+        "name": f"Seyahat Sağlık Sigortası · {days} Gün",
         "summary": (
-            f"{days} güne kadar BAE seyahatlerinde bagaj ve seyahat kesintisi dahil geniş teminat."
-            if plus
-            else f"{days} güne kadar BAE seyahatlerinde acil sağlık masraflarını karşılayan vize uyumlu poliçe."
+            f"{days} güne kadar BAE seyahatlerinde acil sağlık masraflarını karşılayan, "
+            "vize başvurusuna uygun poliçe."
         ),
-        "price_try": round(base_try * INSURANCE_MARKUP),
+        "price_try": round(base_try * INSURANCE_MARKUP / 10) * 10,
         "cost_try": round(base_try, 2),
-        "coverage": "30.000 € teminat + bagaj / seyahat kesintisi" if plus else "30.000 € teminat",
+        "coverage": "30.000 € teminat",
         "validity_days": days,
-        "features": _PLUS_FEATURES if plus else _BASIC_FEATURES,
+        "features": _BASIC_FEATURES,
+        "provider": "tamamliyo",
+        "provider_urun_id": 141,
+        "needs_tckn": True,
         "order": order,
         "popular": popular,
     }
 
 
 INSURANCE_PRODUCTS = [
-    _insurance("ins_8d", 8, 245.29, order=1),
-    _insurance("ins_15d", 15, 280.11, order=2),
-    _insurance("ins_30d", 30, 322.22, popular=True, order=3),
-    _insurance("ins_30d_plus", 30, 1376.87, plus=True, order=4),
-    _insurance("ins_60d", 60, 367.71, order=5),
-    _insurance("ins_60d_plus", 60, 1994.61, plus=True, order=6),
+    _insurance("ins_7d", 7, 196.44, order=1),
+    _insurance("ins_15d", 15, 224.02, popular=True, order=2),
+    _insurance("ins_30d", 30, 257.23, order=3),
+    _insurance("ins_60d", 60, 367.55, order=4),
 ]
 
 # Dubai aktiviteleri: teslimat/rezervasyon acente eliyle yapilir

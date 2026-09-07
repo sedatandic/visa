@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, Clock, Star, Users } from "lucide-react";
+import { Star, Users } from "lucide-react";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/site";
 import { Button } from "./ui/button";
 import { VisaTypeCard } from "./VisaTypeCard";
+import { AddonCard } from "./AddonCard";
 import { Skeleton } from "./ui/skeleton";
 
 /**
@@ -104,28 +105,9 @@ export const PricingTabs = ({ compactHeading = false }) => {
                     <p className="mt-2 text-sm text-muted-foreground">
                         Başvuru sırasında dilediğiniz ek hizmeti seçebilirsiniz. Ücretler yolcu başınadır.
                     </p>
-                    <div className="mt-6 grid gap-6 md:grid-cols-2">
+                    <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {addons.map((a) => (
-                            <div key={a.id} className="card-surface p-6" data-testid={`addon-card-${a.id}`}>
-                                <div className="flex items-start justify-between gap-4">
-                                    <h4 className="font-heading text-lg font-bold">{a.name}</h4>
-                                    <span className="whitespace-nowrap rounded-lg bg-[hsl(var(--sand-surface))] px-3 py-1.5 font-heading text-sm font-bold">
-                                        + {formatMoney(a.price, a.currency)}
-                                    </span>
-                                </div>
-                                <p className="mt-2 text-sm leading-6 text-muted-foreground">{a.description}</p>
-                                <ul className="mt-4 space-y-2">
-                                    {(a.features || []).map((f) => (
-                                        <li key={f} className="flex items-start gap-2 text-sm">
-                                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                                            {f}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
-                                    <Clock className="h-3.5 w-3.5" /> Başvuru formunun 2. adımında seçilebilir
-                                </p>
-                            </div>
+                            <AddonCard key={a.id} addon={a} />
                         ))}
                     </div>
                     <div className="mt-8 flex flex-col items-start gap-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-6 sm:flex-row sm:items-center sm:justify-between">

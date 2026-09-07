@@ -18,7 +18,7 @@ const SLIDES = [
         src: "https://images.unsplash.com/photo-1524234599372-a5bd0194758d?auto=format&fit=crop&w=2000&q=80",
         alt: "Dubai Marina gökdelenleri",
         title: "Ekspres vize hizmeti",
-        text: "Acil seyahatlerde ~8 mesai saatinde sonuç",
+        text: "Acil seyahatlerde 12 saat içinde sonuç",
     },
     {
         src: "https://images.unsplash.com/photo-1489516408517-0c0a15662682?auto=format&fit=crop&w=2000&q=80",

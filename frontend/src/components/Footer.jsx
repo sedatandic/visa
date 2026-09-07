@@ -8,6 +8,7 @@ import { TursabBadge } from "./TursabBadge";
 import { GdrfaBadge } from "./GdrfaBadge";
 import { BrandMark } from "./BrandMark";
 import { BoldText } from "./BoldText";
+import { PhoneDubai } from "./PhoneDubai";
 import { useContact } from "../lib/contact";
 
 export const Footer = () => {
@@ -88,7 +89,13 @@ export const Footer = () => {
                     {contact.phone && (
                         <li className="flex items-start gap-2.5">
                             <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                            <a href={contact.phoneHref} className="transition-colors hover:text-primary">{contact.phone}</a>
+                            <a
+                                href={contact.phoneHref}
+                                aria-label={`Telefon: ${contact.phone}`}
+                                className="transition-colors hover:text-primary"
+                            >
+                                <PhoneDubai phone={contact.phone} letterClassName="text-primary" />
+                            </a>
                         </li>
                     )}
                     <li className="flex items-start gap-2.5">

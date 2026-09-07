@@ -24,6 +24,8 @@ import { CART_MAX_QTY, useCart } from "../lib/cart";
 import { PageHeader } from "../components/SiteLayout";
 import { FxNote } from "../components/FxNote";
 import { DateField } from "../components/DateField";
+import { InsuredIdentityFields } from "../components/InsuredIdentityFields";
+import { cleanTckn, validTckn } from "../lib/tckn";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -121,6 +123,7 @@ export default function Cart() {    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [method, setMethod] = useState("card");
+    const [insured, setInsured] = useState([]);
     const snapshotSig = useRef("");
     const [form, setForm] = useState({
         full_name: "",
@@ -211,6 +214,29 @@ export default function Cart() {    const navigate = useNavigate();
         (l) => l.product.needs_schedule && (!l.scheduled_date || !l.scheduled_time)
     );
 
+    // Sigorta satiri varsa police kesimi icin sigortali kimlik bilgileri zorunlu
+    const insuranceCount = lines
+        .filter((l) => l.product.kind === "insurance")
+        .reduce((sum, l) => sum + l.quantity, 0);
+
+    useEffect(() => {
+        setInsured((prev) =>
+            prev.length === insuranceCount
+                ? prev
+                : Array.from(
+                      { length: insuranceCount },
+                      (_, i) => prev[i] || { full_name: "", tc_kimlik_no: "", birth_date: "" }
+                  )
+        );
+    }, [insuranceCount]);
+
+    const insuredRows = insured.map((person, i) => ({
+        key: String(i),
+        label: `${i + 1}. sigortalı`,
+        namePlaceholder: i === 0 && form.full_name.trim() ? form.full_name.trim() : "Ad soyad",
+        ...person,
+    }));
+
     // Tasarruf sayaci: eksik olan urun eklenirse kazanilacak %10 indirimi canli gosterir.
     const savingsOffer = useMemo(() => {
         if (!lines.length || bundleDiscount > 0) return null;
@@ -263,6 +289,23 @@ export default function Cart() {    const navigate = useNavigate();
             return toast.error(`${missingSchedule[0].product.name} için tarih ve saat seçin.`);
         }
 
+        const people = insured.map((person, i) => ({
+            full_name: (person.full_name || "").trim() || (i === 0 ? name : ""),
+            tc_kimlik_no: cleanTckn(person.tc_kimlik_no),
+            birth_date: person.birth_date || "",
+        }));
+        const invalid = people.findIndex(
+            (p) => p.full_name.length < 3 || !validTckn(p.tc_kimlik_no) || !p.birth_date
+        );
+        if (invalid >= 0) {
+            return toast.error(
+                `${invalid + 1}. sigortalı için ad soyad, geçerli TC kimlik no ve doğum tarihi girin.`
+            );
+        }
+        if (insuranceCount > 0 && !form.travel_start) {
+            return toast.error("Poliçe gidiş tarihinizde başlar; lütfen gidiş tarihini seçin.");
+        }
+
         setSubmitting(true);
         try {
             const { data } = await api.post("/orders", {
@@ -273,6 +316,7 @@ export default function Cart() {    const navigate = useNavigate();
                     scheduled_time: l.scheduled_time || null,
                 })),
                 contact: { full_name: name, email, phone },
+                insured: people,
                 travel_start: form.travel_start || null,
                 travel_end: form.travel_end || null,
                 note: form.note.trim() || null,
@@ -298,7 +342,7 @@ export default function Cart() {    const navigate = useNavigate();
         } finally {
             setSubmitting(false);
         }
-    }, [lines, form, method, cart, navigate, missingSchedule]);
+    }, [lines, form, method, cart, navigate, missingSchedule, insured]);
 
     const empty = !loading && lines.length === 0 && !visaLines.length;
 
@@ -749,10 +793,43 @@ export default function Cart() {    const navigate = useNavigate();
                                         />
                                     </div>
 
+                                    {insuranceCount > 0 && (
+                                        <div
+                                            className="rounded-xl border border-primary/25 bg-primary/[0.05] p-4"
+                                            data-testid="cart-insured-block"
+                                        >
+                                            <p className="font-heading text-sm font-bold">
+                                                Sigortalı bilgileri ({insuranceCount} kişi)
+                                            </p>
+                                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                                Poliçe TC kimlik numarası ile düzenlenir. Bilgiler eksiksiz olduğunda
+                                                poliçeniz ödemeden sonra PDF olarak e-postanıza gelir.
+                                            </p>
+                                            <InsuredIdentityFields
+                                                rows={insuredRows}
+                                                onChange={(key, patch) =>
+                                                    setInsured((prev) =>
+                                                        prev.map((p, i) =>
+                                                            String(i) === key ? { ...p, ...patch } : p
+                                                        )
+                                                    )
+                                                }
+                                                withNameAndBirth
+                                                testIdPrefix="cart-insured"
+                                            />
+                                        </div>
+                                    )}
+
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label htmlFor="cart-start">Gidiş tarihi (opsiyonel)</Label>
-                                            <DateField
+                                            <Label htmlFor="cart-start">
+                                                Gidiş tarihi{" "}
+                                                {insuranceCount > 0 ? (
+                                                    <span className="text-destructive">*</span>
+                                                ) : (
+                                                    "(opsiyonel)"
+                                                )}
+                                            </Label>                                            <DateField
                                                 id="cart-start"
                                                 value={form.travel_start}
                                                 onChange={(v) => setForm((f) => ({ ...f, travel_start: v }))}

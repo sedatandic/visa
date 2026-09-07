@@ -80,6 +80,7 @@ from passport_ai import apply_background_report, background_report, check_photo,
 from rate_limit import check as rate_check, client_ip
 import file_access
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
+from tckn import clean_tckn, valid_tckn
 from visa_guides import build_guide, guide_index
 
 logger = logging.getLogger(__name__)
@@ -969,9 +970,7 @@ def _build_application_doc(
         "price": pricing["total"],
         "currency": pricing["currency"],
         "processing_days": (
-            "aynı gün içinde"
-            if payload.addons.instant_express
-            else "yaklaşık 8 mesai saati"
+            "12 saat içinde"
             if payload.addons.express
             else travelers[0].get("processing_days", "")
         ),
@@ -1081,6 +1080,21 @@ async def application_form_pdf(code: str, last_name: str):
     return pdf_response(await application_form_bytes(doc), form_filename(doc))
 
 
+def _validate_insurance_identity(travelers: list, store_lines: list) -> None:
+    """Sigorta secildiyse her yolcu icin gecerli TC kimlik no zorunludur (police sarti)."""
+    if not any((line.get("kind") or "") == "insurance" for line in store_lines):
+        return
+    for traveler in travelers:
+        digits = clean_tckn(traveler.get("tc_kimlik_no") or traveler.get("national_id") or "")
+        if not valid_tckn(digits):
+            name = f"{traveler.get('first_name', '')} {traveler.get('last_name', '')}".strip()
+            raise HTTPException(
+                400,
+                f"{name or 'Yolcu'}: seyahat sağlık sigortası için geçerli TC kimlik numarası gerekiyor.",
+            )
+        traveler["tc_kimlik_no"] = digits
+
+
 @router.post("/applications")
 async def create_application(payload: ApplicationCreate):
     await _validate_extra_documents(payload.extra_documents)
@@ -1091,6 +1105,7 @@ async def create_application(payload: ApplicationCreate):
         payload.travel.arrival_date,
         payload.travel.departure_date,
     )
+    _validate_insurance_identity(travelers, store_lines)
     pricing = compute_pricing(
         prices,
         payload.addons.model_dump(),

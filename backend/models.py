@@ -45,6 +45,8 @@ class TravelerIn(BaseModel):
     mother_name: str = Field(default="", max_length=80)
     father_name: str = Field(default="", max_length=80)
     visa_type_id: str = Field(..., min_length=3)
+    # Sigorta satin alinirsa police kesimi icin zorunlu (Tamamliyo API'si TC kimlik istiyor)
+    tc_kimlik_no: Optional[str] = Field(default="", max_length=11)
     passport_file_id: str = Field(..., min_length=8)
     photo_file_id: str = Field(..., min_length=8)
 
@@ -74,7 +76,6 @@ class TravelIn(BaseModel):
 
 class AddonsIn(BaseModel):
     express: bool = False
-    instant_express: bool = False
     insurance: bool = False
     insurance_plus: bool = False
     esim: bool = False
@@ -88,6 +89,29 @@ class StoreItemIn(BaseModel):
     # Tur urunleri icin secilen tur tarihi / baslangic saati
     scheduled_date: Optional[str] = Field(None, max_length=10)
     scheduled_time: Optional[str] = Field(None, max_length=5)
+
+
+class InsuredIn(BaseModel):
+    """Sigorta policesi icin sigortali kisi (Tamamliyo TC kimlik + dogum tarihi ister)."""
+
+    full_name: str = Field(..., min_length=3, max_length=90)
+    tc_kimlik_no: str = Field(..., min_length=11, max_length=11)
+    birth_date: str = Field(..., min_length=8, max_length=10)
+
+    @field_validator("tc_kimlik_no")
+    @classmethod
+    def _check_tckn(cls, value: str) -> str:
+        from tckn import clean_tckn, valid_tckn
+
+        digits = clean_tckn(value)
+        if not valid_tckn(digits):
+            raise ValueError("Geçerli bir TC kimlik numarası girin.")
+        return digits
+
+    @field_validator("birth_date")
+    @classmethod
+    def _check_birth(cls, value: str) -> str:
+        return _iso_date_or_error(value, "Doğum tarihi")
 
 
 class ExtraDocumentsIn(BaseModel):

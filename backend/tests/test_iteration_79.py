@@ -217,8 +217,8 @@ class TestRegression:
         assert r.status_code == 200
         body = r.json()
         items = body["items"] if isinstance(body, dict) else body
-        # 4 esim + 6 insurance + 2 tour = 12 (iter_78 had 11 with only 1 tour)
-        assert len(items) == 12, f"expected 12 products, got {len(items)}"
+        # 4 esim + 4 insurance + 2 tour = 10
+        assert len(items) == 10, f"expected 10 products, got {len(items)}"
         kinds = {p.get("kind") for p in items}
         assert kinds == {"esim", "insurance", "tour"}
 

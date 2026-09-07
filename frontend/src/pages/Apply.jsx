@@ -49,6 +49,7 @@ import { DateField, fromISODate } from "../components/DateField";
 import { FxNote } from "../components/FxNote";
 import { BundlePicker } from "../components/BundlePicker";
 import { ComboSelector } from "../components/ComboSelector";
+import { TripSuggestions } from "../components/TripSuggestions";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { FamilyDiscountMeter } from "../components/FamilyDiscountMeter";
 import { PhotoRetryHelper } from "../components/PhotoRetryHelper";
@@ -57,6 +58,8 @@ import { useCart } from "../lib/cart";
 import { BankTransferInfo } from "../components/BankTransferInfo";
 import { BankAccounts } from "../components/BankAccounts";
 import { VisaComparison } from "../components/VisaComparison";
+import { InsuredIdentityFields } from "../components/InsuredIdentityFields";
+import { cleanTckn, validTckn } from "../lib/tckn";
 import {
     Dialog,
     DialogContent,
@@ -877,6 +880,22 @@ export default function Apply() {
         [tourQty, tourSchedule]
     );
 
+    // Sigorta secildiginde police kesimi icin her yolcunun TC kimlik numarasi gerekir.
+    const insuredRows = useMemo(
+        () =>
+            travelers.map((t, idx) => ({
+                key: t.key,
+                label: `${t.first_name} ${t.last_name}`.trim() || `${idx + 1}. Yolcu`,
+                tc_kimlik_no: t.national_id,
+            })),
+        [travelers]
+    );
+
+    const insuredMissing = useMemo(
+        () => (insurancePick ? travelers.filter((t) => !validTckn(t.national_id)) : []),
+        [insurancePick, travelers]
+    );
+
     const toggleEsim = (product) => {
         if (!extrasSelectable) {
             toast.error("Önce gidiş tarihinizi seçin veya \"tarihim henüz belli değil\" seçeneğini işaretleyin.");
@@ -1541,6 +1560,17 @@ export default function Apply() {
             toast.error("Seçtiğiniz tur için tarih belirlemeniz gerekiyor.");
             return null;
         }
+        if (insuredMissing.length) {
+            toast.error(
+                `Seyahat sağlık sigortası için geçerli TC kimlik numarası gerekiyor: ${insuredMissing
+                    .map((t, idx) => `${t.first_name} ${t.last_name}`.trim() || `${idx + 1}. Yolcu`)
+                    .join(", ")}`
+            );
+            document
+                .querySelector('[data-testid="insurance-identity-block"]')
+                ?.scrollIntoView({ behavior: "smooth", block: "center" });
+            return null;
+        }
         submitLock.current = true;
         setSubmitting(true);
         try {
@@ -1564,6 +1594,7 @@ export default function Apply() {
                     mother_name: (t.mother_name || "").trim(),
                     father_name: (t.father_name || "").trim(),
                     visa_type_id: t.visa_type_id,
+                    tc_kimlik_no: cleanTckn(t.national_id),
                     passport_file_id: t.passportFile.file_id,
                     photo_file_id: t.photoFile.file_id,
                 })),
@@ -1997,8 +2028,8 @@ export default function Apply() {
                                             Seyahat tarihleriniz
                                         </h3>
                                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                            Gidiş ve dönüş tarihinizi girin; sürenize uygun sigorta, eSIM ve çöl safarisi
-                                            önerilerini hemen aşağıda gösterelim.
+                                            Gidiş ve dönüş tarihinizi girin; vize süresi ve fiyat bu tarihlere göre
+                                            hesaplanır.
                                         </p>
                                         {!datesFlexible && (
                                             <div className="mt-4 grid gap-5 sm:grid-cols-2">
@@ -2107,110 +2138,12 @@ export default function Apply() {
                                                 <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                                                 <span>
                                                     Seyahatiniz <strong className="text-foreground">{tripDays} gün</strong>{" "}
-                                                    sürüyor. Önerileri bu süreye göre hazırladık.
+                                                    sürüyor. Vize süresini bu plana göre öneriyoruz.
                                                 </span>
                                             </p>
                                         )}
                                     </div>
 
-                                    {/* TARIHE GORE ONERILER: sigorta + eSIM + col safarisi */}
-                                    {extrasSelectable && tripSuggestions.length > 0 && (
-                                        <div className="mt-6" data-testid="trip-suggestions">
-                                            <div className="flex items-center gap-2">
-                                                <Star className="h-4.5 w-4.5 text-primary" aria-hidden="true" />
-                                                <h3 className="font-heading text-base font-bold">
-                                                    Tarihlerinize göre önerilerimiz
-                                                </h3>
-                                            </div>
-                                            <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                                                {tripDays
-                                                    ? `${tripDays} günlük Dubai seyahatiniz için seçtik.`
-                                                    : "Seyahat planınıza göre seçtik."}{" "}
-                                                Ücretler ödeme adımında toplanır; istediğinizi tek tıkla kaldırabilirsiniz.
-                                            </p>
-                                            <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                                                {tripSuggestions.map((s) => {
-                                                    const Icon = s.icon;
-                                                    return (
-                                                        <div
-                                                            key={s.key}
-                                                            className={`flex flex-col rounded-xl border p-5 transition-colors duration-200 ${
-                                                                s.selected
-                                                                    ? "border-primary bg-primary/[0.06]"
-                                                                    : "border-border bg-card hover:border-primary/50"
-                                                            }`}
-                                                            data-testid={`suggestion-card-${s.key}`}
-                                                        >
-                                                            {s.image && (
-                                                                <div className="-mx-5 -mt-5 mb-4 overflow-hidden rounded-t-xl">
-                                                                    <img
-                                                                        src={s.image}
-                                                                        alt={s.product.name}
-                                                                        loading="lazy"
-                                                                        decoding="async"
-                                                                        className="h-32 w-full object-cover transition-transform duration-500 hover:scale-105"
-                                                                        data-testid={`suggestion-image-${s.key}`}
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                            <div className="flex items-center gap-2">
-                                                                <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                                                                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                                                                    {s.label}
-                                                                </span>
-                                                            </div>
-                                                            <p className="mt-2.5 font-heading text-sm font-bold">
-                                                                {s.product.name}
-                                                            </p>
-                                                            <div className="flex-1">
-                                                                <p
-                                                                    className="mt-1.5 text-xs leading-5 text-muted-foreground"
-                                                                    data-testid={`suggestion-meta-${s.key}`}
-                                                                >
-                                                                    {s.meta}
-                                                                </p>
-                                                                <p
-                                                                    className="mt-3 font-heading text-base font-extrabold text-primary"
-                                                                    data-testid={`suggestion-price-${s.key}`}
-                                                                >
-                                                                    {formatMoney(s.product.price, s.product.currency)}
-                                                                    <span className="ml-1 text-xs font-semibold text-muted-foreground">
-                                                                        / {s.unit}
-                                                                    </span>
-                                                                </p>
-                                                            </div>
-                                                            <Button
-                                                                type="button"
-                                                                variant={s.selected ? "secondary" : "default"}
-                                                                className={`mt-4 h-10 w-full ${s.selected ? "border border-primary/40" : ""}`}
-                                                                onClick={s.onToggle}
-                                                                data-testid={`suggestion-toggle-${s.key}`}
-                                                            >
-                                                                {s.selected ? (
-                                                                    <>
-                                                                        <Check className="mr-1.5 h-4 w-4" /> Eklendi · Kaldır
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <Plus className="mr-1.5 h-4 w-4" /> Ekle
-                                                                    </>
-                                                                )}
-                                                            </Button>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                            {bundleActive && (
-                                                <p
-                                                    className="mt-3 rounded-lg bg-[hsl(var(--brand-green))]/10 px-3.5 py-2.5 text-xs font-bold leading-5 text-[hsl(var(--brand-green))]"
-                                                    data-testid="suggestions-bundle-note"
-                                                >
-                                                    Sigorta + eSIM birlikte seçildi: %10 paket indirimi ödeme adımında
-                                                    otomatik uygulanır.
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
 
                                     <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="font-heading text-base font-bold">
@@ -2647,31 +2580,16 @@ export default function Apply() {
                                         <p className="mt-1.5 text-sm text-muted-foreground">Yolcu başına eklenir.</p>
                                         <div className="mt-4 space-y-4">
                                             {addonMeta.map((a) => (
-                                                <label key={a.id} className={`flex cursor-pointer items-start gap-4 rounded-xl border bg-card p-5 ${a.id === "instant_express" ? "border-primary/50" : "border-border"}`} data-testid={`addon-toggle-row-${a.id}`}>
+                                                <label key={a.id} className="flex cursor-pointer items-start gap-4 rounded-xl border border-border bg-card p-5" data-testid={`addon-toggle-row-${a.id}`}>
                                                     <Switch
                                                         checked={!!addons[a.id]}
-                                                        onCheckedChange={(c) =>
-                                                            setAddons((s) => {
-                                                                const next = { ...s, [a.id]: !!c };
-                                                                // Iki ekspres kademesi ayni anda secilemez
-                                                                if (c && a.id === "instant_express") next.express = false;
-                                                                if (c && a.id === "express") next.instant_express = false;
-                                                                return next;
-                                                            })
-                                                        }
+                                                        onCheckedChange={(c) => setAddons((s) => ({ ...s, [a.id]: !!c }))}
                                                         className="mt-1"
                                                         data-testid={`addon-switch-${a.id}`}
                                                     />
                                                     <div className="flex-1">
                                                         <div className="flex flex-wrap items-center justify-between gap-2">
-                                                            <p className="font-heading text-sm font-bold">
-                                                                {a.name}
-                                                                {a.id === "instant_express" && (
-                                                                    <span className="ml-2 rounded-full bg-primary/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                                                                        En hızlı
-                                                                    </span>
-                                                                )}
-                                                            </p>
+                                                            <p className="font-heading text-sm font-bold">{a.name}</p>
                                                             <span className="font-heading text-sm font-bold text-primary">
                                                                 + {formatMoney(a.price, a.currency)} / kişi
                                                             </span>
@@ -2936,6 +2854,15 @@ export default function Apply() {
                                         onChange={applyCombo}
                                     />
 
+                                    {/* EKSTRA HIZMET ONERILERI: sigorta + eSIM + col safarisi */}
+                                    {extrasSelectable && tripSuggestions.length > 0 && (
+                                        <TripSuggestions
+                                            suggestions={tripSuggestions}
+                                            tripDays={tripDays}
+                                            bundleActive={bundleActive}
+                                        />
+                                    )}
+
                                     {/* AKILLI PAKET ONERISI + PAKET INDIRIMI */}
                                     {(insuranceProducts.length > 0 || esimProducts.length > 0) && (
                                         <div
@@ -3082,6 +3009,25 @@ export default function Apply() {
                                                           : ""}
                                                     . Toplam sepetinizde otomatik hesaplanır.
                                                 </p>
+                                            )}
+                                            {insurancePick && (
+                                                <div className="mt-5" data-testid="insurance-identity-block">
+                                                    <p className="font-heading text-sm font-bold">
+                                                        Poliçe için kimlik bilgileri
+                                                    </p>
+                                                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                        Sigorta şirketi poliçeyi TC kimlik numarasıyla düzenler.
+                                                        Pasaportunuzda yazıyorsa alan otomatik doldurulur; boşsa
+                                                        lütfen yazın.
+                                                    </p>
+                                                    <InsuredIdentityFields
+                                                        rows={insuredRows}
+                                                        onChange={(key, patch) =>
+                                                            updateTraveler(key, { national_id: patch.tc_kimlik_no })
+                                                        }
+                                                        testIdPrefix="insured"
+                                                    />
+                                                </div>
                                             )}
                                         </div>
                                     )}

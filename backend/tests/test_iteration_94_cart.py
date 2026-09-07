@@ -1,7 +1,11 @@
 """Iteration 94: Shopping cart (sepet), FX, products, checkout tests."""
 import os
+from datetime import date, timedelta
+
 import pytest
 import requests
+
+from insured_data import insured_people
 
 BASE = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE:
@@ -67,12 +71,17 @@ def test_products(s):
 
 # -------------- Orders ---------------
 def _order_payload(items, ref=None, method="transfer", email=TEST_EMAIL):
-    return {
+    insurance_qty = sum(i["quantity"] for i in items if i["product_id"].startswith("ins_"))
+    payload = {
         "items": items,
         "contact": {"full_name": "Test Cart User", "email": email, "phone": "+90 555 111 22 33"},
         "payment_method": method,
         "application_reference": ref,
     }
+    if insurance_qty:
+        payload["insured"] = insured_people(insurance_qty)
+        payload["travel_start"] = (date.today() + timedelta(days=14)).isoformat()
+    return payload
 
 
 def test_order_with_bundle_discount(s):

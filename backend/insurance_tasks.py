@@ -9,6 +9,7 @@ Saglayici (seyahatpolicesi.com) acik bir API sunmadigi icin kesim adimi
 """
 
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -21,12 +22,13 @@ from emailer import send_email
 
 logger = logging.getLogger(__name__)
 
-PROVIDER_NAME = "seyahatpolicesi.com"
-PROVIDER_BASE = "https://seyahatpolicesi.com/dubai-seyahat-saglik-sigortasi"
+PROVIDER_NAME = "tamamliyo"
+PROVIDER_PANEL = "https://dashboard.tamamliyo.com/anasayfa"
+LEGACY_PROVIDER_BASE = "https://seyahatpolicesi.com/dubai-seyahat-saglik-sigortasi"
 
 
 def provider_link(line: dict, order: dict) -> str:
-    """Saglayici teklif sayfasi icin on doldurmali baglanti."""
+    """API dısı manuel kesim gerekirse kullanilan on doldurmali yedek baglanti."""
     travel = order.get("travel") or {}
     params = {
         "bolge": "tum-dunya",
@@ -35,7 +37,7 @@ def provider_link(line: dict, order: dict) -> str:
         "kisi": line.get("quantity") or 1,
         "baslangic": line.get("starts_on") or travel.get("start") or "",
     }
-    return f"{PROVIDER_BASE}?{urlencode({k: v for k, v in params.items() if v})}"
+    return f"{LEGACY_PROVIDER_BASE}?{urlencode({k: v for k, v in params.items() if v})}"
 
 
 def _policy_html(order: dict, link: str, message: str) -> str:
@@ -90,9 +92,13 @@ def _build_policy_task(order: dict, line: dict, contact: dict, now: datetime) ->
             "email": contact.get("email", ""),
             "phone": contact.get("phone", ""),
         },
+        "insured": order.get("insured") or [],
         "note": order.get("note", ""),
         "provider": PROVIDER_NAME,
         "provider_link": provider_link(line, order),
+        "provider_quote_id": None,
+        "provider_steps": {},
+        "provider_error": None,
         "status": "pending",
         "policy_file_id": None,
         "issued_at": None,
@@ -140,7 +146,61 @@ async def queue_policy_tasks(order: dict) -> list:
 
     await _notify_policy_pending(order, lines, contact, now)
     logger.info("insurance tasks queued: %s (%s)", order.get("reference_code"), len(created))
+    await _maybe_auto_issue(created)
     return created
+
+
+async def _maybe_auto_issue(tasks: list) -> None:
+    """TAMAMLIYO_AUTO_ISSUE acikken policeyi hemen keser (varsayilan kapali)."""
+    import tamamliyo
+
+    from insurance_provider import auto_issue_on, issue_via_provider
+
+    if not (tasks and tamamliyo.configured() and await auto_issue_on()):
+        return
+
+    origin = (os.environ.get("PUBLIC_SITE_URL") or "").strip().rstrip("/")
+    for task in tasks:
+        try:
+            await issue_via_provider(task["id"], origin, actor="auto")
+        except Exception as exc:  # pragma: no cover - saglayici hatasi gorevde saklanir
+            logger.error("otomatik police kesimi basarisiz (%s): %s", task["id"], exc)
+
+
+def _application_insurance_order(app_doc: dict) -> dict:
+    """Basvurudaki sigorta kalemlerini `queue_policy_tasks` sozlesmesine cevirir."""
+    travel = app_doc.get("travel") or {}
+    lines = []
+    for item in app_doc.get("store_items") or []:
+        if (item.get("kind") or "") != "insurance":
+            continue
+        line = dict(item)
+        line.setdefault("starts_on", travel.get("arrival_date"))
+        line.setdefault("ends_on", travel.get("departure_date"))
+        lines.append(line)
+    insured = [
+        {
+            "full_name": f"{t.get('first_name', '')} {t.get('last_name', '')}".strip(),
+            "tc_kimlik_no": t.get("tc_kimlik_no") or "",
+            "birth_date": t.get("birth_date") or "",
+        }
+        for t in app_doc.get("travelers") or []
+    ]
+    return {
+        "id": app_doc.get("id"),
+        "reference_code": app_doc.get("reference_code", ""),
+        "application_id": app_doc.get("id"),
+        "items": lines,
+        "contact": app_doc.get("contact") or {},
+        "insured": insured,
+        "travel": {"start": travel.get("arrival_date")},
+        "note": travel.get("notes", ""),
+    }
+
+
+async def queue_application_policy_tasks(app_doc: dict) -> list:
+    """Vize basvurusuna eklenen sigorta icin police kesim gorevi olusturur."""
+    return await queue_policy_tasks(_application_insurance_order(app_doc))
 
 
 async def issue_policy(task_id: str, policy_file_id: str, origin: str, message: str = "") -> dict:

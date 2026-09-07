@@ -110,6 +110,13 @@ async def _apply_application_payment(app_doc: dict, session_id: str) -> None:
 
     await sync_application_order_payment(app_doc["id"], "paid", method="card")
 
+    # Basvuruya sigorta eklenmisse police kesim gorevini kuyruga al
+    from insurance_tasks import queue_application_policy_tasks
+
+    fresh = await applications_col.find_one({"id": app_doc["id"]})
+    if fresh:
+        await queue_application_policy_tasks(fresh)
+
 
 async def _notify_application_payment(application_id: str) -> None:
     """Odeme alindi bilgilendirme e-postasini gonderir."""

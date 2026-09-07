@@ -1270,3 +1270,17 @@ konumlandırma (yasal risk).
   Ayarlar ekranından girilmeli (şu an `manual`/mock mod).
 - **P1** Gerçek havale bilgileri (`site_settings.bank_transfer` hâlâ `TR00...` örnek IBAN).
 - **P2** Paylaşılabilir aile paketi linki; İngilizce/USD global sürüm (ROADMAP).
+
+## 2026-09-07 · Tamamliyo sigorta CANLI + ekspres sadeleştirme + DUBAI telefonu
+Ayrıntılar CHANGELOG.md "2026-09-07 (4)" bölümünde. Özet:
+- Tamamliyo Travel API canlı (`api.tamamliyo.com`, partner token .env'de): 4 poliçe (7/15/30/60
+  gün), maliyet günlük çekilir, satış = maliyet × 2 (%100 marj). Ödeme bizde (cari tahsilat),
+  poliçe API ile kesilir; **otomatik kesim panelden açılıp kapanır, varsayılan KAPALI**.
+- Sigorta satın alan her kişi için TC kimlik no + doğum tarihi zorunlu (hem `/basvuru` Adım 4
+  hem `/sepet`); sepette sigorta varsa gidiş tarihi de zorunlu (poliçe başlangıcı).
+- Ekspres süresi her yerde "12 saat içinde"; "Anında Ekspres Vize" ürünü kaldırıldı; ekspres
+  kartı vize özet kartı tasarımında (`AddonCard`); `/vize-tipleri` navbar genişliğinde
+  (`.container-wide`).
+- Ekstra hizmet önerileri Adım 1'den **Adım 4 (ödeme öncesi)** "Ekstra hizmetler" bloğuna taşındı.
+- Telefon +90 533 743 82 24; son 5 hanenin altında D U B A I harfleri (`PhoneDubai`).
+- Test: pytest 310 passed / 3 skipped; iteration_115 frontend 10/10.

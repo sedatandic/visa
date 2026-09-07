@@ -1238,3 +1238,56 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
   gün etiketi, yerel gün sınırları, 401, alan/uyum kontrolleri); masaüstü (1600px) ve mobil
   (414px, yatay taşma yok, kart 604px) ekran görüntüleri; "Ödeme bekleyenler" kısayolu ödeme
   filtresini "Ödeme bekliyor"a çeviriyor.
+
+## 2026-09-07 (4) · Tamamliyo seyahat sağlık sigortası CANLI + ekspres/telefon/UI düzenlemeleri
+
+### Tamamliyo entegrasyonu tamamlandı (canlı)
+- **Anahtarlar girildi**: `backend/.env` → `TAMAMLIYO_BASE_URL=https://api.tamamliyo.com`,
+  `TAMAMLIYO_TOKEN` (partner token, kullanıcı panelinden aldı). Bağlantı doğrulandı:
+  4 üründe `fiyat-al` 200 döndü, maliyetler DB'ye yazıldı (ins_7d 244,85 · ins_15d 279,74 ·
+  ins_30d 296,63 · ins_60d 367,55 ₺) ve **%100 marj** ile satış fiyatı üretildi
+  (490 / 560 / 590 / 740 ₺, 10 TL'ye yuvarlanır). Senkron açılışta + 24 saatte bir.
+- `routes_admin.py` lint hatası düzeltildi (`origin_from` → `_resolve_origin(None, request)`).
+- **Panelden otomatik kesim anahtarı**: `insurance_provider.auto_issue_on()/set_auto_issue()`
+  ayarı `site_settings.insurance_provider.value.auto_issue` içinde tutulur (env yedek),
+  yeni uç `POST /api/admin/insurance/auto-issue`. Varsayılan **KAPALI** (ilk poliçe elle kesilir).
+- **Admin → Sigorta Poliçeleri** (`AdminInsurance.jsx`): yeni `ProviderPanel`
+  (`insurance-provider-panel`) — bağlantı durumu, son senkron, ürün kodu (141), otomatik kesim
+  switch'i, "Fiyatları Tamamliyo'dan güncelle" butonu; görev kartlarında sigortalı listesi,
+  `provider_error` ve **"Tamamliyo'dan poliçeyi kes ve gönder"** (`insurance-issue-provider-*`,
+  teklif → cari ödeme onayı → poliçe → PDF, idempotent). Manuel PDF yükleme yedek olarak kaldı.
+- **Sigortalı kimlik bilgileri (poliçe şartı)**: yeni `components/InsuredIdentityFields.jsx`.
+  - `/basvuru` Adım 4: sigorta seçilince `insurance-identity-block` açılır, her yolcu için
+    TC kimlik no (`insured-tckn-<key>`, pasaport OCR'ından ön dolu) — geçersizse gönderim
+    engellenir. Payload artık `tc_kimlik_no` gönderiyor; backend `national_id`'yi de kabul eder.
+  - `/sepet` (sigortayı tek başına alma): `cart-insured-block` — kişi başına ad-soyad + TCKN +
+    doğum tarihi; sigorta varsa **gidiş tarihi zorunlu** (poliçe başlangıcı) — backend de doğrular.
+- Testler: `tests/insured_data.py` (geçerli TCKN üretici) eklendi; eski sabit fiyat/6 ürün
+  varsayan 10 test dosyası canlı tarifeye uyumlu hâle getirildi. **310 passed / 3 skipped**.
+
+### Ekspres hizmet sadeleştirildi (kullanıcı isteği)
+- "Yaklaşık 8 mesai saati" ibaresi **"12 saat içinde"** oldu (content.py ADDONS/SERVICES/FAQ/
+  yorum, visa_guides, routes_public.processing_days, VisaTypes, EasyCompare, AnnouncementTicker,
+  HeroBannerSlider, test_iteration_48).
+- **"Anında Ekspres Vize" (instant_express) tamamen kaldırıldı**: content.py ADDONS + SERVICES,
+  `models.AddonsIn`, `_addon_lines` karşılıklı kapatma mantığı, `Apply.jsx` ek hizmet kartları.
+- **Ekspres Vize Hizmeti kartı vize özet kartı tasarımına geçti**: yeni `components/AddonCard.jsx`
+  (üst şerit, "Ek hizmet" etiketi, rozetler, fiyat kutusu + ≈50 $, özellik listesi,
+  "Başvuruya başla" butonu); `PricingTabs` artık bu kartı vize kartlarıyla aynı ızgarada gösterir.
+- **/vize-tipleri genişletildi**: `index.css` → yeni `.container-wide` (`max-w-[88rem]`, navbar ile
+  aynı hiza), `PageHeader` `containerClass` prop'u aldı; sayfa içeriği artık logo ↔ "Başvuru Yap"
+  hizasında (ölçüm: sol 280px, sağ 1640px @1920).
+
+### Öneriler ödeme adımına taşındı (kullanıcı isteği)
+- Adım 1'deki "Tarihlerinize göre önerilerimiz" bloğu kaldırıldı; `components/TripSuggestions.jsx`
+  olarak ayrıştırılıp **Adım 4 (Özet ve ödeme)** başına "Ekstra hizmetler" adıyla eklendi.
+  Tarih bloğu metinleri de öneri vaadi vermeyecek şekilde güncellendi.
+
+### Telefon numarası + DUBAI harfleri
+- Numara **+90 533 743 82 24** (DB `site_settings.company_info.phone` + `content.COMPANY`).
+  WhatsApp da geçici test numarası (905331234567) yerine **905337438224** yapıldı (kullanıcı teyidi bekliyor).
+- Yeni `components/PhoneDubai.jsx`: son 5 hanenin (3-8-2-2-4) tam altında **D U B A I** harfleri;
+  navbar (masaüstü + mobil) ve footer'da kullanılıyor. Erişilebilirlik için bağlantılarda
+  `aria-label="Telefon: +90 533 743 82 24"`, harf katmanı `aria-hidden`.
+- Doğrulama: iteration_115 → frontend 10/10 madde %100, backend %100 (kapsam içi),
+  pytest 310 passed. Not: `/api/contact` testleri tam suite'te IP hız sınırından (429) atabiliyor.

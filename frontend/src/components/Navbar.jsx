@@ -32,6 +32,7 @@ import { api } from "../lib/api";
 import { BrandMark } from "./BrandMark";
 import { CartButton } from "./CartButton";
 import { TrFlag, UaeFlag } from "./FlagIcons";
+import { PhoneDubai } from "./PhoneDubai";
 import { useContact } from "../lib/contact";
 
 /** Ust seviyede gorunen ana linkler (donusum odakli). */
@@ -210,11 +211,12 @@ export const Navbar = () => {
                     {contact.phone && (
                     <a
                         href={contact.phoneHref}
+                        aria-label={`Telefon: ${contact.phone}`}
                         className="hidden items-center gap-2 whitespace-nowrap rounded-lg px-2 py-2 text-lg font-semibold text-foreground/75 transition-colors duration-150 hover:text-primary 2xl:flex"
                         data-testid="navbar-phone-link"
                     >
                         <Phone className="h-4 w-4 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
-                        {contact.phone}
+                        <PhoneDubai phone={contact.phone} />
                     </a>
                     )}
                     <CartButton />
@@ -310,12 +312,13 @@ export const Navbar = () => {
                                 {contact.phone && (
                                 <a
                                     href={contact.phoneHref}
+                                    aria-label={`Telefon: ${contact.phone}`}
                                     className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-opacity duration-150 hover:opacity-90"
                                     style={{ backgroundColor: "#25D366", boxShadow: "var(--shadow-float)" }}
                                     data-testid="mobile-phone-link"
                                 >
                                     <Phone className="h-4 w-4" aria-hidden="true" />
-                                    {contact.phone}
+                                    <PhoneDubai phone={contact.phone} letterClassName="text-white/80" />
                                 </a>
                                 )}
                             </div>

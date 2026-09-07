@@ -20,6 +20,9 @@ from datetime import date, timedelta
 import pytest
 import requests
 
+from insured_data import insured_people
+
+
 def _load_backend_url() -> str:
     url = os.environ.get("REACT_APP_BACKEND_URL")
     if url:
@@ -67,8 +70,8 @@ class TestStoreCatalog:
         assert r.status_code == 200
         body = r.json()
         items = body["items"]
-        # 4 esim + 6 insurance + 2 tour = 12
-        assert len(items) == 12, f"expected 12 products, got {len(items)}"
+        # 4 esim + 4 insurance + 2 tour = 10
+        assert len(items) == 10, f"expected 10 products, got {len(items)}"
         for it in items:
             assert "price" in it and it["price"] > 0
             assert it["currency"] == "TRY"
@@ -81,7 +84,7 @@ class TestStoreCatalog:
         r = session.get(f"{API}/products", params={"kind": "insurance"}, timeout=15)
         assert r.status_code == 200
         items = r.json()["items"]
-        assert len(items) == 6
+        assert len(items) == 4
         assert all(it["kind"] == "insurance" for it in items)
 
     def test_products_filter_esim(self, session):
@@ -123,6 +126,7 @@ class TestStoreOrders:
             },
             "travel_start": (date.today() + timedelta(days=10)).isoformat(),
             "travel_end": (date.today() + timedelta(days=17)).isoformat(),
+            "insured": insured_people(1),
             "payment_method": "card",
             "note": "TEST_ regression order",
         }

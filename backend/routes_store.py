@@ -25,6 +25,7 @@ from content import (
     family_discount_rate,
 )
 from db import cart_snapshots_col, orders_col, serialize_doc, settings_col
+from models import InsuredIn
 from emailer import order_admin_html, order_received_html, send_email
 from fx import apply_fx_to_list, get_fx
 
@@ -59,7 +60,7 @@ BUNDLE_TEMPLATES = [
         "visa_days": 30,
         "name": "Kısa Kaçamak Paketi",
         "tagline": "3-5 günlük şehir molası için yeterli koruma ve internet.",
-        "insurance_id": "ins_8d",
+        "insurance_id": "ins_7d",
         "esim_id": "esim_1gb",
     },
     {
@@ -75,8 +76,8 @@ BUNDLE_TEMPLATES = [
         "id": "pack_comfort",
         "visa_days": 30,
         "name": "Konforlu 30 Gün Paketi",
-        "tagline": "Bagaj ve seyahat kesintisi teminatı + bol veri, 30 güne kadar.",
-        "insurance_id": "ins_30d_plus",
+        "tagline": "30 güne kadar sağlık teminatı + 10 GB bol veri.",
+        "insurance_id": "ins_30d",
         "esim_id": "esim_10gb",
     },
     {
@@ -104,8 +105,8 @@ BUNDLE_TEMPLATES = [
         "id": "pack_long_plus",
         "visa_days": 60,
         "name": "Uzun Konaklama Plus",
-        "tagline": "Geniş kapsam teminat + sınırsız internet; iş ve uzun tatil için.",
-        "insurance_id": "ins_60d_plus",
+        "tagline": "60 gün sağlık teminatı + sınırsız internet; iş ve uzun tatil için.",
+        "insurance_id": "ins_60d",
         "esim_id": "esim_unlimited",
     },
 ]
@@ -331,6 +332,8 @@ class OrderContactIn(BaseModel):
 class OrderCreateIn(BaseModel):
     items: List[OrderItemIn] = Field(..., min_length=1, max_length=6)
     contact: OrderContactIn
+    # Sigorta satiri varsa police kesimi icin sigortali kimlik bilgileri zorunlu
+    insured: List[InsuredIn] = Field(default_factory=list, max_length=10)
     travel_start: Optional[str] = None
     travel_end: Optional[str] = None
     note: Optional[str] = Field(None, max_length=500)
@@ -462,9 +465,26 @@ async def _linked_application(reference: Optional[str], email: str) -> dict:
     return {"application_id": app_doc.get("id"), "application_reference": app_doc.get("reference_code")}
 
 
+def _validate_insured(lines: list[dict], insured: list, travel_start: Optional[str]) -> list[dict]:
+    """Sigorta satiri varsa sigortali sayisi, kimlik bilgileri ve police baslangicini dogrular."""
+    needed = sum(int(line["quantity"]) for line in lines if line["kind"] == "insurance")
+    if not needed:
+        return []
+    if len(insured) < needed:
+        raise HTTPException(
+            400,
+            f"Poliçe kesilebilmesi için {needed} sigortalının ad-soyad, TC kimlik no ve "
+            "doğum tarihi bilgisi gerekiyor.",
+        )
+    if not _parse_trip_start(travel_start):
+        raise HTTPException(400, "Poliçe gidiş tarihinizde başlar; lütfen gidiş tarihini seçin.")
+    return [person.model_dump() for person in insured[:needed]]
+
+
 @router.post("/orders")
 async def create_order(payload: OrderCreateIn) -> dict:
     lines = await _build_order_lines(payload)
+    insured = _validate_insured(lines, payload.insured, payload.travel_start)
     linked = await _linked_application(payload.application_reference, payload.contact.email)
     now = datetime.now(timezone.utc)
     doc = {
@@ -472,6 +492,7 @@ async def create_order(payload: OrderCreateIn) -> dict:
         "reference_code": new_order_reference(),
         "items": lines,
         "contact": payload.contact.model_dump(),
+        "insured": insured,
         "travel_start": payload.travel_start,
         "travel_end": payload.travel_end,
         "note": payload.note,

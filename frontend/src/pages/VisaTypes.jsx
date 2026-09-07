@@ -53,7 +53,7 @@ const INCLUDED = [
 const EXCLUDED = [
     "Uçak bileti, otel ve transfer giderleri (vize başvurusunda istenmez)",
     "Seyahat sağlık sigortası poliçesi — isteğe bağlı ek hizmet",
-    "Ekspres ve anında ekspres kademeleri — yalnız siz işaretlerseniz",
+    "Ekspres vize hizmeti — yalnız siz işaretlerseniz",
     "Vesikalık çekimi, pasaport yenileme, noter ve tercüme masrafları",
     "İdarenin sonradan isteyebileceği ilave belgelerin temin masrafı",
 ];
@@ -72,7 +72,7 @@ const FACTORS = [
     {
         icon: Zap,
         title: "Sıra önceliği",
-        text: "Standart sırada ortalama 2 iş günü. Uçuşu yakın olanlar için ekspres (yaklaşık 8 mesai saati) ve anında ekspres (aynı gün) kademeleri vardır.",
+        text: "Standart sırada ortalama 2 iş günü. Uçuşu yakın olanlar için ekspres kademesi vardır; sonuç 12 saat içinde çıkar.",
     },
     {
         icon: Receipt,
@@ -88,15 +88,15 @@ const FEE_FAQ = [
     },
     {
         q: "Gördüğüm tutarın üstüne başka bir kalem ekleniyor mu?",
-        a: "Eklenmiyor. Komisyon, dosya masrafı ya da 'işlem ücreti' adı altında sürpriz bir kalem çıkmaz. Tutarı yalnız siz değiştirirsiniz: ekspres kademesi, sigorta, eSIM veya tur eklerseniz sepet o kadar artar.",
+        a: "Eklenmiyor. Komisyon, dosya masrafı ya da 'işlem ücreti' adı altında sürpriz bir kalem çıkmaz. Tutarı yalnız siz değiştirirsiniz: ekspres vize hizmeti, sigorta, eSIM veya tur eklerseniz sepet o kadar artar.",
     },
     {
         q: "Aile indirimi kaç kişiden başlıyor, nasıl uygulanıyor?",
         a: "Aynı başvuruya eklediğiniz üçüncü yolcudan itibaren indirim devreye girer ve özet ekranındaki toplamdan otomatik düşer. Ayrı ayrı başvuru yaparsanız indirim oluşmaz; eşinizi ve çocuklarınızı tek forma ekleyin.",
     },
     {
-        q: "Ekspres kademesini seçmek zorunda mıyım?",
-        a: "Hayır. Standart sıra ücretsizdir ve ortalama 2 iş gününde sonuçlanır. Ekspres kademeleri yalnız uçuşu yakın olanlar için vardır, kişi başı ücretlendirilir ve işaretlemediğiniz sürece sepete girmez.",
+        q: "Ekspres vize hizmetini seçmek zorunda mıyım?",
+        a: "Hayır. Standart sıra ücretsizdir ve ortalama 2 iş gününde sonuçlanır. Ekspres vize hizmeti yalnız uçuşu yakın olanlar için vardır, kişi başı ücretlendirilir ve işaretlemediğiniz sürece sepete girmez.",
     },
     {
         q: "Havale ile ödeyeceğim, arada kur değişirse ne olur?",
@@ -168,7 +168,7 @@ export default function VisaTypes() {
 
     return (
         <div data-testid="visa-types-page">
-            <PageHeader
+            <PageHeader containerClass="container-wide"
                 eyebrow="Hizmet Bedelleri"
                 title="Dubai vize hizmet bedelleri"
                 description="Kalış süreniz, giriş sayınız ve yolcuların yaşına göre bedel değişir. Aşağıdaki tutarlar kişi başıdır, tek seferliktir ve resmî harcı da içerir."
@@ -198,7 +198,7 @@ export default function VisaTypes() {
 
             {/* 01 - GUNCEL BEDELLER */}
             <section className="pb-14 pt-6 sm:pb-16 sm:pt-8">
-                <div className="container-page">
+                <div className="container-wide">
                     <span className="eyebrow">01 · Güncel bedeller</span>
                     <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Vize tipine göre kişi başı bedel</h2>
                     <div className="mb-6 mt-5 flex flex-wrap items-center gap-3">
@@ -227,7 +227,7 @@ export default function VisaTypes() {
 
             {/* 02 - BEDELIN KAPSAMI */}
             <section className="border-t border-border bg-[hsl(var(--cloud))] py-14 sm:py-16">
-                <div className="container-page">
+                <div className="container-wide">
                     <span className="eyebrow">02 · Bedelin kapsamı</span>
                     <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Ödediğiniz tutar karşılığında ne alıyorsunuz?</h2>
                     <div className="mt-7 grid gap-5 sm:grid-cols-2" data-testid="fees-included">
@@ -306,7 +306,7 @@ export default function VisaTypes() {
 
             {/* 03 - ODEME & GUVENLIK */}
             <section className="py-14 sm:py-16">
-                <div className="container-page">
+                <div className="container-wide">
                     <span className="eyebrow">03 · Ödeme & güvenlik</span>
                     <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Ödemeniz nasıl korunuyor?</h2>
                     <PaymentTrustStrip className="mt-6" />
@@ -374,7 +374,7 @@ export default function VisaTypes() {
 
             {/* 04 - REHBERLER + SSS */}
             <section className="border-t border-border bg-[hsl(var(--cloud))] py-14 sm:py-16">
-                <div className="container-page">
+                <div className="container-wide">
                     <div data-testid="visa-guides-index">
                         <span className="eyebrow">04 · Vize rehberi</span>
                         <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Her vize tipi için detaylı rehber</h2>
@@ -413,7 +413,7 @@ export default function VisaTypes() {
 
             {/* CTA */}
             <section className="border-t border-border bg-[hsl(var(--navy))]">
-                <div className="container-page flex flex-col items-start gap-5 py-12 sm:flex-row sm:items-center sm:justify-between">
+                <div className="container-wide flex flex-col items-start gap-5 py-12 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h2 className="font-heading text-2xl font-bold text-white">
                             Aileniz için tek başvuru yeterli

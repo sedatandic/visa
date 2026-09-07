@@ -96,7 +96,7 @@ def test_pricing_quote_tour_only_no_bundle_discount(api):
                 "scheduled_date": TOUR_DATE,
                 "scheduled_time": "15:00",
             },
-            {"product_id": "ins_8d", "quantity": 1},
+            {"product_id": "ins_7d", "quantity": 1},
         ],
         "arrival_date": ARRIVAL,
         "departure_date": DEPARTURE,

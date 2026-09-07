@@ -22,6 +22,8 @@ import pytest
 import requests
 from dotenv import load_dotenv
 
+from insured_data import insured_people
+
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".env"))
 
@@ -30,12 +32,10 @@ BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
 
 EXPECTED_INSURANCE = {
-    "ins_8d": {"days": 8, "price": 491},
-    "ins_15d": {"days": 15, "price": 560},
-    "ins_30d": {"days": 30, "price": 644},
-    "ins_30d_plus": {"days": 30, "price": 2754},
-    "ins_60d": {"days": 60, "price": 735},
-    "ins_60d_plus": {"days": 60, "price": 3989},
+    "ins_7d": {"days": 7},
+    "ins_15d": {"days": 15},
+    "ins_30d": {"days": 30},
+    "ins_60d": {"days": 60},
 }
 
 
@@ -70,8 +70,10 @@ def test_insurance_products(api) -> None:
         assert pid in items, f"missing {pid}"
         p = items[pid]
         assert p.get("validity_days") == want["days"], f"{pid} days"
-        assert abs(float(p.get("price_try") or p.get("price") or 0) - want["price"]) <= 1, f"{pid} price"
         assert p.get("cost_try") is not None and float(p["cost_try"]) > 0, f"{pid} cost missing"
+        price = float(p.get("price_try") or p.get("price") or 0)
+        # satis fiyati = maliyet x2 (10 TL'ye yuvarlanir)
+        assert abs(price - round(float(p["cost_try"]) * 2 / 10) * 10) < 0.01, f"{pid} price {price}"
 
 
 # 2) kar raporu
@@ -108,10 +110,10 @@ def test_update_product_recomputes_margin(admin) -> None:
     assert row1["cost_try"] == 400
     assert row1["margin_pct"] == 100
 
-    # geri al
+    # geri al (canli tarifeden gelen degerler bozulmamali)
     admin.patch(
         f"{BASE_URL}/api/admin/products/ins_30d",
-        json={"price_try": orig_price or 644, "cost_try": orig_cost or 322.22},
+        json={"price_try": orig_price, "cost_try": orig_cost},
     )
 
 
@@ -127,6 +129,7 @@ def paid_order(api, admin):
         },
         "travel_start": "2026-03-01",
         "travel_end": "2026-03-08",
+        "insured": insured_people(2),
         "payment_method": "card",
     }
     r = api.post(f"{BASE_URL}/api/orders", json=payload)

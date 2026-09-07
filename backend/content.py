@@ -197,18 +197,8 @@ ADDONS = {
         'price_usd': 50.0,
         'currency': 'TRY',
         'per_person': True,
-        'description': 'Acil seyahatler için öncelikli işlem. Başvurunuz sıraya girmeden işleme alınır, sonuç yaklaşık 8 mesai saatinde çıkar.',
-        'features': ['Yaklaşık 8 mesai saatinde sonuç', 'Öncelikli işlem sırası', 'Anlık bilgilendirme'],
-    },
-    "instant_express": {
-        'id': 'instant_express',
-        'name': 'Anında Ekspres Vize',
-        'price': 7410.0,
-        'price_usd': 150.0,
-        'currency': 'TRY',
-        'per_person': True,
-        'description': 'Uçuşu bugün olan yolcular için en hızlı kademe. Başvurunuz anında işleme alınır, sonuç aynı gün içinde iletilir.',
-        'features': ['Aynı gün içinde sonuç', 'Başvuru anında işleme alınır', 'WhatsApp ile birebir takip'],
+        'description': 'Acil seyahatler için öncelikli işlem. Başvurunuz sıraya girmeden işleme alınır, sonuç 12 saat içinde çıkar.',
+        'features': ['12 saat içinde sonuç', 'Öncelikli işlem sırası', 'Anlık bilgilendirme'],
     },
 }
 
@@ -302,7 +292,7 @@ PROCESS_STEPS = [
 WHY_US = [
     {"title": "Şeffaf fiyat", "detail": "Gizli masraf yok. Dosya açma veya danışmanlık adı altında ek kalem çıkarmayız."},
     {"title": "Evrak kontrolü bizde", "detail": "Yüklediğiniz her belgeyi başvuru öncesi kontrol ediyoruz. Eksik varsa sizi arıyoruz."},
-    {"title": "Hızlı sonuç", "detail": "Standart başvurular ortalama 2 iş günü, ekspres başvurular yaklaşık 8 mesai saatinde sonuçlanır."},
+    {"title": "Hızlı sonuç", "detail": "Standart başvurular ortalama 2 iş günü, ekspres başvurular 12 saat içinde sonuçlanır."},
     {"title": "Gerçek insan desteği", "detail": "WhatsApp ve telefonla ulaşabileceğiniz Türkçe danışman ekibi."},
 ]
 
@@ -310,8 +300,7 @@ SERVICES = [
     {"key": "visa", "title": "Dubai Vizesi", "detail": "Vize başvurunuzu eksiksiz ve hatasız tamamlamanız için baştan sona uzman desteği."},
     {"key": "family", "title": "Aile Başvurusu", "detail": "Tek formda tüm aileyi ekleyin; aile ve çocuk indirimleri otomatik hesaplansın."},
     {"key": "documents", "title": "Evrak Kontrolü", "detail": "Pasaport, vesikalık ve ek belgeleriniz başvuru gönderilmeden önce ücretsiz kontrol edilir."},
-    {"key": "express", "title": "Ekspres Vize", "detail": "Acil seyahatlerde başvurunuz öncelikli sıraya alınır, sonuç yaklaşık 8 mesai saatinde gelir."},
-    {"key": "instant_express", "title": "Anında Ekspres Vize", "detail": "Uçuşu bugün olan yolcular için en hızlı kademe: başvurunuz anında işleme alınır, sonuç aynı gün içinde iletilir."},
+    {"key": "express", "title": "Ekspres Vize", "detail": "Acil seyahatlerde başvurunuz öncelikli sıraya alınır, sonuç 12 saat içinde gelir."},
     {"key": "extension", "title": "Vize Uzatma", "detail": "Ülkeden çıkmadan kalış sürenizi uzatma işlemlerinizi sizin adınıza yürütüyoruz."},
     {"key": "support", "title": "Başvuru Takibi ve Destek", "detail": "Takip kodunuzla süreci anlık izleyin; danışmanınız her aşamada ulaşılabilir olsun."},
 ]
@@ -365,7 +354,7 @@ TESTIMONIALS = [
         "visa": "Ekspres · 30 Gün",
         "date": "2026-06-09",
         "verified": True,
-        "text": "Uçuşuma 2 gün kalmıştı, ekspres hizmeti aldım. Vizem yaklaşık 8 mesai saatinde elimdeydi. Gece yarısı yazdığım mesaja bile dönüş yaptılar.",
+        "text": "Uçuşuma 2 gün kalmıştı, ekspres hizmeti aldım. Vizem 12 saat içinde elimdeydi. Gece yarısı yazdığım mesaja bile dönüş yaptılar.",
         "rating": 5,
     },
     {
@@ -421,7 +410,7 @@ FAQ = [
     },
     {
         "q": "Vize işlemi ne kadar sürüyor?",
-        "a": "Belgeleriniz eksiksiz olduğunda standart başvurular ortalama 2 iş günü içinde sonuçlanır. Ekspres vize hizmetiyle sonuç yaklaşık 8 mesai saatinde çıkar.",
+        "a": "Belgeleriniz eksiksiz olduğunda standart başvurular ortalama 2 iş günü içinde sonuçlanır. Ekspres vize hizmetiyle sonuç 12 saat içinde çıkar.",
     },
     {
         "q": "Pasaportumu göndermem gerekiyor mu?",
@@ -560,8 +549,8 @@ COMPANY = {
     "legal_name": "Moruya Travel Solutions Turizm Ltd. Şti.",
     "parent_company": "Moruya Travel Solutions Turizm Ltd. Şti.",
     "dubai_company": "Moruya Travel Solutions FZE",
-    "phone": "+90 532 588 26 30",
-    "whatsapp": "905325882630",
+    "phone": "+90 533 743 82 24",
+    "whatsapp": "905337438224",
     "email": "info@dubaivizehatti.com",
     "instagram": "https://www.instagram.com/dubaivizeonline/",
     "google_review": "https://www.google.com/search?q=Dubai+Vize+Online+yorumlar",
@@ -624,6 +613,28 @@ BUNDLE_DISCOUNT = {
 }
 
 
+# Sigortayi vize basvurusuyla birlikte alan musteriye poliçe bedelinde indirim
+# (tek basina magazadan alimda gecerli degil - amac vize + sigorta paketini cazip kilmak)
+WITH_VISA_INSURANCE_DISCOUNT = {
+    "rate": 0.20,
+    "title": "Sigorta dahil vize indirimi",
+    "badge": "Vize + sigorta = poliçede %20 indirim",
+    "note": "Sigortayı vize başvurunuzla birlikte alın, poliçe bedelinde %20 indirim uygulanır.",
+}
+
+
+def visa_insurance_discount_amount(store_lines) -> float:
+    """Vize basvurusuyla birlikte alinan sigorta satirlarina indirim uygular."""
+    total = sum(
+        float(line.get("total") or 0)
+        for line in (store_lines or [])
+        if (line.get("kind") or "") == "insurance"
+    )
+    if total <= 0:
+        return 0.0
+    return round(total * float(WITH_VISA_INSURANCE_DISCOUNT["rate"]), 2)
+
+
 def bundle_discount_amount(store_lines) -> float:
     """Sigorta + eSIM birlikte secildiyse ek urun toplamina indirim uygular."""
     lines = list(store_lines or [])
@@ -637,9 +648,6 @@ def bundle_discount_amount(store_lines) -> float:
 def _addon_lines(addons: dict, count: int, addon_prices: dict | None) -> tuple[list, float]:
     """Secili ek hizmetleri fatura satirlarina cevirir; (satirlar, toplam) doner."""
     lines = []
-    # Aninda ekspres secildiyse standart ekspres tekrar ucretlendirilmez.
-    if addons.get("instant_express"):
-        addons = {**addons, "express": False}
     for key, meta in ADDONS.items():
         if not addons.get(key):
             continue
@@ -673,7 +681,10 @@ def compute_pricing(
     store_lines = list(store_lines or [])
     store_total = round(sum(float(line.get("total") or 0) for line in store_lines), 2)
     bundle_discount = bundle_discount_amount(store_lines)
-    total = round(subtotal - discount + addons_total + store_total - bundle_discount, 2)
+    insurance_discount = visa_insurance_discount_amount(store_lines)
+    total = round(
+        subtotal - discount + addons_total + store_total - bundle_discount - insurance_discount, 2
+    )
     return {
         "traveler_count": count,
         "subtotal": subtotal,
@@ -683,6 +694,11 @@ def compute_pricing(
         "addons_total": addons_total,
         "store_items": store_lines,
         "store_total": store_total,
+        "visa_insurance_discount": insurance_discount,
+        "visa_insurance_discount_rate": (
+            float(WITH_VISA_INSURANCE_DISCOUNT["rate"]) if insurance_discount else 0.0
+        ),
+        "visa_insurance_discount_title": WITH_VISA_INSURANCE_DISCOUNT["title"],
         "bundle_discount": bundle_discount,
         "bundle_discount_rate": float(BUNDLE_DISCOUNT["rate"]) if bundle_discount else 0.0,
         "bundle_discount_title": BUNDLE_DISCOUNT["title"],

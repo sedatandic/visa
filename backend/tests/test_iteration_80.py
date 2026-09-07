@@ -12,6 +12,8 @@ import uuid
 from datetime import date, timedelta
 
 import pytest
+
+from insured_data import insured_people
 import requests
 from dotenv import load_dotenv
 
@@ -174,6 +176,8 @@ class TestOrderTourSchedule:
         r = api.post(f"{API}/orders", json={
             "items": [{"product_id": "ins_15d", "quantity": 1}],
             "contact": self._contact(),
+            "insured": insured_people(1),
+            "travel_start": (date.today() + timedelta(days=20)).isoformat(),
             "payment_method": "card",
         }, timeout=20)
         assert r.status_code == 200, f"insurance order: {r.status_code} {r.text[:300]}"

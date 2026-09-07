@@ -10,6 +10,8 @@ import pytest
 import requests
 from dotenv import load_dotenv
 
+from insured_data import insured_people
+
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".env"))
 
@@ -18,14 +20,7 @@ API = f"{BASE_URL}/api"
 
 ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
 
-EXPECTED_PRICES = {
-    "ins_8d": (491, 8),
-    "ins_15d": (560, 15),
-    "ins_30d": (644, 30),
-    "ins_60d": (735, 60),
-    "ins_30d_plus": (2754, 30),
-    "ins_60d_plus": (3989, 60),
-}
+EXPECTED_DAYS = {"ins_7d": 7, "ins_15d": 15, "ins_30d": 30, "ins_60d": 60}
 
 
 @pytest.fixture(scope="module")
@@ -55,25 +50,30 @@ def visa_type_id(session):
 
 # ------------------------------------------------------------------ katalog
 class TestInsuranceCatalog:
-    def test_returns_six_insurance_products(self, session):
+    def test_returns_four_insurance_products(self, session):
         r = session.get(f"{API}/products", params={"kind": "insurance"})
         assert r.status_code == 200
         data = r.json()
         items = data["items"]
         ids = [p["id"] for p in items]
-        assert len(items) == 6, f"Expected 6 insurance products, got {len(items)}: {ids}"
-        for pid in EXPECTED_PRICES:
+        assert len(items) == 4, f"Expected 4 insurance products, got {len(items)}: {ids}"
+        for pid in EXPECTED_DAYS:
             assert pid in ids, f"Missing product {pid}"
 
     def test_prices_and_currency(self, session):
+        """Fiyatlar Tamamliyo maliyetinden %100 marj ile uretilir (10 TL'ye yuvarlanir)."""
         r = session.get(f"{API}/products", params={"kind": "insurance"})
         items = {p["id"]: p for p in r.json()["items"]}
-        for pid, (expected_price, expected_days) in EXPECTED_PRICES.items():
+        for pid, expected_days in EXPECTED_DAYS.items():
             p = items[pid]
             assert p["currency"] == "TRY", f"{pid} currency should be TRY"
-            assert int(p["price"]) == expected_price, f"{pid} price={p['price']} expected {expected_price}"
-            assert int(p["price_try"]) == expected_price
             assert int(p["validity_days"]) == expected_days
+            assert float(p["price"]) == float(p["price_try"])
+            cost = float(p["cost_try"])
+            assert cost > 0, f"{pid} cost_try missing"
+            assert abs(float(p["price_try"]) - round(cost * 2 / 10) * 10) < 0.01, (
+                f"{pid} price={p['price_try']} cost={cost} (%100 marj beklenir)"
+            )
             # sigorta USD dönüşümü uygulanmıyor: price_usd olmamalı veya 0 olmalı
             assert not p.get("price_usd"), f"{pid} should NOT have price_usd (got {p.get('price_usd')})"
 
@@ -102,6 +102,8 @@ class TestInsuranceCatalog:
 # ---------------------------------------------------------------- siparisler
 class TestInsuranceOrder:
     def test_create_order_ins_30d_qty2(self, session):
+        catalog = {p["id"]: p for p in session.get(f"{API}/products", params={"kind": "insurance"}).json()["items"]}
+        unit_price = float(catalog["ins_30d"]["price"])
         payload = {
             "items": [{"product_id": "ins_30d", "quantity": 2}],
             "contact": {
@@ -109,6 +111,7 @@ class TestInsuranceOrder:
                 "email": "TEST_ins@example.com",
                 "phone": "+905550000101",
             },
+            "insured": insured_people(2),
             "travel_start": "2026-03-01",
             "travel_end": "2026-03-15",
             "payment_method": "card",
@@ -122,12 +125,30 @@ class TestInsuranceOrder:
         line = order["items"][0]
         assert line["product_id"] == "ins_30d"
         assert line["quantity"] == 2
-        assert float(line["unit_price"]) == 644.0
-        assert float(line["total"]) == 1288.0
+        assert float(line["unit_price"]) == unit_price
+        assert float(line["total"]) == round(unit_price * 2, 2)
         assert order["currency"] == "TRY"
+        assert len(order["insured"]) == 2
         # validity 30 gün
         assert line["starts_on"] == "2026-03-01"
         assert line["ends_on"] == "2026-03-30"
+
+    def test_order_without_insured_rejected(self, session):
+        r = session.post(
+            f"{API}/orders",
+            json={
+                "items": [{"product_id": "ins_30d", "quantity": 1}],
+                "contact": {
+                    "full_name": "TEST Sigorta Eksik",
+                    "email": "TEST_ins2@example.com",
+                    "phone": "+905550000102",
+                },
+                "travel_start": "2026-03-01",
+                "payment_method": "card",
+            },
+        )
+        assert r.status_code == 400, r.text
+        assert "TC kimlik" in r.json()["detail"]
 
 
 # ------------------------------------------------ vize basvurusu store_items
@@ -164,6 +185,13 @@ class TestApplicationStoreItems:
         }
 
     def test_pricing_quote_insurance_only(self, session, visa_type_id):
+        unit = float(
+            next(
+                p
+                for p in session.get(f"{API}/products", params={"kind": "insurance"}).json()["items"]
+                if p["id"] == "ins_30d"
+            )["price"]
+        )
         r = session.post(f"{API}/pricing/quote", json={
             "visa_type_ids": [visa_type_id],
             "addons": {"express": False, "insurance": False},
@@ -176,7 +204,7 @@ class TestApplicationStoreItems:
         # sadece sigorta -> bundle indirimi uygulanmamalı
         assert q["bundle_discount"] == 0.0
         store_total = sum(float(l["total"]) for l in q["store_items"])
-        assert store_total == 644.0
+        assert store_total == unit
 
     def test_pricing_quote_bundle_insurance_plus_esim(self, session, visa_type_id):
         r = session.post(f"{API}/pricing/quote", json={
@@ -201,6 +229,13 @@ class TestApplicationStoreItems:
 class TestAdminProductPatch:
     def test_patch_price_try_updates_public_endpoint(self, session, admin_token):
         headers = {"Authorization": f"Bearer {admin_token}"}
+        before = float(
+            next(
+                p
+                for p in session.get(f"{API}/products", params={"kind": "insurance"}).json()["items"]
+                if p["id"] == "ins_30d"
+            )["price_try"]
+        )
         # Yeni fiyat
         new_price = 699.0
         r = session.patch(
@@ -219,13 +254,13 @@ class TestAdminProductPatch:
         assert float(item["price_try"]) == new_price
         assert float(item["price"]) == new_price
 
-        # Eski fiyata geri döndür
+        # Canli tarifeden gelen fiyata geri döndür
         restore = session.patch(
             f"{API}/admin/products/ins_30d",
-            json={"price_try": 644.0},
+            json={"price_try": before},
             headers=headers,
         )
         assert restore.status_code == 200
         pub2 = session.get(f"{API}/products", params={"kind": "insurance"}).json()
         item2 = next(p for p in pub2["items"] if p["id"] == "ins_30d")
-        assert float(item2["price_try"]) == 644.0
+        assert float(item2["price_try"]) == before
