@@ -1252,3 +1252,17 @@ konumlandırma (yasal risk).
 - Açık kalan: admin e-postası `info@dubaivizehatti.com` Google Workspace'te yok →
   kullanıcı kutuyu açmalı veya alternatif adres vermeli (P0, kullanıcı aksiyonu).
 
+## 2026-06-09 · Bu oturum (fork sonrası)
+- **WhatsApp telefon maketi tam 4 sohbet** (kullanıcı isteği): 3. sırada eSIM + seyahat
+  sigortası, 4. sırada aile/çocuklar. Detay: CHANGELOG 2026-06-09.
+- **Pasaport görseli** artık yalnızca kimlik (bio) sayfası, tam görünür ve bilgileri
+  bulanık: `frontend/public/chat/passport-bio.jpg`.
+- **Kırılgan testler çözüldü**: kök neden test içinden `supervisorctl restart backend`
+  çağrılmasıydı (paralel worker 502 alıyordu). Suite artık 271 passed / 3 skipped.
+  IP sayacı tüketen 2 test `RUN_RATELIMIT_TESTS=1` ile ayrı çalıştırılır.
+
+### Sıradaki açık işler (2026-06-09)
+- **P0** WhatsApp botu canlıya alma: gerçek Meta Cloud API bilgileri Admin → WhatsApp →
+  Ayarlar ekranından girilmeli (şu an `manual`/mock mod).
+- **P1** Gerçek havale bilgileri (`site_settings.bank_transfer` hâlâ `TR00...` örnek IBAN).
+- **P2** Paylaşılabilir aile paketi linki; İngilizce/USD global sürüm (ROADMAP).

@@ -1074,3 +1074,31 @@ başlık taşmasın diye görüntülü/sesli arama ikonları küçük ekranlarda
 (`hidden sm:block` / `min-[380px]:block`) ve "Mesaj yazın" tek satıra sabitlendi.
 390px'te ölçüldü: kart genişliği 244px, düzen bozulmuyor.
 
+
+## 2026-06-09 · Telefon maketi 4 sohbete indi + pasaport kimlik sayfası görseli
+- `WhatsAppPhoneMock.jsx` senaryoları 6 → **4**: (1) WhatsApp'tan başvuru,
+  (2) Yeşil/bordo pasaport, (3) **eSIM ve seyahat sigortası** (yeni: eSIM QR, TR numarası
+  açık kalır, 30 günlük poliçe 644 ₺, vize+eSIM+sigorta paketinde %10 indirim link kartı),
+  (4) Aile ve çocuklar. "Pasaport bende kalıyor", "Süre ve ödeme" ve "Vize teslimi ve takip"
+  senaryoları kaldırıldı; kullanılmayan PDF (`doc`) baloncuk tipi ve `FileText` importu silindi.
+- **Pasaport görseli**: kullanıcı isteği "sadece kimlik sayfası tam görünsün" →
+  Gemini ile Türk pasaportu **kimlik/bio sayfası** üretildi, alan değerleri ve MRZ bandı
+  PIL ile yumuşak maskeyle bulanıklaştırıldı → `public/chat/passport-bio.jpg`.
+  Baloncuktaki `object-cover h-[100px]` yerine `object-contain w-full` (kırpma yok).
+
+## 2026-06-09 · Kırılgan backend testleri: kök neden bulundu, suite %100 yeşil
+- **Kök neden**: `tests/test_iteration_82.py` test ortasında 3 kez
+  `sudo supervisorctl restart backend` çağırıyordu. `pytest.ini` `-n 2 --dist loadscope`
+  ile çalıştığı için, backend yeniden başlarken **diğer worker'daki tüm istekler 502**
+  alıyordu (22 failed). İkinci hata: aynı dosya grubunda `.env` elle parse edilirken
+  tırnaklar temizlenmiyordu → `pymongo InvalidURI` (`"mongodb://..."`).
+- **Düzeltmeler**:
+  - Testlerden supervisor yeniden başlatmaları kaldırıldı.
+  - IP başına saatlik bellek içi sayaçları tüketen 2 test (`/account/request-code` 15/sa,
+    `/contact` 8/sa) `@shared_limit` ile **varsayılan olarak atlanıyor**; ayrı çalıştırma:
+    `RUN_RATELIMIT_TESTS=1 python -m pytest tests/test_iteration_82.py -n 0`.
+  - İzole modda oturum sonunda backend bir kez yeniden başlatılıp `/api/products` 200
+    olana kadar beklenerek sayaçlar sıfırlanıyor → sonraki suite çalışmaları 429 almıyor.
+  - `test_iteration_94_cart.py` artık `os.environ["MONGO_URL"]` kullanıyor (conftest dotenv).
+- **Sonuç**: `pytest tests -q` → **271 passed, 3 skipped, 0 failed** (izole grup
+  çalıştırıldıktan hemen sonra tekrar çalıştırılıp doğrulandı).

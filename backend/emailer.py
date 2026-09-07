@@ -530,6 +530,149 @@ def documents_completed_admin_html(app_doc: dict, uploaded_keys: list) -> str:
     return _wrap("Müşteri belge yükledi", body)
 
 
+def _digest_heading(title: str) -> str:
+    return (
+        f'<div style="margin:22px 0 8px;font-size:11px;font-weight:bold;letter-spacing:1.4px;'
+        f'text-transform:uppercase;color:{GOLD};">{title}</div>'
+    )
+
+
+def _digest_rows(items: list) -> str:
+    """Etiket/deger satirlari; bos listede kisa bir not doner."""
+    if not items:
+        return f'<p style="margin:0;font-size:13px;line-height:21px;color:{MUTED};">Kayıt yok.</p>'
+    rows = "".join(_row(esc(i["label"]), i["value"]) for i in items)
+    return f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0">{rows}</table>'
+
+
+def _digest_application_table(rows: list) -> str:
+    if not rows:
+        return ""
+    body = "".join(
+        f'<tr><td style="padding:8px 10px;border-top:1px solid {LINE};font-size:13px;">'
+        f'<strong>{esc(r["reference"])}</strong><br/><span style="color:{MUTED};font-size:12px;">{esc(r["name"])}</span></td>'
+        f'<td style="padding:8px 10px;border-top:1px solid {LINE};font-size:12px;">{esc(r["visa"])}<br/>'
+        f'<span style="color:{MUTED};">{r["travelers"]} yolcu</span></td>'
+        f'<td style="padding:8px 10px;border-top:1px solid {LINE};font-size:13px;font-weight:600;text-align:right;">'
+        f'{money(r["total"])}</td></tr>'
+        for r in rows
+    )
+    return (
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        f'style="margin:10px 0 0;border:1px solid {LINE};border-radius:8px;border-collapse:collapse;">'
+        '<tr style="background-color:#FBF6EC;">'
+        f'<td style="padding:8px 10px;font-size:11px;text-transform:uppercase;color:{MUTED};">Başvuru</td>'
+        f'<td style="padding:8px 10px;font-size:11px;text-transform:uppercase;color:{MUTED};">Vize</td>'
+        f'<td style="padding:8px 10px;font-size:11px;text-transform:uppercase;color:{MUTED};text-align:right;">Tutar</td>'
+        f"</tr>{body}</table>"
+    )
+
+
+def daily_digest_html(data: dict) -> str:
+    """Yoneticiye giden gunluk ozet: basvurular, tahsilat, ekstralar, bekleyen isler."""
+    apps = data.get("applications") or {}
+    revenue = data.get("revenue") or {}
+    attention = data.get("attention") or {}
+    month = data.get("month") or {}
+    admin_url = data.get("admin_url") or ""
+
+    headline = (
+        f"{apps.get('count', 0)} yeni başvuru · {money(revenue.get('total', 0))} tahsilat"
+        if data.get("has_activity")
+        else "Dün hareket yok"
+    )
+    intro = (
+        f'<p style="margin:0 0 4px;font-size:14px;line-height:22px;">{data.get("day_label", "")} özeti</p>'
+        f'<p style="margin:0 0 6px;font-size:20px;line-height:28px;font-weight:bold;color:{INK};">{headline}</p>'
+    )
+    if not data.get("has_activity"):
+        intro += (
+            f'<p style="margin:0;font-size:13px;line-height:21px;color:{MUTED};">'
+            "Dün yeni başvuru, sipariş veya tahsilat kaydı oluşmadı. Bekleyen işler aşağıda.</p>"
+        )
+
+    apps_block = _digest_rows(
+        [
+            {"label": "Başvuru", "value": str(apps.get("count", 0))},
+            {"label": "Yolcu", "value": str(apps.get("travelers", 0))},
+            {"label": "Başvuru tutarı", "value": money(apps.get("amount", 0))},
+        ]
+        + [{"label": v["label"], "value": f"{v['count']} yolcu"} for v in apps.get("by_visa") or []]
+    ) + _digest_application_table(apps.get("rows") or [])
+
+    revenue_block = _digest_rows(
+        [
+            {"label": "Tahsil edilen", "value": money(revenue.get("total", 0))},
+            {"label": "Ödeme sayısı", "value": str(revenue.get("count", 0))},
+        ]
+        + [
+            {"label": m["label"], "value": f"{money(m['amount'])} ({m['count']})"}
+            for m in revenue.get("by_method") or []
+        ]
+    )
+
+    extras_block = _digest_rows(
+        [
+            {"label": e["label"], "value": f"{e['quantity']} adet · {money(e['amount'])}"}
+            for e in data.get("extras") or []
+        ]
+    )
+
+    attention_block = _digest_rows(
+        [
+            {
+                "label": "Eksik belgeli başvuru",
+                "value": str((attention.get("missing_documents") or {}).get("count", 0)),
+            },
+            {
+                "label": "Onay bekleyen havale",
+                "value": f"{(attention.get('awaiting_transfer') or {}).get('count', 0)} · "
+                f"{money((attention.get('awaiting_transfer') or {}).get('amount', 0))}",
+            },
+            {
+                "label": "Yarım kalan sepet",
+                "value": f"{(attention.get('abandoned_carts') or {}).get('count', 0)} · "
+                f"{money((attention.get('abandoned_carts') or {}).get('amount', 0))}",
+            },
+        ]
+    )
+
+    month_block = _digest_rows(
+        [
+            {"label": f"{month.get('label', '')} başvuru", "value": str(month.get("applications", 0))},
+            {"label": f"{month.get('label', '')} tahsilat", "value": money(month.get("revenue", 0))},
+        ]
+    )
+
+    button_html = (
+        f"""
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0 4px;">
+      <tr><td style="background-color:{GOLD};border-radius:8px;">
+        <a href="{admin_url}" style="display:inline-block;padding:13px 24px;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;">Yönetim paneline git</a>
+      </td></tr>
+    </table>
+    """
+        if admin_url
+        else ""
+    )
+
+    body = f"""
+    {intro}
+    {_digest_heading("Dün gelen başvurular")}
+    {apps_block}
+    {_digest_heading("Tahsilat")}
+    {revenue_block}
+    {_digest_heading("Ekstra satışlar")}
+    {extras_block}
+    {_digest_heading("Dikkat gerektirenler")}
+    {attention_block}
+    {_digest_heading("Ay başından bugüne")}
+    {month_block}
+    {button_html}
+    """
+    return _wrap("Günlük özet", body)
+
+
 def contact_admin_html(msg: dict) -> str:
     body = f"""
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">

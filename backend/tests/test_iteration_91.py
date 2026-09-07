@@ -141,7 +141,7 @@ def test_file_access_with_admin_bearer(s, uploaded_file, admin_jwt):
 
 
 def test_admin_request_code_and_verify(s, db):
-    email = "info@dubaivizeonline.com"
+    email = os.environ["ADMIN_LOGIN_EMAIL"].strip().lower()
     db.admin_login_codes.delete_many({"email": email})
     r = s.post(f"{API}/admin/request-code", json={"email": email})
     assert r.status_code == 200, r.text

@@ -27,7 +27,7 @@ from admin_test_token import admin_token  # noqa: E402
 
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 DB_NAME = os.environ.get("DB_NAME", "test_database")
-ADMIN_EMAIL = (os.environ.get("ADMIN_LOGIN_EMAIL") or "info@dubaivizeonline.com").strip().lower()
+ADMIN_EMAIL = (os.environ.get("ADMIN_LOGIN_EMAIL") or "info@dubaivizehatti.com").strip().lower()
 
 
 @pytest.fixture(scope="module")

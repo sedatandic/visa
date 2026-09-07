@@ -35,7 +35,7 @@ def _load_backend_url() -> str:
 
 BASE_URL = _load_backend_url()
 API = f"{BASE_URL}/api"
-ADMIN_EMAIL = "info@dubaivizeonline.com"
+ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"].strip().lower()
 
 
 # ------------------------------------------------------------------ fixtures

@@ -977,6 +977,36 @@ async def admin_pending_reminders(admin: dict = Depends(require_admin)) -> dict:
     return {"items": items, "total": len(items), "due": sum(1 for i in items if i["due"])}
 
 
+@router.post("/admin/daily-digest/run")
+async def admin_run_daily_digest(
+    payload: Optional[dict] = None, admin: dict = Depends(require_admin)
+) -> dict:
+    """Gunluk ozeti hemen gonderir (varsayilan: dun). `day: YYYY-MM-DD` ile gecmis gun."""
+    from datetime import date as _date
+
+    from daily_digest import send_daily_digest
+
+    body = payload or {}
+    day = None
+    if body.get("day"):
+        day = _date.fromisoformat(str(body["day"]))
+    summary = await send_daily_digest(day=day, force=True)
+    summary.pop("data", None)
+    return summary
+
+
+@router.get("/admin/daily-digest/preview")
+async def admin_preview_daily_digest(
+    day: Optional[str] = None, admin: dict = Depends(require_admin)
+) -> dict:
+    """Ozet verisini e-posta gondermeden dondurur."""
+    from datetime import date as _date
+
+    from daily_digest import collect_digest
+
+    return await collect_digest(_date.fromisoformat(day) if day else None)
+
+
 @router.post("/admin/document-reminders/run")
 async def admin_run_reminders(
     request: Request, payload: Optional[dict] = None, admin: dict = Depends(require_admin)

@@ -7,8 +7,14 @@
 - Zami bookmarklet.js / capture.js still 200 and contain `function dvoEsc`
 - Admin OTP regression (request-code -> verify-code -> /admin/emails)
 - Applications regression with new phone format '+90 532 588 26 30'
+
+IZOLASYON NOTU: IP basina saatlik sayaclar (`rate_limit._hits`) uvicorn surecinde
+paylasilir. Bu sayaclari tuketen testler suite icinde calisirsa diger dosyalar 429 alir;
+eskiden bu yuzden `supervisorctl restart backend` cagriliyordu ve paralel worker'daki
+testler 502 aliyordu. Bu testler artik varsayilan olarak atlanir ve AYRI calistirilir:
+
+    RUN_RATELIMIT_TESTS=1 python -m pytest tests/test_iteration_82.py -n 0
 """
-import subprocess
 import os
 import re
 import io
@@ -31,7 +37,36 @@ ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
 
+# Paylasilan IP sayaclarini tuketen testler yalnizca bu bayrakla calisir
+SHARED_LIMIT_TESTS = os.environ.get("RUN_RATELIMIT_TESTS") == "1"
+shared_limit = pytest.mark.skipif(
+    not SHARED_LIMIT_TESTS,
+    reason="IP basina saatlik sayaci tuketir; RUN_RATELIMIT_TESTS=1 ile ayri calistirin",
+)
+
 db = MongoClient(MONGO_URL)[DB_NAME]
+
+
+@pytest.fixture(scope="session", autouse=True)
+def reset_ip_counters():
+    """Izole modda sonda backend'i yeniden baslatarak bellek ici IP sayaclarini sifirlar.
+
+    Boylece bu grup calistiktan sonra bir saat boyunca diger testler 429 almaz.
+    Varsayilan (bayraksiz) calismada hicbir sey yapilmaz.
+    """
+    yield
+    if not SHARED_LIMIT_TESTS:
+        return
+    import subprocess
+
+    subprocess.run(["sudo", "supervisorctl", "restart", "backend"], check=False, capture_output=True)
+    for _ in range(30):
+        time.sleep(1)
+        try:
+            if requests.get(f"{API}/products", timeout=5).status_code == 200:
+                return
+        except requests.RequestException:
+            continue
 
 
 @pytest.fixture(scope="module")
@@ -110,13 +145,13 @@ class TestAccountRateLimits:
         assert r2.status_code == 429, f"second within 60s should 429: {r2.status_code} {r2.text[:200]}"
         assert "1 dakika" in r2.text or "bekleyin" in r2.text.lower()
 
+
+@shared_limit
+class TestAccountRateLimitsIsolated:
     def test_ip_hourly_limit_exceeded(self, api):
-        # Restart backend to reset in-memory counters before this test to avoid contamination
-        subprocess.run(["sudo", "supervisorctl", "restart", "backend"], check=False, capture_output=True)
-        time.sleep(3)
-        # After restart, we can issue 15 distinct emails; 16th should 429.
-        # But request-code sends REAL emails. Use example.com addresses; Resend will error
-        # but 200 is still returned (email_status='error') and the rate counter still increments.
+        # 15 farkli e-posta sonrasi 16.si 429 olmali (sayac IP basina, bellek ici).
+        # request-code GERCEK e-posta gonderir; example.com adresleri Resend'de hata
+        # verir ama 200 doner ve sayac artar.
         got_429 = False
         for i in range(17):
             e = f"TEST_iter82_ratelimit_{i}_{uuid.uuid4().hex[:6]}@example.com"
@@ -132,10 +167,9 @@ class TestAccountRateLimits:
 
 
 # ------------------------------------------------------------ Contact endpoint
+@shared_limit
 class TestContactEndpoint:
     def test_contact_ok_then_ratelimit(self, api):
-        subprocess.run(["sudo", "supervisorctl", "restart", "backend"], check=False, capture_output=True)
-        time.sleep(3)
         got_429 = False
         first_status = None
         for i in range(10):
@@ -179,8 +213,6 @@ class TestZamiScripts:
 # ------------------------------------------------------------ Admin OTP regression
 class TestAdminOTP:
     def test_admin_otp_full(self, api):
-        subprocess.run(["sudo", "supervisorctl", "restart", "backend"], check=False, capture_output=True)
-        time.sleep(3)
         db.admin_login_codes.delete_many({"email": ADMIN_EMAIL.lower()})
         r = api.post(f"{API}/admin/request-code", json={"email": ADMIN_EMAIL}, timeout=15)
         assert r.status_code == 200, f"request-code: {r.status_code} {r.text[:200]}"

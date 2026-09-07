@@ -231,6 +231,7 @@ async def lifespan(app: FastAPI):
     otp_task = None
     cart_task = None
     retention_task = None
+    digest_task = None
     try:
         from doc_reminders import default_origin, reminder_loop
 
@@ -272,9 +273,17 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.error("retention scheduler failed to start: %s", exc)
 
+    try:
+        from daily_digest import digest_loop
+
+        digest_task = asyncio.create_task(digest_loop())
+        logger.info("daily digest scheduler started")
+    except Exception as exc:
+        logger.error("daily digest scheduler failed to start: %s", exc)
+
     yield
 
-    for task in (reminder_task, zami_task, keepalive_task, otp_task, cart_task, retention_task):
+    for task in (reminder_task, zami_task, keepalive_task, otp_task, cart_task, retention_task, digest_task):
         if task:
             task.cancel()
             try:

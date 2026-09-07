@@ -28,11 +28,10 @@ def cleanup():
     # Cleanup created orders
     import asyncio
     from motor.motor_asyncio import AsyncIOMotorClient
-    with open("/app/backend/.env") as f:
-        env = dict(l.strip().split("=", 1) for l in f if "=" in l and not l.startswith("#"))
+    # conftest.py .env'i dotenv ile yukler (tirnaklar temizlenmis olarak)
     async def do():
-        c = AsyncIOMotorClient(env["MONGO_URL"])
-        db = c[env["DB_NAME"]]
+        c = AsyncIOMotorClient(os.environ["MONGO_URL"])
+        db = c[os.environ["DB_NAME"]]
         r = await db.store_orders.delete_many({
             "contact.email": TEST_EMAIL,
             "source": "store",

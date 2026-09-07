@@ -30,6 +30,7 @@ def _read_env(name: str) -> str:
 
 
 BASE_URL = _read_env("REACT_APP_BACKEND_URL").rstrip("/")
+ADMIN_LOGIN_EMAIL = _read_env("ADMIN_LOGIN_EMAIL").strip().lower()
 
 # Fixtures --------------------------------------------------------------------
 DARK_PHOTO_URL = "https://customer-assets-rejwkqb3.emergentagent.net/job_1d50e59a-d91d-4df8-96b0-06dee815c3de/artifacts/1nnotrcm_52492013966_e452741b30_o.jpg"
@@ -195,29 +196,29 @@ class TestOTPRegression:
         mongo_url = _read_env("MONGO_URL")
         db_name = _read_env("DB_NAME")
         MongoClient(mongo_url)[db_name]["admin_login_codes"].delete_many(
-            {"email": "info@dubaivizeonline.com"}
+            {"email": ADMIN_LOGIN_EMAIL}
         )
 
         r = s.post(
             f"{BASE_URL}/api/admin/request-code",
-            json={"email": "info@dubaivizeonline.com"},
+            json={"email": ADMIN_LOGIN_EMAIL},
             timeout=30,
         )
         assert r.status_code == 200, r.text
 
         doc = MongoClient(mongo_url)[db_name]["admin_login_codes"].find_one(
-            {"email": "info@dubaivizeonline.com"}, sort=[("created_at", -1)]
+            {"email": ADMIN_LOGIN_EMAIL}, sort=[("created_at", -1)]
         )
         assert doc and doc.get("code_hash"), doc
         assert "code_plain" not in doc, doc
         mail = MongoClient(mongo_url)[db_name]["email_outbox"].find_one(
-            {"to": "info@dubaivizeonline.com", "kind": "admin_login_code"},
+            {"to": ADMIN_LOGIN_EMAIL, "kind": "admin_login_code"},
             sort=[("created_at", -1)],
         )
         code = re.search(r"\b(\d{6})\b", (mail or {}).get("html", "")).group(1)
         r2 = s.post(
             f"{BASE_URL}/api/admin/verify-code",
-            json={"email": "info@dubaivizeonline.com", "code": code},
+            json={"email": ADMIN_LOGIN_EMAIL, "code": code},
             timeout=30,
         )
         assert r2.status_code == 200, r2.text
