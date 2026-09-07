@@ -349,6 +349,31 @@ def _documents_paragraph(documents: list, st: dict) -> Paragraph:
     return Paragraph("<br/>".join(lines), st["body"])
 
 
+FRAME_INSET = 8 * mm
+
+
+def _draw_frame(canvas, doc) -> None:
+    """Sayfayi ince altin cerceve icine alir (form gorunumu)."""
+    width, height = A4
+    canvas.saveState()
+    canvas.setStrokeColor(GOLD)
+    canvas.setLineWidth(1.1)
+    canvas.roundRect(
+        FRAME_INSET, FRAME_INSET, width - 2 * FRAME_INSET, height - 2 * FRAME_INSET, 3 * mm
+    )
+    inner = FRAME_INSET + 1.6 * mm
+    canvas.setStrokeColor(LINE)
+    canvas.setLineWidth(0.5)
+    canvas.roundRect(inner, inner, width - 2 * inner, height - 2 * inner, 2.2 * mm)
+
+    # Kunye cercevenin alt kenarina sabitlenir
+    footer = _footer_paragraph(_styles())
+    pad = FRAME_INSET + 6 * mm
+    footer.wrap(width - 2 * pad, 30 * mm)
+    footer.drawOn(canvas, pad, FRAME_INSET + 5 * mm)
+    canvas.restoreState()
+
+
 def _footer_paragraph(st: dict) -> Paragraph:
     text = (
         f"{COMPANY['legal_name']} · TÜRSAB Üyesi {COMPANY['tursab_type']} · "
@@ -369,8 +394,8 @@ def build_application_pdf(app_doc: dict, documents: list | None = None) -> bytes
         pagesize=A4,
         leftMargin=15 * mm,
         rightMargin=15 * mm,
-        topMargin=13 * mm,
-        bottomMargin=12 * mm,
+        topMargin=15 * mm,
+        bottomMargin=15 * mm,
         title=f"Başvuru Formu {app_doc.get('reference_code', '')}",
         author=BRAND,
     )
@@ -398,8 +423,6 @@ def build_application_pdf(app_doc: dict, documents: list | None = None) -> bytes
         Spacer(1, 8),
         Paragraph("YÜKLENEN BELGELER", st["section"]),
         _documents_paragraph(documents or [], st),
-        Spacer(1, 10),
-        _footer_paragraph(st),
     ]
-    pdf.build(story)
+    pdf.build(story, onFirstPage=_draw_frame, onLaterPages=_draw_frame)
     return buffer.getvalue()

@@ -1326,3 +1326,14 @@ Kullanıcı otomatik bir kod kalitesi raporu iletti. Bulgular tek tek doğruland
   PDF linki + `SV-…` sipariş kodu doğrulandı; panelde buton görünüyor ve doğru href taşıyor.
 - Test verisi temizliği: `scripts/wipe_test_data.py --apply` ile test başvuru/sipariş/poliçe
   kayıtları silindi (yalnız gerçek kayıt DV-BJ930600 + ayarlar kaldı). pytest 310 passed.
+
+## 2026-09-07 (7) · Başvuru formu PDF'i çerçeve içine alındı
+
+- `application_pdf._draw_frame()` (yeni, `onFirstPage`/`onLaterPages`): sayfa kenarından 8 mm
+  içeride altın (1.1pt) + 1.6 mm daha içeride ince açık (0.5pt) yuvarlatılmış **çift çerçeve**;
+  form artık çerçevenin içinde duruyor.
+- Künye (şirket/TÜRSAB/iletişim + "resmî belge değildir" notu) akıştan çıkarılıp çerçevenin
+  **alt kenarına sabitlendi**; içerik ile künye arasındaki boşluk artık sayfanın tamamını kullanıyor.
+- Üst/alt kenar boşluğu 15 mm'ye çıkarıldı (yan boşluklar 15 mm kaldı: tablo genişlikleri 180 mm).
+- Doğrulama: örnek başvuruyla PDF üretildi ve PNG'ye çevrilip görsel kontrol edildi;
+  `tests/test_iteration_112_application_form.py` 9/9 PASS.
