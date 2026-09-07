@@ -174,3 +174,45 @@ class TestErrorMessage:
     def test_unknown_shape_gives_default(self):
         assert "beklenmeyen" in tamamliyo._error_message({"weird": 1})
         assert "beklenmeyen" in tamamliyo._error_message("plain text")
+
+
+class TestProviderContact:
+    """Musteri, Tamamliyo'nun haber/promosyon listesine eklenmemeli (2026-09-08)."""
+
+    def test_uses_agency_contact_not_customer(self):
+        from content import COMPANY
+
+        email, phone = insurance_provider._provider_contact()
+        assert "dubaivizehatti.com" in email
+        assert phone == COMPANY["phone"].replace(" ", "")
+        assert " " not in phone  # servis bosluklu gsmNo kabul etmiyor
+
+    def test_ensure_quote_never_sends_customer_email(self, monkeypatch):
+        seen = {}
+
+        async def fake_quote(insured, starts_on, ends_on, email, phone):
+            seen.update(email=email, phone=phone, insured=insured)
+            return {"data": {"teklifBilgileri": {"teklifId": "999", "fiyat": "244,85"}}}
+
+        class FakeCol:
+            async def update_one(self, *_args, **_kwargs):
+                return None
+
+            async def find_one(self, *_args, **_kwargs):
+                return {"id": "t1", "provider_quote_id": "999"}
+
+        monkeypatch.setattr(tamamliyo, "create_quote", fake_quote)
+        monkeypatch.setattr(insurance_provider, "insurance_tasks_col", FakeCol())
+
+        task = {
+            "id": "t1",
+            "starts_on": "2026-10-07",
+            "ends_on": "2026-10-13",
+            "customer": {"email": "musteri@ornek.com", "phone": "05325882630"},
+        }
+        quote_id = run(insurance_provider._ensure_quote(task, [{"tcKimlikNo": "45181872398"}]))
+
+        assert quote_id == "999"
+        assert seen["email"] != "musteri@ornek.com"
+        assert seen["phone"] != "05325882630"
+        assert "dubaivizehatti.com" in seen["email"]

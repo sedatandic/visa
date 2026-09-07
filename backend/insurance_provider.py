@@ -9,10 +9,12 @@
 
 import asyncio
 import logging
+import os
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
 import tamamliyo
+from content import COMPANY
 from db import insurance_tasks_col, products_col, settings_col, uploads_col
 from insurance_delivery import issue_policy
 from storage import APP_NAME, put_object
@@ -187,6 +189,19 @@ def _validate_task(task: dict) -> list:
     return insured
 
 
+def _provider_contact() -> tuple:
+    """Tamamliyo'ya musteri degil kendi acente iletisimimiz verilir.
+
+    Servis teklif/police e-postasini bu adrese gonderiyor ve alicilari kendi
+    haber/promosyon listesine ekliyor. Musteri Tamamliyo'nun pazarlama listesine
+    girmesin diye e-postasi/telefonu paylasilmaz; policeyi musteriye zaten kendi
+    e-posta ve WhatsApp akisimizla iletiyoruz.
+    """
+    email = (os.environ.get("ADMIN_EMAIL") or COMPANY["email"]).strip()
+    phone = COMPANY["phone"].replace(" ", "")  # servis bosluklu gsmNo kabul etmiyor
+    return email, phone
+
+
 async def _ensure_quote(task: dict, insured: list) -> str:
     """Teklif yoksa olusturur; varsa mevcut teklif numarasini dondurur (idempotent)."""
     task_id = task["id"]
@@ -194,13 +209,13 @@ async def _ensure_quote(task: dict, insured: list) -> str:
     if quote_id:
         return quote_id
 
-    customer = task.get("customer") or {}
+    notify_email, notify_phone = _provider_contact()
     payload = await tamamliyo.create_quote(
         insured,
         task["starts_on"],
         task["ends_on"],
-        customer.get("email", ""),
-        customer.get("phone", ""),
+        notify_email,
+        notify_phone,
     )
     info = ((payload.get("data") or {}).get("teklifBilgileri")) or {}
     quote_id = info.get("teklifId")

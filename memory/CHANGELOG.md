@@ -1535,3 +1535,21 @@ hesap tarafında açılmadan poliçe kesilemiyor. Seçenekler:
 **Test**: yeni `backend/tests/test_iteration_118_tamamliyo_payment.py` → 13/13 PASS.
 Tam suit: **362 passed / 5 skipped**.
 Test siparişi: `SV-XFG87WZW` (490 ₺, ödendi işaretli), poliçe görevi `pending` durumda.
+
+### 2026-09-08 (ek) · Müşteri artık Tamamliyo'nun promosyon listesine eklenmiyor
+Kullanıcı, Tamamliyo'nun kestiği teklif e-postasının altında
+*"Tamamliyo.com'dan haber ve promosyon e-postaları almayı seçtiğiniz için sizinle
+iletişime geçtik"* yazdığını gördü. API'de bu aboneliği kapatan bir parametre yok
+(dokümanların tamamı tarandı: `mail`, `izin`, `kvkk`, `onay`, `subscribe` alanı yok).
+
+**Çözüm**: `teklif-olustur` çağrısında müşterinin e-posta/telefonu yerine kendi acente
+iletişimimiz gönderiliyor (`insurance_provider._provider_contact()` →
+`ADMIN_EMAIL` / `COMPANY["phone"]`, boşluklar temizlenir çünkü servis boşluklu `gsmNo`
+kabul etmiyor). Böylece Tamamliyo'nun teklif/poliçe ve promosyon e-postaları bize gelir,
+müşteriye gitmez. Poliçe müşteriye zaten kendi markalı e-postamız + WhatsApp ile iletiliyor,
+bu yüzden müşteri deneyiminde kayıp yok — ayrıca müşteri sağlayıcıyı görüp doğrudan
+gitmiyor.
+
+**Doğrulama**: canlı teklif `2135835` — Tamamliyo'ya giden iletişim
+`info@dubaivizehatti.com / +905337438224`. Tam suit: **366 passed / 3 skipped**
+(3 yeni test `TestProviderContact`).
