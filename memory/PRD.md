@@ -1336,3 +1336,11 @@ Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
   5 adımlı yönlendirme içeriyor. Metin `content.py`'de tek kaynakta (e-posta + WhatsApp).
 - **Düzeltme**: WhatsApp mesaj şablonu veritabanında test metni ("Test template …")
   olarak kalmıştı, varsayılan müşteri metnine geri alındı.
+
+## 2026-09-08 (6) · Tek tık doğrulama sayfası
+- GDRFA sayfası ASP.NET ViewState kullandığı için hazır dolu devlet bağlantısı
+  üretilemiyor (canlı incelendi). Bunun yerine: dosya numarası vize PDF'inden otomatik
+  okunuyor (`visa_file_number.py`, PyMuPDF) ve müşteriye imzalı `/vize-dogrula/{id}`
+  sayfası gönderiliyor — File Number / First Name / Date of Birth tek dokunuşla kopyalanır.
+- Panelde "GDRFA dosya numarası" alanı var; okunamayan belgelerde admin elle girer.
+- Ayrıntı: CHANGELOG.md "2026-09-08 (6)".

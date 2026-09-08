@@ -13,7 +13,14 @@ from datetime import datetime, timezone
 from typing import Optional
 from urllib.parse import quote
 
-from content import COMPANY, GDRFA_INTRO, GDRFA_STATUS_URL, GDRFA_STEPS, VISA_TYPES
+from content import (
+    COMPANY,
+    GDRFA_HELPER_INTRO,
+    GDRFA_INTRO,
+    GDRFA_STATUS_URL,
+    GDRFA_STEPS,
+    VISA_TYPES,
+)
 from db import email_outbox_col
 from phone_format import format_phone
 
@@ -527,16 +534,34 @@ def status_change_html(app_doc: dict, status_label: str, note: str = "") -> str:
     return _wrap("Başvuru durumu güncellendi", body)
 
 
-def _gdrfa_block() -> str:
+def _gdrfa_block(verify_link: str = "", file_number: str = "") -> str:
     """Vizeyi resmi kaynaktan dogrulama adimlari (istege bagli)."""
     steps = "".join(
         f'<li style="margin:0 0 8px;font-size:13px;line-height:21px;color:#3E2A14;">{step}</li>'
         for step in GDRFA_STEPS
     )
+    helper = ""
+    if verify_link:
+        number_row = (
+            f'<div style="margin:0 0 10px;font-size:14px;color:#3E2A14;">Dosya numaranız: '
+            f"<strong>{esc(file_number)}</strong></div>"
+            if file_number
+            else ""
+        )
+        helper = f"""
+      {number_row}
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 14px;">
+        <tr><td style="background-color:#B06A29;border-radius:8px;">
+          <a href="{verify_link}" style="display:inline-block;padding:11px 20px;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;">Doğrulama bilgilerimi aç</a>
+        </td></tr>
+      </table>
+      <p style="margin:0 0 12px;font-size:12px;line-height:20px;color:#8A7355;">{GDRFA_HELPER_INTRO}</p>
+        """
     return f"""
     <div style="margin:20px 0 0;background-color:#FBF6EC;border:1px solid #EADFCB;border-radius:10px;padding:16px;">
       <div style="font-size:14px;font-weight:bold;color:#3E2A14;">Vizenizi resmî kaynaktan doğrulamak isterseniz</div>
       <p style="margin:8px 0 12px;font-size:13px;line-height:21px;color:#8A7355;">{GDRFA_INTRO}</p>
+      {helper}
       <ol style="margin:0;padding-left:18px;">{steps}</ol>
       <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Sorgulama sayfası:<br/><a href="{GDRFA_STATUS_URL}" style="color:#0EA5A4;">{GDRFA_STATUS_URL}</a></p>
     </div>
@@ -544,7 +569,11 @@ def _gdrfa_block() -> str:
 
 
 def visa_ready_html(
-    app_doc: dict, download_url: str, message: str = "", attached: bool = False
+    app_doc: dict,
+    download_url: str,
+    message: str = "",
+    attached: bool = False,
+    verify_link: str = "",
 ) -> str:
     message_html = (
         f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#8A7355;">{esc(message)}</p>'
@@ -556,6 +585,7 @@ def visa_ready_html(
         if attached
         else "Vize belgenizi aşağıdaki butondan indirebilirsiniz."
     )
+    file_number = ((app_doc.get("visa_result") or {}).get("file_number")) or ""
     body = f"""
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {_contact_name(app_doc)},</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Müjde! {app_doc.get('reference_code','')} kodlu başvurunuz <strong>onaylandı</strong>, hayırlı olsun. {delivery_line}</p>
@@ -567,7 +597,7 @@ def visa_ready_html(
     </table>
     <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton çalışmıyorsa bu adresi tarayıcınıza kopyalayabilirsiniz:<br/>{download_url}</p>
     <p style="margin:16px 0 0;font-size:13px;line-height:21px;">Vizeniz elektroniktir ve pasaportunuza işlenmez. Sınır kapısında bu belgeyi (baskısını veya telefonunuzdaki kopyasını) göstermeniz yeterlidir.</p>
-    {_gdrfa_block()}
+    {_gdrfa_block(verify_link, file_number)}
     {message_html}
     <p style="margin:20px 0 0;font-size:13px;line-height:21px;color:#8A7355;">Aklınıza takılan bir şey olursa bize yazmanız yeterli. Şimdiden keyifli bir yolculuk dileriz.</p>
     """

@@ -32,6 +32,8 @@ from content import (
     FAMILY_DISCOUNT_TEXT,
     FAMILY_DISCOUNT_TIERS,
     FAQ,
+    GDRFA_STATUS_URL,
+    GDRFA_STEPS,
     IMPORTANT_NOTICE,
     MAX_TRAVELERS,
     PARTNERS,
@@ -82,6 +84,7 @@ import file_access
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
 from tckn import clean_tckn, valid_tckn
 from visa_guides import build_guide, guide_index
+import visa_file_number
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -1295,3 +1298,43 @@ async def create_contact(payload: ContactCreate, request: Request) -> dict:
         )
     return {"ok": True, "message": "Mesajınız alındı. En kısa sürede size dönüş yapacağız."}
 
+
+
+# --------------------------------------------------------- GDRFA dogrulama sayfasi
+@router.get("/visa-verify/{application_id}")
+async def visa_verify(application_id: str, t: str = "") -> dict:
+    """Musteriye ozel dogrulama bilgileri: dosya numarasi, ad ve dogum tarihi.
+
+    GDRFA sayfasi ASP.NET ViewState kullandigi icin hazir dolu bir baglantiyla
+    acilamiyor. Bunun yerine musteriye bu sayfayi gonderiyoruz: bilgiler tek
+    dokunusla kopyalanir, belgenin icinde numara aranmaz.
+    """
+    if not file_access.token_valid(application_id, t):
+        raise HTTPException(403, "Bağlantının süresi dolmuş. Yeni bağlantı için bize yazın.")
+    app_doc = await applications_col.find_one({"id": application_id})
+    if not app_doc or not (app_doc.get("visa_result") or {}).get("file_id"):
+        raise HTTPException(404, "Vize belgesi bulunamadı.")
+
+    visa = app_doc.get("visa_result") or {}
+    numbers = visa.get("file_numbers") or ([visa["file_number"]] if visa.get("file_number") else [])
+    travelers = app_doc.get("travelers") or []
+    paired = len(numbers) == len(travelers)
+    return {
+        "reference_code": app_doc.get("reference_code", ""),
+        "gdrfa_url": GDRFA_STATUS_URL,
+        "steps": list(GDRFA_STEPS),
+        "file_numbers": [
+            {"formatted": number, "plain": visa_file_number.plain(number)} for number in numbers
+        ],
+        "travelers": [
+            {
+                "first_name": (traveler.get("first_name") or "").strip(),
+                "last_name": (traveler.get("last_name") or "").strip(),
+                "birth_date": traveler.get("birth_date") or "",
+                "nationality": traveler.get("nationality") or "TR",
+                "file_number": numbers[index] if paired else "",
+                "file_number_plain": visa_file_number.plain(numbers[index]) if paired else "",
+            }
+            for index, traveler in enumerate(travelers)
+        ],
+    }

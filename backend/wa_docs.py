@@ -24,6 +24,7 @@ import wa_cloud
 from db import applications_col, serialize_doc, uploads_col, wa_documents_col
 from emailer import send_email, visa_ready_html
 from application_docs import visa_pdf_attachment
+import visa_file_number
 from storage import APP_NAME, put_object
 
 load_dotenv()
@@ -228,6 +229,11 @@ async def deliver_to_customer(app_doc: dict, record: dict) -> dict:
     )
     now = datetime.now(timezone.utc)
     delivery: dict = {"email_status": "skipped", "whatsapp_status": "skipped"}
+    visa_result = await visa_file_number.annotate(app_doc["id"], visa_result)
+    app_doc = {**app_doc, "visa_result": visa_result}
+    verify_link = (
+        visa_file_number.verify_url(origin, app_doc["id"]) if visa_result.get("file_number") else ""
+    )
 
     if email:
         attachments = await visa_pdf_attachment(
@@ -236,7 +242,9 @@ async def deliver_to_customer(app_doc: dict, record: dict) -> dict:
         res = await send_email(
             email,
             f"Vizeniz hazır - {app_doc.get('reference_code', '')}",
-            visa_ready_html(serialize_doc(app_doc), download_url, "", bool(attachments)),
+            visa_ready_html(
+                serialize_doc(app_doc), download_url, "", bool(attachments), verify_link
+            ),
             kind="visa_delivered",
             meta={"reference_code": app_doc.get("reference_code"), "source": "whatsapp_supplier"},
             attachments=attachments,
@@ -253,7 +261,7 @@ async def deliver_to_customer(app_doc: dict, record: dict) -> dict:
             media_id=record.get("outbound_media_id", ""),
             link=download_url if not record.get("outbound_media_id") else "",
             filename=visa_result.get("filename") or "vize.pdf",
-            caption=visa_ready_wa_text(app_doc),
+            caption=visa_ready_wa_text(app_doc, verify_link=verify_link),
             cfg=cfg,
         )
         delivery["whatsapp_status"] = sent.get("status", "unknown")

@@ -17,6 +17,7 @@ import Kvkk from "./pages/Kvkk";
 import LegalTerms from "./pages/LegalTerms";
 import Apply from "./pages/Apply";
 import Track from "./pages/Track";
+import VisaVerify from "./pages/VisaVerify";
 import MyAccount from "./pages/MyAccount";
 import Esim from "./pages/Esim";
 import Insurance from "./pages/Insurance";
@@ -81,6 +82,7 @@ function App() {
                     <Route path="/hesabim" element={<Site><MyAccount /></Site>} />
                     <Route path="/esim" element={<Site><Esim /></Site>} />
                     <Route path="/seyahat-sigortasi" element={<Site><Insurance /></Site>} />
+                    <Route path="/vize-dogrula/:applicationId" element={<Site><VisaVerify /></Site>} />
                     <Route path="/sepet" element={<Site><Cart /></Site>} />
                     <Route path="/dubai-turlari" element={<Site><Tours /></Site>} />
                     <Route path="/siparis/:reference" element={<Site><OrderStatus /></Site>} />

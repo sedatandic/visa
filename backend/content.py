@@ -728,6 +728,13 @@ GDRFA_STEPS = (
     "Kalan alanları tamamlayıp sorgulayın; vizenizin güncel durumu ekranda görünür.",
 )
 
+# Dosya numarasi otomatik okunabildiginde musteriye kendi hazir sayfamiz gonderilir:
+# numara, ad ve dogum tarihi tek dokunusla kopyalanir, form aranmaz.
+GDRFA_HELPER_INTRO = (
+    "Dosya numaranızı sizin için hazırladık; aşağıdaki sayfadan tek dokunuşla "
+    "kopyalayıp sorgulama ekranına yapıştırabilirsiniz."
+)
+
 PROMO = {
     "title": "Aile başvurularında %10 indirim",
     "detail": "Tek formda birden fazla yolcu eklediğinizde aile indirimi otomatik uygulanır; çocuk vizelerinde ayrıca indirimli fiyat geçerlidir.",

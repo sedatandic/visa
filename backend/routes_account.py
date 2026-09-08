@@ -335,6 +335,7 @@ async def account_document_resend(
     from db import insurance_tasks_col
     from emailer import send_email, subject_with_ref, visa_ready_html
     from application_docs import visa_pdf_attachment
+    import visa_file_number
     from insurance_delivery import policy_html
 
     rate_check(
@@ -353,11 +354,14 @@ async def account_document_resend(
         if not app_doc or not visa.get("file_id"):
             raise HTTPException(404, "Belge bulunamadi.")
         link = file_access.file_url(origin, visa["file_id"], file_access.TTL_EMAIL, download=True)
+        verify_link = (
+            visa_file_number.verify_url(origin, app_doc["id"]) if visa.get("file_number") else ""
+        )
         attachments = await visa_pdf_attachment(visa["file_id"], app_doc.get("reference_code", ""))
         result = await send_email(
             email,
             subject_with_ref(app_doc.get("reference_code", ""), "vize belgeniz"),
-            visa_ready_html(serialize_doc(app_doc), link, "", bool(attachments)),
+            visa_ready_html(serialize_doc(app_doc), link, "", bool(attachments), verify_link),
             kind="visa_delivered",
             meta={"reference_code": app_doc.get("reference_code", ""), "resend": True},
             attachments=attachments,

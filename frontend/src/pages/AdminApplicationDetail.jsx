@@ -118,6 +118,8 @@ export default function AdminApplicationDetail() {
     const [status, setStatus] = useState("");
     const [note, setNote] = useState("");
     const [visaMessage, setVisaMessage] = useState("");
+    const [fileNumber, setFileNumber] = useState("");
+    const [savingFileNumber, setSavingFileNumber] = useState(false);
     const [missingDocs, setMissingDocs] = useState(null);
     const [remindering, setRemindering] = useState(false);
     const [zamiBusy, setZamiBusy] = useState(false);
@@ -167,6 +169,10 @@ export default function AdminApplicationDetail() {
     useEffect(() => {
         setMeta("Başvuru Detayı | Dubai Vize Hattı", "Başvuru detayı, belge görüntüleyici ve vize teslimi.");
     }, []);
+
+    useEffect(() => {
+        setFileNumber(data?.application?.visa_result?.file_number || "");
+    }, [data?.application?.visa_result?.file_number]);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -243,6 +249,22 @@ export default function AdminApplicationDetail() {
             toast.success("Vize belgesi kaldırıldı.");
         } catch (err) {
             toast.error(apiError(err, "İşlem başarısız."));
+        }
+    };
+
+    const saveFileNumber = async () => {
+        setSavingFileNumber(true);
+        try {
+            const { data: res } = await api.patch(
+                `/admin/applications/${id}/visa-file-number`,
+                { file_number: fileNumber }
+            );
+            setData((d) => ({ ...d, application: res.application }));
+            toast.success("Dosya numarası kaydedildi.");
+        } catch (err) {
+            toast.error(apiError(err, "Dosya numarası kaydedilemedi."));
+        } finally {
+            setSavingFileNumber(false);
         }
     };
 
@@ -994,6 +1016,34 @@ export default function AdminApplicationDetail() {
                                         <Button variant="secondary" className="h-10 border border-border text-destructive" onClick={removeVisa} data-testid="visa-document-delete-button">
                                             <Trash2 className="mr-2 h-4 w-4" /> Kaldır
                                         </Button>
+                                    </div>
+
+                                    <div className="mt-5 space-y-2 rounded-lg border border-border bg-background/60 p-3">
+                                        <Label htmlFor="visa-file-number">GDRFA dosya numarası</Label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                id="visa-file-number"
+                                                value={fileNumber}
+                                                onChange={(e) => setFileNumber(e.target.value)}
+                                                placeholder="201/2026/1234567"
+                                                className="h-10"
+                                                data-testid="visa-file-number-input"
+                                            />
+                                            <Button
+                                                variant="secondary"
+                                                className="h-10 shrink-0 border border-border"
+                                                onClick={saveFileNumber}
+                                                disabled={savingFileNumber}
+                                                data-testid="visa-file-number-save"
+                                            >
+                                                {savingFileNumber ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kaydet"}
+                                            </Button>
+                                        </div>
+                                        <p className="text-xs leading-5 text-muted-foreground">
+                                            {visa.file_number
+                                                ? "Belgeden otomatik okundu. Müşteriye tek dokunuşla kopyalanabilen doğrulama sayfası gönderilir."
+                                                : "PDF'ten okunamadı. Elle girerseniz müşteriye hazır doğrulama sayfası gönderilir."}
+                                        </p>
                                     </div>
 
                                     <div className="mt-5 space-y-3">

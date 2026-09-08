@@ -1683,3 +1683,60 @@ adımlarıyla birlikte döndü, `wa.me` bağlantısı hazır. Gönderim yapılma
 
 **Test**: `test_iteration_120_visa_email.py` 25/25 PASS (8'i WhatsApp tarafı).
 Tam suit: **421 passed / 5 skipped**.
+
+## 2026-09-08 (6) · Tek tık doğrulama: dosya numarası otomatik okunuyor
+
+### Önce araştırma: GDRFA hazır bağlantı kabul ediyor mu?
+Sayfa canlı incelendi: `smart.gdrfad.gov.ae/Public_Th/StatusInquiry_New.aspx`
+**OutSystems/ASP.NET WebForms** — `__VIEWSTATE` + `__OSVSTATE` kullanıyor, query string
+desteği yok (alan adları `...wtFileNoInp`, `...wtFirstNameInp`, `...wtBirthDateInp`,
+ayrıca `wtApplicationNumber_InputOTC` gibi OTC alanları var).
+**Sonuç: devlet sayfasına hazır dolu bir GET bağlantısı üretilemiyor.** Sunucudan
+sorgulamak (scraping) da hem kırılgan hem uygunsuz olurdu. Bu yüzden en fazla
+otomatikleştirilebilir çözüm uygulandı: numara bizde otomatik okunur, müşteriye tek
+dokunuşla kopyalanabilen kendi sayfamız gönderilir.
+
+### Yeni `visa_file_number.py`
+- `FILE_NUMBER_RE`: `201/2026/1234567` (emirlik/yıl/seri). Yıl `19xx|20xx` zorunlu
+  olduğu için tarih/tutar yanlışlıkla yakalanmıyor (`01/2026/12` → boş).
+- `extract_from_text()`: önce etiketli satırlarda arar (`File No`, `File Number`,
+  `Entry Permit`, `رقم الملف`), etiket bir üst satırdaysa da bulur; sonra tüm metne bakar.
+- `extract_all_from_text()`: belgedeki tüm numaralar, görünüm sırasında, tekrarsız
+  (çok yolcu tek PDF senaryosu).
+- `extract_from_upload()`: object storage'dan PDF'i okur (**PyMuPDF**), hata/görsel/
+  bozuk PDF durumunda sessizce boş döner.
+- `annotate(application_id, visa_result)`: numaraları `visa_result.file_number` +
+  `file_numbers` olarak başvuruya yazar.
+- `verify_url(origin, application_id)`: `file_access` HMAC'i ile imzalı, 180 gün
+  geçerli `/vize-dogrula/{id}?t=...` bağlantısı.
+
+### Müşteri sayfası `/vize-dogrula/:applicationId`
+`VisaVerify.jsx` — her yolcu için **File Number (bölü işareti olmadan)**, **First Name**,
+**Date of Birth (GG-AA-YYYY)** kartları; her satırda tek dokunuşla **Kopyala** butonu
+(clipboard API + eski tarayıcılar için fallback), "GDRFA sorgulama sayfasını aç" butonu
+ve 5 adımlı yönlendirme. Çok yolcu + numara sayısı eşleşmezse numaralar ayrı havuz
+kartında listelenir. Süresi geçmiş/yanlış jetonda 403 + anlaşılır hata ekranı.
+`GET /api/visa-verify/{application_id}?t=` imzalı jeton ister.
+
+### Mesajlar
+- **E-posta**: GDRFA kutusuna "Dosya numaranız: 201/2026/1234567" + **"Doğrulama
+  bilgilerimi aç"** butonu eklendi (numara okunamadıysa eski hâli aynen kalıyor).
+- **WhatsApp**: bağlantı varsa adımlar mesaja yazılmıyor (sayfada var) → mesaj kısalıyor
+  ve 1024 karakter caption limitine rahat sığıyor. Bağlantı yoksa 5 adımlı uzun sürüm.
+- Tetiklenen yerler: Zami otomatik teslim, tedarikçi WhatsApp akışı, panelden elle
+  gönderim, müşterinin "tekrar gönder"i — hepsi numarayı okuyup bağlantıyı ekliyor.
+
+### Panel
+`PATCH /api/admin/applications/{id}/visa-file-number` + Başvuru Detayı'nda
+"GDRFA dosya numarası" alanı (`visa-file-number-input`, `-save`). PDF'ten okunamazsa
+admin elle girer; biçim doğrulanır (`201/2026/1234567`).
+
+### Canlı doğrulama
+Örnek vize PDF'i panelden yüklendi → numara **otomatik okundu** (`201/2026/1234567`),
+doğrulama sayfası açıldı, "File Number 20120261234567" kopyalandı (buton "Kopyalandı"
+oldu), 5 adım ve GDRFA butonu göründü; geçersiz jeton **403** verdi. WhatsApp onay mesajı
+numarayı ve bağlantıyı taşıyor. Örnek e-posta `info@dubaivizehatti.com` adresine gönderildi.
+Test vize belgesi sonrasında kaldırıldı.
+
+**Test**: `test_iteration_121_visa_file_number.py` 25/25 PASS.
+Tam suit: **448 passed / 3 skipped**.

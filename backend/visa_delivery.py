@@ -19,6 +19,7 @@ from db import applications_col, serialize_doc, uploads_col
 import file_access
 from emailer import send_email, subject_with_ref, visa_ready_html
 from application_docs import visa_pdf_attachment
+import visa_file_number
 from storage import APP_NAME, put_object
 
 logger = logging.getLogger(__name__)
@@ -181,13 +182,20 @@ async def deliver_visa_document(app_doc: dict, origin: str) -> dict:
         origin, visa_result["file_id"], file_access.TTL_EMAIL, download=True
     )
     now = datetime.now(timezone.utc)
+    visa_result = await visa_file_number.annotate(app_doc["id"], visa_result)
+    app_doc = {**app_doc, "visa_result": visa_result}
+    verify_link = (
+        visa_file_number.verify_url(origin, app_doc["id"]) if visa_result.get("file_number") else ""
+    )
     attachments = await visa_pdf_attachment(
         visa_result["file_id"], app_doc.get("reference_code", "")
     )
     res = await send_email(
         to_email,
         subject_with_ref(app_doc.get("reference_code", ""), "onaylandı - vizeniz hazır"),
-        visa_ready_html(serialize_doc(app_doc), download_url, "", bool(attachments)),
+        visa_ready_html(
+            serialize_doc(app_doc), download_url, "", bool(attachments), verify_link
+        ),
         kind="visa_delivered",
         meta={"reference_code": app_doc.get("reference_code"), "auto": True},
         attachments=attachments,

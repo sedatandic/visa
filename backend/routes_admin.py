@@ -21,6 +21,7 @@ from fastapi import (
 from pydantic import BaseModel, Field
 
 from application_docs import application_form_bytes, form_filename, visa_pdf_attachment
+import visa_file_number
 from content import STATUS_LABELS
 from db import (
     applications_col,
@@ -438,6 +439,34 @@ async def admin_upload_visa_document(
         {"id": application_id},
         {"$set": {"visa_result": visa_result, "updated_at": now}},
     )
+    await visa_file_number.annotate(application_id, visa_result)
+    fresh = await applications_col.find_one({"id": application_id})
+    return {"application": serialize_doc(fresh)}
+
+
+@router.patch("/admin/applications/{application_id}/visa-file-number")
+async def admin_set_visa_file_number(
+    application_id: str, payload: dict, admin: dict = Depends(require_admin)
+) -> dict:
+    """Dosya numarasi PDF'ten okunamadiysa admin elle girer/duzeltir."""
+    app_doc = await applications_col.find_one({"id": application_id})
+    if not app_doc or not (app_doc.get("visa_result") or {}).get("file_id"):
+        raise HTTPException(404, "Vize belgesi bulunamadi.")
+
+    raw = str(payload.get("file_number") or "").strip()
+    number = visa_file_number.normalize(raw)
+    if raw and not number:
+        raise HTTPException(400, "Dosya numarası 201/2026/1234567 biçiminde olmalıdır.")
+    await applications_col.update_one(
+        {"id": application_id},
+        {
+            "$set": {
+                "visa_result.file_number": number,
+                "visa_result.file_numbers": [number] if number else [],
+                "updated_at": datetime.now(timezone.utc),
+            }
+        },
+    )
     fresh = await applications_col.find_one({"id": application_id})
     return {"application": serialize_doc(fresh)}
 
@@ -526,13 +555,18 @@ async def admin_send_visa(
 
     now = datetime.now(timezone.utc)
     update = _visa_send_update(app_doc, to_email, now, payload)
+    visa_result = await visa_file_number.annotate(app_doc["id"], visa_result)
+    app_doc = {**app_doc, "visa_result": visa_result}
+    verify_link = (
+        visa_file_number.verify_url(origin, app_doc["id"]) if visa_result.get("file_number") else ""
+    )
     attachments = await visa_pdf_attachment(visa_result["file_id"], app_doc["reference_code"])
 
     res = await send_email(
         to_email,
         subject_with_ref(app_doc["reference_code"], "onaylandı - vizeniz hazır"),
         visa_ready_html(
-            serialize_doc(app_doc), download_url, payload.message or "", bool(attachments)
+            serialize_doc(app_doc), download_url, payload.message or "", bool(attachments), verify_link
         ),
         kind="visa_delivered",
         meta={"reference_code": app_doc["reference_code"]},

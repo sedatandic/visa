@@ -39,21 +39,30 @@ STATUS_TEXT = {
 RESULT_STATUSES = {"approved", "rejected"}
 
 
-def gdrfa_check_text() -> str:
-    """Vizeyi resmi kaynaktan dogrulama yonlendirmesi (WhatsApp duz metin)."""
+def gdrfa_check_text(verify_link: str = "", file_number: str = "") -> str:
+    """Vizeyi resmi kaynaktan dogrulama yonlendirmesi (WhatsApp duz metin).
+
+    Hazir dogrulama sayfamiz varsa adimlar mesaja yazilmaz: numara ve ad orada
+    tek dokunusla kopyalaniyor, mesaj da caption limitine sigacak kadar kisa kalir.
+    """
+    head = "*Vizenizi resmî kaynaktan doğrulamak isterseniz* (zorunlu değil):"
+    if verify_link:
+        number_line = f"Dosya numaranız: *{file_number}*\n" if file_number else ""
+        return (
+            f"{head}\n{number_line}Bilgileriniz hazır — aşağıdaki sayfadan tek dokunuşla "
+            f"kopyalayıp sorgulayabilirsiniz:\n{verify_link}"
+        )
     steps = "\n".join(f"{i}. {step}" for i, step in enumerate(GDRFA_STEPS, start=1))
-    return (
-        "*Vizenizi resmî kaynaktan doğrulamak isterseniz* (zorunlu değil):\n"
-        f"{GDRFA_STATUS_URL}\n{steps}"
-    )
+    return f"{head}\n{GDRFA_STATUS_URL}\n{steps}"
 
 
-def visa_ready_wa_text(app_doc: dict, extra: str = "") -> str:
+def visa_ready_wa_text(app_doc: dict, extra: str = "", verify_link: str = "") -> str:
     """Vize belgesi teslim mesaji: kisa bilgi + GDRFA dogrulama adimlari."""
     reference = app_doc.get("reference_code", "")
+    file_number = ((app_doc.get("visa_result") or {}).get("file_number")) or ""
     head = f"{reference} numaralı başvurunuzun vize belgesi ekte, hayırlı olsun."
     tail = extra or "Aklınıza takılan bir şey olursa bize yazmanız yeterli. İyi yolculuklar!"
-    return f"{head}\n\n{gdrfa_check_text()}\n\n{tail}"
+    return f"{head}\n\n{gdrfa_check_text(verify_link, file_number)}\n\n{tail}"
 
 
 def normalize_phone(raw: str | None) -> str | None:
@@ -411,7 +420,15 @@ async def notify_result(app_doc: dict, status: str, base_url: str = "", force: b
     text = render_message(cfg["template_text"], app_doc, status, base_url)
     if status == "approved":
         # Onay mesajina resmi dogrulama yonlendirmesi eklenir (manuel mod / wa.me metni)
-        text = f"{text}\n\n{gdrfa_check_text()}"
+        import visa_file_number
+
+        visa = app_doc.get("visa_result") or {}
+        verify_link = (
+            visa_file_number.verify_url(base_url, app_doc.get("id", ""))
+            if visa.get("file_number")
+            else ""
+        )
+        text = f"{text}\n\n{gdrfa_check_text(verify_link, visa.get('file_number', ''))}"
 
     blocked = await _delivery_block(app_doc, cfg, status, phone, text, force)
     if blocked is not None:
