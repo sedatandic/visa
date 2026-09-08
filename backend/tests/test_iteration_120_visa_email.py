@@ -59,7 +59,7 @@ class TestGdrfaBlock:
 
     def test_steps_are_ordered_list(self, html_attached):
         assert "<ol" in html_attached
-        assert html_attached.count("<li") >= len(emailer._GDRFA_STEPS)
+        assert html_attached.count("<li") >= len(emailer.GDRFA_STEPS)
 
     def test_marked_as_optional(self, html_attached):
         assert "zorunlu değildir" in html_attached
@@ -162,3 +162,90 @@ class TestVisaAttachment:
             "content_type": "image/jpeg",
         }
         assert run(application_docs.visa_pdf_attachment("f1"))[0]["filename"] == "vize.jpg"
+
+
+class TestVisaWhatsAppText:
+    """Ayni GDRFA yonlendirmesi WhatsApp mesajinda da olmali (2026-09-08)."""
+
+    def test_document_caption_has_link_and_steps(self):
+        import whatsapp
+
+        text = whatsapp.visa_ready_wa_text({"reference_code": "DV-TEST1234"})
+        assert "DV-TEST1234" in text
+        assert whatsapp.GDRFA_STATUS_URL in text
+        for keyword in ("English", "File Number", "First Name", "bölü işareti"):
+            assert keyword in text
+
+    def test_steps_are_numbered_lines(self):
+        import whatsapp
+
+        text = whatsapp.gdrfa_check_text()
+        for index in range(1, len(whatsapp.GDRFA_STEPS) + 1):
+            assert f"\n{index}. " in text or text.startswith(f"{index}. ")
+
+    def test_caption_fits_whatsapp_limit(self):
+        import whatsapp
+
+        assert len(whatsapp.visa_ready_wa_text({"reference_code": "DV-TEST1234"})) <= 1024
+
+    def test_no_html_markup_in_whatsapp_text(self):
+        import whatsapp
+
+        text = whatsapp.visa_ready_wa_text({"reference_code": "DV-TEST1234"})
+        assert "<strong>" not in text and "<li" not in text and "<div" not in text
+
+    def test_email_and_whatsapp_share_the_same_source(self):
+        import content
+        import whatsapp
+
+        assert whatsapp.GDRFA_STEPS is content.GDRFA_STEPS
+        assert emailer.GDRFA_STEPS is content.GDRFA_STEPS
+        assert whatsapp.GDRFA_STATUS_URL == emailer.GDRFA_STATUS_URL
+
+    def test_custom_closing_line(self):
+        import whatsapp
+
+        text = whatsapp.visa_ready_wa_text({"reference_code": "DV-1"}, "Pasaportunuzu unutmayın.")
+        assert text.endswith("Pasaportunuzu unutmayın.")
+
+
+class TestNotifyResultAppend:
+    """Vize sonucu bildiriminde onay mesajina GDRFA yonlendirmesi eklenir."""
+
+    @pytest.fixture
+    def wa(self, monkeypatch):
+        import whatsapp
+
+        async def fake_settings(masked=True):
+            return {
+                "enabled": True,
+                "only_optin": False,
+                "provider": "manual",
+                "template_text": whatsapp.DEFAULT_TEMPLATE,
+            }
+
+        async def fake_log(*_a, **_k):
+            return None
+
+        monkeypatch.setattr(whatsapp, "get_settings", fake_settings)
+        monkeypatch.setattr(whatsapp, "_log", fake_log)
+        return whatsapp
+
+    def test_approved_message_gets_gdrfa_steps(self, wa):
+        app_doc = {
+            "reference_code": "DV-TEST1234",
+            "contact": {"full_name": "Sedat Andiç", "phone": "05325882630"},
+        }
+        out = run(wa.notify_result(app_doc, "approved"))
+        assert wa.GDRFA_STATUS_URL in out["message"]
+        assert "File Number" in out["message"]
+        assert "Onaylandı" in out["message"]
+
+    def test_rejected_message_stays_clean(self, wa):
+        app_doc = {
+            "reference_code": "DV-TEST1234",
+            "contact": {"full_name": "Sedat Andiç", "phone": "05325882630"},
+        }
+        out = run(wa.notify_result(app_doc, "rejected"))
+        assert wa.GDRFA_STATUS_URL not in out["message"]
+        assert "Reddedildi" in out["message"]

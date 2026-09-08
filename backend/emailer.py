@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from urllib.parse import quote
 
-from content import COMPANY, VISA_TYPES
+from content import COMPANY, GDRFA_INTRO, GDRFA_STATUS_URL, GDRFA_STEPS, VISA_TYPES
 from db import email_outbox_col
 from phone_format import format_phone
 
@@ -527,28 +527,16 @@ def status_change_html(app_doc: dict, status_label: str, note: str = "") -> str:
     return _wrap("Başvuru durumu güncellendi", body)
 
 
-GDRFA_STATUS_URL = "https://smart.gdrfad.gov.ae/Public_Th/StatusInquiry_New.aspx"
-
-_GDRFA_STEPS = (
-    "Bağlantıyı açın ve sayfanın üst kısmındaki dil seçeneğinden <strong>English</strong>'i seçin.",
-    "Sorgulama türü olarak <strong>File</strong> sekmesini işaretleyin.",
-    "<strong>First Name</strong> alanına adınızı, pasaportunuzdaki İngilizce yazımıyla girin.",
-    "<strong>File Number</strong> alanına vize belgenizdeki dosya numarasını, bölü işareti (/) "
-    "kullanmadan yazın.",
-    "Kalan alanları tamamlayıp sorgulayın; vizenizin güncel durumu ekranda görünür.",
-)
-
-
 def _gdrfa_block() -> str:
     """Vizeyi resmi kaynaktan dogrulama adimlari (istege bagli)."""
     steps = "".join(
         f'<li style="margin:0 0 8px;font-size:13px;line-height:21px;color:#3E2A14;">{step}</li>'
-        for step in _GDRFA_STEPS
+        for step in GDRFA_STEPS
     )
     return f"""
     <div style="margin:20px 0 0;background-color:#FBF6EC;border:1px solid #EADFCB;border-radius:10px;padding:16px;">
       <div style="font-size:14px;font-weight:bold;color:#3E2A14;">Vizenizi resmî kaynaktan doğrulamak isterseniz</div>
-      <p style="margin:8px 0 12px;font-size:13px;line-height:21px;color:#8A7355;">Dubai Göçmenlik İdaresi'nin (GDRFA) sorgulama sayfasından vizenizin durumunu kendiniz de görebilirsiniz. Bu adım zorunlu değildir; vizeniz onaylanmış olarak tarafımıza ulaştı.</p>
+      <p style="margin:8px 0 12px;font-size:13px;line-height:21px;color:#8A7355;">{GDRFA_INTRO}</p>
       <ol style="margin:0;padding-left:18px;">{steps}</ol>
       <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Sorgulama sayfası:<br/><a href="{GDRFA_STATUS_URL}" style="color:#0EA5A4;">{GDRFA_STATUS_URL}</a></p>
     </div>

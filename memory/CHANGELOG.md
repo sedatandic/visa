@@ -1654,3 +1654,32 @@ aynı olmasın**.
 **Test**: `test_iteration_120_visa_email.py` 17/17 PASS. Ayrıca gerçek örnek e-posta
 `info@dubaivizehatti.com` adresine gönderildi (status=sent).
 Tam suit: **413 passed / 5 skipped**.
+
+## 2026-09-08 (5) · GDRFA yönlendirmesi WhatsApp mesajına da eklendi
+
+- **Tek kaynak**: `content.py` içine `GDRFA_STATUS_URL`, `GDRFA_INTRO`, `GDRFA_STEPS`
+  eklendi. `emailer` (HTML `<ol>` kutusu) ve `whatsapp` (numaralı düz metin) aynı
+  kaynaktan besleniyor — metin ileride tek yerden güncellenebilir.
+- **`whatsapp.gdrfa_check_text()`**: WhatsApp'a uygun düz metin (HTML yok, `*kalın*`
+  vurgu, numaralı 5 adım, 517 karakter).
+- **`whatsapp.visa_ready_wa_text(app_doc, extra)`**: vize belgesi teslim mesajı —
+  "…vize belgesi ekte, hayırlı olsun" + GDRFA adımları + kapanış. 659 karakter,
+  WhatsApp 1024 karakter caption limitinin altında (test bunu doğruluyor).
+- **`wa_docs.deliver_to_customer`**: belge gönderim caption'ı artık bu metni kullanıyor
+  (önceden tek satırlık "vize belgesi ekte" metniydi).
+- **`whatsapp.notify_result`**: `status == "approved"` ise mesajın sonuna GDRFA
+  yönlendirmesi ekleniyor. Ret mesajı temiz kalıyor (test var).
+  WhatsApp manuel modda olduğu için bu metin doğrudan `wa.me` bağlantısına giriyor.
+
+### 🐞 Yan bulgu ve düzeltme
+Veritabanındaki WhatsApp mesaj şablonu eski bir testten kalmış:
+`"Test template {name} {status}"` — gerçek müşteriye *"Test template … Onaylandı"*
+gidecekti. Şablon varsayılana geri alındı:
+`"Sayın {name}, Dubai vize başvurunuzun sonucu: {status}. Başvuru numaranız: {reference}. Detay: {link}"`
+
+### Canlı doğrulama
+`POST /api/admin/whatsapp/send/{id}` (onaylı başvuru, manuel mod) → mesaj GDRFA
+adımlarıyla birlikte döndü, `wa.me` bağlantısı hazır. Gönderim yapılmadı (manuel mod).
+
+**Test**: `test_iteration_120_visa_email.py` 25/25 PASS (8'i WhatsApp tarafı).
+Tam suit: **421 passed / 5 skipped**.

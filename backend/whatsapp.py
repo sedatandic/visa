@@ -18,6 +18,7 @@ from urllib.parse import quote
 import httpx
 
 from db import db, settings_col
+from content import GDRFA_STATUS_URL, GDRFA_STEPS
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,23 @@ STATUS_TEXT = {
 }
 
 RESULT_STATUSES = {"approved", "rejected"}
+
+
+def gdrfa_check_text() -> str:
+    """Vizeyi resmi kaynaktan dogrulama yonlendirmesi (WhatsApp duz metin)."""
+    steps = "\n".join(f"{i}. {step}" for i, step in enumerate(GDRFA_STEPS, start=1))
+    return (
+        "*Vizenizi resmî kaynaktan doğrulamak isterseniz* (zorunlu değil):\n"
+        f"{GDRFA_STATUS_URL}\n{steps}"
+    )
+
+
+def visa_ready_wa_text(app_doc: dict, extra: str = "") -> str:
+    """Vize belgesi teslim mesaji: kisa bilgi + GDRFA dogrulama adimlari."""
+    reference = app_doc.get("reference_code", "")
+    head = f"{reference} numaralı başvurunuzun vize belgesi ekte, hayırlı olsun."
+    tail = extra or "Aklınıza takılan bir şey olursa bize yazmanız yeterli. İyi yolculuklar!"
+    return f"{head}\n\n{gdrfa_check_text()}\n\n{tail}"
 
 
 def normalize_phone(raw: str | None) -> str | None:
@@ -391,6 +409,9 @@ async def notify_result(app_doc: dict, status: str, base_url: str = "", force: b
     contact = app_doc.get("contact") or {}
     phone = normalize_phone(contact.get("phone"))
     text = render_message(cfg["template_text"], app_doc, status, base_url)
+    if status == "approved":
+        # Onay mesajina resmi dogrulama yonlendirmesi eklenir (manuel mod / wa.me metni)
+        text = f"{text}\n\n{gdrfa_check_text()}"
 
     blocked = await _delivery_block(app_doc, cfg, status, phone, text, force)
     if blocked is not None:

@@ -243,21 +243,17 @@ async def deliver_to_customer(app_doc: dict, record: dict) -> dict:
         )
         delivery["email_status"] = res.get("status", "unknown")
 
-    from whatsapp import normalize_phone
+    from whatsapp import normalize_phone, visa_ready_wa_text
 
     phone = (normalize_phone(contact.get("phone")) or "").lstrip("+")
     if phone:
         cfg = await wa_cloud.config(masked=False)
-        caption = (
-            f"{app_doc.get('reference_code', '')} numaralı başvurunuzun vize belgesi ekte. "
-            "İyi yolculuklar dileriz."
-        )
         sent = await wa_cloud.send_document(
             phone,
             media_id=record.get("outbound_media_id", ""),
             link=download_url if not record.get("outbound_media_id") else "",
             filename=visa_result.get("filename") or "vize.pdf",
-            caption=caption,
+            caption=visa_ready_wa_text(app_doc),
             cfg=cfg,
         )
         delivery["whatsapp_status"] = sent.get("status", "unknown")

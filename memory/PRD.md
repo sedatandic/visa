@@ -1330,3 +1330,9 @@ Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
 - **Vize hazır e-postası**: GDRFA resmî sorgulama linki + 5 adımlı yönlendirme eklendi,
   vize PDF'i artık e-postaya ek olarak da gidiyor.
 - Kalan P0: Tamamliyo paneline cari bakiye yüklenmesi (kullanıcı tarafında).
+
+## 2026-09-08 (5) · GDRFA yönlendirmesi WhatsApp'ta da
+- Vize onay mesajı ve vize belgesi WhatsApp caption'ı artık GDRFA sorgulama linki +
+  5 adımlı yönlendirme içeriyor. Metin `content.py`'de tek kaynakta (e-posta + WhatsApp).
+- **Düzeltme**: WhatsApp mesaj şablonu veritabanında test metni ("Test template …")
+  olarak kalmıştı, varsayılan müşteri metnine geri alındı.

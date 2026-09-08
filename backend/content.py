@@ -709,6 +709,25 @@ def compute_pricing(
 
 # --------------------------------------------------------------- Odeme / hukuk
 
+# Vize onaylandiginda musteriye gonderilen resmi dogrulama yonlendirmesi.
+# Ayni metin e-posta (emailer) ve WhatsApp (whatsapp/wa_docs) kanallarinda kullanilir.
+GDRFA_STATUS_URL = "https://smart.gdrfad.gov.ae/Public_Th/StatusInquiry_New.aspx"
+
+GDRFA_INTRO = (
+    "Dubai Göçmenlik İdaresi'nin (GDRFA) sorgulama sayfasından vizenizin durumunu "
+    "kendiniz de görebilirsiniz. Bu adım zorunlu değildir; vizeniz onaylanmış olarak "
+    "tarafımıza ulaştı."
+)
+
+GDRFA_STEPS = (
+    "Bağlantıyı açın ve sayfanın üst kısmındaki dil seçeneğinden English'i seçin.",
+    "Sorgulama türü olarak “File” sekmesini işaretleyin.",
+    "“First Name” alanına adınızı, pasaportunuzdaki İngilizce yazımıyla girin.",
+    "“File Number” alanına vize belgenizdeki dosya numarasını, bölü işareti (/) "
+    "kullanmadan yazın.",
+    "Kalan alanları tamamlayıp sorgulayın; vizenizin güncel durumu ekranda görünür.",
+)
+
 PROMO = {
     "title": "Aile başvurularında %10 indirim",
     "detail": "Tek formda birden fazla yolcu eklediğinizde aile indirimi otomatik uygulanır; çocuk vizelerinde ayrıca indirimli fiyat geçerlidir.",
