@@ -40,11 +40,11 @@ const ROWS = [
 ];
 
 const Cell = ({ text, positive }) => (
-    <span className="flex items-start gap-2 text-sm leading-6">
+    <span className="flex items-start gap-2 text-xs leading-5 sm:text-sm sm:leading-6">
         {positive ? (
-            <Check className="mt-1 h-4 w-4 shrink-0 text-[hsl(var(--brand-green))]" aria-hidden="true" />
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--brand-green))] sm:mt-1" aria-hidden="true" />
         ) : (
-            <X className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/70" aria-hidden="true" />
+            <X className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/70 sm:mt-1" aria-hidden="true" />
         )}
         <span className={positive ? "font-medium text-foreground" : "text-muted-foreground"}>{text}</span>
     </span>
@@ -80,21 +80,23 @@ export const EasyCompare = () => (
                 {ROWS.map((row, i) => (
                     <div
                         key={row.key}
-                        className={`grid gap-3 px-6 py-4 md:grid-cols-[1.05fr_1.3fr_1.3fr] md:gap-0 md:px-0 md:py-0 ${
+                        className={`grid grid-cols-2 gap-2 px-4 py-3 md:grid-cols-[1.05fr_1.3fr_1.3fr] md:gap-0 md:px-0 md:py-0 ${
                             i ? "border-t border-border" : ""
                         }`}
                         data-testid={`compare-row-${row.key}`}
                     >
-                        <span className="font-heading text-sm font-semibold md:px-6 md:py-4">{row.label}</span>
-                        <div className="bg-[hsl(var(--brand-green)/0.06)] p-4 md:border-l md:border-border md:px-6 md:py-4">
-                            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--brand-green))] md:hidden">
-                                Dubai Vize Hattı
+                        <span className="col-span-2 font-heading text-sm font-semibold md:col-span-1 md:px-6 md:py-4">
+                            {row.label}
+                        </span>
+                        <div className="rounded-lg bg-[hsl(var(--brand-green)/0.06)] p-3 md:rounded-none md:border-l md:border-border md:px-6 md:py-4">
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--brand-green))] md:hidden">
+                                Biz
                             </p>
                             <Cell text={row.us} positive />
                         </div>
-                        <div className="p-4 md:border-l md:border-border md:px-6 md:py-4">
-                            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground md:hidden">
-                                Klasik acente yöntemi
+                        <div className="rounded-lg border border-border p-3 md:rounded-none md:border-0 md:border-l md:border-border md:px-6 md:py-4">
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground md:hidden">
+                                Klasik acente
                             </p>
                             <Cell text={row.them} positive={false} />
                         </div>

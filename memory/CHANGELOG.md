@@ -2127,3 +2127,18 @@ Kullanıcı: "cepten bakınca cep telefonu çok uzun görünüyor."
   tour-strip 1034. Sıradaki turda kullanıcı seçimine göre kısaltılacak.
 - Deploy hazırlık kontrolü (deployment_agent): **pass** — gizli anahtar/URL sızıntısı,
   port/CORS, derleme hatası yok. Yayına alma kullanıcının "Deploy" butonuna basmasıyla olur.
+
+## 2026-09-08 (13) · Mobil kısaltma 2. tur (hero, vize türleri, karşılaştırma, belgeler)
+Masaüstü görünüm hiçbir bölümde değişmedi (tüm değişiklikler `sm:`/`md:`/`lg:` altında).
+- **Hero** (`Home.jsx`): mobilde üst etiket, 3'lü "kolaylık" çipi ve ikinci buton gizlendi;
+  tek mesaj (dönen başlık + kapanış cümlesi) + tam genişlik **tek buton** kaldı. `VisaExplainer`
+  artık mobilde "Nasıl çalışıyor? 60 saniyede anlatalım" düğmesiyle açılıyor
+  (`hero-explainer-toggle`, tek bileşen örneği; `sm:` üstünde her zaman açık).
+  **1294px → 494px**.
+- **VisaShowcase**: mobilde yatay snap kaydırma (kart genişliği %80), `sm:` üstünde eski
+  2/3 kolon ızgara. **1658px → 635px**.
+- **EasyCompare**: mobilde satır düzeni "etiket üstte, Biz | Klasik acente yan yana" oldu
+  (yazı 12px, etiketler kısaltıldı), `md:` üstünde tablo aynı. **1631px → 1131px**.
+- **Gerekli belgeler** (`landing-documents`): mobilde ilk 2 kart görünüyor, "Tüm belgeleri gör (4)"
+  düğmesi (`documents-show-all`) kalanları açıyor; `sm:` üstünde hepsi açık. **1216px → 884px**.
+- Ana sayfa mobil toplam yükseklik: **19.863px → 17.208px** (ilk ölçüme göre %22 kısaldı).

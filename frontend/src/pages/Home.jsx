@@ -94,6 +94,8 @@ const TrackingBox = () => {
 export default function Home() {
     const contact = useContact();
     const [content, setContent] = useState(null);
+    const [explainerOpen, setExplainerOpen] = useState(false);
+    const [docsOpen, setDocsOpen] = useState(false);
 
     useEffect(() => {
         setMeta(
@@ -153,7 +155,7 @@ export default function Home() {
 
                         <div className="relative mx-auto max-w-3xl text-center">
                             <span
-                                className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/70"
+                                className="hidden items-center gap-2 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/70 sm:inline-flex"
                                 data-testid="hero-eyebrow"
                             >
                                 <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
@@ -162,7 +164,7 @@ export default function Home() {
                             <HeroHeadline />
 
                             <ul
-                                className="mt-6 flex flex-wrap items-center justify-center gap-2.5"
+                                className="mt-6 hidden flex-wrap items-center justify-center gap-2.5 sm:flex"
                                 data-testid="hero-simplicity-strip"
                             >
                                 {[
@@ -180,24 +182,47 @@ export default function Home() {
                                 ))}
                             </ul>
 
-                            <p className="mt-5 text-sm font-semibold text-primary" data-testid="hero-closing-line">
+                            <p
+                                className="mt-4 text-sm font-semibold text-primary sm:mt-5"
+                                data-testid="hero-closing-line"
+                            >
                                 Siz sadece belgelerinizi yükleyin, vize sürecinizi biz halledelim.
                             </p>
 
-                            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                                <Button asChild size="lg" data-testid="hero-apply-now-button">
+                            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
+                                <Button asChild size="lg" className="w-full sm:w-auto" data-testid="hero-apply-now-button">
                                     <Link to="/basvuru">
                                         Hemen Başvuruya Başla <ArrowRight className="ml-1 h-4 w-4" />
                                     </Link>
                                 </Button>
-                                <Button asChild size="lg" variant="outline" data-testid="hero-pricing-button">
+                                <Button
+                                    asChild
+                                    size="lg"
+                                    variant="outline"
+                                    className="hidden sm:inline-flex"
+                                    data-testid="hero-pricing-button"
+                                >
                                     <Link to="/vize-tipleri">Hizmet Bedellerini Gör</Link>
                                 </Button>
                             </div>
                         </div>
 
-                        <div className="relative mt-8">
-                            <VisaExplainer />
+                        <div className="relative mt-6 sm:mt-8">
+                            <button
+                                type="button"
+                                onClick={() => setExplainerOpen((open) => !open)}
+                                className="flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary sm:hidden"
+                                data-testid="hero-explainer-toggle"
+                            >
+                                {explainerOpen ? "Anlatımı kapat" : "Nasıl çalışıyor? 60 saniyede anlatalım"}
+                                <ArrowRight
+                                    className={`h-3.5 w-3.5 transition-transform ${explainerOpen ? "-rotate-90" : "rotate-90"}`}
+                                    aria-hidden="true"
+                                />
+                            </button>
+                            <div className={explainerOpen ? "mt-4" : "hidden sm:block"}>
+                                <VisaExplainer />
+                            </div>
                         </div>
                     </motion.div>
                 </div>
@@ -291,10 +316,16 @@ export default function Home() {
                         </p>
                     </div>
                     <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        {(content?.required_documents || []).map((d) => {
+                        {(content?.required_documents || []).map((d, i) => {
                             const Icon = DOC_ICONS[d.key] || FileText;
                             return (
-                                <div key={d.key} className="card-surface card-hoverable p-5" data-testid={`doc-card-${d.key}`}>
+                                <div
+                                    key={d.key}
+                                    className={`card-surface card-hoverable p-5 ${
+                                        !docsOpen && i >= 2 ? "hidden sm:block" : ""
+                                    }`}
+                                    data-testid={`doc-card-${d.key}`}
+                                >
                                     <div className="flex items-start justify-between gap-3">
                                         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                                             <Icon className="h-4.5 w-4.5 text-primary" />
@@ -315,6 +346,17 @@ export default function Home() {
                             );
                         })}
                     </div>
+                    {(content?.required_documents || []).length > 2 && !docsOpen && (
+                        <button
+                            type="button"
+                            onClick={() => setDocsOpen(true)}
+                            className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-5 text-sm font-semibold transition-colors hover:border-primary/50 hover:text-primary sm:hidden"
+                            data-testid="documents-show-all"
+                        >
+                            Tüm belgeleri gör ({(content?.required_documents || []).length})
+                            <ArrowRight className="h-4 w-4 rotate-90" aria-hidden="true" />
+                        </button>
+                    )}
                     <Button asChild variant="secondary" className="mt-6 h-11 border border-border">
                         <Link to="/gerekli-belgeler">
                             Belge detayları ve fotoğraf kuralları <ArrowRight className="ml-2 h-4 w-4" />

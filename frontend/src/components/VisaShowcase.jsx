@@ -90,14 +90,14 @@ export const VisaShowcase = () => {
                             </Button>
                         </div>
                     ) : (
-                        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="mt-8 -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
                             {cards.map((visa) => {
                                 const Icon = metaIcon(visa);
                                 return (
                                     <Link
                                         key={visa.id}
                                         to={applyPath({ vize: visa.id })}
-                                        className="group block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card transition-colors duration-200 hover:border-primary/40 focus-visible:outline-none"
+                                        className="group block w-[80%] shrink-0 snap-start overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card transition-colors duration-200 hover:border-primary/40 focus-visible:outline-none sm:w-auto"
                                         data-testid={`showcase-card-${visa.id}`}
                                         aria-label={`${visa.name} ile başvuruya başla`}
                                     >
