@@ -10,7 +10,10 @@
       (sitemap artık build sırasında üretiliyor, 30 URL, 404 veren transit rehberi çıkarıldı).
 
 ## P0 — Acil
-- [ ] **Tamamliyo 220 ürün kodu**: sağlayıcı "her sigorta alımında 220 kullanın" dedi ama
+- [ ] **Tamamliyo 220 ürün kodu** (2026-09-08: panelde "Ürün kodu satışa açık mı?" butonu
+      eklendi — Admin → Sigorta Poliçeleri → kod gir → "Kodu sorgula". 220 hâlâ kapalı:
+      "Fiyat bulunamadı … 758". Açıldığında `.env` → `TAMAMLIYO_URUN_ID=220` + restart.)
+- [ ] **Eski madde**: sağlayıcı "her sigorta alımında 220 kullanın" dedi ama
       `fiyat-al` 220 için "Fiyat bulunamadı ... 758" dönüyor (141/185/189 çalışıyor, 220
       `urun-kodlari` listesinde de yok). Kullanıcı Tamamliyo'dan ürünün partner hesabına
       tanımlanmasını isteyecek. Açıldığında: `backend/.env` → `TAMAMLIYO_URUN_ID=220` +
@@ -18,18 +21,9 @@
 - [ ] **İlk gerçek test poliçesi**: kart hazır (**** 1028), otomatik kesim açık; kullanıcı
       isteğiyle **220 açılana kadar ertelendi**. Kesim sırasında gereken: sigortalının gerçek
       TCKN + doğum tarihi + ad soyad (MERNIS doğrulaması).
-- [ ] **Tamamliyo cari bakiyesi yükle (tek kalan engel)**: ödeme `odeme-yap` +
-      `odemeTipi=3` (cari bakiye) ile yapılıyor, kart bilgisi tutulmuyor. Canlı denemede
-      `HATA_15 "Yetersiz puan bakiyesi."` — Tamamliyo panelinden bakiye yüklenince poliçe
-      kesimi çalışacak. Kod hazır ve test edildi (2026-09-08).
-      Kullanıcı kararı: açık/cari tahsilat talebi şu an Tamamliyo'ya gönderilmeyecek.
-      Bakiye yüklendikten sonra Admin → Sigorta Poliçeleri → **Bakiye yükledim** alanına
-      tutarı girin; bekleyen poliçeler o an kendiliğinden kesilir.
-- [ ] **İlk poliçeyi elle kes** (bakiye yüklendikten sonra):
-      Tamamliyo canlı bağlı, fiyatlar senkron, otomatik kesim KAPALI. İlk sigorta siparişinde
-      Admin → Sigorta Poliçeleri → "Tamamliyo'dan poliçeyi kes ve gönder" ile poliçe kesilip
-      PDF/e-posta doğrulanacak; **başarılıysa aynı ekrandaki "Otomatik poliçe kesimi"
-      anahtarı açılacak** (kullanıcı onayı alındı).
+- [x] ~~Tamamliyo cari bakiyesi / elle ilk kesim~~ → 2026-09-08: ödeme kurumsal karta
+      taşındı (odemeTipi=2), kart tanımlı (**** 1028), otomatik poliçe kesimi AÇIK,
+      kâr koruması devrede. Kalan tek engel 220 ürün kodunun açılması.
 - [ ] **WhatsApp numarası teyidi**: telefon +90 533 743 82 24 olarak güncellendi ve WhatsApp
       linki de bu numaraya alındı; numaranın WhatsApp'ta açık olduğu kullanıcıdan teyit edilmeli.
 - [x] ~~E-posta gönderimi kapalı~~ → 2026-06-11: kullanıcı tam yetkili Resend anahtarı verdi,

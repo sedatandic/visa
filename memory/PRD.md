@@ -1357,3 +1357,12 @@ Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
 - Tüm sayfa başlıkları ≤60 karakter (7 vize rehberi seo_title'ı dahil).
 - Başvuru formu PDF'i: saydam logo, "Dubai Vizesi Başvuru Detayları" başlığı, başvuru tarihi
   referans bandında, ortalanmış künye + marka/işletmeci cümlesi.
+
+## 2026-09-08 · Kâr koruması (özet — detay CHANGELOG.md)
+- `insurance_margin.py`: maliyet satış fiyatına ulaşırsa satış fiyatı otomatik `maliyet × 2`
+  yapılır; marj %20 altında yalnız uyarı. Poliçe kesiminde karttan çekilen tutar satışı
+  aşarsa uyarı + fiyat düzeltme (soğutma yok).
+- Uyarı: yönetici e-postası + WhatsApp + panel bildirimi. Uçlar: `GET/POST
+  /admin/insurance/margin[/check]`. Panel: Sigorta Poliçeleri → "Kâr koruması" kartı.
+- `GET /admin/insurance/product-check?urun_id=220`: Tamamliyo ürün kodunun satışa açık olup
+  olmadığını sorgular (panelde buton). 220 hâlâ kapalı ("Fiyat bulunamadı … 758").

@@ -8,11 +8,13 @@
 """
 
 import asyncio
+import json
 import logging
 import os
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
+import insurance_margin
 import insurance_payment
 import tamamliyo
 from content import COMPANY
@@ -32,8 +34,8 @@ STEPS = ("quote", "payment_confirm", "policy", "policy_pdf")
 
 
 def _sale_price(cost: float) -> float:
-    """Maliyet + %100 marj, 10 TL'ye yuvarlanir."""
-    return float(round(cost * INSURANCE_MARKUP / 10.0) * 10)
+    """Maliyet + %100 marj, 10 TL'ye yuvarlanir (kar korumasiyla ayni formul)."""
+    return insurance_margin.sale_price(cost)
 
 
 async def fetch_cost(days: int) -> dict:
@@ -105,6 +107,37 @@ async def sync_prices() -> dict:
         "rows": rows,
         "errors": errors,
         "retired": retired.modified_count,
+        "margin": await insurance_margin.guard_products("sync"),
+    }
+
+
+async def probe_product(urun_id: int) -> dict:
+    """Verilen urun kodu partner hesabinda satista mi (fiyat donuyor mu)? Police kesmez."""
+    start = date.today() + timedelta(days=1)
+    end = start + timedelta(days=7)
+    try:
+        payload = await tamamliyo.price(1, start.isoformat(), end.isoformat(), int(urun_id))
+    except Exception as exc:
+        detail = str(exc)
+        payload = getattr(exc, "payload", None)
+        if payload and "beklenmeyen" in detail:  # mesaj cikarilamadiysa ham yaniti gosterelim
+            detail = f"{detail} · {json.dumps(payload, ensure_ascii=False)[:200]}"
+        return {
+            "urun_id": int(urun_id),
+            "available": False,
+            "error": detail,
+            "active_urun_id": tamamliyo.URUN_ID,
+        }
+    info = ((payload.get("data") or {}).get("urunBilgileri")) or {}
+    cost = round(float(info.get("fiyatFloat") or 0), 2)
+    return {
+        "urun_id": int(urun_id),
+        "available": cost > 0,
+        "cost_try": cost,
+        "price_try": insurance_margin.sale_price(cost) if cost > 0 else None,
+        "product_name": info.get("urunAdi") or "",
+        "active_urun_id": tamamliyo.URUN_ID,
+        "error": "" if cost > 0 else "Tamamliyo bu ürün kodu için fiyat döndürmedi.",
     }
 
 
@@ -241,17 +274,17 @@ async def _ensure_quote(task: dict, insured: list) -> str:
 
 
 async def _record_charge(task_id: str) -> None:
-    """Karttan cekilen tutari gorev uzerine yazar (gider raporunun kaynagi)."""
+    """Karttan cekilen tutari goreve yazar (gider raporu) ve kar kontrolunu tetikler."""
     doc = await insurance_tasks_col.find_one({"id": task_id}) or {}
+    charged = insurance_payment.parse_try(doc.get("provider_quote_price"))
     await insurance_tasks_col.update_one(
         {"id": task_id},
-        {
-            "$set": {
-                "charged_try": insurance_payment.parse_try(doc.get("provider_quote_price")),
-                "charged_at": datetime.now(timezone.utc),
-            }
-        },
+        {"$set": {"charged_try": charged, "charged_at": datetime.now(timezone.utc)}},
     )
+    try:
+        await insurance_margin.check_charge({**doc, "charged_try": charged})
+    except Exception as exc:  # uyari gonderilemese de police kesimi durmamali
+        logger.error("kar uyarisi gonderilemedi (%s): %s", task_id, exc)
 
 
 async def _ensure_policy(task: dict, quote_id: str, steps: dict) -> None:

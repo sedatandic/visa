@@ -1978,3 +1978,42 @@ Kart hazır (**** 1028), otomatik kesim açık, gider raporu çekimi bekliyor.
 çekim kaydı, ödeme adımının çekimi kaydetmesi, tekrarlanan ödemede çift kayıt olmaması,
 aylık gruplama, panel alanları, çoklu yolcu cirosu, geçersiz tarihin toplama girmemesi).
 Tam suit: **467 passed / 3 skipped**.
+
+## 2026-09-08 (6) · Kâr koruması (otomatik fiyat düzeltme + uyarı) + ürün kodu sorgusu
+
+### Kâr koruması — `backend/insurance_margin.py` (yeni)
+Kullanıcı isteği: "Bir poliçenin maliyeti satış fiyatını aşarsa fiyatı otomatik güncelleyip
+beni uyar." Tek modülde 3 kontrol noktası:
+- `guard_products(reason)`: aktif sigorta ürünlerini tarar. **Zarar** (satış ≤ maliyet) →
+  satış fiyatı `maliyet × 2` (10 ₺'ye yuvarlı) olarak güncellenir; **ince marj**
+  (%20 altı) → fiyata dokunulmaz, yalnız uyarı. Tetiklendiği yerler: günlük/elle fiyat
+  senkronu (`sync_prices` sonunda), panelden fiyat/maliyet elle değiştirildiğinde
+  (`PATCH /admin/products/{id}`), panelden "Şimdi kontrol et".
+- `check_charge(task)`: poliçe kesiminde karttan çekilen tutar müşteriden alınan tutarı
+  aşarsa (asıl zarar senaryosu) olay kaydedilir, kişi başı gerçek maliyetten yeni satış
+  fiyatı hesaplanıp ürün güncellenir. Bu uyarıda **soğutma yok** (her zarar bildirilir).
+  `insurance_provider._record_charge` içinden çağrılır; uyarı hatası poliçe kesimini bozmaz.
+- Uyarı kanalları: yönetici e-postası + WhatsApp + panel bildirimi
+  (`notifications.kind=insurance_margin_alert`). Ürün uyarılarında 6 saat soğutma.
+  Son 20 olay `site_settings.insurance_margin.events` altında.
+- Uçlar: `GET /admin/insurance/margin`, `POST /admin/insurance/margin/check`.
+- Panel: `AdminInsurance.jsx` → **"Kâr koruması"** kartı (`insurance-margin-panel`):
+  ürün bazlı maliyet/satış/kâr/marj tablosu + durum etiketi (Kârlı / İnce marj / Zarar),
+  otomatik düzeltme geçmişi, "Şimdi kontrol et" butonu, son kontrol/uyarı zamanı.
+
+### Tamamliyo ürün kodu sorgusu (220 takibi)
+- `insurance_provider.probe_product(urun_id)` + `GET /admin/insurance/product-check?urun_id=`:
+  fiyat sorgusu ile kodun partner hesabında satışta olup olmadığını söyler (poliçe kesmez,
+  ücret çıkarmaz). Panelde "Ürün kodu satışa açık mı?" alanı (varsayılan 220).
+- `tamamliyo._error_message` artık üst seviyedeki `errorMessage/errorCode` alanlarını da
+  okuyor → 220 için gerçek hata görünüyor: "Fiyat bulunamadı … 758" (kod hâlâ **kapalı**).
+- 141 doğrulandı: "Yurt Dışı Sağlık Destek Paketi", maliyet 244,82 ₺ → satış 490 ₺.
+
+### Doğrulama
+- `tests/test_iteration_124_margin_guard.py` (23 test): marj durumları, zararda fiyat
+  yükseltme, ince marjda sadece uyarı, soğutma, çoklu yolcuda kişi başı maliyet,
+  fiyat gereksizse düşürülmemesi, `_record_charge` entegrasyonu, ürün kodu sorgusu.
+- Tam suit: **488 passed / 5 skipped**.
+- Canlı e2e: `PATCH /admin/products/ins_7d {"price_try":200}` → fiyat otomatik 490 ₺'ye
+  çıktı, olay kaydı oluştu, uyarı e-postası `info@dubaivizehatti.com` adresine
+  `status=sent` gitti; panel ekran görüntüsüyle doğrulandı.

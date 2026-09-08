@@ -84,7 +84,7 @@ def _error_message(payload) -> str:
             detail = inner.get("errorMessage") or inner.get("errorCode")
             if isinstance(detail, str) and detail.strip():
                 return detail.strip()
-        for key in ("message", "mesaj", "hata", "error", "authentication", "errors"):
+        for key in ("errorMessage", "errorCode", "message", "mesaj", "hata", "error", "authentication", "errors"):
             value = payload.get(key)
             if isinstance(value, str) and value.strip():
                 return value.strip()

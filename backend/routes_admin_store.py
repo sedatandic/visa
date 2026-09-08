@@ -52,8 +52,15 @@ async def admin_update_product(product_id: str, payload: dict, admin: dict = Dep
     res = await products_col.update_one({"id": product_id}, {"$set": update})
     if res.matched_count == 0:
         raise HTTPException(404, "Urun bulunamadi.")
+
+    guard = None
+    if {"price_try", "cost_try"} & set(update):
+        from insurance_margin import guard_products
+
+        guard = await guard_products("manual")
     items = await product_list(include_inactive=True)
-    return next((i for i in items if i["id"] == product_id), None)
+    item = next((i for i in items if i["id"] == product_id), None)
+    return {**(item or {}), "margin_guard": guard}
 
 
 # ---------------------------------------------------------------- siparisler
@@ -119,6 +126,32 @@ async def admin_insurance_sync_prices(admin: dict = Depends(require_admin)) -> d
     from insurance_provider import sync_prices
 
     return await sync_prices()
+
+
+@router.get("/admin/insurance/product-check")
+async def admin_insurance_product_check(urun_id: int, admin: dict = Depends(require_admin)) -> dict:
+    """Bir Tamamliyo urun kodu partner hesabinda satista mi (fiyat sorgusu, police kesmez)."""
+    from insurance_provider import probe_product
+
+    return await probe_product(urun_id)
+
+
+# ------------------------------------------------------ sigorta: kar korumasi
+@router.get("/admin/insurance/margin")
+async def admin_insurance_margin(admin: dict = Depends(require_admin)) -> dict:
+    """Urun bazli maliyet/satis/marj durumu + otomatik fiyat duzeltme gecmisi."""
+    from insurance_margin import status
+
+    return await status()
+
+
+@router.post("/admin/insurance/margin/check")
+async def admin_insurance_margin_check(admin: dict = Depends(require_admin)) -> dict:
+    """Zarar eden urunlerin fiyatini hemen duzeltir ve uyari gonderir."""
+    from insurance_margin import guard_products, status
+
+    result = await guard_products("manual")
+    return {**await status(), "result": result}
 
 
 @router.post("/admin/insurance/auto-issue")

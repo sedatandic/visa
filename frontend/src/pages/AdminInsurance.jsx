@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ExternalLink, Loader2, MessageCircle, Receipt, RefreshCw, Send, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
+import { AlertTriangle, ExternalLink, Loader2, MessageCircle, Receipt, RefreshCw, Search, Send, ShieldAlert, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
 import { formatDateTime, formatMoney } from "../lib/site";
@@ -220,6 +220,24 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
 const ProviderPanel = ({ status, onChange }) => {
     const [syncing, setSyncing] = useState(false);
     const [toggling, setToggling] = useState(false);
+    const [probeId, setProbeId] = useState("220");
+    const [probing, setProbing] = useState(false);
+    const [probe, setProbe] = useState(null);
+
+    const checkProduct = async () => {
+        setProbing(true);
+        try {
+            const { data } = await api.get(`/admin/insurance/product-check?urun_id=${Number(probeId)}`);
+            setProbe(data);
+            if (data.available)
+                toast.success(`${data.urun_id} kodu satışta: maliyet ${data.cost_try} ₺.`);
+            else toast.warning(`${data.urun_id} kodu henüz açık değil.`);
+        } catch (err) {
+            toast.error(apiError(err, "Ürün kodu sorgulanamadı."));
+        } finally {
+            setProbing(false);
+        }
+    };
 
     const sync = async () => {
         setSyncing(true);
@@ -330,6 +348,211 @@ const ProviderPanel = ({ status, onChange }) => {
                 )}
                 Fiyatları Tamamliyo'dan güncelle
             </Button>
+
+            <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3">
+                <p className="text-xs font-semibold">Ürün kodu satışa açık mı?</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Tamamliyo'ya fiyat sorgusu gönderir; poliçe kesmez, ücret çıkarmaz. Kod açıldığında
+                    sunucudaki <code>TAMAMLIYO_URUN_ID</code> değeri güncellenip fiyatlar senkronlanır.
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <input
+                        type="number"
+                        value={probeId}
+                        onChange={(e) => setProbeId(e.target.value)}
+                        className="h-10 w-28 rounded-lg border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        data-testid="insurance-product-check-input"
+                    />
+                    <Button
+                        variant="secondary"
+                        onClick={checkProduct}
+                        disabled={probing || !status.configured}
+                        className="h-10 border border-border"
+                        data-testid="insurance-product-check"
+                    >
+                        {probing ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Search className="mr-2 h-4 w-4" />
+                        )}
+                        Kodu sorgula
+                    </Button>
+                </div>
+                {probe && (
+                    <p
+                        className={`mt-2 text-xs font-semibold ${
+                            probe.available ? "text-emerald-700" : "text-amber-700"
+                        }`}
+                        data-testid="insurance-product-check-result"
+                    >
+                        {probe.available
+                            ? `${probe.urun_id} · ${probe.product_name || "ürün"} satışta: maliyet ${
+                                  probe.cost_try
+                              } ₺, önerilen satış ${probe.price_try} ₺.`
+                            : `${probe.urun_id} kodu kullanılamıyor: ${probe.error}`}
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const MARGIN_STATES = {
+    ok: { label: "Kârlı", cls: "bg-emerald-100 text-emerald-800" },
+    low: { label: "İnce marj", cls: "bg-amber-100 text-amber-900" },
+    loss: { label: "Zarar", cls: "bg-destructive/10 text-destructive" },
+    unknown: { label: "Maliyet yok", cls: "bg-muted text-muted-foreground" },
+};
+
+const EVENT_LABELS = {
+    price_fixed: "Fiyat otomatik yükseltildi",
+    low_margin: "Marj eşiğin altına düştü",
+    charge_loss: "Çekim satış tutarını aştı",
+};
+
+const MarginPanel = ({ data, onChange }) => {
+    const [busy, setBusy] = useState(false);
+    const items = data.items || [];
+    const events = data.events || [];
+    const risky = items.filter((row) => row.state === "loss" || row.state === "low");
+
+    const check = async () => {
+        setBusy(true);
+        try {
+            const { data: res } = await api.post("/admin/insurance/margin/check");
+            const fixed = res.result?.fixed?.length || 0;
+            const low = res.result?.low_margin?.length || 0;
+            if (fixed) toast.warning(`${fixed} poliçenin satış fiyatı otomatik yükseltildi.`);
+            else if (low) toast.warning(`${low} poliçede marj %${data.low_margin_pct} altında.`);
+            else toast.success("Tüm poliçeler kârlı, düzeltme gerekmedi.");
+            onChange();
+        } catch (err) {
+            toast.error(apiError(err, "Kâr kontrolü yapılamadı."));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <div
+            className={`card-surface mt-6 border p-5 ${
+                risky.length ? "border-amber-300 bg-amber-50/60" : "border-border"
+            }`}
+            data-testid="insurance-margin-panel"
+        >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 className="flex items-center gap-2 font-heading text-sm font-bold">
+                        <ShieldAlert className="h-4 w-4 text-primary" /> Kâr koruması
+                    </h2>
+                    <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+                        Bir poliçenin maliyeti satış fiyatına ulaşırsa satış fiyatı otomatik olarak
+                        maliyet × {data.markup} (10 ₺'ye yuvarlı) yapılır ve size e-posta + WhatsApp
+                        uyarısı gider. Marj %{data.low_margin_pct} altına düşerse fiyata dokunulmaz,
+                        yalnızca uyarılırsınız. Kesim anında karttan çekilen tutar müşteriden alınan
+                        tutarı aşarsa da uyarı gelir.
+                    </p>
+                </div>
+                <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        risky.length ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-800"
+                    }`}
+                    data-testid="insurance-margin-state"
+                >
+                    {risky.length ? `${risky.length} poliçe riskli` : "Tüm poliçeler kârlı"}
+                </span>
+            </div>
+
+            <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead className="text-left text-xs uppercase text-muted-foreground">
+                        <tr>
+                            <th className="py-2 pr-3">Poliçe</th>
+                            <th className="py-2 pr-3">Maliyet</th>
+                            <th className="py-2 pr-3">Satış</th>
+                            <th className="py-2 pr-3">Kâr</th>
+                            <th className="py-2 pr-3">Marj</th>
+                            <th className="py-2">Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border" data-testid="insurance-margin-rows">
+                        {items.map((row) => {
+                            const tone = MARGIN_STATES[row.state] || MARGIN_STATES.unknown;
+                            return (
+                                <tr key={row.id} data-testid={`insurance-margin-row-${row.id}`}>
+                                    <td className="py-2 pr-3 font-medium">{row.name}</td>
+                                    <td className="py-2 pr-3">{formatMoney(row.cost_try, "TRY")}</td>
+                                    <td className="py-2 pr-3">{formatMoney(row.price_try, "TRY")}</td>
+                                    <td
+                                        className={`py-2 pr-3 font-semibold ${
+                                            row.profit_try > 0 ? "text-emerald-700" : "text-destructive"
+                                        }`}
+                                    >
+                                        {formatMoney(row.profit_try, "TRY")}
+                                    </td>
+                                    <td className="py-2 pr-3">
+                                        {row.margin_pct != null ? `%${row.margin_pct}` : "-"}
+                                    </td>
+                                    <td className="py-2">
+                                        <span className={`rounded-full px-2 py-1 text-xs font-semibold ${tone.cls}`}>
+                                            {tone.label}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            {events.length > 0 ? (
+                <ul className="mt-4 space-y-2" data-testid="insurance-margin-events">
+                    {events.slice(0, 6).map((event, index) => (
+                        <li
+                            key={`${event.product_id}-${event.at}-${index}`}
+                            className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs"
+                        >
+                            <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                            <span className="font-semibold">{EVENT_LABELS[event.kind] || event.kind}</span>
+                            <span className="text-muted-foreground">
+                                {event.name}
+                                {event.new_price_try && event.new_price_try !== event.old_price_try
+                                    ? ` · ${formatMoney(event.old_price_try, "TRY")} → ${formatMoney(
+                                          event.new_price_try,
+                                          "TRY"
+                                      )}`
+                                    : ""}
+                                {event.kind === "charge_loss"
+                                    ? ` · çekilen ${formatMoney(event.charged_try, "TRY")} / satış ${formatMoney(
+                                          event.revenue_try,
+                                          "TRY"
+                                      )}`
+                                    : ""}
+                            </span>
+                            <span className="ml-auto text-muted-foreground">{formatDateTime(event.at)}</span>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="mt-4 text-sm text-muted-foreground" data-testid="insurance-margin-empty">
+                    Henüz otomatik fiyat düzeltmesi veya kâr uyarısı olmadı.
+                </p>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Button onClick={check} disabled={busy} className="h-10" data-testid="insurance-margin-check">
+                    {busy ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <ShieldAlert className="mr-2 h-4 w-4" />
+                    )}
+                    Şimdi kontrol et
+                </Button>
+                <p className="text-xs text-muted-foreground" data-testid="insurance-margin-last-check">
+                    Son kontrol: {data.last_check_at ? formatDateTime(data.last_check_at) : "henüz yapılmadı"}
+                    {data.last_alert_at ? ` · son uyarı: ${formatDateTime(data.last_alert_at)}` : ""}
+                </p>
+            </div>
         </div>
     );
 };
@@ -568,12 +791,13 @@ export default function AdminInsurance() {
     const [provider, setProvider] = useState(null);
     const [payment, setPayment] = useState(null);
     const [expenses, setExpenses] = useState(null);
+    const [margin, setMargin] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const load = async () => {
         setLoading(true);
         try {
-            const [tasksRes, reportRes, monthlyRes, providerRes, paymentRes, expenseRes] =
+            const [tasksRes, reportRes, monthlyRes, providerRes, paymentRes, expenseRes, marginRes] =
                 await Promise.all([
                     api.get("/admin/insurance-tasks"),
                     api.get("/admin/insurance-report"),
@@ -581,6 +805,7 @@ export default function AdminInsurance() {
                     api.get("/admin/insurance/provider"),
                     api.get("/admin/insurance/payment"),
                     api.get("/admin/insurance/expenses?months=12"),
+                    api.get("/admin/insurance/margin"),
                 ]);
             setTasks(tasksRes.data.items || []);
             setReport(reportRes.data);
@@ -588,6 +813,7 @@ export default function AdminInsurance() {
             setProvider(providerRes.data);
             setPayment(paymentRes.data);
             setExpenses(expenseRes.data);
+            setMargin(marginRes.data);
         } catch (err) {
             toast.error(apiError(err, "Veriler yüklenemedi."));
         } finally {
@@ -624,6 +850,7 @@ export default function AdminInsurance() {
 
             {provider && <ProviderPanel status={provider} onChange={load} />}
             {payment && <PaymentPanel state={payment} onChange={load} />}
+            {margin && <MarginPanel data={margin} onChange={load} />}
             {expenses && <ExpensePanel data={expenses} />}
 
             {monthly && (
