@@ -25,6 +25,7 @@ URUN_ID = 141  # "Yurt Disi Saglik Destek Paketi" - 30.000 EUR + vize teminati
 # Gidilecek ulke kodu (Tamamliyo /partner/v1/countries): 784 = Birlesik Arap Emirlikleri.
 # teklif-olustur bu alani zorunlu tutuyor (HATA_2: "ulkeKodu gonderilmesi zorunludur").
 ULKE_KODU_BAE = 784
+PAYMENT_TYPE_BALANCE = "3"  # odeme-yap: 1/2 kredi karti, 3 cari bakiye (puan)
 RETRYABLE_STATUS = {408, 425, 429, 500, 502, 503, 504}
 MAX_ATTEMPTS = 3
 PDF_MAGIC = "JVBERi"
@@ -137,20 +138,14 @@ async def create_quote(
     return await _request("POST", f"{PATH}/teklif-olustur", body)
 
 
-async def confirm_payment(quote_id, parameters: dict) -> dict:
-    """Cari/acik tahsilat onayi: parayi biz tahsil ettik bilgisini gecer.
+async def pay_with_balance(quote_id) -> dict:
+    """Teklifin odemesini Tamamliyo cari bakiyesinden (`odemeTipi=3`) duser.
 
-    `parameters` zorunludur; servis bilet alanlarini (pnrNo, flightNumber,
-    ticketNumber, company, ticketType, departureLocation, arrivalLocation,
-    departureDateTime) eksiksiz ister, yoksa HATA_3 doner.
+    Kart bilgisi tasimadigimiz icin bu yontem kullanilir; bakiye Tamamliyo
+    panelinden yuklenir. Bakiye yetmezse HATA_15 "Yetersiz puan bakiyesi" doner.
     """
-    body = {
-        "status_code": 100,
-        "payment_status": "Payment Successfully Completed",
-        "teklifId": quote_id,
-        "parameters": parameters,
-    }
-    return await _request("POST", f"{PATH}/odeme-onay", body)
+    body = {"odemeTipi": PAYMENT_TYPE_BALANCE, "teklifId": quote_id}
+    return await _request("POST", f"{PATH}/odeme-yap", body)
 
 
 async def create_policy(quote_id) -> dict:

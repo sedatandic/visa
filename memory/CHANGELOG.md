@@ -1553,3 +1553,35 @@ gitmiyor.
 **Doğrulama**: canlı teklif `2135835` — Tamamliyo'ya giden iletişim
 `info@dubaivizehatti.com / +905337438224`. Tam suit: **366 passed / 3 skipped**
 (3 yeni test `TestProviderContact`).
+
+## 2026-09-08 (2) · Ödeme yöntemi cari tahsilat → Tamamliyo bakiyesi (odemeTipi=3)
+
+Kullanıcı kararı: **"cari ödemeyi denemeyin şu an"** — Tamamliyo'ya açık tahsilat talebi
+gönderilmedi. Ödeme, kart bilgisi taşımayan cari bakiye yöntemine çevrildi.
+
+### Değişiklikler
+- `tamamliyo.confirm_payment` (POST `odeme-onay`, açık tahsilat) **kaldırıldı**;
+  yerine `tamamliyo.pay_with_balance(quote_id)` → POST `odeme-yap`
+  `{"odemeTipi": "3", "teklifId": ...}`. `PAYMENT_TYPE_BALANCE = "3"` sabiti eklendi.
+- `insurance_provider._payment_parameters` (odeme-onay'ın zorunlu tuttuğu 8 bilet alanı)
+  kaldırıldı — `odeme-yap` + `odemeTipi=3` bu alanları istemiyor (canlı doğrulandı:
+  parameters ile ve olmadan aynı yanıt).
+- `_save_provider_error`: mesajda "bakiye" geçiyorsa panele yapılacak iş de yazılıyor →
+  *"Yetersiz puan bakiyesi. Tamamliyo panelinden cari bakiye yükleyip poliçeyi tekrar kesin."*
+- `AdminInsurance.jsx`: "Ödeme bizde kalır (cari tahsilat)" metni kaldırıldı; yerine
+  "Poliçe bedeli Tamamliyo cari bakiyesinden düşülür, kart bilgisi hiçbir yerde tutulmaz"
+  + turuncu bakiye uyarısı (`data-testid="insurance-balance-note"`).
+
+### Canlı doğrulama
+`odemeTipi` haritası (canlı deneme): `1`/`2` → kredi kartı zorunlu, **`3` → cari bakiye**,
+`odeme-onay` → hesapta kapalı. Teklif `2135835` ile `_ensure_policy` canlı çalıştırıldı →
+`HATA_15 "Yetersiz puan bakiyesi."` yani akış doğru, sadece bakiye yüklenmesi bekleniyor.
+Kart verisi hiçbir aşamada sisteme girmiyor (test bunu ayrıca doğruluyor).
+
+### Test verisi temizliği (kullanıcı isteği)
+`SV-XFG87WZW` kapsamındaki 8 kayıt (sipariş, poliçe görevi, bildirim, 3 e-posta kaydı,
+2 ziyaret izi) + kullanıcının onayıyla `DV-BJ930600` vize başvurusu ve kayıtlı yolcu
+kaydı silindi. **Veritabanında TCKN `451…` izi kalmadı** (tüm koleksiyonlar tarandı).
+
+**Test**: `test_iteration_118_tamamliyo_payment.py` 17/17 PASS.
+Tam suit: **368 passed / 3 skipped**.

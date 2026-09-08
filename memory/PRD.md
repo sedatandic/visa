@@ -1311,3 +1311,12 @@ Ayrıntı: CHANGELOG.md "2026-09-08". Özet:
   Tamamliyo'dan istenecek: açık tahsilat/cari yetkisi VEYA bakiye yüklemesi (odemeTipi=3)
   VEYA kart ile `odeme-yap` (odemeTipi=2) entegrasyonu.
 - Test verisi: sipariş `SV-XFG87WZW`, teklifler 2135824 / 2135825 (ödenmedi, ücret yok).
+
+## 2026-09-08 (2) · Ödeme yöntemi: Tamamliyo cari bakiyesi
+- Kullanıcı kararı: cari/açık tahsilat şu an denenmeyecek. Poliçe ödemesi
+  `odeme-yap` + `odemeTipi=3` (cari bakiye) ile yapılıyor; kart bilgisi hiçbir yerde
+  tutulmuyor. Ayrıntı: CHANGELOG.md "2026-09-08 (2)".
+- **P0 kalan tek iş**: Tamamliyo panelinden cari bakiye yüklenmesi. Yüklendiği an
+  Admin → Sigorta Poliçeleri → "Poliçeyi kes" ile ilk poliçe kesilip PDF/e-posta/WhatsApp
+  akışı doğrulanacak, sonra "Otomatik poliçe kesimi" anahtarı açılacak.
+- Test verisi ve kimlik bilgileri veritabanından tamamen silindi (2026-09-08).

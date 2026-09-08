@@ -255,7 +255,12 @@ const ProviderPanel = ({ status, onChange }) => {
                     </h2>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">
                         Maliyetler günlük çekilir, satış fiyatı %{Math.round((status.markup - 1) * 100)} kâr
-                        marjıyla hesaplanır. Ödeme bizde kalır (cari tahsilat), poliçe API ile kesilir.
+                        marjıyla hesaplanır. Poliçe bedeli Tamamliyo cari bakiyesinden düşülür, kart
+                        bilgisi hiçbir yerde tutulmaz.
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-amber-700" data-testid="insurance-balance-note">
+                        Bakiye bitince poliçe kesilemez ("Yetersiz puan bakiyesi") — Tamamliyo panelinden
+                        bakiye yükleyip poliçeyi tekrar kesin.
                     </p>
                 </div>
                 <span

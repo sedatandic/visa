@@ -83,52 +83,28 @@ class TestQuotePayload:
 
 
 class TestPaymentPayload:
-    def test_confirm_payment_body(self, captured):
-        params = {"pnrNo": "SV-TEST"}
-        run(tamamliyo.confirm_payment(2135825, params))
+    """Odeme cari bakiyeden yapilir (`odeme-yap`, odemeTipi=3); kart bilgisi tasinmaz."""
+
+    def test_pay_with_balance_body(self, captured):
+        run(tamamliyo.pay_with_balance(2135835))
         body = captured[0]["body"]
-        assert body["status_code"] == 100
-        assert body["payment_status"] == "Payment Successfully Completed"
-        assert body["teklifId"] == 2135825
-        assert body["parameters"] == params
-        assert captured[0]["path"].endswith("/odeme-onay")
+        assert body == {"odemeTipi": "3", "teklifId": 2135835}
+        assert captured[0]["path"].endswith("/odeme-yap")
 
-    def test_payment_parameters_has_every_required_field(self):
-        task = {"order_reference": "SV-XFG87WZW", "starts_on": "2026-10-07"}
-        params = insurance_provider._payment_parameters(task)
-        required = {
-            "pnrNo",
-            "flightNumber",
-            "ticketNumber",
-            "company",
-            "ticketType",
-            "departureLocation",
-            "arrivalLocation",
-            "departureDateTime",
-        }
-        assert required <= set(params)
-        assert all(str(params[key]).strip() for key in required)
+    def test_balance_payment_type_constant(self):
+        assert tamamliyo.PAYMENT_TYPE_BALANCE == "3"
 
-    def test_payment_parameters_uses_order_reference_and_start_date(self):
-        params = insurance_provider._payment_parameters(
-            {"order_reference": "SV-XFG87WZW", "starts_on": "2026-10-07"}
-        )
-        assert params["pnrNo"] == "SV-XFG87WZW"
-        assert params["ticketNumber"] == "SV-XFG87WZW"
-        assert params["departureDateTime"].startswith("2026-10-07")
-        assert params["arrivalLocation"] == "Dubai"
+    def test_no_card_field_is_ever_sent(self, captured):
+        run(tamamliyo.pay_with_balance("2135835"))
+        sent = str(captured[0]["body"]).lower()
+        for field in ("krediKarti", "cvv", "kart"):
+            assert field.lower() not in sent
 
-    def test_payment_parameters_tolerates_missing_task_fields(self):
-        params = insurance_provider._payment_parameters({})
-        assert params["pnrNo"] == "-"
-        assert params["departureDateTime"] == "00:00:00"
-
-    def test_ensure_policy_forwards_parameters(self, monkeypatch):
+    def test_ensure_policy_pays_from_balance(self, monkeypatch):
         seen = {}
 
-        async def fake_confirm(quote_id, parameters):
+        async def fake_pay(quote_id):
             seen["quote_id"] = quote_id
-            seen["parameters"] = parameters
             return {"success": True}
 
         async def fake_policy(quote_id):
@@ -137,16 +113,37 @@ class TestPaymentPayload:
         async def fake_mark(task_id, step, detail=None):
             seen.setdefault("steps", []).append(step)
 
-        monkeypatch.setattr(tamamliyo, "confirm_payment", fake_confirm)
+        monkeypatch.setattr(tamamliyo, "pay_with_balance", fake_pay)
         monkeypatch.setattr(tamamliyo, "create_policy", fake_policy)
         monkeypatch.setattr(insurance_provider, "_mark_step", fake_mark)
 
         task = {"id": "t1", "order_reference": "SV-XFG87WZW", "starts_on": "2026-10-07"}
-        run(insurance_provider._ensure_policy(task, "2135825", {}))
+        run(insurance_provider._ensure_policy(task, "2135835", {}))
 
-        assert seen["quote_id"] == "2135825"
-        assert seen["parameters"]["pnrNo"] == "SV-XFG87WZW"
+        assert seen["quote_id"] == "2135835"
         assert seen["steps"] == ["payment_confirm", "policy"]
+
+    def test_completed_steps_are_not_repeated(self, monkeypatch):
+        called = []
+
+        async def fake_pay(quote_id):
+            called.append("pay")
+            return {"success": True}
+
+        async def fake_policy(quote_id):
+            called.append("policy")
+            return {"data": {}}
+
+        async def fake_mark(task_id, step, detail=None):
+            return None
+
+        monkeypatch.setattr(tamamliyo, "pay_with_balance", fake_pay)
+        monkeypatch.setattr(tamamliyo, "create_policy", fake_policy)
+        monkeypatch.setattr(insurance_provider, "_mark_step", fake_mark)
+
+        steps = {"payment_confirm": "done", "policy": "done"}
+        run(insurance_provider._ensure_policy({"id": "t1"}, "2135835", steps))
+        assert called == []
 
 
 class TestErrorMessage:
@@ -216,3 +213,30 @@ class TestProviderContact:
         assert seen["email"] != "musteri@ornek.com"
         assert seen["phone"] != "05325882630"
         assert "dubaivizehatti.com" in seen["email"]
+
+
+class TestBalanceHint:
+    """Bakiye yetmezse panelde ne yapilacagi yazmali (HATA_15)."""
+
+    def test_balance_error_gets_actionable_hint(self, monkeypatch):
+        saved = {}
+
+        class FakeCol:
+            async def update_one(self, query, update):
+                saved["message"] = update["$set"]["provider_error"]
+
+        monkeypatch.setattr(insurance_provider, "insurance_tasks_col", FakeCol())
+        run(insurance_provider._save_provider_error("t1", "Yetersiz puan bakiyesi."))
+        assert "Yetersiz puan bakiyesi." in saved["message"]
+        assert "bakiye yükleyip" in saved["message"]
+
+    def test_other_errors_are_left_untouched(self, monkeypatch):
+        saved = {}
+
+        class FakeCol:
+            async def update_one(self, query, update):
+                saved["message"] = update["$set"]["provider_error"]
+
+        monkeypatch.setattr(insurance_provider, "insurance_tasks_col", FakeCol())
+        run(insurance_provider._save_provider_error("t1", "T.C. Kimlik Numarası hatalı"))
+        assert saved["message"] == "T.C. Kimlik Numarası hatalı"
