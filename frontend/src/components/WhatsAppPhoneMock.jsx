@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, ChevronLeft, Link2, Mic, MoreVertical, Phone, Plus, Smile, Video } from "lucide-react";
+import { Camera, ChevronLeft, FileText, Link2, Mic, MoreVertical, Phone, Plus, Smile, Video } from "lucide-react";
 
 const ROTATE_MS = 6800;
 
@@ -95,6 +95,28 @@ const SCENARIOS = [
             { from: "in", time: "15:48", text: "Anlaşıldı, belgeleri topluyorum" },
         ],
     },
+    {
+        id: "approved",
+        label: "Onay ve PDF teslimi",
+        contact: "Selin A.",
+        clock: "13:12",
+        messages: [
+            { from: "in", time: "13:07", text: "Başvurumdan haber var mı? Cuma akşamı uçuşum var." },
+            { from: "out", time: "13:08", text: "Tam da size yazıyordum: dosyanız bu sabah sonuçlandı." },
+            { from: "out", time: "13:08", text: "Vizeniz ONAYLANDI. 30 gün tek giriş, 19.10.2026'ya kadar giriş yapabilirsiniz." },
+            {
+                from: "out",
+                time: "13:09",
+                doc: { name: "Dubai_Vize_Onay_Selin_A.pdf", meta: "1 sayfa · 214 KB · PDF" },
+                text: "Onay belgeniz ekte; e-postanıza da gönderdim.",
+            },
+            { from: "in", time: "13:10", text: "Yazdırmam gerekiyor mu?" },
+            { from: "out", time: "13:10", text: "Gerek yok. Pasaportunuzla bu PDF'i telefonunuzdan göstermeniz yeterli." },
+            { from: "in", time: "13:11", text: "Süper, çok hızlı oldu. Teşekkürler!" },
+            { from: "out", time: "13:12", text: "İyi yolculuklar. Dubai'de bir şeye ihtiyacınız olursa bu numaradan yazın." },
+        ],
+    },
+
 ];
 
 const IN_TAIL = "M1.533 9.432 8 .807V12H2.812C1.042 12 .474 10.844 1.533 9.432z";
@@ -133,6 +155,15 @@ const Bubble = ({ m, i }) => {
                         loading="lazy"
                         data-testid="wa-bubble-passport-image"
                     />
+                )}
+                {m.doc && (
+                    <span className="mb-1.5 flex items-center gap-2 rounded-md bg-black/[0.045] px-2.5 py-2">
+                        <FileText className="h-6 w-6 shrink-0 text-[#DB4437]" aria-hidden="true" />
+                        <span className="min-w-0">
+                            <span className="block truncate text-[12px] font-semibold">{m.doc.name}</span>
+                            <span className="block text-[11px] text-[#667781]">{m.doc.meta}</span>
+                        </span>
+                    </span>
                 )}
                 {m.link && (
                     <span className="mb-1.5 block rounded-md bg-black/[0.045] px-2.5 py-2">

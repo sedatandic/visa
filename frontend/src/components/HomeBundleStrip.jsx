@@ -318,11 +318,16 @@ export const HomeBundleStrip = () => {
                     değiştirin, fiyat anında güncellenir.
                 </p>
 
-                <div className="mt-7 grid gap-5 lg:grid-cols-3">
+                <div className="mt-7 -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0 lg:pb-0">
                     {bundles.map((b) => (
-                        <BundleCard key={b.id} bundle={b} highlighted={b.id === popularId} />
+                        <div key={b.id} className="w-[87%] shrink-0 snap-start lg:w-auto">
+                            <BundleCard bundle={b} highlighted={b.id === popularId} />
+                        </div>
                     ))}
                 </div>
+                <p className="mt-2 text-xs text-muted-foreground lg:hidden" data-testid="home-bundle-swipe-hint">
+                    Paketleri görmek için yana kaydırın
+                </p>
             </div>
         </section>
     );

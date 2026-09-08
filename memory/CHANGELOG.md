@@ -2111,3 +2111,19 @@ Kullanıcı: "cepten bakınca cep telefonu çok uzun görünüyor."
   solda beyaz (kuyruk sol altta). Başlık müşteri adını gösteriyor (senaryo başına
   Ayşe K. / Mehmet T. / Elif D. / Burak Y.), avatar baş harfli daire
   (`wa-phone-contact`). Yeşil balonda kuyruk/çıkıntı yok, dört köşe yuvarlak.
+
+## 2026-09-08 (12) · Yeni sohbet senaryosu + mobil kısaltma turu 1. tur
+- `WhatsAppPhoneMock`: 5. senaryo **"Onay ve PDF teslimi"** (Selin A.) eklendi — durum sorusu,
+  "Vizeniz ONAYLANDI" mesajı, **PDF ek balonu** (yeni `doc` tipi: kırmızı dosya ikonu, dosya
+  adı + "1 sayfa · 214 KB · PDF"), yazdırma gerekmediği bilgisi ve iyi yolculuk dileği.
+- Mobil kısaltma (masaüstü görünüm aynı):
+  - `SecurityBadges`: mobilde 2 kolon + kompakt kart (açıklama `sm:` üstünde görünür) →
+    **1870px → 786px**.
+  - `HomeBundleStrip`: mobilde yatay kaydırmalı (snap) şerit + "yana kaydırın" ipucu,
+    `lg:` üstünde eski 3'lü ızgara → **2173px → 1133px**.
+  - Ana sayfa toplam mobil yüksekliği **21.987px → 19.863px** (%10 kısaldı).
+- Kalan uzun bölümler (390px'de): visa-showcase 1658, easy-compare 1631, ask-first 1513,
+  hero 1294, documents 1216, insurance-strip 1199, commitments 1090, visa-specimen 1066,
+  tour-strip 1034. Sıradaki turda kullanıcı seçimine göre kısaltılacak.
+- Deploy hazırlık kontrolü (deployment_agent): **pass** — gizli anahtar/URL sızıntısı,
+  port/CORS, derleme hatası yok. Yayına alma kullanıcının "Deploy" butonuna basmasıyla olur.

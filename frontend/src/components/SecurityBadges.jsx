@@ -83,18 +83,20 @@ export const SecurityBadges = ({ withHeading = true, className = "" }) => (
                 </div>
             )}
 
-            <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-4 ${withHeading ? "mt-8" : ""}`}>
+            <div className={`grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 ${withHeading ? "mt-8" : ""}`}>
                 {SECURITY_BADGES.map(({ key, icon: Icon, title, text }) => (
                     <div
                         key={key}
-                        className="card-surface flex h-full flex-col gap-3 p-5 transition-transform duration-200 hover:-translate-y-0.5"
+                        className="card-surface flex h-full flex-col gap-2 p-4 transition-transform duration-200 hover:-translate-y-0.5 sm:gap-3 sm:p-5"
                         data-testid={`security-badge-${key}`}
                     >
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                            <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 sm:h-10 sm:w-10">
+                            <Icon className="h-4 w-4 text-primary sm:h-5 sm:w-5" aria-hidden="true" />
                         </span>
-                        <h3 className="font-heading text-sm font-bold leading-5">{title}</h3>
-                        <p className="text-xs leading-6 text-muted-foreground">{text}</p>
+                        <h3 className="font-heading text-[13px] font-bold leading-[18px] sm:text-sm sm:leading-5">
+                            {title}
+                        </h3>
+                        <p className="hidden text-xs leading-6 text-muted-foreground sm:block">{text}</p>
                     </div>
                 ))}
             </div>
