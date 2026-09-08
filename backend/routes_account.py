@@ -30,7 +30,9 @@ from db import (
 )
 from doc_reminders import missing_documents
 from emailer import draft_saved_html, login_code_html, send_email, subject_with_ref
-from rate_limit import check as rate_check, client_ip, code_request_window
+from rate_limit import allow as rate_allow
+from rate_limit import check as rate_check
+from rate_limit import client_ip, code_request_window
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -144,6 +146,8 @@ class DraftIn(BaseModel):
     traveler_count: int = 1
     draft_id: Optional[str] = None
     resume_code: Optional[str] = None
+    # True yalnizca kullanicinin acik "kaydet" istegi icin; otomatik kayitlarda posta yok.
+    notify: bool = False
 
 
 # ---------------------------------------------------------------------- giris
@@ -332,10 +336,10 @@ async def account_document_resend(
     import re
 
     import file_access
+    import visa_file_number
+    from application_docs import visa_pdf_attachment
     from db import insurance_tasks_col
     from emailer import send_email, subject_with_ref, visa_ready_html
-    from application_docs import visa_pdf_attachment
-    import visa_file_number
     from insurance_delivery import policy_html
 
     rate_check(
@@ -407,6 +411,12 @@ async def account_delete_draft(draft_id: str, email: str = Depends(require_custo
 async def save_draft(payload: DraftIn, request: Request) -> dict:
     """Yarim kalan basvuruyu kaydeder; devam kodu ile geri donulebilir."""
     email = _norm_email(payload.email)
+    rate_check(
+        f"draft-save:{client_ip(request)}",
+        120,
+        3600,
+        "Cok fazla taslak kaydi denemesi. Lutfen birkac dakika sonra tekrar deneyin.",
+    )
     now = datetime.now(timezone.utc)
 
     existing = None
@@ -437,13 +447,18 @@ async def save_draft(payload: DraftIn, request: Request) -> dict:
     resume_url = (
         f"{origin}/basvuru?taslak={doc['id']}&kod={doc['resume_code']}" if origin else ""
     )
-    email_result = await send_email(
-        email,
-        subject_with_ref(doc.get("resume_code", ""), "kaydedildi - kaldığınız yerden devam edin"),
-        draft_saved_html(doc, resume_url),
-        kind="draft_saved",
-        meta={"draft_id": doc["id"]},
-    )
+    # Otomatik kayitlar (5 sn'de bir) e-posta tetiklemez: yalnizca ilk kayit veya
+    # kullanicinin acik "kaydet" istegi, alici basina saatte en fazla 3 posta.
+    email_result: dict = {"status": "skipped"}
+    should_mail = existing is None or payload.notify
+    if should_mail and rate_allow(f"draft-mail:{email}", 3, 3600):
+        email_result = await send_email(
+            email,
+            subject_with_ref(doc.get("resume_code", ""), "kaydedildi - kaldığınız yerden devam edin"),
+            draft_saved_html(doc, resume_url),
+            kind="draft_saved",
+            meta={"draft_id": doc["id"]},
+        )
     return {
         "draft_id": doc["id"],
         "resume_code": doc["resume_code"],

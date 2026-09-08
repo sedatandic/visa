@@ -15,7 +15,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 
 from content import (
@@ -25,9 +25,12 @@ from content import (
     family_discount_rate,
 )
 from db import cart_snapshots_col, orders_col, serialize_doc, settings_col
-from models import InsuredIn
 from emailer import order_admin_html, order_received_html, send_email
 from fx import apply_fx_to_list, get_fx
+from models import InsuredIn
+from rate_limit import allow as rate_allow
+from rate_limit import check as rate_check
+from rate_limit import client_ip
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -36,10 +39,10 @@ ORDER_PREFIX = "SV-"
 
 from store_catalog import (  # noqa: F401 - tests/other modules re-import from here
     DEFAULT_PRODUCTS,
-    tour_schedule,
-    MAX_QTY,
     KIND_LABELS,
+    MAX_QTY,
     product_list,
+    tour_schedule,
 )
 
 
@@ -425,13 +428,16 @@ async def _bank_transfer_details(payment_method: str) -> Optional[dict]:
 
 async def _notify_new_order(doc: dict, view: dict, bank: Optional[dict]) -> None:
     """Musteriye ve (tanimliysa) admine siparis bildirimi gonderir."""
-    await send_email(
-        doc["contact"]["email"],
-        f"Siparişiniz alındı - {doc['reference_code']}",
-        order_received_html(view, bank),
-        kind="order_received",
-        meta={"order_id": doc["id"], "reference_code": doc["reference_code"]},
-    )
+    # Ayni alici saatte 40'tan fazla siparis postasi almaz (bombardiman engeli);
+    # siparis her durumda olusur, yalnizca bildirim atlanir.
+    if rate_allow(f"order-mail:{doc['contact']['email'].strip().lower()}", 40, 3600):
+        await send_email(
+            doc["contact"]["email"],
+            f"Siparişiniz alındı - {doc['reference_code']}",
+            order_received_html(view, bank),
+            kind="order_received",
+            meta={"order_id": doc["id"], "reference_code": doc["reference_code"]},
+        )
     admin_email = os.environ.get("ADMIN_EMAIL")
     if not admin_email:
         return
@@ -479,7 +485,13 @@ def _validate_insured(lines: list[dict], insured: list, travel_start: Optional[s
 
 
 @router.post("/orders")
-async def create_order(payload: OrderCreateIn) -> dict:
+async def create_order(payload: OrderCreateIn, request: Request) -> dict:
+    rate_check(
+        f"order-create-ip:{client_ip(request)}",
+        300,
+        3600,
+        "Cok fazla siparis denemesi. Lutfen daha sonra tekrar deneyin.",
+    )
     lines = await _build_order_lines(payload)
     insured = _validate_insured(lines, payload.insured, payload.travel_start)
     linked = await _linked_application(payload.application_reference, payload.contact.email)

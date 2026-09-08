@@ -1,8 +1,9 @@
 # ROADMAP (2026-09-08 itibarıyla · SEO denetim düzeltmeleri sonrası)
 
-## P0 — Kullanıcı eylemi (SEO düzeltmelerinin canlıya yansıması için)
-- [ ] **Yeniden deploy**: statik ön-render (`scripts/prerender.js`) yalnız production build'de
-      çalışır; deploy edilmeden SEO raporundaki duplicate/metin oranı bulguları kapanmaz.
+## P0 — Kullanıcı eylemi (SEO + güvenlik düzeltmelerinin canlıya yansıması için)
+- [ ] **Yeniden deploy**: statik ön-render (`scripts/prerender.js`) ve güvenlik düzeltmeleri
+      (hız sınırları, güvenlik başlıkları, /docs kapatma, PDF kaçışı) yalnız yeni deploy
+      sonrası canlıda geçerli olur.
 - [ ] **301 yönlendirme**: `dubaivizehatti.com` → `www.dubaivizehatti.com` (şu an iki host da
       200 dönüyor; 89 taranan sayfanın yarısı bu yüzden kopya). Alan adı/hosting panelinden.
 - [ ] **Search Console**: `https://www.dubaivizehatti.com/sitemap.xml` yeniden gönderilmeli

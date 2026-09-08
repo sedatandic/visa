@@ -1816,3 +1816,53 @@ tarafında açılmalı (şu an iki host da 200 dönüyor), (c) Search Console'a
   (form tek sayfada kalıyor, doğrulandı).
 - Doğrulama: canlı endpoint `GET /api/admin/applications/{id}/form.pdf` → 200, PDF görsel
   olarak kontrol edildi; `test_iteration_112_application_form.py` dahil 32 PDF testi PASS.
+
+## 2026-09-08 · Güvenlik denetimi (security_audit_agent) ve düzeltmeleri
+
+Denetim sonucu: **kritik/yüksek bulgu yok**; önceki denetimin SEC-001…004 + P3 maddelerinin
+tamamı kodda kapalı doğrulandı (OTP + hash'li kod, imzalı/süreli dosya jetonu, kaçışlı
+bookmarklet, CORS allowlist, JWT_SECRET fallback'i yok, admin uçları `require_admin`,
+ödeme tutarı yalnız sunucudan, WhatsApp webhook imza doğrulaması fail-closed).
+Kalan 2 ORTA bulgu ve 6 P3 sertleştirme maddesi düzeltildi:
+
+### SEC-001 (ORTA) — kimliksiz ve sınırsız e-posta gönderimi
+Kök neden iki katmanlıydı: (a) `POST /api/drafts` kimlik doğrulaması ve hız sınırı
+olmadan istenen adrese posta attırıyordu; (b) **frontend her 5 saniyede otomatik taslak
+kaydediyor ve her kayıt posta tetikliyordu** — canlı DB'de tek müşteriye 10 "kaydedildi"
+postası gitmiş (`email_outbox`).
+- `rate_limit.py`: yeni `allow(key, limit, window)` — sınır aşılınca 429 atmak yerine
+  `False` döner (kayıt/sipariş akışı bozulmadan yalnız bildirim atlanır).
+- `routes_account.save_draft`: IP başına 120 kayıt/saat (429) + posta yalnızca **ilk
+  kayıtta** veya kullanıcının açık isteğinde (`DraftIn.notify`, frontend `notify: !silent`
+  gönderiyor), alıcı başına **3 posta/saat**.
+- `routes_public.create_application` + `routes_store.create_order`: IP başına 300 oluşturma/saat
+  (429) ve müşteri bildirim postası alıcı başına **40/saat** (aşılırsa başvuru/sipariş yine
+  oluşur, yalnız müşteri postası atlanır; admin bildirimi gider).
+- Eşikler bilinçli olarak geniş: CGNAT/ortak IP arkasındaki gerçek müşteriler ve acente
+  personeli engellenmesin (ilk denemede 12/saat seçilmişti, test suit'i ve gerçek kullanım
+  senaryosunu kırdığı görülüp yükseltildi).
+
+### SEC-002 (ORTA) — PDF motoruna markup enjeksiyonu
+`application_pdf.py`: yeni `_safe()` (xml escape) ile ad/soyad, pasaport no, notlar,
+konaklama, ürün adları, belge etiketleri, takip kodu ve süre alanları ReportLab
+`Paragraph`'a kaçışlı giriyor. Böylece `<img src=...>`/`<b>` gibi girdiler metin olarak
+basılıyor; PDF üretimi bozulmuyor ve sunucu taraflı dış kaynak isteği (SSRF adayı) kalmıyor.
+
+### Sertleştirme (P3)
+- `server.py`: güvenlik başlıkları middleware'i (HSTS, `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`).
+- `/docs`, `/redoc`, `/openapi.json` artık **kapalı** (yalnız `ENABLE_API_DOCS` env'i
+  tanımlıysa açılır) — yönetim API yüzeyi dışarıya listelenmiyor.
+- `routes_public._validate_upload`: uzantı/boyut kontrolüne ek **dosya imzası (magic byte)**
+  doğrulaması (JPEG/PNG/PDF/WEBP); uzantısı değiştirilmiş dosyalar 400 alıyor.
+- `routes_admin.admin_verify_code`: IP başına 20 doğrulama denemesi/saat.
+- `backend/.env`: kullanılmayan `ADMIN_LOGIN_PASSWORD` kaldırıldı (giriş OTP ile);
+  `tests/test_iteration_80.py` bu env bağımlılığından kurtarıldı.
+
+**Test**: yeni `tests/test_iteration_122_security_hardening.py` (8 test: taslak posta
+bastırma + alıcı sınırı, sahte/gerçek JPEG yükleme, güvenlik başlıkları, /docs-/redoc-
+/openapi kapalı, PDF markup kaçışı). Tam suit: **461 passed / 3 skipped**.
+NOT: tam suit aynı saat içinde arka arkaya çalıştırılırsa `/api/contact` (mevcut, bu
+oturumdan önce eklenen) IP sınırı ve paylaşımlı test kutusu (`delivered@resend.dev`)
+40/saat posta sınırı nedeniyle 2-3 test 429 alabilir; backend'i yeniden başlatmak sayaçları
+sıfırlar.

@@ -38,6 +38,18 @@ def check(key: str, limit: int, window_seconds: int, message: str) -> None:
     hits.append(now)
 
 
+def allow(key: str, limit: int, window_seconds: int) -> bool:
+    """check() ile ayni sayac; sinir asildiginda 429 yerine False doner.
+
+    Kayit/siparis akisini bozmadan yalnizca bildirim e-postasini atlamak icin.
+    """
+    try:
+        check(key, limit, window_seconds, "rate limited")
+    except HTTPException:
+        return False
+    return True
+
+
 def as_utc(value) -> Optional[datetime]:
     if not isinstance(value, datetime):
         return None

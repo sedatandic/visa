@@ -24,7 +24,6 @@ load_dotenv(os.path.join(HERE, "..", "..", "frontend", ".env"))
 BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 API = f"{BASE_URL}/api"
 ADMIN_EMAIL = os.environ["ADMIN_LOGIN_EMAIL"]
-ADMIN_PASS = os.environ["ADMIN_LOGIN_PASSWORD"]
 
 
 @pytest.fixture(scope="module")

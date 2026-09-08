@@ -322,6 +322,7 @@ export default function Apply() {
                 draft_id: draft.id,
                 resume_code: draft.code,
                 step,
+                notify: !silent,
                 traveler_count: travelers.length,
                 title: `${travelers.length} yolcu · ${contact.full_name || contact.email}`,
                 data: { contact, travelers, travel, addons, extraDocs, step, insurancePick, esimQty, tourQty, tourSchedule },

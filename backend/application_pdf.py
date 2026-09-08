@@ -4,6 +4,7 @@ import io
 import logging
 import os
 from datetime import datetime
+from xml.sax.saxutils import escape as xml_escape
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -86,6 +87,12 @@ def _fonts() -> tuple[str, str]:
     return _FONTS
 
 
+def _safe(value) -> str:
+    """Kullanici metnini ReportLab markup'ina karsi kacisir (etiket enjeksiyonu/dis kaynak yok)."""
+    text = str(value).strip() if value not in (None, "") else "-"
+    return xml_escape(text)
+
+
 def _date(value) -> str:
     raw = str(value or "")[:10]
     try:
@@ -140,7 +147,7 @@ def _reference_band(app_doc: dict, st: dict) -> Table:
     payment = (app_doc.get("payment") or {}).get("status")
     rows = [
         [
-            [Paragraph("TAKİP KODU", st["label"]), Paragraph(app_doc.get("reference_code", "-"), st["code"])],
+            [Paragraph("TAKİP KODU", st["label"]), Paragraph(_safe(app_doc.get("reference_code")), st["code"])],
             [
                 Paragraph("BAŞVURU TARİHİ", st["label"]),
                 Paragraph(_date(str(app_doc.get("created_at") or "")[:10]), st["value"]),
@@ -151,7 +158,7 @@ def _reference_band(app_doc: dict, st: dict) -> Table:
             ],
             [
                 Paragraph("TAHMİNİ SONUÇLANMA", st["label"]),
-                Paragraph(app_doc.get("processing_days") or "-", st["value"]),
+                Paragraph(_safe(app_doc.get("processing_days")), st["value"]),
             ],
         ]
     ]
@@ -178,7 +185,7 @@ def _pairs_table(pairs: list, st: dict) -> Table:
         chunk = pairs[i : i + 2]
         row = []
         for label, value in chunk:
-            row += [Paragraph(label, st["label"]), Paragraph(str(value or "-"), st["value"])]
+            row += [Paragraph(label, st["label"]), Paragraph(_safe(value), st["value"])]
         if len(chunk) == 1:
             row += ["", ""]
         rows.append(row)
@@ -236,11 +243,11 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
         rows.append(
             [
                 Paragraph(str(i), st["body"]),
-                Paragraph(name, st["value"]),
+                Paragraph(_safe(name), st["value"]),
                 Paragraph(_date(t.get("birth_date")), st["body"]),
-                Paragraph(t.get("passport_no") or "-", st["body"]),
+                Paragraph(_safe(t.get("passport_no")), st["body"]),
                 Paragraph(_date(t.get("passport_expiry")), st["body"]),
-                Paragraph(t.get("visa_short_name") or t.get("visa_type_name") or "-", st["body"]),
+                Paragraph(_safe(t.get("visa_short_name") or t.get("visa_type_name")), st["body"]),
                 Paragraph(money(t.get("price", 0), t.get("currency", "TRY")), st["value"]),
             ]
         )
@@ -331,7 +338,7 @@ def _pricing_rows(app_doc: dict) -> list:
 
 def _price_table(app_doc: dict, st: dict) -> Table:
     rows = [
-        [Paragraph(label, st["body"]), Paragraph(value, st["value"])]
+        [Paragraph(_safe(label), st["body"]), Paragraph(value, st["value"])]
         for label, value in _pricing_rows(app_doc)
     ]
     table = Table(rows, colWidths=_cols(140, 40))
@@ -359,7 +366,7 @@ def _documents_paragraph(documents: list, st: dict) -> Paragraph:
     lines = []
     for item in documents:
         note = "" if item.get("attached", True) else " (e-postada bağlantı olarak)"
-        lines.append(f"• {item.get('label', '')}{note}")
+        lines.append(f"• {_safe(item.get('label'))}{note}")
     return Paragraph("<br/>".join(lines), st["body"])
 
 

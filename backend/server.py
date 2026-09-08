@@ -310,7 +310,28 @@ async def lifespan(app: FastAPI):
     client.close()
 
 
-app = FastAPI(title="Dubai Vize Hattı API", lifespan=lifespan)
+app = FastAPI(
+    title="Dubai Vize Hattı API",
+    lifespan=lifespan,
+    # API semasi/dokumantasyonu yalnizca acikca izin verilirse yayinlanir (yonetim yuzeyi sizmasin)
+    docs_url="/docs" if os.environ.get("ENABLE_API_DOCS") else None,
+    redoc_url="/redoc" if os.environ.get("ENABLE_API_DOCS") else None,
+    openapi_url="/openapi.json" if os.environ.get("ENABLE_API_DOCS") else None,
+)
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    """Tarayici tarafi sertlestirme basliklari (ingress uzerinde de eklenebilir)."""
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+    response.headers.setdefault(
+        "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+    )
+    return response
 
 api_router = APIRouter(prefix="/api")
 

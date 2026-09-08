@@ -20,16 +20,19 @@ from fastapi import (
 )
 from pydantic import BaseModel, Field
 
-from application_docs import application_form_bytes, form_filename, visa_pdf_attachment
+import file_access
 import visa_file_number
-from content import STATUS_LABELS
+from admin_auth import SESSION_DAYS, create_token, hash_code, require_admin
+from application_docs import application_form_bytes, form_filename, visa_pdf_attachment
+from content import BANK_TRANSFER, COMPANY, STATUS_LABELS
 from db import (
+    admin_login_codes_col,
     applications_col,
     articles_col,
     contact_col,
     conversations_col,
-    wa_documents_col,
     email_outbox_col,
+    login_codes_col,
     notifications_col,
     payments_col,
     serialize_doc,
@@ -37,22 +40,17 @@ from db import (
     testimonials_col,
     uploads_col,
     visa_types_col,
-    admin_login_codes_col,
-    login_codes_col,
     visits_col,
+    wa_documents_col,
 )
-from content import BANK_TRANSFER, COMPANY
 from doc_reminders import (
     missing_documents,
+    pending_applications,
     pending_drafts,
     run_draft_reminder_sweep,
-    pending_applications,
     run_reminder_sweep,
     send_document_reminder,
 )
-from fx import apply_fx_to_list, apply_fx_to_visa, get_fx, update_fx_settings
-from visa_guides import build_guide, guide_index
-from visitors import visit_summary
 from emailer import (
     admin_code_html,
     payment_received_html,
@@ -61,10 +59,7 @@ from emailer import (
     subject_with_ref,
     visa_ready_html,
 )
-from rate_limit import code_request_window
-from admin_auth import SESSION_DAYS, create_token, hash_code, require_admin
-from origins import public_base_url, resolve_origin
-import file_access
+from fx import apply_fx_to_list, apply_fx_to_visa, get_fx, update_fx_settings
 from models import (
     AdminCodeRequest,
     AdminCodeVerify,
@@ -77,7 +72,12 @@ from models import (
     TestimonialIn,
     WhatsAppRequest,
 )
+from origins import public_base_url, resolve_origin
+from rate_limit import check as rate_check
+from rate_limit import client_ip, code_request_window
 from storage import APP_NAME, MIME_TYPES, put_object
+from visa_guides import build_guide, guide_index
+from visitors import visit_summary
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -155,8 +155,14 @@ async def admin_request_code(payload: AdminCodeRequest, request: Request) -> dic
 
 
 @router.post("/admin/verify-code")
-async def admin_verify_code(payload: AdminCodeVerify) -> dict:
+async def admin_verify_code(payload: AdminCodeVerify, request: Request) -> dict:
     """Kodu dogrular ve 30 gun gecerli yonetici oturum jetonu dondurur."""
+    rate_check(
+        f"admin-verify:{client_ip(request)}",
+        20,
+        3600,
+        "Cok fazla dogrulama denemesi. Lutfen bir saat sonra tekrar deneyin.",
+    )
     email = payload.email.strip().lower()
     doc = await admin_login_codes_col.find_one({"email": email})
     if not doc or not doc.get("code_hash"):

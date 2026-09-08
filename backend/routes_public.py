@@ -79,7 +79,7 @@ from store_catalog import MAX_QTY, product_list, tour_schedule
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
 import ocr_metrics
 from passport_ai import apply_background_report, background_report, check_photo, read_passport
-from rate_limit import check as rate_check, client_ip
+from rate_limit import allow as rate_allow, check as rate_check, client_ip
 import file_access
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
 from tckn import clean_tckn, valid_tckn
@@ -508,7 +508,7 @@ async def pricing_quote(payload: QuoteRequest):
 
 # ---------------------------------------------------------------- uploads
 def _validate_upload(filename: str, data: bytes) -> str:
-    """Uzanti ve boyut dogrulamasi yapar; gecerli uzantiyi dondurur."""
+    """Uzanti, boyut ve dosya imzasi (magic byte) dogrulamasi yapar."""
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if ext not in ALLOWED_EXT:
         raise HTTPException(400, "Sadece JPG, PNG, WEBP veya PDF dosyalari yuklenebilir.")
@@ -516,7 +516,23 @@ def _validate_upload(filename: str, data: bytes) -> str:
         raise HTTPException(400, "Dosya bos gorunuyor. Lutfen tekrar deneyin.")
     if len(data) > MAX_FILE_BYTES:
         raise HTTPException(400, "Dosya boyutu en fazla 10 MB olabilir.")
+    if not _signature_matches(data):
+        raise HTTPException(
+            400, "Dosya icerigi taninamadi. Lutfen gercek bir JPG, PNG, WEBP veya PDF yukleyin."
+        )
     return ext
+
+
+def _signature_matches(data: bytes) -> bool:
+    """Icerigin gercekten izin verilen bir tur oldugunu imzadan dogrular."""
+    head = data[:16]
+    if head.startswith(b"\xff\xd8\xff"):  # JPEG
+        return True
+    if head.startswith(b"\x89PNG\r\n\x1a\n"):  # PNG
+        return True
+    if head.startswith(b"%PDF-"):  # PDF
+        return True
+    return head[:4] == b"RIFF" and data[8:12] == b"WEBP"  # WEBP
 
 
 def _store_upload(path: str, data: bytes, content_type: str) -> dict:
@@ -1047,14 +1063,19 @@ async def _send_application_emails(doc: dict, traveler_count: int) -> dict:
     except Exception as exc:  # pragma: no cover - ekler hazirlanamazsa posta yine gider
         logger.error("basvuru ekleri hazirlanamadi: %s", exc)
         bundle = {"attachments": [], "documents": [], "form_filename": ""}
-    email_result = await send_email(
-        doc["contact"]["email"],
-        subject_with_ref(reference_code, "alındı"),
-        applicant_received_html(view, bundle["documents"], bundle["form_filename"]),
-        kind="application_received",
-        meta={"reference_code": reference_code},
-        attachments=bundle["attachments"],
-    )
+    # Ayni alici saatte 40'tan fazla basvuru postasi almaz (bombardiman engeli);
+    # basvuru her durumda olusur, yalnizca musteri bildirimi atlanir.
+    if rate_allow(f"app-mail:{doc['contact']['email'].strip().lower()}", 40, 3600):
+        email_result = await send_email(
+            doc["contact"]["email"],
+            subject_with_ref(reference_code, "alındı"),
+            applicant_received_html(view, bundle["documents"], bundle["form_filename"]),
+            kind="application_received",
+            meta={"reference_code": reference_code},
+            attachments=bundle["attachments"],
+        )
+    else:
+        email_result = {"status": "skipped", "reason": "recipient hourly mail limit"}
     admin_email = os.environ.get("ADMIN_EMAIL") or ""
     if admin_email:
         await send_email(
@@ -1099,7 +1120,13 @@ def _validate_insurance_identity(travelers: list, store_lines: list) -> None:
 
 
 @router.post("/applications")
-async def create_application(payload: ApplicationCreate):
+async def create_application(payload: ApplicationCreate, request: Request):
+    rate_check(
+        f"app-create-ip:{client_ip(request)}",
+        300,
+        3600,
+        "Cok fazla basvuru olusturma denemesi. Lutfen daha sonra tekrar deneyin.",
+    )
     await _validate_extra_documents(payload.extra_documents)
     travelers, prices = await _build_travelers(payload.travelers, payload.travel)
 
