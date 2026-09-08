@@ -225,12 +225,17 @@ def _travel_pairs(app_doc: dict) -> list:
             ("Gidiş tarihi", _date(travel.get("arrival_date"))),
             ("Dönüş tarihi", _date(travel.get("departure_date"))),
         ]
-    return dates + [
-        ("Yolcu sayısı", str(len(app_doc.get("travelers") or []))),
+    optional = [
         ("Konaklama", travel.get("accommodation")),
         ("Uçuş bilgisi", travel.get("flight_no")),
         ("Notlar", travel.get("notes")),
     ]
+    return (
+        dates
+        + [("Yolcu sayısı", str(len(app_doc.get("travelers") or [])))]
+        # bos alanlar formda hic gosterilmez (musteri bilgi vermediyse satir cikmaz)
+        + [(label, value) for label, value in optional if str(value or "").strip()]
+    )
 
 
 def _travelers_table(app_doc: dict, st: dict) -> Table:
