@@ -446,6 +446,61 @@ function buildStaticPages(ctx) {
             jsonld: ["breadcrumb"],
         },
         {
+            path: "/guvenlik",
+            priority: "0.5",
+            changefreq: "yearly",
+            title: `Güvenlik ve Veri Koruma | ${BRAND}`,
+            description:
+                "256-bit SSL, 3D Secure ve PCI-DSS ödeme altyapısı, imzalı belge bağlantıları, 90 gün sonra imha ve KVKK uyumu: bilgilerinizin nasıl korunduğu.",
+            h1: "Güvenlik ve veri koruma",
+            intro: [
+                "Pasaport bilgilerinizi ve ödemenizi bize emanet ediyorsunuz. Karşılığında uyguladığımız teknik önlemlerin tamamı bu sayfada açık dille yazılı: şifreli bağlantı, kart bilgisi saklamayan ödeme akışı, süreli belge bağlantıları, 90 günlük saklama süresi ve şifresiz tek kullanımlık kodla giriş.",
+            ],
+            sections: [
+                {
+                    h2: "Bağlantı ve site güvenliği",
+                    paras: [
+                        "Sitenin tamamı ve başvuru formu 256-bit SSL/TLS ile şifrelenir; HSTS başlığı sayesinde tarayıcınız şifresiz bağlantı kurmaz. Sunucu yanıtlarında içerik türü zorlaması, çerçeveleme (clickjacking) koruması, referans politikası ve kamera/mikrofon/konum izinlerini kapatan başlıklar tanımlıdır.",
+                        "Yönetim arayüzünün API şeması dışarıya kapalıdır; başvuru, iletişim ve kod gönderimi uçlarında IP ve e-posta bazlı hız sınırları uygulanır.",
+                    ],
+                },
+                {
+                    h2: "Ödeme güvenliği",
+                    paras: [
+                        "Kart ödemeleri PCI-DSS sertifikalı ödeme kuruluşunun güvenli sayfasında alınır; kart numarası, son kullanma tarihi ve CVV sunucularımıza hiç ulaşmaz. Son onay bankanızın 3D Secure ekranında verilir.",
+                        "Havale/EFT tercih edenler için hesap bilgileri yalnızca kendi sitemizde gösterilir. IBAN değişikliği bildiren mesajlara güvenmeyin, ödeme öncesi bize doğrulatın.",
+                    ],
+                },
+                {
+                    h2: "Belgelerinizin güvenliği",
+                    paras: [
+                        "Pasaport taramanız ve fotoğrafınız erişimi kısıtlı depolamada tutulur; dosyalar yalnızca imzalı ve süresi dolan bağlantılarla açılabilir, herkese açık bir adres yoktur.",
+                        "Saklama süresi 90 gündür; süre dolduğunda belgelerin içeriği geri getirilemeyecek şekilde otomatik silinir.",
+                    ],
+                },
+                {
+                    h2: "Hesap ve oturum güvenliği",
+                    paras: [
+                        "Müşteri hesabı ve yönetim panelinde şifre kullanılmaz; giriş e-postaya gelen 6 haneli tek kullanımlık kodla yapılır. Kodlar kısa süre geçerlidir, tek kullanımlıktır, düz metin saklanmaz ve hatalı denemelerde kilitlenir.",
+                    ],
+                },
+                {
+                    h2: "Yetki, mevzuat ve şeffaflık",
+                    paras: [
+                        "Hizmet TÜRSAB üyesi A Grubu seyahat acentesi olarak sunulur; vize kararı Dubai göçmenlik makamlarına (GDRFA) aittir. Kişisel verileriniz KVKK kapsamında işlenir, reklam amacıyla üçüncü taraflara satılmaz.",
+                    ],
+                },
+                {
+                    h2: "Dolandırıcılığa karşı 4 kontrol",
+                    paras: [
+                        "Ödeme yalnızca dubaivizehatti.com üzerinden veya bize ait banka hesabına yapılır; adres çubuğundaki kilit simgesini ve alan adının doğru yazıldığını kontrol edin; sizden şifre, kart CVV'si veya SMS kodu istemeyiz; şüpheli mesajlarda işlem yapmadan önce iletişim sayfamızdaki numaradan doğrulatın.",
+                    ],
+                },
+            ],
+            faq: [],
+            jsonld: ["breadcrumb"],
+        },
+        {
             path: "/kvkk",
             priority: "0.3",
             changefreq: "yearly",

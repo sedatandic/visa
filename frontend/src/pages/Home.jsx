@@ -26,6 +26,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { ReviewSpotlight } from "../components/ReviewSpotlight";
 import { AuthorityStrip } from "../components/AuthorityStrip";
+import { SecurityBadges } from "../components/SecurityBadges";
 import { VisaShowcase } from "../components/VisaShowcase";
 import { VisaExplainer } from "../components/VisaExplainer";
 import { VisaSpecimen } from "../components/VisaSpecimen";
@@ -326,6 +327,8 @@ export default function Home() {
             <VisaSpecimen compact />
 
             <CommitmentsStrip />
+
+            <SecurityBadges />
 
             <section className="section" data-testid="landing-tracking">
                 <div className="container-page grid items-center gap-10 lg:grid-cols-[1fr_0.9fr]">

@@ -25,6 +25,7 @@ import { PageHeader } from "../components/SiteLayout";
 import { FxNote } from "../components/FxNote";
 import { DateField } from "../components/DateField";
 import { InsuredIdentityFields } from "../components/InsuredIdentityFields";
+import { SecurityMiniStrip } from "../components/SecurityBadges";
 import { cleanTckn, validTckn } from "../lib/tckn";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -731,6 +732,7 @@ export default function Cart() {    const navigate = useNavigate();
                                         className="space-y-3 border-t border-border pt-5"
                                         data-testid="cart-visa-checkout-panel"
                                     >
+                                        <SecurityMiniStrip />
                                         <p className="text-sm leading-6">
                                             Sepetinizde vize olduğu için ödeme başvuru formunda alınır: pasaport ve
                                             fotoğrafınızı yükleyip vize, sigorta ve eSIM'i tek seferde ödeyeceksiniz.
@@ -884,6 +886,7 @@ export default function Cart() {    const navigate = useNavigate();
 
                                     <div>
                                         <Label className="mb-2 block">Ödeme yöntemi</Label>
+                                        <SecurityMiniStrip className="mb-3" />
                                         <div className="grid gap-3 sm:grid-cols-2">
                                             {[
                                                 { id: "card", label: "Kredi / banka kartı", icon: CreditCard },

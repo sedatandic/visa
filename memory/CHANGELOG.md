@@ -2017,3 +2017,24 @@ beni uyar." Tek modülde 3 kontrol noktası:
 - Canlı e2e: `PATCH /admin/products/ins_7d {"price_try":200}` → fiyat otomatik 490 ₺'ye
   çıktı, olay kaydı oluştu, uyarı e-postası `info@dubaivizehatti.com` adresine
   `status=sent` gitti; panel ekran görüntüsüyle doğrulandı.
+
+## 2026-09-08 (7) · Güven rozetleri + "Güvenlik ve Veri Koruma" sayfası
+Kullanıcı isteği: "Web sitesine güvenlikle ilgili bazı sertifikalar koy ya da yazılar
+güven sağlamak için." Uydurma sertifika (ISO vb.) kullanılmadı; yalnızca sistemde
+gerçekten uygulanan önlemler yazıldı.
+- `components/SecurityBadges.jsx` (yeni): 8 rozet — 256-bit SSL/HSTS, 3D Secure + PCI-DSS
+  ödeme (kart bilgisi saklanmaz), imzalı/süreli belge bağlantıları, 90 gün sonra imha,
+  şifresiz tek kullanımlık kodla giriş, KVKK uyumu, TÜRSAB A Grubu üyeliği, kötüye kullanım
+  koruması (hız sınırı + sertleştirilmiş başlıklar). İki varyant: `SecurityBadges` (ızgara
+  bölüm, `security-badges`) ve `SecurityMiniStrip` (tek satır, `security-mini-strip`).
+- `pages/Security.jsx` + rota **`/guvenlik`**: 6 bölümlük yazılı açıklama (bağlantı, ödeme,
+  belge, hesap/oturum, yetki-mevzuat, dolandırıcılığa karşı 4 kontrol), güvenlik açığı
+  bildirim kutusu (ADMIN e-postası) ve yasal metin linkleri.
+- Yerleşim: ana sayfada `CommitmentsStrip` altına rozet ızgarası; **başvuru sihirbazı Adım 4
+  "Ödeme yöntemi"** üstüne, **sepet** özet panelinin ödeme alanına (hem vize hem
+  sigorta/eSIM akışı) mini şerit; footer'a "Güvenlik ve Veri Koruma" linki
+  (`footer-security-link`).
+- SEO: `scripts/seo-pages.js` içine `/guvenlik` kaydı (title/description/h1 + 6 bölüm) →
+  ön-render ve sitemap'e otomatik girer (priority 0.5).
+- Doğrulama: /guvenlik'te 8 rozet + bildirim kutusu, ana sayfada bölüm, sepet ödeme alanında
+  mini şerit ekran görüntüleriyle kontrol edildi; webpack derlemesi temiz.

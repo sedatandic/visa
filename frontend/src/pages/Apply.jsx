@@ -56,6 +56,7 @@ import { PhotoRetryHelper } from "../components/PhotoRetryHelper";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { useCart } from "../lib/cart";
 import { BankTransferInfo } from "../components/BankTransferInfo";
+import { SecurityMiniStrip } from "../components/SecurityBadges";
 import { BankAccounts } from "../components/BankAccounts";
 import { VisaComparison } from "../components/VisaComparison";
 import { InsuredIdentityFields } from "../components/InsuredIdentityFields";
@@ -3488,6 +3489,7 @@ export default function Apply() {
                                     {/* ÖDEME YÖNTEMİ */}
                                     <div className="mt-6" data-testid="payment-method-section">
                                         <h3 className="font-heading text-base font-bold">Ödeme yöntemi</h3>
+                                        <SecurityMiniStrip className="mt-3" />
                                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                             {[
                                                 {

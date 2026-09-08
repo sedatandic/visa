@@ -15,6 +15,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Kvkk from "./pages/Kvkk";
 import LegalTerms from "./pages/LegalTerms";
+import Security from "./pages/Security";
 import Apply from "./pages/Apply";
 import Track from "./pages/Track";
 import VisaVerify from "./pages/VisaVerify";
@@ -73,6 +74,7 @@ function App() {
                     <Route path="/hakkimizda" element={<Site><About /></Site>} />
                     <Route path="/iletisim" element={<Site><Contact /></Site>} />
                     <Route path="/kvkk" element={<Site><Kvkk /></Site>} />
+                    <Route path="/guvenlik" element={<Site><Security /></Site>} />
                     <Route path="/iade-kosullari" element={<Site><LegalTerms variant="refund" /></Site>} />
                     <Route path="/hizmet-sozlesmesi" element={<Site><LegalTerms variant="service" /></Site>} />
                     <Route path="/gizlilik-politikasi" element={<Site><LegalTerms variant="privacy" /></Site>} />
