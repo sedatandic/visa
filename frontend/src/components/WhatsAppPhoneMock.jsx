@@ -93,22 +93,10 @@ const SCENARIOS = [
     },
 ];
 
-const TAILS = {
-    in: {
-        d: "M1.533 9.432 8 .807V12H2.812C1.042 12 .474 10.844 1.533 9.432z",
-        fill: "#FFFFFF",
-        position: "-left-[7px]",
-    },
-    out: {
-        d: "M6.467 9.432 0 .807V12h5.188c1.77 0 2.338-1.156 1.279-2.568z",
-        fill: "#D9FDD3",
-        position: "-right-[7px]",
-    },
-};
+const IN_TAIL = "M1.533 9.432 8 .807V12H2.812C1.042 12 .474 10.844 1.533 9.432z";
 
 const Bubble = ({ m, i }) => {
     const out = m.from === "out";
-    const tail = out ? TAILS.out : TAILS.in;
     return (
         <motion.div
             initial={{ opacity: 0, y: 12, scale: 0.97 }}
@@ -119,18 +107,20 @@ const Bubble = ({ m, i }) => {
         >
             <div
                 className={`relative max-w-[85%] rounded-[7px] px-2.5 py-1.5 text-[13px] leading-[18px] text-[#111B21] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] ${
-                    out ? "rounded-br-none bg-[#D9FDD3]" : "rounded-bl-none bg-white"
+                    out ? "bg-[#D9FDD3]" : "rounded-bl-none bg-white"
                 }`}
             >
-                <svg
-                    viewBox="0 0 8 13"
-                    width="8"
-                    height="13"
-                    className={`absolute bottom-0 ${tail.position}`}
-                    aria-hidden="true"
-                >
-                    <path d={tail.d} fill={tail.fill} />
-                </svg>
+                {!out && (
+                    <svg
+                        viewBox="0 0 8 13"
+                        width="8"
+                        height="13"
+                        className="absolute -left-[7px] bottom-0"
+                        aria-hidden="true"
+                    >
+                        <path d={IN_TAIL} fill="#FFFFFF" />
+                    </svg>
+                )}
                 {m.image && (
                     <img
                         src={m.image}
