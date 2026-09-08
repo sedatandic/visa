@@ -10,9 +10,14 @@
       (sitemap artık build sırasında üretiliyor, 30 URL, 404 veren transit rehberi çıkarıldı).
 
 ## P0 — Acil
-- [ ] **İlk gerçek test poliçesi**: kart girildi ve bağlantı doğrulandı (2026-09-08,
-      "Kart hazır **** 1028"); kullanıcı isteğiyle gerçek kesim bekletiliyor. Onay gelince
-      7 günlük poliçe kesilecek (karttan ~245 ₺ çekim) ve PDF teslimi kontrol edilecek.
+- [ ] **Tamamliyo 220 ürün kodu**: sağlayıcı "her sigorta alımında 220 kullanın" dedi ama
+      `fiyat-al` 220 için "Fiyat bulunamadı ... 758" dönüyor (141/185/189 çalışıyor, 220
+      `urun-kodlari` listesinde de yok). Kullanıcı Tamamliyo'dan ürünün partner hesabına
+      tanımlanmasını isteyecek. Açıldığında: `backend/.env` → `TAMAMLIYO_URUN_ID=220` +
+      backend restart + fiyat senkronu (kod hazır, 2026-09-08).
+- [ ] **İlk gerçek test poliçesi**: kart hazır (**** 1028), otomatik kesim açık; kullanıcı
+      isteğiyle **220 açılana kadar ertelendi**. Kesim sırasında gereken: sigortalının gerçek
+      TCKN + doğum tarihi + ad soyad (MERNIS doğrulaması).
 - [ ] **Tamamliyo cari bakiyesi yükle (tek kalan engel)**: ödeme `odeme-yap` +
       `odemeTipi=3` (cari bakiye) ile yapılıyor, kart bilgisi tutulmuyor. Canlı denemede
       `HATA_15 "Yetersiz puan bakiyesi."` — Tamamliyo panelinden bakiye yüklenince poliçe

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ExternalLink, Loader2, MessageCircle, RefreshCw, Send, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
+import { ExternalLink, Loader2, MessageCircle, Receipt, RefreshCw, Send, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
 import { formatDateTime, formatMoney } from "../lib/site";
@@ -334,6 +334,107 @@ const ProviderPanel = ({ status, onChange }) => {
     );
 };
 
+const ExpensePanel = ({ data }) => {
+    const months = (data.items || []).filter((row) => row.count > 0);
+    const max = Math.max(1, ...months.map((row) => row.charged_try));
+    const totals = data.totals || {};
+
+    return (
+        <div className="card-surface mt-6 p-5" data-testid="insurance-expense-panel">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 className="flex items-center gap-2 font-heading text-sm font-bold">
+                        <Receipt className="h-4 w-4 text-primary" /> Sigorta gideri · karttan çekilen
+                    </h2>
+                    <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+                        Tamamliyo'ya kurumsal karttan ödenen poliçe bedelleri. Yalnızca gerçekten
+                        çekim yapılan poliçeler listelenir; elle/test kesimleri gidere girmez.
+                    </p>
+                </div>
+                <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Bu ay</p>
+                    <p
+                        className="font-heading text-lg font-bold text-primary"
+                        data-testid="insurance-expense-this-month"
+                    >
+                        {formatMoney(totals.this_month_try || 0, "TRY")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        {totals.this_month_count || 0} poliçe · toplam{" "}
+                        {formatMoney(totals.charged_try || 0, "TRY")}
+                    </p>
+                </div>
+            </div>
+
+            {months.length === 0 ? (
+                <p className="mt-4 text-sm text-muted-foreground" data-testid="insurance-expense-empty">
+                    Henüz karttan çekim yapılmadı. İlk poliçe kesildiğinde tutar burada görünecek.
+                </p>
+            ) : (
+                <>
+                    <ul className="mt-4 space-y-2" data-testid="insurance-expense-months">
+                        {months.map((row) => (
+                            <li key={row.month} className="flex items-center gap-3 text-sm">
+                                <span className="w-14 shrink-0 text-xs text-muted-foreground">
+                                    {row.label}
+                                </span>
+                                <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                                    <span
+                                        className="block h-full rounded-full bg-primary transition-all"
+                                        style={{ width: `${Math.max(4, (row.charged_try / max) * 100)}%` }}
+                                    />
+                                </span>
+                                <span className="w-16 shrink-0 text-right text-xs text-muted-foreground">
+                                    {row.count} poliçe
+                                </span>
+                                <span className="w-28 shrink-0 text-right font-medium">
+                                    {formatMoney(row.charged_try, "TRY")}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <div className="mt-5 overflow-x-auto">
+                        <table className="w-full min-w-[720px] text-left text-sm">
+                            <thead className="text-xs uppercase text-muted-foreground">
+                                <tr>
+                                    <th className="pb-2 font-medium">Tarih</th>
+                                    <th className="pb-2 font-medium">Sipariş</th>
+                                    <th className="pb-2 font-medium">Plan</th>
+                                    <th className="pb-2 font-medium">Poliçe no</th>
+                                    <th className="pb-2 text-right font-medium">Çekilen</th>
+                                    <th className="pb-2 text-right font-medium">Satış</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border" data-testid="insurance-expense-rows">
+                                {(data.recent || []).map((row) => (
+                                    <tr key={row.task_id} data-testid={`insurance-expense-row-${row.task_id}`}>
+                                        <td className="py-2 text-xs text-muted-foreground">
+                                            {formatDateTime(row.charged_at)}
+                                        </td>
+                                        <td className="py-2 font-medium">{row.order_reference || "-"}</td>
+                                        <td className="py-2 text-xs">
+                                            {row.plan_name || "-"}
+                                            {row.quantity > 1 ? ` × ${row.quantity}` : ""}
+                                        </td>
+                                        <td className="py-2 text-xs">{row.policy_no || row.quote_id || "-"}</td>
+                                        <td className="py-2 text-right font-medium">
+                                            {formatMoney(row.charged_try, "TRY")}
+                                        </td>
+                                        <td className="py-2 text-right text-muted-foreground">
+                                            {formatMoney(row.revenue_try, "TRY")}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
+
 const PaymentPanel = ({ state, onChange }) => {
     const [busy, setBusy] = useState(false);
 
@@ -466,23 +567,27 @@ export default function AdminInsurance() {
     const [monthly, setMonthly] = useState(null);
     const [provider, setProvider] = useState(null);
     const [payment, setPayment] = useState(null);
+    const [expenses, setExpenses] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const load = async () => {
         setLoading(true);
         try {
-            const [tasksRes, reportRes, monthlyRes, providerRes, paymentRes] = await Promise.all([
-                api.get("/admin/insurance-tasks"),
-                api.get("/admin/insurance-report"),
-                api.get("/admin/profit-monthly?months=12"),
-                api.get("/admin/insurance/provider"),
-                api.get("/admin/insurance/payment"),
-            ]);
+            const [tasksRes, reportRes, monthlyRes, providerRes, paymentRes, expenseRes] =
+                await Promise.all([
+                    api.get("/admin/insurance-tasks"),
+                    api.get("/admin/insurance-report"),
+                    api.get("/admin/profit-monthly?months=12"),
+                    api.get("/admin/insurance/provider"),
+                    api.get("/admin/insurance/payment"),
+                    api.get("/admin/insurance/expenses?months=12"),
+                ]);
             setTasks(tasksRes.data.items || []);
             setReport(reportRes.data);
             setMonthly(monthlyRes.data);
             setProvider(providerRes.data);
             setPayment(paymentRes.data);
+            setExpenses(expenseRes.data);
         } catch (err) {
             toast.error(apiError(err, "Veriler yüklenemedi."));
         } finally {
@@ -519,6 +624,7 @@ export default function AdminInsurance() {
 
             {provider && <ProviderPanel status={provider} onChange={load} />}
             {payment && <PaymentPanel state={payment} onChange={load} />}
+            {expenses && <ExpensePanel data={expenses} />}
 
             {monthly && (
                 <div className="mt-6">

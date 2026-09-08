@@ -22,7 +22,14 @@ _jitter = secrets.SystemRandom()
 
 PATH = "/partner/v3/seyahat-saglik-sigortasi"
 PRODUCT = "yurtdisi-seyahat"
-URUN_ID = 141  # "Yurt Disi Saglik Destek Paketi" - 30.000 EUR + vize teminati
+def _configured_urun_id() -> int:
+    """Urun kodu .env'den okunur (saglayici partner hesabina gore degisebilir)."""
+    raw = (os.environ.get("TAMAMLIYO_URUN_ID") or "").strip()
+    return int(raw) if raw.isdigit() else 141
+
+
+# 141 "Yurt Disi Saglik Destek Paketi" (30.000 EUR + vize teminati) — varsayilan
+URUN_ID = _configured_urun_id()
 # Gidilecek ulke kodu (Tamamliyo /partner/v1/countries): 784 = Birlesik Arap Emirlikleri.
 # teklif-olustur bu alani zorunlu tutuyor (HATA_2: "ulkeKodu gonderilmesi zorunludur").
 ULKE_KODU_BAE = 784

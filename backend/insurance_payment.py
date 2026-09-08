@@ -11,6 +11,7 @@ Police bedeli `odeme-yap` ucundan `odemeTipi=2` ile kurumsal karttan cekilir
 
 import logging
 import os
+import re
 from datetime import datetime, timedelta, timezone
 
 import tamamliyo
@@ -24,6 +25,20 @@ SETTINGS_KEY = "insurance_payment"
 ALERT_COOLDOWN_HOURS = 12
 # Odeme engeli olarak degerlendirilen saglayici hatalari (kart/limit/bakiye/tanimsiz kart)
 BLOCKED_KEYWORDS = ("kart", "bakiye", "limit", "yetersiz", "tanımlı değil", "tanimli degil")
+
+
+def parse_try(value) -> float:
+    """'1.234,56 TL' / '244,85' / 244.85 -> float (Tamamliyo fiyat alanlari)."""
+    if isinstance(value, (int, float)):
+        return float(value)
+    text = str(value or "").strip()
+    if not text:
+        return 0.0
+    text = re.sub(r"[^\d,.]", "", text).replace(".", "").replace(",", ".")
+    try:
+        return float(text)
+    except ValueError:
+        return 0.0
 
 
 def is_payment_unknown(message: str) -> bool:

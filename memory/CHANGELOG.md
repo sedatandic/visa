@@ -1935,3 +1935,46 @@ gerçek 7 günlük test poliçesi kesilip doğrulanmalı.
   ödeme gövdesi maskeli olarak kontrol edildi (odemeTipi=2, 16 haneli numara, boşluksuz).
 - **Gerçek test poliçesi kullanıcı tercihiyle henüz KESİLMEDİ** ("önce bağlantıyı doğrula").
   İlk gerçek kesim yapıldığında kartından ~245 ₺ (7 günlük) çekilecek.
+
+## 2026-09-08 (5) · Sigorta gider raporu + otomatik poliçe kesimi açıldı + ürün kodu env'e taşındı
+
+### Sigorta gider raporu (karttan çekilen tutarlar)
+- `insurance_provider._record_charge()`: ödeme başarılı olduğu anda göreve **`charged_try`**
+  (Tamamliyo teklif fiyatı) + **`charged_at`** yazılıyor — gider raporunun tek doğruluk kaynağı.
+- `insurance_payment.parse_try()` geri geldi ("244,85" / "1.234,56 TL" / 296.63 → float).
+- `insurance_tasks.expense_report(months)`: yalnızca gerçekten çekim yapılan görevleri
+  (`charged_at` dolu) alır; aylık toplam + adet, bu ay özeti ve son 25 çekimin listesi
+  (tarih, sipariş referansı, plan, poliçe no, çekilen tutar, satış tutarı).
+  Elle/test kesimleri (mevcut 30 kayıt) gidere girmiyor — tablo sıfırdan başlıyor.
+- Yeni uç: **`GET /admin/insurance/expenses?months=12`**.
+- Panel: `AdminInsurance.jsx` → yeni **"Sigorta gideri · karttan çekilen"** kartı
+  (`insurance-expense-panel`): bu ay toplamı, aylık bar listesi ve çekim tablosu;
+  çekim yoksa "Henüz karttan çekim yapılmadı" boş durumu.
+
+### Otomatik poliçe kesimi
+- Panelden **açıldı** (`POST /admin/insurance/auto-issue {"enabled": true}` → `auto_issue: true`).
+  Artık ödeme onaylanan sigorta siparişlerinde poliçe elle beklemeden kesiliyor, PDF müşteriye
+  gidiyor (`insurance_tasks._maybe_auto_issue`).
+- `test_iteration_116_refactor.py::test_provider_status` artık `auto_issue`'nun bool olmasını
+  doğruluyor (eskiden `False` sabitini bekliyordu).
+
+### Ürün kodu (`urun_id`) artık .env'de
+- Kullanıcı Tamamliyo'dan "her sigorta alımında 220 kodunu kullanın" bilgisini iletti.
+  **Canlı deneme: 220 fiyat dönmüyor** — `fiyat-al` `urun: yurtdisi-seyahat`, `urun_id: 220`
+  ile 1/2 kişi, 7/30/90/365 gün, bugün/yarın başlangıç, string/int id kombinasyonlarının
+  **tamamında** `"Fiyat bulunamadı. Lütfen daha sonra tekrar deneyiniz. 758"`.
+  Aynı istek 141 (244,82 ₺), 185 (Covid dahil 383,84 ₺), 189 (Covid + vize reddi dahil
+  1.483,01 ₺) ile çalışıyor. `urun-kodlari` listesinde de 220 yok → ürün partner hesabımıza
+  tanımlı değil; Tamamliyo'nun açması gerekiyor (kullanıcıya iletilecek hata metni verildi).
+- `tamamliyo.URUN_ID` artık `TAMAMLIYO_URUN_ID` env'inden okunuyor (varsayılan 141).
+  220 açıldığında tek satır .env değişikliği + backend restart yeterli.
+- Kullanıcı kararı: **141 ile devam**, 220 açılınca geçilecek.
+
+### İlk gerçek test poliçesi
+Kullanıcı isteğiyle **220 açılana kadar ertelendi** (kimlik bilgileri de bu yüzden alınmadı).
+Kart hazır (**** 1028), otomatik kesim açık, gider raporu çekimi bekliyor.
+
+**Test**: yeni `tests/test_iteration_123_insurance_expenses.py` (14 test: fiyat ayrıştırma,
+çekim kaydı, ödeme adımının çekimi kaydetmesi, tekrarlanan ödemede çift kayıt olmaması,
+aylık gruplama, panel alanları, çoklu yolcu cirosu, geçersiz tarihin toplama girmemesi).
+Tam suit: **467 passed / 3 skipped**.

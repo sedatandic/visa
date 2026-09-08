@@ -142,6 +142,14 @@ async def admin_insurance_payment(admin: dict = Depends(require_admin)) -> dict:
     return state
 
 
+@router.get("/admin/insurance/expenses")
+async def admin_insurance_expenses(months: int = 12, admin: dict = Depends(require_admin)) -> dict:
+    """Karttan cekilen police bedelleri: aylik toplam + son cekimler."""
+    from insurance_tasks import expense_report
+
+    return await expense_report(months)
+
+
 @router.post("/admin/insurance/payment/retry")
 async def admin_insurance_payment_retry(admin: dict = Depends(require_admin)) -> dict:
     """Odeme bekleyen policeleri hemen tekrar dener (kart sorunu cozuldugunde)."""

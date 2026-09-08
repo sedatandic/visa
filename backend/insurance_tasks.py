@@ -273,6 +273,71 @@ async def monthly_profit(months: int = 12) -> dict:
     }
 
 
+async def expense_report(months: int = 12) -> dict:
+    """Karttan cekilen police bedelleri: aylik toplam + son cekimler.
+
+    Yalnizca gercekten odemesi yapilan gorevler (`charged_at` yazilmis) sayilir;
+    elle/test kesimleri gidere girmez.
+    """
+    charged = (
+        await insurance_tasks_col.find({"charged_at": {"$ne": None}})
+        .sort("charged_at", -1)
+        .to_list(500)
+    )
+    buckets: dict = {}
+    for task in charged:
+        charged_at = task.get("charged_at")
+        if not isinstance(charged_at, datetime):
+            continue
+        bucket = buckets.setdefault(charged_at.strftime("%Y-%m"), {"count": 0, "charged_try": 0.0})
+        bucket["count"] += 1
+        bucket["charged_try"] += float(task.get("charged_try") or 0)
+
+    rows = [
+        {
+            "month": key,
+            "label": f"{key[5:]}.{key[2:4]}",
+            "count": buckets.get(key, {}).get("count", 0),
+            "charged_try": round(buckets.get(key, {}).get("charged_try", 0.0), 2),
+        }
+        for key in _month_keys(months)
+    ]
+    recent = [
+        {
+            "task_id": task["id"],
+            "order_reference": task.get("order_reference"),
+            "plan_name": task.get("plan_name"),
+            "validity_days": task.get("validity_days"),
+            "quantity": task.get("quantity"),
+            "customer_name": (task.get("customer") or {}).get("full_name"),
+            "policy_no": (task.get("provider_steps") or {}).get("policy_no")
+            or ((task.get("provider_steps") or {}).get("policy") or {}).get("police_no"),
+            "quote_id": task.get("provider_quote_id"),
+            "charged_try": round(float(task.get("charged_try") or 0), 2),
+            "charged_at": task.get("charged_at"),
+            "revenue_try": round(
+                float(task.get("unit_price") or 0) * int(task.get("quantity") or 1), 2
+            ),
+        }
+        for task in charged[:25]
+    ]
+    total = round(sum(row["charged_try"] for row in rows), 2)
+    this_month = next(
+        (row for row in rows if row["month"] == datetime.now(timezone.utc).strftime("%Y-%m")), None
+    )
+    return {
+        "currency": "TRY",
+        "items": rows,
+        "recent": recent,
+        "totals": {
+            "charged_try": total,
+            "count": sum(row["count"] for row in rows),
+            "this_month_try": (this_month or {}).get("charged_try", 0.0),
+            "this_month_count": (this_month or {}).get("count", 0),
+        },
+    }
+
+
 async def _sold_insurance_totals() -> dict:
     """Odenmis siparislerden urun bazli satilan adet ve ciroyu toplar."""
     sold: dict = {}

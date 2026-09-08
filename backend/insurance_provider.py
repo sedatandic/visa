@@ -240,12 +240,27 @@ async def _ensure_quote(task: dict, insured: list) -> str:
     return (fresh or {}).get("provider_quote_id") or quote_id
 
 
+async def _record_charge(task_id: str) -> None:
+    """Karttan cekilen tutari gorev uzerine yazar (gider raporunun kaynagi)."""
+    doc = await insurance_tasks_col.find_one({"id": task_id}) or {}
+    await insurance_tasks_col.update_one(
+        {"id": task_id},
+        {
+            "$set": {
+                "charged_try": insurance_payment.parse_try(doc.get("provider_quote_price")),
+                "charged_at": datetime.now(timezone.utc),
+            }
+        },
+    )
+
+
 async def _ensure_policy(task: dict, quote_id: str, steps: dict) -> None:
     """Kartla odeme ve police olusturma adimlarini tamamlar."""
     task_id = task["id"]
     if steps.get("payment_confirm") != "done":
         result = await tamamliyo.pay_for_quote(quote_id)
         await _mark_step(task_id, "payment_confirm", {"success": bool(result.get("success", True))})
+        await _record_charge(task_id)
 
     if steps.get("policy") != "done":
         result = await tamamliyo.create_policy(quote_id)

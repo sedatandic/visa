@@ -286,7 +286,8 @@ class TestProviderPanel:
         assert r.status_code == 200, r.text
         body = r.json()
         assert body.get("configured") is True
-        assert body.get("auto_issue") is False
+        # Otomatik police kesimi panelden acilip kapatilabiliyor (2026-09-08'de acildi)
+        assert isinstance(body.get("auto_issue"), bool)
         assert body.get("urun_id")
         assert body.get("last_sync_at")
         rows = body.get("products") or body.get("rows") or body.get("items") or []
