@@ -2103,3 +2103,6 @@ Kullanıcı: "cepten bakınca cep telefonu çok uzun görünüyor."
   (11px → 10px, leading 13px), avatar mobilde 32px, isim bloğuna `pr-3.5` ile telefon/⋮
   ikonlarından ayrı durması sağlandı. 390px'de ölçüldü: başlık tam görünüyor (97px).
 - Maket durum çubuğunda pil yüzdesi ("86" kutusu) yerine **5G** yazısı gösteriliyor.
+- Sohbet balonu köşeleri gerçek WhatsApp geometrisine çevrildi: köşe yarıçapı 7px, kuyruk
+  tarafındaki üst köşe düz (`rounded-tl-none` / `rounded-tr-none`) ve kuyruk artık üçgen
+  clipPath değil, WhatsApp'ın kıvrımlı SVG kuyruğu (gelen solda beyaz, giden sağda #D9FDD3).
