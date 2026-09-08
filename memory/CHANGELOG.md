@@ -1866,3 +1866,60 @@ NOT: tam suit aynı saat içinde arka arkaya çalıştırılırsa `/api/contact`
 oturumdan önce eklenen) IP sınırı ve paylaşımlı test kutusu (`delivered@resend.dev`)
 40/saat posta sınırı nedeniyle 2-3 test 429 alabilir; backend'i yeniden başlatmak sayaçları
 sıfırlar.
+
+## 2026-09-08 · Tamamliyo ödemesi: cari bakiye → kurumsal kart (odemeTipi=2)
+
+Tamamliyo'dan gelen bilgi: **"odemeTipi 3 yok bize; `odeme-yap` kullanmanız lazım,
+ödeme tipi 2 kullanması gerekiyor."** Partner hesabımızda cari bakiye/puan yöntemi
+bulunmuyor. Dokümanda `odemeTipi=2`, `odeme-yap` ucuna kredi kartı alanlarıyla
+gönderiliyor (`krediKartiNo`, `krediKartiCvv`, `krediKartiBitisTarihi`, `krediKartiAd`,
+`krediKartiSoyad`). Kart bizim **kurumsal kartımız** (müşteri kartı değil).
+
+### Backend
+- `tamamliyo.py`: `pay_with_balance()` → **`pay_for_quote()`**; `PAYMENT_TYPE_CARD="2"`,
+  kart alanları `CARD_ENV` üzerinden yalnız ortam değişkenlerinden okunuyor
+  (`TAMAMLIYO_CARD_NUMBER/EXPIRY/CVV/NAME/SURNAME`), numaradaki boşluklar temizleniyor.
+  `card_configured()` + `card_hint()` (maskeli son 4 hane) eklendi; log'a yalnızca
+  maskeli bilgi yazılıyor, kart hiçbir yerde saklanmıyor/dönmüyor.
+- **Mükerrer çekim koruması**: `_request(..., retry=False)` — ödeme isteği asla
+  tekrarlanmaz. Zaman aşımında `ODEME_DURUMU_BILINMIYOR` işaretiyle hata döner
+  (integration_expert playbook'undaki "timeout ≠ çekim olmadı" kuralı).
+- Yeni **`insurance_payment.py`** (eski `insurance_balance.py` silindi): ödeme engeli
+  tespiti (`is_payment_blocked`: kart/limit/bakiye/tanımsız kart), belirsiz çekim tespiti
+  (`is_payment_unknown`), operatör uyarısı (e-posta + WhatsApp, 12 saat soğutma) ve
+  panel durumu (`method: card`, `card_configured`, `card_hint`).
+- `insurance_provider.py`: `WAITING_STATUS` `waiting_balance` → **`waiting_payment`**,
+  yeni **`REVIEW_STATUS = "payment_review"`**. Ödeme reddi/kart eksikliği → kuyruk
+  (15 dk'da bir otomatik tekrar); yanıt alınamayan çekim → `payment_review` ve
+  **otomatik tekrar YOK** (operatör Tamamliyo panelinden kontrol eder).
+  Bakiye takibi (`_policy_cost`, `record_spend`, `mark_empty`) kaldırıldı.
+- Rotalar: `GET /admin/insurance/balance` + `POST /admin/insurance/balance/topup` kaldırıldı;
+  yerine **`GET /admin/insurance/payment`** ve **`POST /admin/insurance/payment/retry`**.
+- `server.py`: arka plan döngüsü `insurance balance queue` → `insurance payment queue`
+  (`payment_retry_loop`).
+- `backend/.env`: 5 kart anahtarı **boş** olarak eklendi (kullanıcı dolduracak).
+
+### Panel (AdminInsurance.jsx)
+- "Tamamliyo cari bakiyesi" paneli → **"Poliçe ödemesi · kurumsal kart"**: kart hazır/
+  tanımsız durumu (maskeli son 4 hane), ödeme bekleyen poliçe, doğrulama bekleyen çekim,
+  son uyarı zamanı, "Bekleyenleri tekrar dene" butonu ve mükerrer çekim uyarısı.
+  Bakiye yükleme formu kaldırıldı. Görev etiketleri: "Ödeme bekliyor" /
+  "Ödeme doğrulaması bekliyor".
+
+### Test
+- `test_iteration_118_tamamliyo_payment.py` güncellendi (21 test): odemeTipi=2 payload'ı,
+  kart alanlarının env'den gelmesi, boşluk temizliği, **retry=False**, maskeleme,
+  kart eksikken istek gönderilmemesi, zaman aşımında `ODEME_DURUMU_BILINMIYOR`.
+- `test_iteration_119_insurance_balance.py` → **`test_iteration_119_insurance_payment.py`**
+  (16 test): engel/belirsiz çekim ayrımı, kuyruk durumları, uyarı metinleri + soğutma,
+  kart yokken retry'ın atlanması.
+- Tam suit **453 passed / 3 skipped**. Canlı uçlar doğrulandı
+  (`/admin/insurance/payment` → `card_configured: false`, eski bakiye ucu 404) ve panel
+  ekran görüntüsüyle kontrol edildi.
+
+### ⏳ Kullanıcıdan bekleniyor (tek engel)
+Kurumsal kart bilgileri `backend/.env` içine girilmeli:
+`TAMAMLIYO_CARD_NUMBER`, `TAMAMLIYO_CARD_EXPIRY` (YYYY-MM-DD), `TAMAMLIYO_CARD_CVV`,
+`TAMAMLIYO_CARD_NAME`, `TAMAMLIYO_CARD_SURNAME`. Girilene kadar poliçeler
+`waiting_payment` kuyruğunda bekler, müşteri siparişi kaybolmaz. Girildikten sonra
+gerçek 7 günlük test poliçesi kesilip doğrulanmalı.

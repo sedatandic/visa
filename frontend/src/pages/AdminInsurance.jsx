@@ -8,7 +8,6 @@ import { AdminLayout } from "../components/AdminLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { MonthlyProfitChart } from "../components/MonthlyProfitChart";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
 import { Switch } from "../components/ui/switch";
 import { Textarea } from "../components/ui/textarea";
 
@@ -66,7 +65,7 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${
                         task.status === "issued"
                             ? "bg-emerald-100 text-emerald-800"
-                            : task.status === "waiting_balance"
+                            : task.status === "waiting_payment" || task.status === "payment_review"
                               ? "bg-destructive/10 text-destructive"
                               : "bg-amber-100 text-amber-900"
                     }`}
@@ -74,9 +73,11 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
                 >
                     {task.status === "issued"
                         ? "Gönderildi"
-                        : task.status === "waiting_balance"
-                          ? "Bakiye bekliyor"
-                          : "Kesim bekliyor"}
+                        : task.status === "waiting_payment"
+                          ? "Ödeme bekliyor"
+                          : task.status === "payment_review"
+                            ? "Ödeme doğrulaması bekliyor"
+                            : "Kesim bekliyor"}
                 </span>
             </div>
 
@@ -262,12 +263,12 @@ const ProviderPanel = ({ status, onChange }) => {
                     </h2>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">
                         Maliyetler günlük çekilir, satış fiyatı %{Math.round((status.markup - 1) * 100)} kâr
-                        marjıyla hesaplanır. Poliçe bedeli Tamamliyo cari bakiyesinden düşülür, kart
-                        bilgisi hiçbir yerde tutulmaz.
+                        marjıyla hesaplanır. Poliçe bedeli her kesimde kurumsal karttan çekilir
+                        (odemeTipi=2); kart bilgisi yalnızca sunucu ortam değişkenlerinde tutulur.
                     </p>
-                    <p className="mt-1 text-xs leading-5 text-amber-700" data-testid="insurance-balance-note">
-                        Bakiye bitince poliçe kesilemez ("Yetersiz puan bakiyesi") — Tamamliyo panelinden
-                        bakiye yükleyip poliçeyi tekrar kesin.
+                    <p className="mt-1 text-xs leading-5 text-amber-700" data-testid="insurance-payment-note">
+                        Kart reddedilir veya tanımlı değilse poliçe kesilemez; sipariş kuyruğa alınır ve
+                        ödeme düzelince kendiliğinden kesilip müşteriye gönderilir.
                     </p>
                 </div>
                 <span
@@ -333,140 +334,127 @@ const ProviderPanel = ({ status, onChange }) => {
     );
 };
 
-const BalancePanel = ({ state, onChange }) => {
-    const [amount, setAmount] = useState("");
+const PaymentPanel = ({ state, onChange }) => {
     const [busy, setBusy] = useState(false);
 
-    const topup = async () => {
-        const value = Number(String(amount).replace(",", "."));
-        if (!value || value <= 0) return toast.error("Yüklediğiniz tutarı girin.");
+    const retry = async () => {
         setBusy(true);
         try {
-            const { data } = await api.post("/admin/insurance/balance/topup", { amount: value });
+            const { data } = await api.post("/admin/insurance/payment/retry");
             const issued = data.retry?.issued || 0;
             toast.success(
                 issued
-                    ? `Bakiye kaydedildi, bekleyen ${issued} poliçe kesildi ve gönderildi.`
-                    : "Bakiye kaydedildi."
+                    ? `Bekleyen ${issued} poliçe kesildi ve müşterilere gönderildi.`
+                    : "Kesilebilecek bekleyen poliçe bulunamadı."
             );
-            setAmount("");
             onChange();
         } catch (err) {
-            toast.error(apiError(err, "Bakiye kaydedilemedi."));
+            toast.error(apiError(err, "Tekrar deneme başarısız."));
         } finally {
             setBusy(false);
         }
     };
 
-    const critical = state.empty || state.low;
-    const tone = state.empty
+    const waiting = state.waiting_tasks || 0;
+    const review = state.review_tasks || 0;
+    const blocked = !state.card_configured;
+    const tone = blocked || review
         ? "border-destructive/40 bg-destructive/[0.06]"
-        : state.low
+        : waiting
           ? "border-amber-400/50 bg-amber-50"
           : "border-border";
 
     return (
-        <div className={`card-surface mt-6 border p-5 ${tone}`} data-testid="insurance-balance-panel">
+        <div className={`card-surface mt-6 border p-5 ${tone}`} data-testid="insurance-payment-panel">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 className="flex items-center gap-2 font-heading text-sm font-bold">
-                        <Wallet className="h-4 w-4 text-primary" /> Tamamliyo cari bakiyesi
+                        <Wallet className="h-4 w-4 text-primary" /> Poliçe ödemesi · kurumsal kart
                     </h2>
                     <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-                        Tamamliyo bakiye sorgu servisi sunmuyor, bu yüzden bakiyeyi biz takip
-                        ediyoruz. Panelden yüklediğiniz tutarı buraya girin; her kesilen poliçenin
-                        maliyeti otomatik düşülür.
+                        Tamamliyo poliçe bedeli her kesimde kurumsal karttan çekilir (odemeTipi=2).
+                        Kart bilgileri yalnızca sunucudaki ortam değişkenlerinde tutulur; panelde,
+                        veritabanında ve kayıtlarda görünmez.
                     </p>
                 </div>
                 <span
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        state.empty
+                        blocked
                             ? "bg-destructive/10 text-destructive"
-                            : state.low
-                              ? "bg-amber-100 text-amber-900"
-                              : "bg-emerald-100 text-emerald-800"
+                            : "bg-emerald-100 text-emerald-800"
                     }`}
-                    data-testid="insurance-balance-state"
+                    data-testid="insurance-payment-state"
                 >
-                    {!state.tracked
-                        ? "Bakiye girilmedi"
-                        : state.empty
-                          ? "Bakiye bitti"
-                          : state.low
-                            ? "Bakiye azaldı"
-                            : "Yeterli"}
+                    {blocked ? "Kart tanımlı değil" : `Kart hazır ${state.card_hint || ""}`}
                 </span>
             </div>
 
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-4">
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
                 <div>
-                    <dt className="text-xs text-muted-foreground">Kalan bakiye</dt>
-                    <dd className="font-heading text-lg font-bold" data-testid="insurance-balance-remaining">
-                        {formatMoney(state.remaining_try, "TRY")}
+                    <dt className="text-xs text-muted-foreground">Ödeme bekleyen poliçe</dt>
+                    <dd
+                        className="font-heading text-lg font-bold"
+                        data-testid="insurance-payment-waiting"
+                    >
+                        {waiting}
                     </dd>
                 </div>
                 <div>
-                    <dt className="text-xs text-muted-foreground">Kesilebilir poliçe</dt>
-                    <dd className="font-heading text-lg font-bold" data-testid="insurance-balance-policies">
-                        ≈ {state.policies_left}
+                    <dt className="text-xs text-muted-foreground">Doğrulama bekleyen çekim</dt>
+                    <dd
+                        className="font-heading text-lg font-bold"
+                        data-testid="insurance-payment-review"
+                    >
+                        {review}
                     </dd>
                 </div>
                 <div>
-                    <dt className="text-xs text-muted-foreground">Poliçe maliyeti (en yüksek)</dt>
-                    <dd className="font-medium">{formatMoney(state.unit_cost_try, "TRY")}</dd>
-                </div>
-                <div>
-                    <dt className="text-xs text-muted-foreground">Bakiye bekleyen poliçe</dt>
-                    <dd className="font-medium" data-testid="insurance-balance-waiting">
-                        {state.waiting_tasks || 0}
+                    <dt className="text-xs text-muted-foreground">Son uyarı</dt>
+                    <dd className="font-medium" data-testid="insurance-payment-last-alert">
+                        {state.last_alert_at ? formatDateTime(state.last_alert_at) : "Yok"}
                     </dd>
                 </div>
             </dl>
 
-            {critical && (
+            {blocked && (
                 <p
-                    className="mt-3 rounded-lg border border-amber-400/50 bg-amber-50 p-3 text-xs font-semibold text-amber-900"
-                    data-testid="insurance-balance-warning"
+                    className="mt-3 rounded-lg border border-destructive/40 bg-destructive/[0.06] p-3 text-xs font-semibold text-destructive"
+                    data-testid="insurance-payment-warning"
                 >
-                    {state.empty
-                        ? "Bakiye bitti: poliçe kesimi durdu. Tamamliyo panelinden bakiye yükleyin — bekleyen poliçeler kendiliğinden kesilip müşterilere gönderilecek."
-                        : `Bakiye azaldı: yaklaşık ${state.policies_left} poliçe kaldı. Satış durmasın diye bakiye yükleyin.`}
+                    Kart bilgileri sunucuda tanımlı değil: poliçe kesimi durur ve siparişler kuyrukta
+                    bekler. TAMAMLIYO_CARD_NUMBER, TAMAMLIYO_CARD_EXPIRY, TAMAMLIYO_CARD_CVV,
+                    TAMAMLIYO_CARD_NAME, TAMAMLIYO_CARD_SURNAME değerleri girilmeli.
                 </p>
             )}
 
-            <div className="mt-4 flex flex-wrap items-end gap-3">
-                <div>
-                    <label className="text-xs text-muted-foreground" htmlFor="insurance-topup">
-                        Tamamliyo'ya yüklediğim tutar (₺)
-                    </label>
-                    <Input
-                        id="insurance-topup"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        placeholder="1000"
-                        inputMode="decimal"
-                        className="mt-1 h-10 w-40"
-                        data-testid="insurance-balance-amount"
-                    />
-                </div>
+            {review > 0 && (
+                <p
+                    className="mt-3 rounded-lg border border-amber-400/50 bg-amber-50 p-3 text-xs font-semibold text-amber-900"
+                    data-testid="insurance-payment-review-warning"
+                >
+                    {review} poliçede ödeme yanıtı alınamadı; çekim yapılmış olabilir. Mükerrer çekimi
+                    önlemek için otomatik tekrar denenmiyor — Tamamliyo panelinden ödeme durumunu
+                    kontrol edip poliçeyi elle kesin.
+                </p>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
                 <Button
-                    onClick={topup}
-                    disabled={busy}
+                    onClick={retry}
+                    disabled={busy || !waiting}
                     className="h-10"
-                    data-testid="insurance-balance-topup"
+                    data-testid="insurance-payment-retry"
                 >
                     {busy ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                        <Wallet className="mr-2 h-4 w-4" />
+                        <RefreshCw className="mr-2 h-4 w-4" />
                     )}
-                    Bakiye yükledim
+                    Bekleyenleri tekrar dene
                 </Button>
-                {state.last_topup_at && (
-                    <p className="text-xs text-muted-foreground" data-testid="insurance-balance-last-topup">
-                        Son yükleme: {formatDateTime(state.last_topup_at)}
-                    </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                    Ödeme sorunu çözülünce kuyruk 15 dakikada bir kendiliğinden de denenir.
+                </p>
             </div>
         </div>
     );
@@ -477,24 +465,24 @@ export default function AdminInsurance() {
     const [report, setReport] = useState(null);
     const [monthly, setMonthly] = useState(null);
     const [provider, setProvider] = useState(null);
-    const [balance, setBalance] = useState(null);
+    const [payment, setPayment] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const load = async () => {
         setLoading(true);
         try {
-            const [tasksRes, reportRes, monthlyRes, providerRes, balanceRes] = await Promise.all([
+            const [tasksRes, reportRes, monthlyRes, providerRes, paymentRes] = await Promise.all([
                 api.get("/admin/insurance-tasks"),
                 api.get("/admin/insurance-report"),
                 api.get("/admin/profit-monthly?months=12"),
                 api.get("/admin/insurance/provider"),
-                api.get("/admin/insurance/balance"),
+                api.get("/admin/insurance/payment"),
             ]);
             setTasks(tasksRes.data.items || []);
             setReport(reportRes.data);
             setMonthly(monthlyRes.data);
             setProvider(providerRes.data);
-            setBalance(balanceRes.data);
+            setPayment(paymentRes.data);
         } catch (err) {
             toast.error(apiError(err, "Veriler yüklenemedi."));
         } finally {
@@ -530,7 +518,7 @@ export default function AdminInsurance() {
             </div>
 
             {provider && <ProviderPanel status={provider} onChange={load} />}
-            {balance && <BalancePanel state={balance} onChange={load} />}
+            {payment && <PaymentPanel state={payment} onChange={load} />}
 
             {monthly && (
                 <div className="mt-6">

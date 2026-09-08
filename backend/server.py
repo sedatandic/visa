@@ -264,10 +264,10 @@ def _background_loops() -> tuple:
 
         return [price_sync_loop()]
 
-    def insurance_balance_queue():
-        from insurance_provider import balance_retry_loop
+    def insurance_payment_queue():
+        from insurance_provider import payment_retry_loop
 
-        return [balance_retry_loop()]
+        return [payment_retry_loop()]
 
     return (
         ("document reminder", documents),
@@ -277,7 +277,7 @@ def _background_loops() -> tuple:
         ("document retention", retention),
         ("daily digest", digest),
         ("insurance price sync", insurance_prices),
-        ("insurance balance queue", insurance_balance_queue),
+        ("insurance payment queue", insurance_payment_queue),
     )
 
 

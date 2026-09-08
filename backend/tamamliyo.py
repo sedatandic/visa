@@ -1,7 +1,8 @@
 """Tamamliyo Partner Travel API v3 istemcisi (yurtdisi seyahat saglik sigortasi).
 
 Kimlik dogrulama: partner token, `token` HTTP header'inda gonderilir.
-Akis: fiyat-al -> teklif-olustur -> odeme-onay (cari tahsilat) -> police-olustur -> police-pdf
+Akis: fiyat-al -> teklif-olustur -> odeme-yap (kurumsal kart, odemeTipi=2)
+      -> police-olustur -> police-pdf
 Dokumantasyon kopyasi: /app/memory/tamamliyo/travel_api.txt
 """
 
@@ -25,7 +26,18 @@ URUN_ID = 141  # "Yurt Disi Saglik Destek Paketi" - 30.000 EUR + vize teminati
 # Gidilecek ulke kodu (Tamamliyo /partner/v1/countries): 784 = Birlesik Arap Emirlikleri.
 # teklif-olustur bu alani zorunlu tutuyor (HATA_2: "ulkeKodu gonderilmesi zorunludur").
 ULKE_KODU_BAE = 784
-PAYMENT_TYPE_BALANCE = "3"  # odeme-yap: 1/2 kredi karti, 3 cari bakiye (puan)
+PAYMENT_TYPE_CARD = "2"  # odeme-yap: 2 = kurumsal kartla dogrudan cekim (partner hesabimizda cari bakiye yok)
+# Kart alanlari <-> .env anahtarlari (kart bilgisi yalnizca ortam degiskeninde tutulur)
+CARD_ENV = {
+    "krediKartiNo": "TAMAMLIYO_CARD_NUMBER",
+    "krediKartiBitisTarihi": "TAMAMLIYO_CARD_EXPIRY",
+    "krediKartiCvv": "TAMAMLIYO_CARD_CVV",
+    "krediKartiAd": "TAMAMLIYO_CARD_NAME",
+    "krediKartiSoyad": "TAMAMLIYO_CARD_SURNAME",
+}
+# Odeme isteginde zaman asimi olursa cekim yapilmis olabilir: istek tekrarlanmaz,
+# gorev bu isaretle operator incelemesine dusurulur.
+PAYMENT_UNKNOWN_MARKER = "ODEME_DURUMU_BILINMIYOR"
 RETRYABLE_STATUS = {408, 425, 429, 500, 502, 503, 504}
 MAX_ATTEMPTS = 3
 PDF_MAGIC = "JVBERi"
@@ -74,17 +86,22 @@ def _error_message(payload) -> str:
     return "Tamamliyo servisi beklenmeyen yanit dondurdu."
 
 
-async def _request(method: str, path: str, payload: dict | None = None) -> dict:
+async def _request(method: str, path: str, payload: dict | None = None, retry: bool = True) -> dict:
     if not configured():
         raise TamamliyoError("Tamamliyo API bilgileri tanimli degil (TAMAMLIYO_BASE_URL/TOKEN).")
     url = f"{base_url()}{path}"
     headers = {"token": token(), "Accept": "application/json"}
+    attempts = MAX_ATTEMPTS if retry else 1
     async with httpx.AsyncClient(timeout=httpx.Timeout(connect=5.0, read=30.0, write=15.0, pool=5.0)) as client:
-        for attempt in range(MAX_ATTEMPTS):
+        for attempt in range(attempts):
             try:
                 res = await client.request(method, url, json=payload, headers=headers)
             except (httpx.TimeoutException, httpx.NetworkError) as exc:
-                if attempt == MAX_ATTEMPTS - 1:
+                if attempt == attempts - 1:
+                    if not retry:
+                        raise TamamliyoError(
+                            f"{PAYMENT_UNKNOWN_MARKER}: Tamamliyo yaniti alinamadi, cekim yapilmis olabilir ({exc})."
+                        ) from exc
                     raise TamamliyoError(f"Tamamliyo servisine ulasilamadi: {exc}", retryable=True) from exc
                 await asyncio.sleep(0.5 * (2**attempt) + _jitter.random() * 0.25)
                 continue
@@ -96,8 +113,8 @@ async def _request(method: str, path: str, payload: dict | None = None) -> dict:
                 if isinstance(data, dict) and data.get("authentication"):
                     raise TamamliyoError(str(data["authentication"]), res.status_code, data)
                 return data
-            retryable = res.status_code in RETRYABLE_STATUS
-            if not retryable or attempt == MAX_ATTEMPTS - 1:
+            retryable = retry and res.status_code in RETRYABLE_STATUS
+            if not retryable or attempt == attempts - 1:
                 raise TamamliyoError(_error_message(data), res.status_code, data, retryable)
             await asyncio.sleep(0.5 * (2**attempt) + _jitter.random() * 0.25)
     raise TamamliyoError("Tamamliyo istegi tamamlanamadi.", retryable=True)
@@ -138,14 +155,37 @@ async def create_quote(
     return await _request("POST", f"{PATH}/teklif-olustur", body)
 
 
-async def pay_with_balance(quote_id) -> dict:
-    """Teklifin odemesini Tamamliyo cari bakiyesinden (`odemeTipi=3`) duser.
+def card_configured() -> bool:
+    """Kurumsal kart bilgileri .env icinde tanimli mi?"""
+    return all((os.environ.get(env) or "").strip() for env in CARD_ENV.values())
 
-    Kart bilgisi tasimadigimiz icin bu yontem kullanilir; bakiye Tamamliyo
-    panelinden yuklenir. Bakiye yetmezse HATA_15 "Yetersiz puan bakiyesi" doner.
+
+def card_hint() -> str:
+    """Panelde gosterilecek maskeli kart bilgisi (son 4 hane)."""
+    number = re.sub(r"\D", "", os.environ.get(CARD_ENV["krediKartiNo"]) or "")
+    return f"**** {number[-4:]}" if len(number) >= 4 else ""
+
+
+def _card_fields() -> dict:
+    missing = [env for env in CARD_ENV.values() if not (os.environ.get(env) or "").strip()]
+    if missing:
+        raise TamamliyoError(
+            "Tamamliyo ödeme kartı tanımlı değil (" + ", ".join(missing) + ")."
+        )
+    fields = {field: (os.environ.get(env) or "").strip() for field, env in CARD_ENV.items()}
+    fields["krediKartiNo"] = re.sub(r"\s", "", fields["krediKartiNo"])
+    return fields
+
+
+async def pay_for_quote(quote_id) -> dict:
+    """Teklifin odemesini kurumsal kartla yapar (`odeme-yap`, odemeTipi=2).
+
+    Kart bilgileri yalnizca .env'den okunur; log'lanmaz, veritabanina yazilmaz.
+    Zaman asiminda cekim gerceklesmis olabileceginden istek TEKRARLANMAZ.
     """
-    body = {"odemeTipi": PAYMENT_TYPE_BALANCE, "teklifId": quote_id}
-    return await _request("POST", f"{PATH}/odeme-yap", body)
+    body = {"odemeTipi": PAYMENT_TYPE_CARD, "teklifId": quote_id, **_card_fields()}
+    logger.info("tamamliyo odeme istegi: teklif %s, kart %s", quote_id, card_hint())
+    return await _request("POST", f"{PATH}/odeme-yap", body, retry=False)
 
 
 async def create_policy(quote_id) -> dict:

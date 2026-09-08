@@ -1,4 +1,8 @@
-"""Iteration 118: Tamamliyo teklif/odeme payload duzeltmelerinin regresyon testleri.
+"""Iteration 118: Tamamliyo teklif/odeme payload testleri.
+
+2026-09-08 guncellemesi: saglayici partner hesabimizda cari bakiye (odemeTipi=3)
+bulunmadigini bildirdi; odeme `odeme-yap` ucundan `odemeTipi=2` (kurumsal kart) ile
+yapiliyor. Kart bilgileri yalnizca .env'den okunur.
 
 Canli testte ortaya cikan uc hata:
 1. `teklif-olustur` -> HATA_2 "ulkeKodu gonderilmesi zorunludur" (eksik alan).
@@ -33,8 +37,8 @@ def captured(monkeypatch):
     """`_request` cagrilarini yakalar, sabit basarili yanit doner."""
     calls = []
 
-    async def fake_request(method, path, payload=None):
-        calls.append({"method": method, "path": path, "body": payload})
+    async def fake_request(method, path, payload=None, retry=True):
+        calls.append({"method": method, "path": path, "body": payload, "retry": retry})
         return {"success": True, "data": {}}
 
     monkeypatch.setattr(tamamliyo, "_request", fake_request)
@@ -83,24 +87,70 @@ class TestQuotePayload:
 
 
 class TestPaymentPayload:
-    """Odeme cari bakiyeden yapilir (`odeme-yap`, odemeTipi=3); kart bilgisi tasinmaz."""
+    """Odeme kurumsal kartla yapilir (`odeme-yap`, odemeTipi=2 — cari bakiye yontemi yok)."""
 
-    def test_pay_with_balance_body(self, captured):
-        run(tamamliyo.pay_with_balance(2135835))
+    @pytest.fixture(autouse=True)
+    def card(self, monkeypatch):
+        monkeypatch.setenv("TAMAMLIYO_CARD_NUMBER", "4111 1111 1111 1111")
+        monkeypatch.setenv("TAMAMLIYO_CARD_EXPIRY", "2030-12-01")
+        monkeypatch.setenv("TAMAMLIYO_CARD_CVV", "123")
+        monkeypatch.setenv("TAMAMLIYO_CARD_NAME", "MORUYA")
+        monkeypatch.setenv("TAMAMLIYO_CARD_SURNAME", "TRAVEL")
+
+    def test_pay_body_uses_card_payment_type(self, captured):
+        run(tamamliyo.pay_for_quote(2135835))
         body = captured[0]["body"]
-        assert body == {"odemeTipi": "3", "teklifId": 2135835}
+        assert body["odemeTipi"] == "2"
+        assert body["teklifId"] == 2135835
         assert captured[0]["path"].endswith("/odeme-yap")
 
-    def test_balance_payment_type_constant(self):
-        assert tamamliyo.PAYMENT_TYPE_BALANCE == "3"
+    def test_card_fields_come_from_env_and_are_normalised(self, captured):
+        run(tamamliyo.pay_for_quote("2135835"))
+        body = captured[0]["body"]
+        assert body["krediKartiNo"] == "4111111111111111"  # bosluklar temizlenir
+        assert body["krediKartiCvv"] == "123"
+        assert body["krediKartiBitisTarihi"] == "2030-12-01"
+        assert body["krediKartiAd"] == "MORUYA"
+        assert body["krediKartiSoyad"] == "TRAVEL"
 
-    def test_no_card_field_is_ever_sent(self, captured):
-        run(tamamliyo.pay_with_balance("2135835"))
-        sent = str(captured[0]["body"]).lower()
-        for field in ("krediKarti", "cvv", "kart"):
-            assert field.lower() not in sent
+    def test_payment_request_is_never_retried(self, captured):
+        # Zaman asiminda cekim yapilmis olabilir: tekrar denemek mukerrer cekim riskidir.
+        run(tamamliyo.pay_for_quote("2135835"))
+        assert captured[0]["retry"] is False
 
-    def test_ensure_policy_pays_from_balance(self, monkeypatch):
+    def test_card_hint_masks_number(self):
+        assert tamamliyo.card_hint() == "**** 1111"
+        assert tamamliyo.card_configured() is True
+
+    def test_missing_card_raises_actionable_error(self, monkeypatch, captured):
+        monkeypatch.delenv("TAMAMLIYO_CARD_CVV", raising=False)
+        assert tamamliyo.card_configured() is False
+        with pytest.raises(tamamliyo.TamamliyoError) as err:
+            run(tamamliyo.pay_for_quote("2135835"))
+        assert "TAMAMLIYO_CARD_CVV" in str(err.value)
+        assert captured == []  # istek hic gonderilmez
+
+    def test_timeout_marks_payment_unknown(self, monkeypatch):
+        import httpx
+
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *_args):
+                return False
+
+            async def request(self, *_args, **_kwargs):
+                raise httpx.ReadTimeout("timeout")
+
+        monkeypatch.setenv("TAMAMLIYO_BASE_URL", "https://api-test.example.com")
+        monkeypatch.setenv("TAMAMLIYO_TOKEN", "test-token")
+        monkeypatch.setattr(httpx, "AsyncClient", lambda **_kwargs: FakeClient())
+        with pytest.raises(tamamliyo.TamamliyoError) as err:
+            run(tamamliyo.pay_for_quote("2135835"))
+        assert tamamliyo.PAYMENT_UNKNOWN_MARKER in str(err.value)
+
+    def test_ensure_policy_pays_with_card(self, monkeypatch):
         seen = {}
 
         async def fake_pay(quote_id):
@@ -113,7 +163,7 @@ class TestPaymentPayload:
         async def fake_mark(task_id, step, detail=None):
             seen.setdefault("steps", []).append(step)
 
-        monkeypatch.setattr(tamamliyo, "pay_with_balance", fake_pay)
+        monkeypatch.setattr(tamamliyo, "pay_for_quote", fake_pay)
         monkeypatch.setattr(tamamliyo, "create_policy", fake_policy)
         monkeypatch.setattr(insurance_provider, "_mark_step", fake_mark)
 
@@ -137,7 +187,7 @@ class TestPaymentPayload:
         async def fake_mark(task_id, step, detail=None):
             return None
 
-        monkeypatch.setattr(tamamliyo, "pay_with_balance", fake_pay)
+        monkeypatch.setattr(tamamliyo, "pay_for_quote", fake_pay)
         monkeypatch.setattr(tamamliyo, "create_policy", fake_policy)
         monkeypatch.setattr(insurance_provider, "_mark_step", fake_mark)
 
@@ -215,28 +265,36 @@ class TestProviderContact:
         assert "dubaivizehatti.com" in seen["email"]
 
 
-class TestBalanceHint:
-    """Bakiye yetmezse panelde ne yapilacagi yazmali (HATA_15)."""
+class TestProviderErrorHint:
+    """Odeme hatasi panelde ne yapilacagini soylemeli."""
 
-    def test_balance_error_gets_actionable_hint(self, monkeypatch):
+    class FakeCol:
+        def __init__(self, saved):
+            self.saved = saved
+
+        async def update_one(self, query, update):
+            self.saved["message"] = update["$set"]["provider_error"]
+
+    def test_card_error_gets_actionable_hint(self, monkeypatch):
         saved = {}
+        monkeypatch.setattr(insurance_provider, "insurance_tasks_col", self.FakeCol(saved))
+        run(insurance_provider._save_provider_error("t1", "Kredi kartı limiti yetersiz."))
+        assert "Kredi kartı limiti yetersiz." in saved["message"]
+        assert "kartın limitini" in saved["message"].lower()
 
-        class FakeCol:
-            async def update_one(self, query, update):
-                saved["message"] = update["$set"]["provider_error"]
-
-        monkeypatch.setattr(insurance_provider, "insurance_tasks_col", FakeCol())
-        run(insurance_provider._save_provider_error("t1", "Yetersiz puan bakiyesi."))
-        assert "Yetersiz puan bakiyesi." in saved["message"]
-        assert "bakiye yükleyip" in saved["message"]
+    def test_unknown_payment_warns_about_double_charge(self, monkeypatch):
+        saved = {}
+        monkeypatch.setattr(insurance_provider, "insurance_tasks_col", self.FakeCol(saved))
+        run(
+            insurance_provider._save_provider_error(
+                "t1", f"{tamamliyo.PAYMENT_UNKNOWN_MARKER}: yanit alinamadi"
+            )
+        )
+        assert "Mükerrer çekim riski" in saved["message"]
+        assert "elle kesin" in saved["message"]
 
     def test_other_errors_are_left_untouched(self, monkeypatch):
         saved = {}
-
-        class FakeCol:
-            async def update_one(self, query, update):
-                saved["message"] = update["$set"]["provider_error"]
-
-        monkeypatch.setattr(insurance_provider, "insurance_tasks_col", FakeCol())
+        monkeypatch.setattr(insurance_provider, "insurance_tasks_col", self.FakeCol(saved))
         run(insurance_provider._save_provider_error("t1", "T.C. Kimlik Numarası hatalı"))
         assert saved["message"] == "T.C. Kimlik Numarası hatalı"

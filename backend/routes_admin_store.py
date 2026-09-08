@@ -129,31 +129,27 @@ async def admin_insurance_auto_issue(payload: dict, admin: dict = Depends(requir
     return await set_auto_issue(bool(payload.get("enabled")))
 
 
-# ----------------------------------------------------- sigorta: cari bakiye
-@router.get("/admin/insurance/balance")
-async def admin_insurance_balance(admin: dict = Depends(require_admin)) -> dict:
-    """Tamamliyo cari bakiye takibi (saglayici bakiye sorgu API'si sunmuyor)."""
-    from insurance_balance import status
-    from insurance_provider import WAITING_STATUS
+# ------------------------------------------------ sigorta: police odemesi (kart)
+@router.get("/admin/insurance/payment")
+async def admin_insurance_payment(admin: dict = Depends(require_admin)) -> dict:
+    """Tamamliyo kart odemesi durumu + odeme bekleyen police sayilari."""
+    from insurance_payment import status
+    from insurance_provider import REVIEW_STATUS, WAITING_STATUS
 
     state = await status()
     state["waiting_tasks"] = await insurance_tasks_col.count_documents({"status": WAITING_STATUS})
+    state["review_tasks"] = await insurance_tasks_col.count_documents({"status": REVIEW_STATUS})
     return state
 
 
-@router.post("/admin/insurance/balance/topup")
-async def admin_insurance_balance_topup(
-    payload: dict, admin: dict = Depends(require_admin)
-) -> dict:
-    """Tamamliyo paneline yuklenen bakiyeyi kaydeder, bekleyen policeleri hemen keser."""
-    from insurance_balance import add_topup
+@router.post("/admin/insurance/payment/retry")
+async def admin_insurance_payment_retry(admin: dict = Depends(require_admin)) -> dict:
+    """Odeme bekleyen policeleri hemen tekrar dener (kart sorunu cozuldugunde)."""
+    from insurance_payment import status
     from insurance_provider import retry_waiting_tasks
 
-    amount = float(payload.get("amount") or 0)
-    if amount <= 0:
-        raise HTTPException(400, "Yüklediğiniz bakiye tutarını girin.")
-    state = await add_topup(amount, admin.get("email", ""))
-    return {**state, "retry": await retry_waiting_tasks()}
+    retry = await retry_waiting_tasks()
+    return {**await status(), "retry": retry}
 
 
 # ------------------------------------------------------ sigorta: police kesimi
@@ -175,7 +171,7 @@ async def admin_issue_policy_via_provider(
 
 @router.get("/admin/insurance-tasks")
 async def admin_insurance_tasks(status: str = "", admin: dict = Depends(require_admin)) -> dict:
-    query = {"status": status} if status in {"pending", "issued", "waiting_balance"} else {}
+    query = {"status": status} if status in {"pending", "issued", "waiting_payment", "payment_review"} else {}
     docs = await insurance_tasks_col.find(query).sort("created_at", -1).limit(200).to_list(200)
     return {"items": serialize_doc(docs)}
 
