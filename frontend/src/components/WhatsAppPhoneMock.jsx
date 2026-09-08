@@ -192,24 +192,26 @@ export const WhatsAppPhoneMock = ({ href }) => {
                                 <i className="block h-2 w-[3px] rounded-sm bg-white/80" />
                                 <i className="block h-2.5 w-[3px] rounded-sm bg-white/40" />
                             </span>
-                            <span className="ml-1 rounded-sm border border-white/60 px-1 text-[8px] leading-3">86</span>
+                            <span className="ml-0.5 text-[9px] font-bold tracking-tight text-white/90">5G</span>
                         </span>
                     </div>
 
                     {/* sohbet basligi */}
-                    <div className="flex items-center gap-2.5 bg-[#075E54] px-3 pb-2.5 pt-1">
+                    <div className="flex items-center gap-2 bg-[#075E54] px-3 pb-2.5 pt-1">
                         <ChevronLeft className="h-5 w-5 shrink-0 text-white/90" aria-hidden="true" />
                         <img
                             src="/brand/emblem-512.png"
                             alt=""
-                            className="h-9 w-9 shrink-0 rounded-full bg-white object-contain p-0.5"
+                            className="h-8 w-8 shrink-0 rounded-full bg-white object-contain p-0.5 sm:h-9 sm:w-9"
                         />
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-[13px] font-semibold text-white">Dubai Vize Hattı</p>
-                            <p className="text-[11px] text-white/70">çevrimiçi</p>
+                        <div className="min-w-0 flex-1 pr-3.5">
+                            <p className="whitespace-nowrap text-[12.5px] font-semibold leading-[15px] text-white sm:text-[13px]">
+                                Dubai Vize Hattı
+                            </p>
+                            <p className="text-[10px] leading-[13px] text-white/70">çevrimiçi</p>
                         </div>
                         <Video className="hidden h-5 w-5 shrink-0 text-white/85 sm:block" aria-hidden="true" />
-                        <Phone className="hidden h-4 w-4 shrink-0 text-white/85 min-[380px]:block" aria-hidden="true" />
+                        <Phone className="hidden h-4 w-4 shrink-0 text-white/85 min-[420px]:block" aria-hidden="true" />
                         <MoreVertical className="h-4 w-4 shrink-0 text-white/85" aria-hidden="true" />
                     </div>
 

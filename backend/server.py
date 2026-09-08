@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from content import ARTICLES, REVIEW_SUMMARY, TESTIMONIALS, VISA_TYPES, compute_pricing
+from content import ARTICLES, COMPANY, REVIEW_SUMMARY, TESTIMONIALS, VISA_TYPES, compute_pricing
 from db import (
     applications_col,
     articles_col,
@@ -208,12 +208,33 @@ async def seed_content_collections() -> None:
         logger.info("seeded review summary")
 
 
+PLACEHOLDER_CONTACT = {
+    "phone": {"+90 533 123 45 67", "+90 533 743 82 24", "+90 850 000 00 00"},
+    "whatsapp": {"905331234567", "905337438224", "908500000000"},
+}
+
+
+async def fix_placeholder_contact() -> None:
+    """Eski demo telefon/WhatsApp numaralarini guncel numarayla degistirir (her ortamda)."""
+    doc = await settings_col.find_one({"key": "company_info"})
+    value = (doc or {}).get("value") or {}
+    update = {
+        f"value.{field}": COMPANY[field]
+        for field, placeholders in PLACEHOLDER_CONTACT.items()
+        if str(value.get(field) or "").strip() in placeholders
+    }
+    if update:
+        await settings_col.update_one({"key": "company_info"}, {"$set": update})
+        logger.info("placeholder contact fixed: %s", sorted(update))
+
+
 async def _init_startup_state() -> None:
     """Veritabani seed'leri ve nesne depolama; hatalar servisi durdurmaz."""
     try:
         await ensure_indexes()
         await seed_visa_types()
         await seed_content_collections()
+        await fix_placeholder_contact()
         await migrate_legacy_applications()
         await seed_products()
         await backfill_saved_travelers()

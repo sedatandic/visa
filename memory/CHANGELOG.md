@@ -2087,3 +2087,19 @@ Kullanıcı: "cepten bakınca cep telefonu çok uzun görünüyor."
   Nokta göstergesi boşluğu mobilde `mt-8` → `mt-5`.
 - Sonuç: 390px genişlikte maketin toplam yüksekliği ~700px'ten **569px**'e indi (telefon
   gövdesi ~470px); son mesajlar yine `justify-end` ile görünür kalıyor.
+
+## 2026-09-08 (11) · Canlıdaki eski WhatsApp numarası + maket başlığı
+- **Kök neden**: önizleme ve canlı ortamların MongoDB'leri ayrı. Numarayı yalnızca önizleme
+  veritabanında güncellemiştik; canlıda `company_info.whatsapp = 905331234567` (demo değer)
+  kaldığı için sağ alttaki WhatsApp düğmesi hâlâ +90 533 123 45 67 açıyordu.
+- Çözüm: `server.fix_placeholder_contact()` açılış göçü — `company_info` içindeki bilinen
+  demo numaralar (905331234567 / 905337438224 / 908500000000 ve "+90 533 123 45 67",
+  "+90 533 743 82 24", "+90 850 000 00 00") `content.COMPANY` değerleriyle değiştirilir; elle
+  girilmiş gerçek numaralara dokunulmaz. `_init_startup_state` içinde çalışır, yani **canlı
+  ortam yeni deploy'da kendini düzeltir** (log: "placeholder contact fixed").
+  `tests/test_iteration_125_placeholder_contact.py` (11 test).
+- `WhatsAppPhoneMock` başlığı: "Dubai Vize Hattı" artık kırpılmıyor (`truncate` kalktı,
+  12.5px/13px, satır yüksekliği 15px), "çevrimiçi" ile arasındaki boşluk daraltıldı
+  (11px → 10px, leading 13px), avatar mobilde 32px, isim bloğuna `pr-3.5` ile telefon/⋮
+  ikonlarından ayrı durması sağlandı. 390px'de ölçüldü: başlık tam görünüyor (97px).
+- Maket durum çubuğunda pil yüzdesi ("86" kutusu) yerine **5G** yazısı gösteriliyor.
