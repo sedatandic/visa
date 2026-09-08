@@ -1923,3 +1923,15 @@ Kurumsal kart bilgileri `backend/.env` içine girilmeli:
 `TAMAMLIYO_CARD_NAME`, `TAMAMLIYO_CARD_SURNAME`. Girilene kadar poliçeler
 `waiting_payment` kuyruğunda bekler, müşteri siparişi kaybolmaz. Girildikten sonra
 gerçek 7 günlük test poliçesi kesilip doğrulanmalı.
+
+### 2026-09-08 (aynı gün, devam) · Kurumsal kart girildi ve bağlantı doğrulandı
+- `backend/.env`: kart bilgileri girildi (numara **** 1028, son kullanma 2030-06-01,
+  ad SEDAT / soyad ANDİÇ). Numara/CVV hiçbir ekranda, kayıtta veya log'da görünmüyor.
+- `krediKartiBitisTarihi` formatı Tamamliyo dokümanına göre **YYYY-AA-01** (06/30 → 2030-06-01).
+- Doğrulamalar (ücretsiz, kayıt/çekim oluşturmadan): `GET /admin/insurance/payment` →
+  `card_configured: true`, `card_hint: "**** 1028"`; panelde "Kart hazır **** 1028",
+  uyarı bandı kayboldu; `POST /admin/insurance/sync-prices` ile Tamamliyo'dan canlı
+  maliyetler çekildi (7g 244,85 ₺ → 490 ₺ satış, 15g 279,74 ₺, 30g 296,63 ₺, 60g 367,55 ₺);
+  ödeme gövdesi maskeli olarak kontrol edildi (odemeTipi=2, 16 haneli numara, boşluksuz).
+- **Gerçek test poliçesi kullanıcı tercihiyle henüz KESİLMEDİ** ("önce bağlantıyı doğrula").
+  İlk gerçek kesim yapıldığında kartından ~245 ₺ (7 günlük) çekilecek.

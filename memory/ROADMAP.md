@@ -10,11 +10,9 @@
       (sitemap artık build sırasında üretiliyor, 30 URL, 404 veren transit rehberi çıkarıldı).
 
 ## P0 — Acil
-- [ ] **Tamamliyo kurumsal kart bilgileri (tek kalan engel)**: ödeme artık `odeme-yap` +
-      `odemeTipi=2` (kredi kartı) ile yapılıyor — sağlayıcı cari bakiye yönteminin hesabımızda
-      olmadığını bildirdi. `backend/.env` içindeki TAMAMLIYO_CARD_NUMBER / _EXPIRY / _CVV /
-      _NAME / _SURNAME doldurulmalı; sonrasında 7 günlük gerçek test poliçesi kesilecek.
-      Kod hazır ve test edildi (2026-09-08).
+- [ ] **İlk gerçek test poliçesi**: kart girildi ve bağlantı doğrulandı (2026-09-08,
+      "Kart hazır **** 1028"); kullanıcı isteğiyle gerçek kesim bekletiliyor. Onay gelince
+      7 günlük poliçe kesilecek (karttan ~245 ₺ çekim) ve PDF teslimi kontrol edilecek.
 - [ ] **Tamamliyo cari bakiyesi yükle (tek kalan engel)**: ödeme `odeme-yap` +
       `odemeTipi=3` (cari bakiye) ile yapılıyor, kart bilgisi tutulmuyor. Canlı denemede
       `HATA_15 "Yetersiz puan bakiyesi."` — Tamamliyo panelinden bakiye yüklenince poliçe
