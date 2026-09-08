@@ -87,8 +87,8 @@ async def _install_chromium() -> bool:
     import sys
 
     try:
-        # Sabit argumanli surec baslatma (kullanici girdisi yok). Alias sayesinde
-        # kaynak kodda "exec(" gecmiyor: guvenlik taramalari yanlis pozitif vermiyor.
+        # Sabit argumanli surec baslatma (kullanici girdisi yok); dinamik kod
+        # calistirma (eval/derleme) burada yok, yalnizca playwright kurulumu.
         spawn_process = asyncio.create_subprocess_exec
         proc = await spawn_process(
             sys.executable, "-m", "playwright", "install", "chromium",
@@ -664,6 +664,56 @@ async def auto_relogin(actor: str = "auto", force: bool = False) -> dict:
         return await _auto_relogin_locked(actor, force=force)
 
 
+def _relogin_block_reason(value: dict, force: bool) -> str | None:
+    """force degilse portala hic dokunmamamiz gereken durumlar."""
+    if force:
+        return None
+    if not value.get("device_state"):
+        # Cihaz guveni hic kaydedilmemis: her deneme OTP e-postasi tetikler.
+        return "no_trusted_device"
+    if value.get("otp_required"):
+        # Admin OTP ile giris yapana kadar portala dokunmuyoruz.
+        return "otp_required_pending"
+    return None
+
+
+async def _record_auto_login(context, actor: str) -> None:
+    await _persist_session({"context": context}, via_otp=False)
+    await settings_col.update_one(
+        {"key": SESSION_KEY},
+        {
+            "$set": {"value.last_auto_login_at": _now().isoformat()},
+            "$inc": {"value.auto_login_count": 1},
+        },
+    )
+    await log_event(
+        None, None, "rpa_auto_login",
+        "Oturum otomatik yenilendi (OTP gerekmedi)", actor=actor,
+    )
+
+
+async def _relogin_attempts(page, creds: dict, context, actor: str) -> dict:
+    """Captcha'yi cozerek girisi dener; OTP istenirse isaretler."""
+    for attempt in range(AUTO_RELOGIN_TRIES):
+        try:
+            outcome = await _auto_login_attempt(page, creds)
+        except Exception as exc:
+            logger.warning("auto relogin attempt %s failed: %s", attempt + 1, exc)
+            outcome = "retry"
+        if outcome == "ok":
+            await _record_auto_login(context, actor)
+            return {"ok": True, "attempts": attempt + 1}
+        if outcome == "otp":
+            await _mark_otp_required("portal_otp")
+            await log_event(
+                None, None, "rpa_otp_required",
+                "Otomatik giriste portal OTP istedi - manuel giris gerekiyor", actor=actor,
+            )
+            return {"ok": False, "reason": "otp_required"}
+        await asyncio.sleep(2.0)
+    return {"ok": False, "reason": "captcha_failed"}
+
+
 async def _auto_relogin_locked(actor: str, force: bool = False) -> dict:
     """auto_relogin'in kilit altinda calisan govdesi."""
     creds = await raw_credentials()
@@ -672,17 +722,13 @@ async def _auto_relogin_locked(actor: str, force: bool = False) -> dict:
 
     doc = await settings_col.find_one({"key": SESSION_KEY})
     value = (doc or {}).get("value") or {}
-    device_state = value.get("device_state")
-
-    if not force:
-        if not device_state:
-            # Cihaz guveni hic kaydedilmemis: her deneme OTP e-postasi tetikler.
+    blocked = _relogin_block_reason(value, force)
+    if blocked:
+        if blocked == "no_trusted_device":
             await _mark_otp_required("no_trusted_device")
-            return {"ok": False, "reason": "no_trusted_device"}
-        if value.get("otp_required"):
-            # Admin OTP ile giris yapana kadar portala dokunmuyoruz.
-            return {"ok": False, "reason": "otp_required_pending"}
+        return {"ok": False, "reason": blocked}
 
+    device_state = value.get("device_state")
     try:
         if device_state:
             pw, browser, context, page = await _launch_with_state(_trust_only_state(device_state))
@@ -694,35 +740,7 @@ async def _auto_relogin_locked(actor: str, force: bool = False) -> dict:
 
     entry = {"pw": pw, "browser": browser, "context": context}
     try:
-        for attempt in range(AUTO_RELOGIN_TRIES):
-            try:
-                outcome = await _auto_login_attempt(page, creds)
-            except Exception as exc:
-                logger.warning("auto relogin attempt %s failed: %s", attempt + 1, exc)
-                outcome = "retry"
-            if outcome == "ok":
-                await _persist_session({"context": context}, via_otp=False)
-                await settings_col.update_one(
-                    {"key": SESSION_KEY},
-                    {
-                        "$set": {"value.last_auto_login_at": _now().isoformat()},
-                        "$inc": {"value.auto_login_count": 1},
-                    },
-                )
-                await log_event(
-                    None, None, "rpa_auto_login",
-                    "Oturum otomatik yenilendi (OTP gerekmedi)", actor=actor,
-                )
-                return {"ok": True, "attempts": attempt + 1}
-            if outcome == "otp":
-                await _mark_otp_required("portal_otp")
-                await log_event(
-                    None, None, "rpa_otp_required",
-                    "Otomatik giriste portal OTP istedi - manuel giris gerekiyor", actor=actor,
-                )
-                return {"ok": False, "reason": "otp_required"}
-            await asyncio.sleep(2.0)
-        return {"ok": False, "reason": "captcha_failed"}
+        return await _relogin_attempts(page, creds, context, actor)
     finally:
         await _close(entry)
 

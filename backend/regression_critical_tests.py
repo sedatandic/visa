@@ -204,43 +204,29 @@ class CriticalRegressionTester:
             }
             
             all_correct = True
-            if fields_count != expected["fields"]:
-                self.log(f"Fields count mismatch: expected {expected['fields']}, got {fields_count}", "WARN")
-                all_correct = False
-            
-            if traveler_fields_count != expected["traveler_fields"]:
-                self.log(f"Traveler fields count mismatch: expected {expected['traveler_fields']}, got {traveler_fields_count}", "WARN")
-                all_correct = False
-            
-            if constants_count != expected["constants"]:
-                self.log(f"Constants count mismatch: expected {expected['constants']}, got {constants_count}", "WARN")
-                all_correct = False
-            
-            if upload_targets_count != expected["upload_targets"]:
-                self.log(f"Upload targets count mismatch: expected {expected['upload_targets']}, got {upload_targets_count}", "WARN")
-                all_correct = False
-            
-            if validate_selector != expected["validate_selector"]:
-                self.log(f"Validate selector mismatch: expected '{expected['validate_selector']}', got '{validate_selector}'", "WARN")
-                all_correct = False
-            
-            if status_url != expected["status_url"]:
-                self.log(f"Status URL mismatch: expected '{expected['status_url']}', got '{status_url}'", "WARN")
-                all_correct = False
-            
-            if auto_check_enabled != expected["auto_check_enabled"]:
-                self.log(f"Auto check enabled mismatch: expected {expected['auto_check_enabled']}, got {auto_check_enabled}", "WARN")
-                all_correct = False
-            
-            if all_correct:
-                self.log("Zami mapping verification PASSED: all fields match expected values", "PASS")
-                self.tests_passed += 1
-                return True
-            else:
-                self.log("Zami mapping verification PASSED with warnings (some counts differ but mapping is intact)", "PASS")
-                self.tests_passed += 1
-                return True
-            
+            checks = [
+                ("Fields count", fields_count, expected["fields"]),
+                ("Traveler fields count", traveler_fields_count, expected["traveler_fields"]),
+                ("Constants count", constants_count, expected["constants"]),
+                ("Upload targets count", upload_targets_count, expected["upload_targets"]),
+                ("Validate selector", validate_selector, expected["validate_selector"]),
+                ("Status URL", status_url, expected["status_url"]),
+                ("Auto check enabled", auto_check_enabled, expected["auto_check_enabled"]),
+            ]
+            for label, actual, wanted in checks:
+                if actual != wanted:
+                    self.log(f"{label} mismatch: expected {wanted!r}, got {actual!r}", "WARN")
+                    all_correct = False
+
+            self.log(
+                "Zami mapping verification PASSED: all fields match expected values"
+                if all_correct
+                else "Zami mapping verification PASSED with warnings (some counts differ but mapping is intact)",
+                "PASS",
+            )
+            self.tests_passed += 1
+            return True
+
         except Exception as e:
             self.log(f"Zami mapping verification error: {str(e)}", "FAIL")
             return False

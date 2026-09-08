@@ -2048,3 +2048,34 @@ gerçekten uygulanan önlemler yazıldı.
 - Doğrulama: `whatsapp-floating-button` href = `https://wa.me/905384838224?text=…`,
   footer `tel:+905384838224`, `phone-dubai` öğesi DOM'da yok; ekran görüntüsüyle kontrol
   edildi. pytest alt kümesi (content/iteration_48/refactor) 89 passed.
+
+## 2026-09-08 (9) · Kod inceleme raporu: 3 gerçek düzeltme + 3 yanlış pozitif doğrulaması
+
+### Uygulanan düzeltmeler
+- `zami_rpa.py`: **`_auto_relogin_locked` karmaşıklığı 11 → eşik altı**. Yeni yardımcılar:
+  `_relogin_block_reason` (cihaz güveni / bekleyen OTP kontrolü), `_record_auto_login`
+  (oturum kaydı + log), `_relogin_attempts` (captcha deneme döngüsü). Davranış aynı.
+  Ayrıca 91. satırdaki yorum yeniden yazıldı — yorumun içindeki `"exec("` metni tarayıcıların
+  "exec kullanımı" yanlış pozitifini üretiyordu.
+- `insurance_tasks.py`: **`expense_report` 62 satır → 20 satır**; `_charge_buckets`
+  (aylık toplama) ve `_charge_detail` (tek çekim satırı) ayrıldı. Uç yanıtı bire bir aynı
+  (`/admin/insurance/expenses` canlı doğrulandı).
+- Test betikleri: `regression_critical_tests.test_zami_mapping_verification` 7 ayrı if
+  bloğu yerine tek `checks` listesi + döngü (90 → ~55 satır, karmaşıklık 12 → 4);
+  `backend_test.test_brand_name_in_backend` iki yardımcıya bölündü
+  (`_check_brand_asset`, `_check_brand_content_site`, karmaşıklık 13 → 3).
+- Doğrulama: `ruff --select C901 (max-complexity=10)` → **0 bulgu**; tam pytest
+  **490 passed / 3 skipped**.
+
+### Yanlış pozitifler (kod değişikliği gerekmedi, tekrar doğrulandı)
+- **"zami_rpa.py:91 exec() güvenlik açığı"**: dosyada `exec()`/`eval()` çağrısı YOK; ilgili
+  satır `asyncio.create_subprocess_exec` (sabit argv ile playwright kurulumu) ve tarayıcının
+  eşleştiği metin bir YORUM içindeydi. Yorum yeniden yazıldı ki rapor tekrarlanmasın.
+- **"18 tanımsız değişken"**: `ruff --select F821` → *All checks passed*.
+- **"`is` ile sabit karşılaştırma"**: `ruff --select F632,E711,E712` → 0 bulgu; zami_rpa/zami/
+  whatsapp/zami_status/wa_cloud dosyalarında ` is "..."` kalıbı hiç yok (tüm kullanımlar
+  `is None` / `is not None`).
+- **"routes_admin.py 35 import"**: gerçek sayı **27** import satırı, 1234 satır dosya. Modül
+  bölme (P2) risk/fayda dengesi nedeniyle yapılmadı; istenirse `routes_admin_content.py` +
+  `routes_admin_reports.py` olarak ayrılabilir (mağaza/sigorta uçları zaten
+  `routes_admin_store.py` içinde ayrı).

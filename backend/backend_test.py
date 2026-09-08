@@ -1368,58 +1368,52 @@ class MandatoryFieldsTester:
             self.log(f"Zami mapping preservation test error: {str(e)}", "FAIL")
             return False
     
+    def _check_brand_asset(self, path: str) -> bool:
+        """Verilen betikte marka adi guncel mi (eski 'VizeAtlas' kalmis mi)?"""
+        response = requests.get(f"{BASE_URL}{path}", timeout=10)
+        if response.status_code != 200:
+            return True
+        content = response.text
+        if "VizeAtlas" in content and "Dubai Vize Hattı" not in content:
+            self.log(f"FAIL: {path} still contains 'VizeAtlas' instead of 'Dubai Vize Hattı'", "FAIL")
+            return False
+        level = "PASS" if "Dubai Vize Hattı" in content else "WARN"
+        self.log(f"{level}: {path} brand name check ({level.lower()})", level)
+        return True
+
+    def _check_brand_content_site(self) -> bool:
+        """content/site company.brand alani guncel marka adini tasiyor mu?"""
+        response = requests.get(f"{BASE_URL}/content/site", timeout=10)
+        if response.status_code != 200:
+            return True
+        company = (response.json() or {}).get("company", {})
+        brand = company.get("brand", "")
+        if "VizeAtlas" in brand:
+            self.log(f"FAIL: content/site company.brand still contains 'VizeAtlas': '{brand}'", "FAIL")
+            return False
+        level = "PASS" if "Dubai Vize" in brand else "WARN"
+        self.log(f"{level}: content/site company.brand is '{brand} {company.get('brandSuffix', '')}'".strip(), level)
+        return True
+
     def test_brand_name_in_backend(self):
         """Test that brand name is 'Dubai Vize Hattı' not 'VizeAtlas' in backend texts"""
         self.tests_run += 1
         self.log("Testing brand name in backend texts...", "INFO")
-        
+
         try:
-            # Test bookmarklet.js
-            response = requests.get(f"{BASE_URL}/zami/bookmarklet.js", timeout=10)
-            if response.status_code == 200:
-                content = response.text
-                if "VizeAtlas" in content and "Dubai Vize Hattı" not in content:
-                    self.log("FAIL: bookmarklet.js still contains 'VizeAtlas' instead of 'Dubai Vize Hattı'", "FAIL")
-                    return False
-                elif "Dubai Vize Hattı" in content:
-                    self.log("PASS: bookmarklet.js contains 'Dubai Vize Hattı'", "PASS")
-                else:
-                    self.log("WARN: bookmarklet.js doesn't contain brand name", "WARN")
-            
-            # Test capture.js
-            response = requests.get(f"{BASE_URL}/zami/capture.js", timeout=10)
-            if response.status_code == 200:
-                content = response.text
-                if "VizeAtlas" in content and "Dubai Vize Hattı" not in content:
-                    self.log("FAIL: capture.js still contains 'VizeAtlas' instead of 'Dubai Vize Hattı'", "FAIL")
-                    return False
-                elif "Dubai Vize Hattı" in content:
-                    self.log("PASS: capture.js contains 'Dubai Vize Hattı'", "PASS")
-                else:
-                    self.log("WARN: capture.js doesn't contain brand name", "WARN")
-            
-            # Test content/site
-            response = requests.get(f"{BASE_URL}/content/site", timeout=10)
-            if response.status_code == 200:
-                result = response.json()
-                company = result.get("company", {})
-                brand = company.get("brand", "")
-                brand_suffix = company.get("brandSuffix", "")
-                
-                if "VizeAtlas" in brand:
-                    self.log(f"FAIL: content/site company.brand still contains 'VizeAtlas': '{brand}'", "FAIL")
-                    return False
-                elif "Dubai Vize" in brand:
-                    self.log(f"PASS: content/site company.brand is '{brand} {brand_suffix}'", "PASS")
-                else:
-                    self.log(f"WARN: content/site company.brand is '{brand}'", "WARN")
-            
-            self.tests_passed += 1
-            return True
-            
+            checks = [
+                self._check_brand_asset("/zami/bookmarklet.js"),
+                self._check_brand_asset("/zami/capture.js"),
+                self._check_brand_content_site(),
+            ]
         except Exception as e:
             self.log(f"Brand name test error: {str(e)}", "FAIL")
             return False
+
+        if not all(checks):
+            return False
+        self.tests_passed += 1
+        return True
     
     def test_application_without_gender(self):
         """Test creating application WITHOUT gender field (new behavior)"""
