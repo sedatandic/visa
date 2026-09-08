@@ -13,6 +13,7 @@ import os
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
+import insurance_balance
 import tamamliyo
 from content import COMPANY
 from db import insurance_tasks_col, products_col, settings_col, uploads_col
@@ -24,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 SETTINGS_KEY = "insurance_provider"
 SYNC_INTERVAL_HOURS = 24
+RETRY_INTERVAL_MINUTES = 15
+WAITING_STATUS = "waiting_balance"
 STEPS = ("quote", "payment_confirm", "policy", "policy_pdf")
 
 
@@ -273,6 +276,25 @@ async def _save_provider_error(task_id: str, message: str) -> None:
     )
 
 
+def _policy_cost(task: dict) -> float:
+    """Bakiyeden dusulecek tutar: saglayici teklif fiyati, yoksa katalog maliyeti."""
+    quoted = insurance_balance.parse_try(task.get("provider_quote_price"))
+    if quoted > 0:
+        return quoted
+    return float(task.get("unit_cost") or 0) * int(task.get("quantity") or 1)
+
+
+async def _park_for_balance(task_id: str) -> None:
+    """Bakiye yetmedi: gorev kuyruga alinir, admine uyari gider."""
+    await insurance_tasks_col.update_one(
+        {"id": task_id},
+        {"$set": {"status": WAITING_STATUS, "waiting_since": datetime.now(timezone.utc)}},
+    )
+    await insurance_balance.mark_empty()
+    waiting = await insurance_tasks_col.count_documents({"status": WAITING_STATUS})
+    await insurance_balance.maybe_alert(waiting)
+
+
 async def issue_via_provider(task_id: str, origin: str, actor: str = "") -> dict:
     """Tamamliyo uzerinden policeyi keser; her adim tek sefer calisir (idempotent)."""
     task = await insurance_tasks_col.find_one({"id": task_id})
@@ -297,6 +319,8 @@ async def issue_via_provider(task_id: str, origin: str, actor: str = "") -> dict
     except Exception as exc:
         message = str(exc)
         await _save_provider_error(task_id, message)
+        if insurance_balance.is_balance_error(message):
+            await _park_for_balance(task_id)
         logger.error("tamamliyo police kesimi basarisiz (%s): %s", task_id, message)
         return {"ok": False, "error": message, "quote_id": quote_id}
 
@@ -307,7 +331,45 @@ async def issue_via_provider(task_id: str, origin: str, actor: str = "") -> dict
         {"id": task_id},
         {"$set": {"provider_error": None, "provider_issued_by": actor or "system"}},
     )
+    fresh = await insurance_tasks_col.find_one({"id": task_id})
+    await insurance_balance.record_spend(_policy_cost(fresh or task))
     return {"ok": True, "quote_id": quote_id, "policy_file_id": file_id, "delivery": sent}
+
+
+async def retry_waiting_tasks() -> dict:
+    """Bakiye bekleyen policeleri, bakiye geldiginde kendiliginden keser."""
+    waiting = (
+        await insurance_tasks_col.find({"status": WAITING_STATUS})
+        .sort("created_at", 1)
+        .to_list(50)
+    )
+    if not waiting or not tamamliyo.configured():
+        return {"issued": 0, "waiting": len(waiting)}
+
+    state = await insurance_balance.status()
+    if state["remaining_try"] <= 0:
+        return {"issued": 0, "waiting": len(waiting), "reason": "no_balance"}
+
+    origin = (os.environ.get("PUBLIC_SITE_URL") or "").strip().rstrip("/")
+    issued = 0
+    for task in waiting:
+        result = await issue_via_provider(task["id"], origin, actor="auto-retry")
+        if not result.get("ok"):
+            break  # bakiye yine bitmis olabilir, kuyrugu zorlamayalim
+        issued += 1
+    return {"issued": issued, "waiting": len(waiting) - issued}
+
+
+async def balance_retry_loop() -> None:
+    """Bakiye bekleyen policeleri periyodik olarak tekrar dener."""
+    while True:
+        await asyncio.sleep(RETRY_INTERVAL_MINUTES * 60)
+        try:
+            result = await retry_waiting_tasks()
+            if result["issued"]:
+                logger.info("bakiye geldi: %s bekleyen police kesildi", result["issued"])
+        except Exception as exc:
+            logger.error("bakiye kuyrugu denemesi hatasi: %s", exc)
 
 
 async def price_sync_loop() -> None:

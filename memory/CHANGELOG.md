@@ -1585,3 +1585,72 @@ kaydı silindi. **Veritabanında TCKN `451…` izi kalmadı** (tüm koleksiyonla
 
 **Test**: `test_iteration_118_tamamliyo_payment.py` 17/17 PASS.
 Tam suit: **368 passed / 3 skipped**.
+
+## 2026-09-08 (3) · Bakiye takibi + uyarı + bakiye bekleyen poliçe kuyruğu
+
+Tamamliyo **bakiye sorgu API'si sunmuyor** (dokümanlarda yok; `/partner/v1/bakiye`,
+`/partner/v1/cari`, `.../bakiye` denendi → 404 / CORS catch-all 405). Bakiye yalnızca
+ödeme anında `HATA_15 "Yetersiz puan bakiyesi"` ile anlaşılıyor. Bu yüzden bakiye
+kendimiz takip ediliyor.
+
+### Yeni `insurance_balance.py`
+- `settings_col` → `insurance_balance`: `loaded_try`, `spent_try`, `topups[]` (son 20),
+  `last_alert_at/kind`, `threshold_policies` (varsayılan 3).
+- `status()`: kalan bakiye + **kesilebilir poliçe sayısı** (en pahalı aktif poliçe maliyetine
+  göre temkinli), `low` / `empty` bayrakları.
+- `add_topup(amount, actor)`: panelden girilen yükleme; uyarı kilidini sıfırlar.
+- `record_spend(amount)`: her kesilen poliçenin maliyetini düşer
+  (`provider_quote_price` varsa o, yoksa katalog maliyeti × kişi).
+- `mark_empty()`: Tamamliyo "yetersiz bakiye" derse takip sıfırlanır (gerçek her zaman onda).
+- `maybe_alert(waiting)`: admine **e-posta + WhatsApp** uyarısı. `empty` → ACİL,
+  `low` → hatırlatma. Aynı tür uyarı 12 saatte bir; `low → empty` yükselmesi anında geçer.
+- `parse_try()`: "1.244,85" / "244.85" / sayı formatlarını tolere eder.
+
+### Bakiye bekleyen poliçe kuyruğu (`insurance_provider.py`)
+- Poliçe kesimi bakiye hatası verirse görev `status: "waiting_balance"` olur
+  (`waiting_since`), bakiye sıfırlanır ve admine uyarı gider (`_park_for_balance`).
+- `retry_waiting_tasks()`: takip edilen bakiye > 0 ise bekleyen görevleri sırayla keser;
+  ilk hatada durur (bakiye yine bitmiş olabilir).
+- `balance_retry_loop()`: 15 dakikada bir çalışır (server.py'de "insurance balance queue").
+- Bakiye yüklendiği an `POST /admin/insurance/balance/topup` kuyruğu hemen tetikler.
+
+### API + panel
+- `GET /api/admin/insurance/balance` (+ `waiting_tasks`), `POST /api/admin/insurance/balance/topup`.
+- `GET /api/admin/insurance-tasks?status=waiting_balance` filtresi eklendi.
+- `AdminInsurance.jsx`: "Tamamliyo cari bakiyesi" kartı — kalan bakiye, ≈kesilebilir poliçe,
+  poliçe maliyeti, bakiye bekleyen poliçe sayısı, kritik uyarı ve "Bakiye yükledim" alanı
+  (`insurance-balance-panel`, `-state`, `-remaining`, `-policies`, `-waiting`, `-warning`,
+  `-amount`, `-topup`). Görev rozetine "Bakiye bekliyor" durumu eklendi.
+
+### Canlı doğrulama
+Gerçek API ile: görev `waiting_balance`'a düştü, `provider_error` =
+*"Yetersiz puan bakiyesi. Tamamliyo panelinden cari bakiye yükleyip poliçeyi tekrar kesin."*,
+uyarı e-postası **gönderildi** (`ACİL · Tamamliyo bakiyesi bitti, poliçe kesilemiyor`,
+status=sent), panel kartı ve "Bakiye bekliyor" rozeti ekran görüntüsüyle teyit edildi.
+Test görevi sonrasında silindi.
+
+**Test**: `test_iteration_119_insurance_balance.py` 30/30 PASS.
+
+## 2026-09-08 (4) · Vize hazır e-postası: GDRFA doğrulama adımları + PDF eki
+
+Kullanıcı isteği: vize çıkınca müşteriye WhatsApp mesajına benzer bir e-posta gitsin —
+resmî sorgulama linki + adımlar olsun, vize belgesi de ekte gelsin, **cümleler birebir
+aynı olmasın**.
+
+- `emailer.visa_ready_html(app_doc, download_url, message, attached)`:
+  - Yeni `_gdrfa_block()`: GDRFA sorgulama kutusu (`GDRFA_STATUS_URL`) + 5 adımlı sıralı
+    liste (English dil seçimi → File sekmesi → First Name → File Number'ı `/` olmadan gir →
+    sorgula). "Bu adım zorunlu değildir" notu var.
+  - Metin yeniden yazıldı; orijinal WhatsApp cümlelerinin hiçbiri geçmiyor (test bunu
+    ayrıca doğruluyor: "Linke tıklayın", "Nasıl kontrol edilir?" vb. yasaklı).
+  - `attached=True` ise "Vize belgeniz bu e-postanın ekinde…", değilse eski buton metni.
+- Yeni `application_docs.visa_pdf_attachment(file_id, reference_code)`: belgeyi object
+  storage'dan okur, `vize-dv-xxx.pdf` adıyla ek döndürür; dosya yoksa/okunamazsa/18 MB'ı
+  aşarsa boş liste döner (e-posta yine bağlantıyla gider, hiç patlamaz).
+- 4 gönderim noktası da eki kullanıyor: `visa_delivery.deliver_visa_document` (Zami'den
+  otomatik), `wa_docs` (tedarikçi WhatsApp akışı), `routes_account` (müşteri "tekrar
+  gönder"), `routes_admin` (panelden elle gönderim).
+
+**Test**: `test_iteration_120_visa_email.py` 17/17 PASS. Ayrıca gerçek örnek e-posta
+`info@dubaivizehatti.com` adresine gönderildi (status=sent).
+Tam suit: **413 passed / 5 skipped**.

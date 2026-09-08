@@ -20,7 +20,7 @@ from fastapi import (
 )
 from pydantic import BaseModel, Field
 
-from application_docs import application_form_bytes, form_filename
+from application_docs import application_form_bytes, form_filename, visa_pdf_attachment
 from content import STATUS_LABELS
 from db import (
     applications_col,
@@ -526,13 +526,17 @@ async def admin_send_visa(
 
     now = datetime.now(timezone.utc)
     update = _visa_send_update(app_doc, to_email, now, payload)
+    attachments = await visa_pdf_attachment(visa_result["file_id"], app_doc["reference_code"])
 
     res = await send_email(
         to_email,
         subject_with_ref(app_doc["reference_code"], "onaylandı - vizeniz hazır"),
-        visa_ready_html(serialize_doc(app_doc), download_url, payload.message or ""),
+        visa_ready_html(
+            serialize_doc(app_doc), download_url, payload.message or "", bool(attachments)
+        ),
         kind="visa_delivered",
         meta={"reference_code": app_doc["reference_code"]},
+        attachments=attachments,
     )
     update["visa_result.send_status"] = res.get("status")
 

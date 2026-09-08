@@ -67,6 +67,29 @@ def _extension(record: dict) -> str:
     return "pdf" if record.get("content_type") == "application/pdf" else "jpg"
 
 
+async def visa_pdf_attachment(file_id: str, reference_code: str = "") -> list[dict]:
+    """Vize belgesini e-posta eki formatinda dondurur; okunamazsa bos liste."""
+    record = await uploads_col.find_one({"id": file_id, "is_deleted": False})
+    if not record:
+        return []
+    try:
+        data, content_type = await asyncio.to_thread(get_object, record["storage_path"])
+    except Exception as exc:  # pragma: no cover - object storage hatasi
+        logger.warning("vize belgesi eke eklenemedi (%s): %s", file_id, exc)
+        return []
+    if len(data) > MAX_TOTAL_BYTES:
+        logger.warning("vize belgesi eke sigmadi (%s bayt), baglanti gonderilecek", len(data))
+        return []
+    suffix = f"-{_slug(reference_code)}" if reference_code else ""
+    return [
+        {
+            "filename": f"vize{suffix}.{_extension(record)}",
+            "content": data,
+            "content_type": content_type or record.get("content_type") or "application/pdf",
+        }
+    ]
+
+
 async def collect_application_documents(app_doc: dict, with_data: bool = True) -> list[dict]:
     """Yuklenen evraklari (istege gore icerikleriyle) toplar; okunamayan dosyayi atlar."""
     items: list[dict] = []

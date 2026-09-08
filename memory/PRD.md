@@ -1320,3 +1320,13 @@ Ayrıntı: CHANGELOG.md "2026-09-08". Özet:
   Admin → Sigorta Poliçeleri → "Poliçeyi kes" ile ilk poliçe kesilip PDF/e-posta/WhatsApp
   akışı doğrulanacak, sonra "Otomatik poliçe kesimi" anahtarı açılacak.
 - Test verisi ve kimlik bilgileri veritabanından tamamen silindi (2026-09-08).
+
+## 2026-09-08 (3-4) · Bakiye takibi, otomatik kuyruk ve vize e-postası
+Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
+- **Bakiye takibi**: Tamamliyo bakiye sorgu API'si yok; bakiye panelden girilir, kesilen
+  poliçelerin maliyeti düşülür. Kritik seviyede admine e-posta + WhatsApp uyarısı gider.
+- **Bakiye bekleyen poliçe kuyruğu**: bakiye yetmezse sipariş `waiting_balance` olur,
+  bakiye yüklenince 15 dk içinde (veya yükleme anında) kendiliğinden kesilir.
+- **Vize hazır e-postası**: GDRFA resmî sorgulama linki + 5 adımlı yönlendirme eklendi,
+  vize PDF'i artık e-postaya ek olarak da gidiyor.
+- Kalan P0: Tamamliyo paneline cari bakiye yüklenmesi (kullanıcı tarafında).

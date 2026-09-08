@@ -527,15 +527,50 @@ def status_change_html(app_doc: dict, status_label: str, note: str = "") -> str:
     return _wrap("Başvuru durumu güncellendi", body)
 
 
-def visa_ready_html(app_doc: dict, download_url: str, message: str = "") -> str:
+GDRFA_STATUS_URL = "https://smart.gdrfad.gov.ae/Public_Th/StatusInquiry_New.aspx"
+
+_GDRFA_STEPS = (
+    "Bağlantıyı açın ve sayfanın üst kısmındaki dil seçeneğinden <strong>English</strong>'i seçin.",
+    "Sorgulama türü olarak <strong>File</strong> sekmesini işaretleyin.",
+    "<strong>First Name</strong> alanına adınızı, pasaportunuzdaki İngilizce yazımıyla girin.",
+    "<strong>File Number</strong> alanına vize belgenizdeki dosya numarasını, bölü işareti (/) "
+    "kullanmadan yazın.",
+    "Kalan alanları tamamlayıp sorgulayın; vizenizin güncel durumu ekranda görünür.",
+)
+
+
+def _gdrfa_block() -> str:
+    """Vizeyi resmi kaynaktan dogrulama adimlari (istege bagli)."""
+    steps = "".join(
+        f'<li style="margin:0 0 8px;font-size:13px;line-height:21px;color:#3E2A14;">{step}</li>'
+        for step in _GDRFA_STEPS
+    )
+    return f"""
+    <div style="margin:20px 0 0;background-color:#FBF6EC;border:1px solid #EADFCB;border-radius:10px;padding:16px;">
+      <div style="font-size:14px;font-weight:bold;color:#3E2A14;">Vizenizi resmî kaynaktan doğrulamak isterseniz</div>
+      <p style="margin:8px 0 12px;font-size:13px;line-height:21px;color:#8A7355;">Dubai Göçmenlik İdaresi'nin (GDRFA) sorgulama sayfasından vizenizin durumunu kendiniz de görebilirsiniz. Bu adım zorunlu değildir; vizeniz onaylanmış olarak tarafımıza ulaştı.</p>
+      <ol style="margin:0;padding-left:18px;">{steps}</ol>
+      <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Sorgulama sayfası:<br/><a href="{GDRFA_STATUS_URL}" style="color:#0EA5A4;">{GDRFA_STATUS_URL}</a></p>
+    </div>
+    """
+
+
+def visa_ready_html(
+    app_doc: dict, download_url: str, message: str = "", attached: bool = False
+) -> str:
     message_html = (
         f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#8A7355;">{esc(message)}</p>'
         if message
         else ""
     )
+    delivery_line = (
+        "Vize belgeniz bu e-postanın ekinde; dilerseniz aşağıdaki butondan da indirebilirsiniz."
+        if attached
+        else "Vize belgenizi aşağıdaki butondan indirebilirsiniz."
+    )
     body = f"""
     <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Sayın {_contact_name(app_doc)},</p>
-    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Müjde! {app_doc.get('reference_code','')} kodlu başvurunuz <strong>onaylandı</strong>. Vize belgenizi aşağıdaki butondan indirebilirsiniz.</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:22px;">Müjde! {app_doc.get('reference_code','')} kodlu başvurunuz <strong>onaylandı</strong>, hayırlı olsun. {delivery_line}</p>
     {_travelers_table(app_doc)}
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 4px;">
       <tr><td style="background-color:#0EA5A4;border-radius:8px;">
@@ -544,8 +579,9 @@ def visa_ready_html(app_doc: dict, download_url: str, message: str = "") -> str:
     </table>
     <p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#8A7355;">Buton çalışmıyorsa bu adresi tarayıcınıza kopyalayabilirsiniz:<br/>{download_url}</p>
     <p style="margin:16px 0 0;font-size:13px;line-height:21px;">Vizeniz elektroniktir ve pasaportunuza işlenmez. Sınır kapısında bu belgeyi (baskısını veya telefonunuzdaki kopyasını) göstermeniz yeterlidir.</p>
+    {_gdrfa_block()}
     {message_html}
-    <p style="margin:20px 0 0;font-size:13px;line-height:21px;color:#8A7355;">İyi yolculuklar dileriz.</p>
+    <p style="margin:20px 0 0;font-size:13px;line-height:21px;color:#8A7355;">Aklınıza takılan bir şey olursa bize yazmanız yeterli. Şimdiden keyifli bir yolculuk dileriz.</p>
     """
     return _wrap("Vizeniz hazır", body)
 

@@ -23,6 +23,7 @@ import file_access
 import wa_cloud
 from db import applications_col, serialize_doc, uploads_col, wa_documents_col
 from emailer import send_email, visa_ready_html
+from application_docs import visa_pdf_attachment
 from storage import APP_NAME, put_object
 
 load_dotenv()
@@ -229,12 +230,16 @@ async def deliver_to_customer(app_doc: dict, record: dict) -> dict:
     delivery: dict = {"email_status": "skipped", "whatsapp_status": "skipped"}
 
     if email:
+        attachments = await visa_pdf_attachment(
+            visa_result.get("file_id", ""), app_doc.get("reference_code", "")
+        )
         res = await send_email(
             email,
             f"Vizeniz hazır - {app_doc.get('reference_code', '')}",
-            visa_ready_html(serialize_doc(app_doc), download_url, ""),
+            visa_ready_html(serialize_doc(app_doc), download_url, "", bool(attachments)),
             kind="visa_delivered",
             meta={"reference_code": app_doc.get("reference_code"), "source": "whatsapp_supplier"},
+            attachments=attachments,
         )
         delivery["email_status"] = res.get("status", "unknown")
 

@@ -6,6 +6,8 @@
       `HATA_15 "Yetersiz puan bakiyesi."` — Tamamliyo panelinden bakiye yüklenince poliçe
       kesimi çalışacak. Kod hazır ve test edildi (2026-09-08).
       Kullanıcı kararı: açık/cari tahsilat talebi şu an Tamamliyo'ya gönderilmeyecek.
+      Bakiye yüklendikten sonra Admin → Sigorta Poliçeleri → **Bakiye yükledim** alanına
+      tutarı girin; bekleyen poliçeler o an kendiliğinden kesilir.
 - [ ] **İlk poliçeyi elle kes** (bakiye yüklendikten sonra):
       Tamamliyo canlı bağlı, fiyatlar senkron, otomatik kesim KAPALI. İlk sigorta siparişinde
       Admin → Sigorta Poliçeleri → "Tamamliyo'dan poliçeyi kes ve gönder" ile poliçe kesilip

@@ -264,6 +264,11 @@ def _background_loops() -> tuple:
 
         return [price_sync_loop()]
 
+    def insurance_balance_queue():
+        from insurance_provider import balance_retry_loop
+
+        return [balance_retry_loop()]
+
     return (
         ("document reminder", documents),
         ("zami status + session keepalive", zami),
@@ -272,6 +277,7 @@ def _background_loops() -> tuple:
         ("document retention", retention),
         ("daily digest", digest),
         ("insurance price sync", insurance_prices),
+        ("insurance balance queue", insurance_balance_queue),
     )
 
 
