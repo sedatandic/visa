@@ -2079,3 +2079,11 @@ gerçekten uygulanan önlemler yazıldı.
   bölme (P2) risk/fayda dengesi nedeniyle yapılmadı; istenirse `routes_admin_content.py` +
   `routes_admin_reports.py` olarak ayrılabilir (mağaza/sigorta uçları zaten
   `routes_admin_store.py` içinde ayrı).
+
+## 2026-09-08 (10) · Mobilde WhatsApp telefon maketi kısaltıldı
+Kullanıcı: "cepten bakınca cep telefonu çok uzun görünüyor."
+- `WhatsAppPhoneMock`: sohbet alanı mobilde `h-[498px]` (masaüstünden bile uzundu) →
+  **`h-[320px]`**, 420px üstü ekranlarda 380px, `sm:` ve üstünde 452px (masaüstü aynı kaldı).
+  Nokta göstergesi boşluğu mobilde `mt-8` → `mt-5`.
+- Sonuç: 390px genişlikte maketin toplam yüksekliği ~700px'ten **569px**'e indi (telefon
+  gövdesi ~470px); son mesajlar yine `justify-end` ile görünür kalıyor.

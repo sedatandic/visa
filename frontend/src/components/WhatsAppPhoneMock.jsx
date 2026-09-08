@@ -215,7 +215,7 @@ export const WhatsAppPhoneMock = ({ href }) => {
 
                     {/* sohbet alani */}
                     <div
-                        className="flex h-[498px] flex-col justify-end overflow-hidden px-3 py-2.5 sm:h-[452px]"
+                        className="flex h-[320px] flex-col justify-end overflow-hidden px-3 py-2.5 min-[420px]:h-[380px] sm:h-[452px]"
                         style={{
                             backgroundColor: "#EFEAE2",
                             backgroundImage:
@@ -267,7 +267,7 @@ export const WhatsAppPhoneMock = ({ href }) => {
                 </div>
             </motion.div>
 
-            <div className="mt-8 flex items-center justify-center gap-2" data-testid="wa-chat-dots">
+            <div className="mt-5 flex items-center justify-center gap-2 sm:mt-8" data-testid="wa-chat-dots">
                 {SCENARIOS.map((s, i) => (
                     <button
                         key={s.id}
