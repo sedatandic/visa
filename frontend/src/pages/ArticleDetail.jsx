@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CalendarDays, Loader2 } from "lucide-react";
 import { api } from "../lib/api";
-import { COMPANY, formatDate, setJsonLd, setMeta } from "../lib/site";
+import { COMPANY, formatDate, setJsonLd, setMeta, SITE_URL, withBrandTitle } from "../lib/site";
 import { Button } from "../components/ui/button";
 import {
     Breadcrumb,
@@ -28,24 +28,34 @@ export default function ArticleDetail() {
                 if (cancelled) return;
                 setData(res);
                 const a = res.article || {};
-                setMeta(`${a.title} | Dubai Vize Hattı`, a.excerpt || "", {
+                const brand = `${COMPANY.brand} ${COMPANY.brandSuffix}`;
+                const articleUrl = `${SITE_URL}/gelismeler/${a.slug}`;
+                const image = a.image_url || a.image || `${SITE_URL}/brand/logo-horizontal-gold-palm.png`;
+                setMeta(withBrandTitle(a.title), a.excerpt || "", {
                     canonicalPath: `/gelismeler/${a.slug}`,
                     ogType: "article",
+                    image,
                 });
                 setJsonLd("article", {
                     "@context": "https://schema.org",
                     "@type": "Article",
-                    headline: a.title,
-                    description: a.excerpt,
+                    headline: String(a.title || "").slice(0, 110),
+                    description: a.excerpt || "",
+                    image: [image],
                     datePublished: a.date,
                     dateModified: a.updated_at || a.date,
                     inLanguage: "tr-TR",
-                    author: { "@type": "Organization", name: `${COMPANY.brand} ${COMPANY.brandSuffix}` },
+                    author: { "@type": "Organization", name: brand, url: SITE_URL },
                     publisher: {
                         "@type": "Organization",
-                        name: `${COMPANY.brand} ${COMPANY.brandSuffix}`,
+                        name: brand,
+                        logo: {
+                            "@type": "ImageObject",
+                            url: `${SITE_URL}/brand/logo-horizontal-gold-palm.png`,
+                        },
                     },
-                    mainEntityOfPage: `${window.location.origin}/gelismeler/${a.slug}`,
+                    mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
+                    url: articleUrl,
                 });
             })
             .catch(() => {

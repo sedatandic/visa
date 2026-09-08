@@ -121,7 +121,7 @@ export default function VisaTypes() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vize Hizmet Bedelleri 2026 — Fiyatlar ve Ödeme | Dubai Vize Hattı",
+            "Dubai Vize Fiyatları 2026 | Dubai Vize Hattı",
             "Dubai (BAE) vize hizmet bedelleri 2026: 30/60 gün tek ve çok girişli vize, çocuk vizesi, uzatma ve ekspres fiyatları. Bedele dahil olanlar, ödeme ve iade koşulları net."
         );
         api.get("/content/site")

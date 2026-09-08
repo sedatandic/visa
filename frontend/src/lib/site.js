@@ -117,44 +117,78 @@ export function formatDateTime(value) {
     });
 }
 
-export function setMeta(title, description, options = {}) {
-    document.title = title;
-    let tag = document.querySelector('meta[name="description"]');
+/** Kanonik alan adi: www/www'suz kopyalarin ayni sayfa sayilmasi icin sabit tutulur. */
+export const SITE_URL = (process.env.REACT_APP_SITE_URL || "https://www.dubaivizehatti.com").replace(/\/+$/, "");
+
+const BRAND_TITLE = "Dubai Vize Hattı";
+
+/** Title 60 karakteri gecmesin: marka eki sigmiyorsa dusurulur. */
+export function withBrandTitle(title) {
+    const full = `${title} | ${BRAND_TITLE}`;
+    if (full.length <= 60) return full;
+    if (title.length <= 60) return title;
+    const cut = title.slice(0, 59);
+    const space = cut.lastIndexOf(" ");
+    return `${cut.slice(0, space > 30 ? space : 59)}…`;
+}
+
+const upsertMeta = (attr, key, content) => {
+    let tag = document.querySelector(`meta[${attr}="${key}"]`);
     if (!tag) {
         tag = document.createElement("meta");
-        tag.setAttribute("name", "description");
+        tag.setAttribute(attr, key);
         document.head.appendChild(tag);
     }
-    tag.setAttribute("content", description);
+    tag.setAttribute("content", content);
+};
 
-    // canonical
+export function setMeta(title, description, options = {}) {
+    document.title = title;
+    upsertMeta("name", "description", description);
+
     const path = options.canonicalPath || window.location.pathname;
+    const url = `${SITE_URL}${path === "/" ? "/" : path.replace(/\/+$/, "")}`;
     let link = document.querySelector('link[rel="canonical"]');
     if (!link) {
         link = document.createElement("link");
         link.setAttribute("rel", "canonical");
         document.head.appendChild(link);
     }
-    link.setAttribute("href", `${window.location.origin}${path}`);
+    link.setAttribute("href", url);
 
-    // Open Graph
-    const og = {
-        "og:title": title,
-        "og:description": description,
-        "og:type": options.ogType || "website",
-        "og:url": `${window.location.origin}${path}`,
-        "og:locale": "tr_TR",
-    };
-    if (options.image) og["og:image"] = options.image;
-    Object.entries(og).forEach(([property, content]) => {
-        let m = document.querySelector(`meta[property="${property}"]`);
-        if (!m) {
-            m = document.createElement("meta");
-            m.setAttribute("property", property);
-            document.head.appendChild(m);
-        }
-        m.setAttribute("content", content);
+    upsertMeta("name", "robots", options.noindex ? "noindex, nofollow" : "index, follow");
+
+    const image = options.image || `${SITE_URL}/brand/logo-horizontal-gold-palm.png`;
+    upsertMeta("property", "og:site_name", BRAND_TITLE);
+    upsertMeta("property", "og:title", title);
+    upsertMeta("property", "og:description", description);
+    upsertMeta("property", "og:type", options.ogType || "website");
+    upsertMeta("property", "og:url", url);
+    upsertMeta("property", "og:locale", "tr_TR");
+    upsertMeta("property", "og:image", image);
+    upsertMeta("name", "twitter:card", "summary_large_image");
+    upsertMeta("name", "twitter:title", title);
+    upsertMeta("name", "twitter:description", description);
+    upsertMeta("name", "twitter:image", image);
+}
+
+/** SEO dostu basvuru adresi: /basvuru/pack-family/visa-30-single */
+export function applyPath({ paket, vize, query } = {}) {
+    const seg = (id) => String(id).replace(/_/g, "-");
+    const segments = [paket && seg(paket), vize && seg(vize)].filter(Boolean);
+    const qs = query ? `?${query}` : "";
+    return `/basvuru${segments.length ? `/${segments.join("/")}` : ""}${qs}`;
+}
+
+/** /basvuru/<paket>/<vize> yol parcalarini id'lere cevirir. */
+export function parseApplyPath(...segments) {
+    const out = { paket: null, vize: null };
+    segments.filter(Boolean).forEach((segment) => {
+        const id = String(segment).replace(/-/g, "_");
+        if (id.startsWith("pack")) out.paket = id;
+        else if (id.startsWith("visa")) out.vize = id;
     });
+    return out;
 }
 
 /** Sayfaya JSON-LD yapisal veri ekler (varsa gunceller). */

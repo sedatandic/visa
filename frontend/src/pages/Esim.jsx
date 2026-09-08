@@ -57,7 +57,7 @@ const FAQ = [
 export default function Esim() {
     useEffect(() => {
         setMeta(
-            "Dubai eSIM Paketleri | Anında Kurulum, QR Kod ile İnternet",
+            "Dubai eSIM Paketleri | Dubai Vize Hattı",
             "Dubai ve BAE için eSIM paketleri: 1 GB'dan sınırsıza kadar seçenekler, QR kod ile 2 dakikada kurulum, Türkiye numaranız açık kalır. Paketi vize başvurunuza ekleyin.",
             { canonicalPath: "/esim" }
         );

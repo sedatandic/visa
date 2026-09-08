@@ -26,7 +26,7 @@ const CONFIG = {
         title: "Şartlar ve Mesafeli Hizmet Sözleşmesi",
         description:
             "Online başvuru sırasında kurulan sözleşmenin tarafları, kapsamı, aracılık statüsü ve karşılıklı yükümlülükler.",
-        meta: "Şartlar ve Mesafeli Hizmet Sözleşmesi | Dubai Vize Hattı",
+        meta: "Mesafeli Hizmet Sözleşmesi | Dubai Vize Hattı",
         metaDesc:
             "Dubai Vize Hattı hizmet sözleşmesi: kapsam, yükümlülükler, ödeme, aracılık statüsü, riskli aktiviteler, cayma hakkı ve uyuşmazlık.",
         testId: "service-terms-page",
@@ -50,7 +50,7 @@ const CONFIG = {
         title: "Ticari Elektronik İleti Onam Formu",
         description:
             "Kampanya ve fırsat bildirimleri için verdiğiniz onayın kapsamı, işlenen bilgiler ve onayı geri alma yolları.",
-        meta: "Ticari Elektronik İleti Onam Formu | Dubai Vize Hattı",
+        meta: "Ticari Elektronik İleti Onamı | Dubai Vize Hattı",
         metaDesc:
             "Kampanya, indirim ve fırsat bildirimleri için ticari elektronik ileti onayının kapsamı, reklam eşleştirmesi ve izni geri alma adımları.",
         testId: "marketing-consent-page",

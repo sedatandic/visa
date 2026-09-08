@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError, customerAuth } from "../lib/api";
-import { formatMoney, setMeta } from "../lib/site";
+import { applyPath, formatMoney, setMeta } from "../lib/site";
 import { CART_MAX_QTY, useCart } from "../lib/cart";
 import { PageHeader } from "../components/SiteLayout";
 import { FxNote } from "../components/FxNote";
@@ -200,8 +200,11 @@ export default function Cart() {    const navigate = useNavigate();
         .reduce((sum, l) => sum + l.qty, 0);
 
     const applyHref = adultVisaLine
-        ? `/basvuru?vize=${adultVisaLine.visa.id}${cart.bundleId ? `&paket=${cart.bundleId}` : ""}` +
-          `&sepet=1&yetiskin=${visaPassengers - childPassengers}&cocuk=${childPassengers}`
+        ? applyPath({
+              paket: cart.bundleId,
+              vize: adultVisaLine.visa.id,
+              query: `sepet=1&yetiskin=${visaPassengers - childPassengers}&cocuk=${childPassengers}`,
+          })
         : "";
 
     const itemsTotal = lines.reduce((sum, l) => sum + l.total, 0);

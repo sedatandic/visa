@@ -12,7 +12,7 @@ BASE_PATH = "/dubai-vizesi"
 GUIDES = {
     "30-gun-tek-giris": {
         "h1": "30 Günlük Tek Girişli Dubai Vizesi",
-        "seo_title": "30 Günlük Dubai Vizesi 2026 | Fiyat, Şartlar ve Online Başvuru",
+        "seo_title": "30 Günlük Dubai Vizesi 2026 | Fiyat ve Başvuru",
         "seo_description": "30 günlük tek girişli Dubai vizesi nasıl alınır? 2026 fiyatı, gerekli belgeler, başvuru süresi ve onay şartları. Tek formda aile başvurusu, ortalama 2 iş gününde sonuç.",
         "keywords": ["30 günlük dubai vizesi", "dubai vizesi fiyat", "dubai turistik vize", "dubai vize başvurusu"],
         "intro": [
@@ -58,7 +58,7 @@ GUIDES = {
     },
     "60-gun-tek-giris": {
         "h1": "60 Günlük Tek Girişli Dubai Vizesi",
-        "seo_title": "60 Günlük Dubai Vizesi | Uzun Süreli Kalış İçin Fiyat ve Şartlar",
+        "seo_title": "60 Günlük Dubai Vizesi | Fiyat ve Şartlar",
         "seo_description": "60 günlük tek girişli Dubai vizesi ile iki aya kadar kalın. 2026 fiyatı, gerekli belgeler, başvuru süresi ve 30 günlük vize ile karşılaştırma.",
         "keywords": ["60 günlük dubai vizesi", "dubai uzun süreli vize", "dubai 2 aylık vize"],
         "intro": [
@@ -100,7 +100,7 @@ GUIDES = {
     },
     "30-gun-cok-giris": {
         "h1": "30 Günlük Çok Girişli Dubai Vizesi",
-        "seo_title": "30 Günlük Çok Girişli Dubai Vizesi | Multiple Vize Fiyat ve Şartlar",
+        "seo_title": "30 Günlük Çok Girişli Dubai Vizesi | Fiyat",
         "seo_description": "30 günlük çok girişli (multiple) Dubai vizesi ile ülkeye birden fazla kez giriş yapın. Fiyat, gerekli belgeler, kimler için uygun ve online başvuru.",
         "keywords": ["çok girişli dubai vizesi", "multiple dubai vize", "dubai multi vize"],
         "intro": [
@@ -175,7 +175,7 @@ GUIDES = {
     },
     "30-gun-cocuk-vizesi": {
         "h1": "30 Günlük Çocuk Vizesi (Dubai)",
-        "seo_title": "Dubai Çocuk Vizesi 30 Gün | 18 Yaş Altı İndirimli Vize Başvurusu",
+        "seo_title": "Dubai Çocuk Vizesi 30 Gün | İndirimli Başvuru",
         "seo_description": "18 yaş altı çocuklar için 30 günlük indirimli Dubai vizesi. Gerekli belgeler, veli izni, aile başvurusu indirimi ve online başvuru adımları.",
         "keywords": ["dubai çocuk vizesi", "18 yaş altı dubai vizesi", "bebek dubai vizesi"],
         "intro": [
@@ -216,7 +216,7 @@ GUIDES = {
     },
     "60-gun-cocuk-vizesi": {
         "h1": "60 Günlük Çocuk Vizesi (Dubai)",
-        "seo_title": "Dubai Çocuk Vizesi 60 Gün | Uzun Aile Tatili İçin İndirimli Vize",
+        "seo_title": "Dubai Çocuk Vizesi 60 Gün | İndirimli Başvuru",
         "seo_description": "18 yaş altı çocuklar için 60 günlük indirimli Dubai vizesi. Uzun aile tatillerinde gerekli belgeler, veli izni ve tek formda aile başvurusu.",
         "keywords": ["60 günlük çocuk vizesi", "dubai aile vizesi", "çocuk dubai vize fiyat"],
         "intro": [

@@ -17,16 +17,18 @@ export const PricingTabs = ({ compactHeading = false }) => {
     const [categories, setCategories] = useState([]);
     const [addons, setAddons] = useState([]);
     const [discountText, setDiscountText] = useState("");
+    const [guideSlugs, setGuideSlugs] = useState([]);
     const [active, setActive] = useState("single");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        Promise.all([api.get("/visa-types"), api.get("/content/site")])
-            .then(([v, c]) => {
+        Promise.all([api.get("/visa-types"), api.get("/content/site"), api.get("/visa-guides")])
+            .then(([v, c, g]) => {
                 setVisaTypes(v.data);
                 setCategories(c.data.visa_categories || []);
                 setAddons(c.data.addons || []);
                 setDiscountText(c.data.family_discount_text || "");
+                setGuideSlugs((g.data.items || []).map((i) => i.slug));
             })
             .catch(() => {})
             .finally(() => setLoading(false));
@@ -96,7 +98,13 @@ export const PricingTabs = ({ compactHeading = false }) => {
                               <Skeleton className="mt-6 h-12 w-full rounded-xl" />
                           </div>
                       ))
-                    : visible.map((visa) => <VisaTypeCard key={visa.id} visa={visa} />)}
+                    : visible.map((visa) => (
+                          <VisaTypeCard
+                              key={visa.id}
+                              visa={visa}
+                              hasGuide={guideSlugs.includes(visa.slug)}
+                          />
+                      ))}
             </div>
 
             {!compactHeading && addons.length > 0 && (

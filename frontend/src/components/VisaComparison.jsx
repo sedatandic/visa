@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Star } from "lucide-react";
 import { Button } from "./ui/button";
-import { formatMoney, formatUsd } from "../lib/site";
+import { applyPath, formatMoney, formatUsd } from "../lib/site";
 
 // Hangi vize kime uygun: fiyat/sure disindaki karar kriteri
 const FIT = {
@@ -186,7 +186,7 @@ export const VisaComparison = ({ visas = [], onSelect, selectedId = "" }) => {
                                         className="h-10 w-full whitespace-nowrap"
                                         data-testid={`visa-comparison-apply-${v.id}`}
                                     >
-                                        <Link to={`/basvuru?vize=${v.id}`}>
+                                        <Link to={applyPath({ vize: v.id })}>
                                             Başvuruya başla
                                             <ArrowRight className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
                                         </Link>

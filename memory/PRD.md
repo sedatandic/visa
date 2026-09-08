@@ -1344,3 +1344,16 @@ Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
   sayfası gönderiliyor — File Number / First Name / Date of Birth tek dokunuşla kopyalanır.
 - Panelde "GDRFA dosya numarası" alanı var; okunamayan belgelerde admin elle girer.
 - Ayrıntı: CHANGELOG.md "2026-09-08 (6)".
+
+## 2026-09-08 · SEO altyapısı (özet — detay CHANGELOG.md)
+- Kanonik host tek: `SITE_URL` (`REACT_APP_SITE_URL`, varsayılan https://www.dubaivizehatti.com);
+  `setMeta` canonical/OG/twitter + noindex desteği.
+- Build sonrası statik ön-render: `frontend/scripts/prerender.js` + `seo-pages.js`
+  (30 rota; tekil title/description/JSON-LD + gerçek metin; `build/sitemap.xml` üretimi).
+  Build komutu: `craco build && node scripts/prerender.js`.
+- JSON-LD: Article (image/publisher.logo/mainEntityOfPage), guide FAQ/Offer korumaları,
+  ana sayfada TravelAgency + WebSite.
+- SEO dostu başvuru adresleri: `/basvuru/pack-family/visa-30-single` (`applyPath`/`parseApplyPath`).
+- Tüm sayfa başlıkları ≤60 karakter (7 vize rehberi seo_title'ı dahil).
+- Başvuru formu PDF'i: saydam logo, "Dubai Vizesi Başvuru Detayları" başlığı, başvuru tarihi
+  referans bandında, ortalanmış künye + marka/işletmeci cümlesi.

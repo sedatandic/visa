@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
-import { formatMoney } from "../lib/site";
+import { applyPath, formatMoney } from "../lib/site";
 import { useCart } from "../lib/cart";
 
 const PICKS = ["pack_standard", "pack_family", "pack_long"];
@@ -78,10 +78,11 @@ const BundleCard = ({ bundle, highlighted }) => {
     const b = quote || bundle;
     const qty = b.quantities || {};
     const travelers = isFamily ? adults + children : 1;
-    const applyHref =
-        `/basvuru?paket=${b.id}` +
-        (b.visa ? `&vize=${b.visa.id}` : "") +
-        (isFamily ? `&yetiskin=${adults}&cocuk=${children}${withTour ? "&tur=1" : ""}` : "");
+    const applyHref = applyPath({
+        paket: b.id,
+        vize: b.visa ? b.visa.id : null,
+        query: isFamily ? `yetiskin=${adults}&cocuk=${children}${withTour ? "&tur=1" : ""}` : "",
+    });
 
     const addToCart = () => {
         const visas = [];

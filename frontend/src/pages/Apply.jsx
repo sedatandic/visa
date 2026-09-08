@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
     AlertCircle,
     AlertTriangle,
@@ -41,7 +41,7 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { api, apiError, customerAuth } from "../lib/api";
-import { formatDate, formatMoney, setMeta } from "../lib/site";
+import { formatDate, formatMoney, parseApplyPath, setMeta } from "../lib/site";
 import { useContact, waLink } from "../lib/contact";
 import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
@@ -208,6 +208,8 @@ const SummaryRow = ({ label, value, strong }) => (
 export default function Apply() {
     const siteContact = useContact();
     const [searchParams] = useSearchParams();
+    const { seg1, seg2 } = useParams();
+    const pathIds = useMemo(() => parseApplyPath(seg1, seg2), [seg1, seg2]);
     const navigate = useNavigate();
 
     const [visaTypes, setVisaTypes] = useState([]);
@@ -422,8 +424,9 @@ export default function Apply() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vize Başvuru Formu | Aile Başvurusu | Dubai Vize Hattı",
-            "Dubai vize başvurunuzu online tamamlayın. Tek formda birden fazla yolcu ekleyin; çocuk vizesi ve aile indirimi otomatik hesaplanır."
+            "Dubai Vize Başvuru Formu | Dubai Vize Hattı",
+            "Dubai vize başvurunuzu online tamamlayın. Tek formda birden fazla yolcu ekleyin; çocuk vizesi ve aile indirimi otomatik hesaplanır.",
+            { canonicalPath: "/basvuru" }
         );
     }, []);
 
@@ -436,7 +439,7 @@ export default function Apply() {
                 setMaxTravelers(c.data.max_travelers || 10);
                 setBankInfo(c.data.bank_transfer || null);
                 setAgencyItems((c.data.agency_info || {}).items || []);
-                const wanted = searchParams.get("vize");
+                const wanted = pathIds.vize || searchParams.get("vize");
                 if (wanted && v.data.some((x) => x.id === wanted)) {
                     const found = v.data.find((x) => x.id === wanted);
                     const childVisa = found.category === "child";
@@ -664,8 +667,8 @@ export default function Apply() {
         toast.success(`${bundle.name} eklendi.`);
     };
 
-    // Ana sayfadan paket secilerek gelindiyse (?paket=pack_x) secimleri hazir getir
-    const bundleParam = searchParams.get("paket");
+    // Ana sayfadan paket secilerek gelindiyse (/basvuru/pack-x veya ?paket=pack_x) secimleri hazir getir
+    const bundleParam = pathIds.paket || searchParams.get("paket");
     const bundleApplied = useRef(false);
     useEffect(() => {
         if (!bundleParam || bundleApplied.current) return;

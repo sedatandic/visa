@@ -78,6 +78,8 @@ function App() {
                     <Route path="/gizlilik-politikasi" element={<Site><LegalTerms variant="privacy" /></Site>} />
                     <Route path="/ticari-ileti-onami" element={<Site><LegalTerms variant="marketing" /></Site>} />
                     <Route path="/basvuru" element={<Site><Apply /></Site>} />
+                    <Route path="/basvuru/:seg1" element={<Site><Apply /></Site>} />
+                    <Route path="/basvuru/:seg1/:seg2" element={<Site><Apply /></Site>} />
                     <Route path="/takip" element={<Site><Track /></Site>} />
                     <Route path="/hesabim" element={<Site><MyAccount /></Site>} />
                     <Route path="/esim" element={<Site><Esim /></Site>} />

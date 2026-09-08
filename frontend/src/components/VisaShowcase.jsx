@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Clock, Repeat, Baby } from "lucide-react";
 import { api } from "../lib/api";
-import { IMAGES, formatMoney, formatUsd } from "../lib/site";
+import { IMAGES, applyPath, formatMoney, formatUsd } from "../lib/site";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
@@ -96,7 +96,7 @@ export const VisaShowcase = () => {
                                 return (
                                     <Link
                                         key={visa.id}
-                                        to={`/basvuru?vize=${visa.id}`}
+                                        to={applyPath({ vize: visa.id })}
                                         className="group block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card transition-colors duration-200 hover:border-primary/40 focus-visible:outline-none"
                                         data-testid={`showcase-card-${visa.id}`}
                                         aria-label={`${visa.name} ile başvuruya başla`}

@@ -1740,3 +1740,79 @@ Test vize belgesi sonrasında kaldırıldı.
 
 **Test**: `test_iteration_121_visa_file_number.py` 25/25 PASS.
 Tam suit: **448 passed / 3 skipped**.
+
+## 2026-09-08 · SEO denetim düzeltmeleri (dağıtılmış site raporu) + başvuru formu PDF rötuşları
+
+### SEO raporu (Health 83 · 194 hata / 162 uyarı / 89 sayfa) — kök nedenler ve çözümler
+1. **60 sayfada tekrarlanan title/description/içerik + 78 sayfada düşük metin/HTML oranı**
+   Kök neden (canlıda doğrulandı): CRA SPA olduğu için sunucu her rota için AYNI 3.5 KB'lık
+   `index.html` kabuğunu döndürüyor (`curl https://www.dubaivizehatti.com/vize-tipleri` →
+   ana sayfa title'ı, canonical yok). Ayrıca hem `www` hem `www'suz` host 200 dönüyor ve
+   canonical `window.location.origin` kullandığı için her host kendini işaretliyordu
+   (89 taranan sayfa ≈ 44 sayfa × 2 host).
+   Çözüm:
+   - `src/lib/site.js` → yeni `SITE_URL` sabiti (`REACT_APP_SITE_URL`, varsayılan
+     `https://www.dubaivizehatti.com`). canonical + og:url artık HER ZAMAN tek host.
+     `setMeta` yeniden yazıldı: og:site_name/og:image, twitter kartları ve
+     **noindex desteği** (daha önce `{noindex:true}` seçeneği hiç uygulanmıyordu →
+     /sepet, /hesabim indekslenebilir durumdaydı; artık `robots: noindex, nofollow`).
+   - **Statik ön-render**: `scripts/prerender.js` + `scripts/seo-pages.js` (yeni).
+     `yarn build` artık `craco build && node scripts/prerender.js`. Script build sonrası
+     backend API'sinden (`/api/content/site`, `/api/visa-types`, `/api/visa-guides`,
+     `/api/articles`, `/api/content/legal`) içeriği çekip **30 rota için** ayrı
+     `build/<rota>/index.html` üretiyor: tekil title/description/canonical/OG + JSON-LD +
+     gerçek metin gövdesi (`#root` içinde `#seo-prerender`, React mount olunca değişiyor).
+     Sonuç: 30 sayfanın tamamında **tekil** title/description, metin/HTML oranı
+     **%12.5-46** (önce ~%2), sayfa başına 107-732 kelime. Script idempotent
+     (tekrar çalıştırıldığında birikme yok), API'ye ulaşamazsa build'i düşürmüyor.
+     `build/sitemap.xml` de bu listeden üretiliyor (lastmod=build günü).
+2. **14 sayfada yapısal veri hatası**
+   - `ArticleDetail.jsx`: Article şemasına `image` (dizi) ve `publisher.logo` (ImageObject)
+     eklendi, `mainEntityOfPage` string → `{"@type":"WebPage","@id":...}`, `author.url`.
+   - `VisaGuide.jsx`: FAQ boşsa **FAQPage hiç basılmıyor** (boş `mainEntity` geçersizdi),
+     `Offer` yalnız fiyat varsa ve `price` 2 ondalıklı string olarak, breadcrumb ana sayfa
+     item'ı `${origin}/`, provider'a `url`.
+   - `Home.jsx`: yeni **TravelAgency (@id #organization) + WebSite** şeması (logo, telefon,
+     e-posta, adres, sameAs, areaServed) — daha önce hiç kurum şeması yoktu.
+3. **/basvuru URL'lerinde çok fazla parametre**: `applyPath()` / `parseApplyPath()` helper'ları
+   ve `/basvuru/:seg1/:seg2` rotaları eklendi → `/basvuru/pack-family/visa-30-single`.
+   Tüm iç linkler (HomeBundleStrip, VisaShowcase, VisaTypeCard, VisaComparison, Cart,
+   VisaGuide) yol tabanlı adrese geçti; eski `?vize=&paket=` adresleri çalışmaya devam ediyor;
+   canonical her durumda `/basvuru`.
+4. **60 karakterden uzun title'lar**: /seyahat-sigortasi 77→42; ayrıca Home 69→46,
+   /vize-tipleri 70→44, /gelismeler 63→52, /basvuru 60→43, /esim, /dubai-turlari, /kvkk,
+   2 hukuki sayfa ve **7 vize rehberi** (`backend/visa_guides.py` seo_title'ları 62-67→41-56)
+   kısaltıldı. `withBrandTitle()` yazı başlıklarında marka ekini sığmıyorsa düşürüyor.
+5. **Minify (80 dosya)**: bu dosyalar `assets.emergent.sh` üzerinden gelen platform
+   script'leri — bizim tarafta değiştirilemez. Kendi bundle'ımız CRA/terser ile minify;
+   ek olarak `GENERATE_SOURCEMAP=false` eklendi (.map dosyaları artık üretilmiyor).
+6. Ek düzeltmeler: `robots.txt` sitemap adresi www'ya alındı + `/siparis/`, `/vize-dogrula/`
+   disallow; statik `public/sitemap.xml` www'ya alındı ve **404 veren
+   `/dubai-vizesi/transit-vize`** kaydı silindi; rehberi olmayan vize tiplerinde
+   ("transit vize", "14 gün") 404'e giden "Detaylı rehberi oku" linki kaldırıldı
+   (`PricingTabs` guide slug listesini çekip `VisaTypeCard hasGuide` prop'una geçiriyor).
+
+**Test**: `testing_agent` iteration_117 → frontend **%100**, sorun yok (14 sayfada title
+27-53 karakter, duplicate yok, canonical/robots doğru, JSON-LD geçerli, yol tabanlı ve
+legacy /basvuru adresleri çalışıyor). Backend pytest **455 passed / 3 skipped**.
+
+**Kullanıcı eylemi gerekiyor**: (a) yeniden **deploy** (ön-render yalnız production build'de),
+(b) `dubaivizehatti.com → www.dubaivizehatti.com` **301 yönlendirmesi** alan adı/hosting
+tarafında açılmalı (şu an iki host da 200 dönüyor), (c) Search Console'a
+`https://www.dubaivizehatti.com/sitemap.xml` yeniden gönderilmeli.
+
+### Başvuru formu PDF'i (kullanıcı ekran görüntüsü üzerine)
+`backend/application_pdf.py`:
+- Logo krem zeminliydi (`assets/email-logo.png` RGB) → saydam `assets/pdf-logo.png`
+  (frontend `logo-horizontal-gold-palm.png` kopyası) kullanılıyor, zemin bloğu kalktı.
+- Başlık **"VİZE BAŞVURU FORMU" → "Dubai Vizesi Başvuru Detayları"** (PDF metadata title da).
+- Başlık altındaki "Başvuru tarihi … · Dubai / Birleşik Arap Emirlikleri" satırı kaldırıldı;
+  **BAŞVURU TARİHİ** referans bandına, **ÖDEME DURUMU'nun soluna** taşındı
+  (4 kolon: takip kodu · başvuru tarihi · ödeme durumu · tahmini sonuçlanma).
+- Künye **ortalandı** (`foot` stili `TA_CENTER`) ve yeni cümle eklendi: "Dubai Vize Hattı,
+  Moruya Travel Solutions Turizm Ltd. Şti. tarafından işletilen bir markadır; tüm hizmetler
+  bu şirket üzerinden verilmektedir. Birleşik Arap Emirlikleri'ndeki grup şirketimiz
+  Moruya Travel Solutions FZE'dir." Künye 4 satıra çıktığı için `bottomMargin` 15→27 mm
+  (form tek sayfada kalıyor, doğrulandı).
+- Doğrulama: canlı endpoint `GET /api/admin/applications/{id}/form.pdf` → 200, PDF görsel
+  olarak kontrol edildi; `test_iteration_112_application_form.py` dahil 32 PDF testi PASS.

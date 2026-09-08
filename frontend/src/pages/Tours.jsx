@@ -156,7 +156,7 @@ export default function Tours() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Turları · Çöl Safarisi | Dubai Vize Hattı",
+            "Dubai Turları ve Çöl Safarisi | Dubai Vize Hattı",
             "Türkçe rehberli Dubai çöl safarisi turları: kumul turu, deve gezisi, kum sörfü ve Arap kampında akşam yemeği. Tarih ve saat seçip sepete ekleyin.",
             { canonicalPath: "/dubai-turlari" }
         );

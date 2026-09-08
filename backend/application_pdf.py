@@ -6,15 +6,24 @@ import os
 from datetime import datetime
 
 from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import (
+    Image,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
 from content import COMPANY
-from emailer import BRAND, money as _money_html
+from emailer import BRAND
+from emailer import money as _money_html
 from phone_format import format_phone
 
 
@@ -30,7 +39,11 @@ MUTED = colors.HexColor("#8A7355")
 LINE = colors.HexColor("#EADFCB")
 PANEL = colors.HexColor("#FBF6EC")
 
-LOGO_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "email-logo.png")
+ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+# Saydam zeminli logo (email-logo.png krem zemine gomulu oldugu icin formda kullanilmaz)
+LOGO_FILE = os.path.join(ASSETS_DIR, "pdf-logo.png")
+if not os.path.exists(LOGO_FILE):
+    LOGO_FILE = os.path.join(ASSETS_DIR, "email-logo.png")
 FONT_CANDIDATES = (
     (
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
@@ -92,19 +105,15 @@ def _styles() -> dict:
         "label": ParagraphStyle("l", fontName=reg, fontSize=7, leading=9, textColor=MUTED),
         "value": ParagraphStyle("v", fontName=bold, fontSize=8.5, leading=11, textColor=INK),
         "body": ParagraphStyle("b", fontName=reg, fontSize=8, leading=11, textColor=INK),
-        "foot": ParagraphStyle("f", fontName=reg, fontSize=6.5, leading=9, textColor=MUTED),
+        "foot": ParagraphStyle(
+            "f", fontName=reg, fontSize=6.5, leading=9, textColor=MUTED, alignment=TA_CENTER
+        ),
         "code": ParagraphStyle("c", fontName=bold, fontSize=16, leading=19, textColor=INK),
     }
 
 
 def _header(app_doc: dict, st: dict) -> Table:
-    created = str(app_doc.get("created_at") or "")[:10]
-    right = [
-        Paragraph("VİZE BAŞVURU FORMU", st["title"]),
-        Paragraph(
-            f"Başvuru tarihi: {_date(created)} · Dubai / Birleşik Arap Emirlikleri", st["sub"]
-        ),
-    ]
+    right = [Paragraph("Dubai Vizesi Başvuru Detayları", st["title"])]
     cells = []
     if os.path.exists(LOGO_FILE):
         cells.append(Image(LOGO_FILE, width=52 * mm, height=52 * mm * 0.23, kind="proportional"))
@@ -133,6 +142,10 @@ def _reference_band(app_doc: dict, st: dict) -> Table:
         [
             [Paragraph("TAKİP KODU", st["label"]), Paragraph(app_doc.get("reference_code", "-"), st["code"])],
             [
+                Paragraph("BAŞVURU TARİHİ", st["label"]),
+                Paragraph(_date(str(app_doc.get("created_at") or "")[:10]), st["value"]),
+            ],
+            [
                 Paragraph("ÖDEME DURUMU", st["label"]),
                 Paragraph("Ödendi" if payment == "paid" else "Bekliyor", st["value"]),
             ],
@@ -142,7 +155,7 @@ def _reference_band(app_doc: dict, st: dict) -> Table:
             ],
         ]
     ]
-    table = Table(rows, colWidths=_cols(66, 52, 62))
+    table = Table(rows, colWidths=_cols(56, 38, 38, 48))
     table.setStyle(
         TableStyle(
             [
@@ -378,11 +391,11 @@ def _draw_frame(canvas, doc) -> None:
     canvas.setLineWidth(0.5)
     canvas.roundRect(inner, inner, width - 2 * inner, height - 2 * inner, 2.2 * mm)
 
-    # Kunye cercevenin alt kenarina sabitlenir
+    # Kunye cercevenin alt kenarina sabitlenir (ortali)
     footer = _footer_paragraph(_styles())
     pad = FRAME_INSET + 6 * mm
-    footer.wrap(width - 2 * pad, 30 * mm)
-    footer.drawOn(canvas, pad, FRAME_INSET + 5 * mm)
+    _, _footer_h = footer.wrap(width - 2 * pad, 40 * mm)
+    footer.drawOn(canvas, pad, FRAME_INSET + 4 * mm)
     canvas.restoreState()
 
 
@@ -391,6 +404,9 @@ def _footer_paragraph(st: dict) -> Paragraph:
         f"{COMPANY['legal_name']} · TÜRSAB Üyesi {COMPANY['tursab_type']} · "
         f"{COMPANY['phone']} · {COMPANY['email']} · www.dubaivizehatti.com<br/>"
         f"{COMPANY['address']}<br/>"
+        f"{BRAND}, {COMPANY['parent_company']} tarafından işletilen bir markadır; "
+        "tüm hizmetler bu şirket üzerinden verilmektedir. Birleşik Arap Emirlikleri'ndeki "
+        f"grup şirketimiz {COMPANY['dubai_company']}'dir.<br/>"
         "Bu form başvuru kaydınızın sistem tarafından üretilmiş özetidir; "
         "resmî vize belgesi değildir."
     )
@@ -407,8 +423,8 @@ def build_application_pdf(app_doc: dict, documents: list | None = None) -> bytes
         leftMargin=15 * mm,
         rightMargin=15 * mm,
         topMargin=15 * mm,
-        bottomMargin=15 * mm,
-        title=f"Başvuru Formu {app_doc.get('reference_code', '')}",
+        bottomMargin=27 * mm,
+        title=f"Dubai Vizesi Başvuru Detayları {app_doc.get('reference_code', '')}",
         author=BRAND,
     )
     extra_pairs = _traveler_extra_pairs(app_doc)

@@ -5,5 +5,7 @@ Disallow: /admin/
 Disallow: /odeme/
 Disallow: /hesabim
 Disallow: /sepet
+Disallow: /siparis/
+Disallow: /vize-dogrula/
 
-Sitemap: https://dubaivizehatti.com/sitemap.xml
+Sitemap: https://www.dubaivizehatti.com/sitemap.xml

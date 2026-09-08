@@ -13,7 +13,7 @@ import {
     Users,
 } from "lucide-react";
 import { api } from "../lib/api";
-import { COMPANY, formatMoney, formatUsd, setJsonLd, setMeta } from "../lib/site";
+import { COMPANY, applyPath, formatMoney, formatUsd, setJsonLd, setMeta, SITE_URL } from "../lib/site";
 import { ContentByline } from "../components/ContentByline";
 import { FxNote } from "../components/FxNote";
 import { Button } from "../components/ui/button";
@@ -36,9 +36,11 @@ import {
 const brandName = `${COMPANY.brand} ${COMPANY.brandSuffix}`;
 
 function buildJsonLd(guide, path) {
-    const origin = window.location.origin;
+    const origin = SITE_URL;
     const visa = guide.visa || {};
-    return [
+    const price = Number(visa.price);
+    const faqs = (guide.faqs || []).filter((f) => f && f.q && f.a);
+    const blocks = [
         {
             id: "guide-service",
             data: {
@@ -49,27 +51,19 @@ function buildJsonLd(guide, path) {
                 description: guide.seo_description,
                 inLanguage: "tr-TR",
                 areaServed: { "@type": "Country", name: "Türkiye" },
-                provider: { "@type": "TravelAgency", name: brandName, telephone: COMPANY.phone },
+                provider: { "@type": "TravelAgency", name: brandName, telephone: COMPANY.phone, url: origin },
                 url: `${origin}${path}`,
-                offers: {
-                    "@type": "Offer",
-                    price: visa.price,
-                    priceCurrency: visa.currency || "TRY",
-                    availability: "https://schema.org/InStock",
-                    url: `${origin}/basvuru?vize=${visa.id}`,
-                },
-            },
-        },
-        {
-            id: "guide-faq",
-            data: {
-                "@context": "https://schema.org",
-                "@type": "FAQPage",
-                mainEntity: (guide.faqs || []).map((f) => ({
-                    "@type": "Question",
-                    name: f.q,
-                    acceptedAnswer: { "@type": "Answer", text: f.a },
-                })),
+                ...(price
+                    ? {
+                          offers: {
+                              "@type": "Offer",
+                              price: price.toFixed(2),
+                              priceCurrency: visa.currency || "TRY",
+                              availability: "https://schema.org/InStock",
+                              url: `${origin}${applyPath({ vize: visa.id })}`,
+                          },
+                      }
+                    : {}),
             },
         },
         {
@@ -78,13 +72,28 @@ function buildJsonLd(guide, path) {
                 "@context": "https://schema.org",
                 "@type": "BreadcrumbList",
                 itemListElement: [
-                    { "@type": "ListItem", position: 1, name: "Ana sayfa", item: origin },
+                    { "@type": "ListItem", position: 1, name: "Ana sayfa", item: `${origin}/` },
                     { "@type": "ListItem", position: 2, name: "Vize Tipleri", item: `${origin}/vize-tipleri` },
                     { "@type": "ListItem", position: 3, name: guide.h1, item: `${origin}${path}` },
                 ],
             },
         },
     ];
+    if (faqs.length) {
+        blocks.push({
+            id: "guide-faq",
+            data: {
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: faqs.map((f) => ({
+                    "@type": "Question",
+                    name: f.q,
+                    acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+            },
+        });
+    }
+    return blocks;
 }
 
 const GuideSkeleton = () => (
@@ -149,7 +158,7 @@ export default function VisaGuide() {
     }
 
     const visa = guide.visa || {};
-    const applyHref = `/basvuru?vize=${visa.id}`;
+    const applyHref = applyPath({ vize: visa.id });
     const facts = [
         { icon: CalendarDays, label: "Kalış süresi", value: `${visa.duration_days} gün` },
         { icon: LogIn, label: "Giriş tipi", value: visa.entry_label },

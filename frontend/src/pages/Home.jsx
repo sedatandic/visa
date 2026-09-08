@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "../lib/api";
-import { IMAGES, setMeta } from "../lib/site";
+import { IMAGES, setJsonLd, setMeta, SITE_URL } from "../lib/site";
 import { useContact, waLink } from "../lib/contact";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -96,11 +96,45 @@ export default function Home() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Vizesi Başvurusu | Online Başvuru ve Fiyatlar | Dubai Vize Hattı",
-            "Dubai (BAE) vize başvurunuzu tamamen online tamamlayın: evraklarınızı yükleyin, ödemenizi yapın, onaylanan vizenizi e-posta ile alın. Net fiyatlar ve başvuru takibi."
+            "Dubai Vizesi Online Başvuru | Dubai Vize Hattı",
+            "Dubai (BAE) vizenizi online alın: pasaport ve fotoğrafınızı yükleyin, ödemenizi yapın, onaylı vizeniz e-postanıza gelsin. Net fiyatlar, başvuru takibi."
         );
         api.get("/content/site").then(({ data }) => setContent(data)).catch(() => {});
     }, []);
+
+    useEffect(() => {
+        const company = content?.company || {};
+        setJsonLd("organization", {
+            "@context": "https://schema.org",
+            "@type": "TravelAgency",
+            "@id": `${SITE_URL}/#organization`,
+            name: "Dubai Vize Hattı",
+            ...(company.legal_name ? { legalName: company.legal_name } : {}),
+            url: SITE_URL,
+            logo: { "@type": "ImageObject", url: `${SITE_URL}/brand/logo-horizontal-gold-palm.png` },
+            image: `${SITE_URL}/brand/logo-horizontal-gold-palm.png`,
+            ...(company.phone ? { telephone: company.phone } : {}),
+            ...(company.email ? { email: company.email } : {}),
+            ...(company.address
+                ? { address: { "@type": "PostalAddress", streetAddress: company.address, addressCountry: "TR" } }
+                : {}),
+            areaServed: { "@type": "Country", name: "Türkiye" },
+            ...(company.instagram ? { sameAs: [company.instagram] } : {}),
+        });
+        setJsonLd("website", {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "@id": `${SITE_URL}/#website`,
+            name: "Dubai Vize Hattı",
+            url: SITE_URL,
+            inLanguage: "tr-TR",
+            publisher: { "@id": `${SITE_URL}/#organization` },
+        });
+        return () => {
+            setJsonLd("organization", null);
+            setJsonLd("website", null);
+        };
+    }, [content]);
 
     return (
         <div data-testid="home-page">

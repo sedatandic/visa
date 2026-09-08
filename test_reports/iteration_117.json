@@ -1,0 +1,21 @@
+{
+  "summary": "SEO/routing regresyon testi tamamlandı. 14 sayfada title < 60 char ve tüm title/description birbirinden farklı; canonical https://www.dubaivizehatti.com prefix'i doğru; index/follow ile /sepet ve /hesabim noindex+nofollow doğru şekilde ayrıldı. JSON-LD içerikleri geçerli (Home: TravelAgency+WebSite; VisaGuide: Service+BreadcrumbList+FAQPage, offers.price='5190.00' TRY; Article: image[], publisher.logo.url, mainEntityOfPage WebPage, datePublished). Path tabanlı /basvuru/pack-family/visa-30-single doğru paket+vize ile yükleniyor ve %10 aile paket indirimi özet panelinde görünüyor. /basvuru?vize=visa_30_single legacy query çalışıyor. /vize-tipleri fiyat sekmeleri (3 adet) ve apply-visa-* linkleri yol tabanlı; guide-link-* yalnızca rehberi olan 3 vize için var (transit_visa & 14gun için yok, doğru). /sepet ve /takip yükleniyor.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "site.js withBrandTitle: title zaten 60+ ise slice(0,59)+'…' brand ekini tamamen kaldırıyor; kabul edilebilir ancak dokümante etmek iyi olur.",
+    "SITE_URL preview'da production domain'e canonical basıyor (kasıtlı, kullanıcı isteği). Preview üzerinde AI/manuel crawler test edilirken karışıklığa neden olabilir; bir yorum bu davranışı zaten açıklıyor."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "SEO refactor + path based /basvuru rotaları çalışıyor. Test edilen 14 sayfada title uzunluğu 27-53 karakter arası. Duplicate title/desc yok. Ana ajanın prerender.js sadece production build'de etkili, preview'da test edilemedi (beklenen)."
+}

@@ -2,9 +2,9 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Clock, Star } from "lucide-react";
 import { Button } from "./ui/button";
-import { formatMoney, formatUsd } from "../lib/site";
+import { applyPath, formatMoney, formatUsd } from "../lib/site";
 
-export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false }) => {
+export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false, hasGuide = false }) => {
     const isPopular = !!visa.popular;
 
     // Kart yalnizca secim modunda (basvuru formu) tiklanabilir; bilgilendirme
@@ -129,12 +129,12 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
                     ) : (
                         <>
                             <Button asChild className="h-12 w-full text-base" data-testid={`apply-visa-${visa.id}`}>
-                                <Link to={`/basvuru?vize=${visa.id}`}>
+                                <Link to={applyPath({ vize: visa.id })}>
                                     Başvuruya başla
                                     <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                                 </Link>
                             </Button>
-                            {visa.slug && (
+                            {visa.slug && hasGuide && (
                                 <Link
                                     to={`/dubai-vizesi/${visa.slug}`}
                                     className="relative z-[2] mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold text-primary underline-offset-4 transition-colors duration-150 hover:text-foreground hover:underline focus-visible:outline-none"
