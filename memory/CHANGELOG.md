@@ -2038,3 +2038,13 @@ gerçekten uygulanan önlemler yazıldı.
   ön-render ve sitemap'e otomatik girer (priority 0.5).
 - Doğrulama: /guvenlik'te 8 rozet + bildirim kutusu, ana sayfada bölüm, sepet ödeme alanında
   mini şerit ekran görüntüleriyle kontrol edildi; webpack derlemesi temiz.
+
+## 2026-09-08 (8) · Telefon numarası +90 538 483 82 24, "DUBAI" harf gösterimi kaldırıldı
+- DB `site_settings.company_info`: `phone` → **+90 538 483 82 24**, `whatsapp` → **905384838224**
+  (eski test numarası 905331234567 kalmıştı; sağ alttaki WhatsApp düğmesi bu yüzden yanlış
+  numarayı açıyordu). `content.py COMPANY["phone"]` statik yedeği de güncellendi.
+- `components/PhoneDubai.jsx` **silindi**; navbar (masaüstü + mobil menü) ve footer artık
+  numarayı düz metin gösteriyor (rakamların altındaki D-U-B-A-I harfleri kalktı).
+- Doğrulama: `whatsapp-floating-button` href = `https://wa.me/905384838224?text=…`,
+  footer `tel:+905384838224`, `phone-dubai` öğesi DOM'da yok; ekran görüntüsüyle kontrol
+  edildi. pytest alt kümesi (content/iteration_48/refactor) 89 passed.

@@ -8,7 +8,6 @@ import { TursabBadge } from "./TursabBadge";
 import { GdrfaBadge } from "./GdrfaBadge";
 import { BrandMark } from "./BrandMark";
 import { BoldText } from "./BoldText";
-import { PhoneDubai } from "./PhoneDubai";
 import { useContact } from "../lib/contact";
 
 export const Footer = () => {
@@ -95,7 +94,7 @@ export const Footer = () => {
                                 aria-label={`Telefon: ${contact.phone}`}
                                 className="transition-colors hover:text-primary"
                             >
-                                <PhoneDubai phone={contact.phone} letterClassName="text-primary" />
+                                {contact.phone}
                             </a>
                         </li>
                     )}

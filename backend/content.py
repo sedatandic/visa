@@ -549,7 +549,7 @@ COMPANY = {
     "legal_name": "Moruya Travel Solutions Turizm Ltd. Şti.",
     "parent_company": "Moruya Travel Solutions Turizm Ltd. Şti.",
     "dubai_company": "Moruya Travel Solutions FZE",
-    "phone": "+90 533 743 82 24",
+    "phone": "+90 538 483 82 24",
     "whatsapp": "905384838224",
     "email": "info@dubaivizehatti.com",
     "instagram": "https://www.instagram.com/dubaivizeonline/",

@@ -32,7 +32,6 @@ import { api } from "../lib/api";
 import { BrandMark } from "./BrandMark";
 import { CartButton } from "./CartButton";
 import { TrFlag, UaeFlag } from "./FlagIcons";
-import { PhoneDubai } from "./PhoneDubai";
 import { useContact } from "../lib/contact";
 
 /** Ust seviyede gorunen ana linkler (donusum odakli). */
@@ -216,7 +215,7 @@ export const Navbar = () => {
                         data-testid="navbar-phone-link"
                     >
                         <Phone className="h-4 w-4 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
-                        <PhoneDubai phone={contact.phone} />
+                        <span>{contact.phone}</span>
                     </a>
                     )}
                     <CartButton />
@@ -318,7 +317,7 @@ export const Navbar = () => {
                                     data-testid="mobile-phone-link"
                                 >
                                     <Phone className="h-4 w-4" aria-hidden="true" />
-                                    <PhoneDubai phone={contact.phone} letterClassName="text-white/80" />
+                                    <span>{contact.phone}</span>
                                 </a>
                                 )}
                             </div>
