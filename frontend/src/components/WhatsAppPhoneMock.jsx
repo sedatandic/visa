@@ -29,66 +29,70 @@ const SCENARIOS = [
     {
         id: "apply",
         label: "WhatsApp'tan başvuru",
+        contact: "Ayşe K.",
         clock: "09:41",
         messages: [
-            { from: "out", time: "09:40", text: "Form doldurmak istemiyorum, buradan başvurabilir miyim?" },
-            { from: "in", time: "09:40", text: "Elbette. Pasaportunuzun kimlik sayfası ve bir vesikalık yeterli." },
-            { from: "out", time: "09:41", text: "Pasaportum 7 ay sonra doluyor, sorun olur mu?" },
-            { from: "in", time: "09:41", text: "Olmaz. Dönüş tarihinizden itibaren 6 ay geçerlilik tek teknik şart." },
-            { from: "out", time: "09:42", image: "/chat/passport-bio.jpg", text: "Pasaport kimlik sayfam" },
-            { from: "in", time: "09:42", text: "Net geldi, başvurunuzu ben oluşturuyorum." },
-            { from: "in", time: "09:43", text: "Ödeme linkiniz ve takip kodunuz birazdan burada olacak." },
-            { from: "out", time: "09:43", text: "Çok kolay oldu, teşekkürler" },
+            { from: "in", time: "09:40", text: "Form doldurmak istemiyorum, buradan başvurabilir miyim?" },
+            { from: "out", time: "09:40", text: "Elbette. Pasaportunuzun kimlik sayfası ve bir vesikalık yeterli." },
+            { from: "in", time: "09:41", text: "Pasaportum 7 ay sonra doluyor, sorun olur mu?" },
+            { from: "out", time: "09:41", text: "Olmaz. Dönüş tarihinizden itibaren 6 ay geçerlilik tek teknik şart." },
+            { from: "in", time: "09:42", image: "/chat/passport-bio.jpg", text: "Pasaport kimlik sayfam" },
+            { from: "out", time: "09:42", text: "Net geldi, başvurunuzu ben oluşturuyorum." },
+            { from: "out", time: "09:43", text: "Ödeme linkiniz ve takip kodunuz birazdan burada olacak." },
+            { from: "in", time: "09:43", text: "Çok kolay oldu, teşekkürler" },
         ],
     },
     {
         id: "green",
         label: "Yeşil pasaport",
+        contact: "Mehmet T.",
         clock: "11:05",
         messages: [
-            { from: "out", time: "11:03", text: "Yeşil pasaportum var, Dubai için vize almam gerekiyor mu?" },
-            { from: "in", time: "11:03", text: "Hususi (yeşil) pasaportla yılda 90 güne kadar vizesiz giriş yapabilirsiniz." },
-            { from: "out", time: "11:04", text: "Eşimin bordo pasaportu var, o ne yapacak?" },
-            { from: "in", time: "11:04", text: "Umuma mahsus bordo pasaportta vize zorunlu; eşiniz için başvuru açalım." },
-            { from: "out", time: "11:04", text: "30 gün yeter bize" },
-            { from: "in", time: "11:05", text: "30 gün tek girişli vize uygun. Pasaport sayfası ve vesikalık yeterli." },
-            { from: "out", time: "11:05", text: "Hemen gönderiyorum" },
-            { from: "in", time: "11:06", text: "Bekliyorum; dosyayı bugün resmî sisteme iletiyoruz." },
+            { from: "in", time: "11:03", text: "Yeşil pasaportum var, Dubai için vize almam gerekiyor mu?" },
+            { from: "out", time: "11:03", text: "Hususi (yeşil) pasaportla yılda 90 güne kadar vizesiz giriş yapabilirsiniz." },
+            { from: "in", time: "11:04", text: "Eşimin bordo pasaportu var, o ne yapacak?" },
+            { from: "out", time: "11:04", text: "Umuma mahsus bordo pasaportta vize zorunlu; eşiniz için başvuru açalım." },
+            { from: "in", time: "11:04", text: "30 gün yeter bize" },
+            { from: "out", time: "11:05", text: "30 gün tek girişli vize uygun. Pasaport sayfası ve vesikalık yeterli." },
+            { from: "in", time: "11:05", text: "Hemen gönderiyorum" },
+            { from: "out", time: "11:06", text: "Bekliyorum; dosyayı bugün resmî sisteme iletiyoruz." },
         ],
     },
     {
         id: "extras",
         label: "eSIM ve seyahat sigortası",
+        contact: "Elif D.",
         clock: "16:34",
         messages: [
-            { from: "out", time: "16:31", text: "Dubai'de internet için hat mı almam gerekiyor?" },
-            { from: "in", time: "16:31", text: "Gerek yok. Dubai eSIM'imizde QR kodu okutuyorsunuz, iner inmez internetiniz açık." },
-            { from: "in", time: "16:32", text: "Türkiye numaranız da açık kalır; WhatsApp aynı numaradan çalışmaya devam eder." },
-            { from: "out", time: "16:32", text: "Seyahat sigortası da zorunlu mu?" },
-            { from: "in", time: "16:33", text: "BAE vizesi için zorunlu değil ama sağlık masrafları için öneriyoruz; 30 günlük poliçe 644 ₺." },
-            { from: "out", time: "16:33", text: "İkisini birlikte alabilir miyim?" },
+            { from: "in", time: "16:31", text: "Dubai'de internet için hat mı almam gerekiyor?" },
+            { from: "out", time: "16:31", text: "Gerek yok. Dubai eSIM'imizde QR kodu okutuyorsunuz, iner inmez internetiniz açık." },
+            { from: "out", time: "16:32", text: "Türkiye numaranız da açık kalır; WhatsApp aynı numaradan çalışmaya devam eder." },
+            { from: "in", time: "16:32", text: "Seyahat sigortası da zorunlu mu?" },
+            { from: "out", time: "16:33", text: "BAE vizesi için zorunlu değil ama sağlık masrafları için öneriyoruz; 30 günlük poliçe 644 ₺." },
+            { from: "in", time: "16:33", text: "İkisini birlikte alabilir miyim?" },
             {
-                from: "in",
+                from: "out",
                 time: "16:34",
                 link: { title: "Vize + eSIM + Sigorta paketi", sub: "%10 paket indirimi · tek ödeme", url: "dubaivizehatti.com/paketler" },
                 text: "Evet, vizeyle birlikte alırsanız ikisinde %10 paket indirimi uygulanır.",
             },
-            { from: "out", time: "16:35", text: "Paketi seçtim, ödemeye geçiyorum" },
+            { from: "in", time: "16:35", text: "Paketi seçtim, ödemeye geçiyorum" },
         ],
     },
     {
         id: "family",
         label: "Aile ve çocuklar",
+        contact: "Burak Y.",
         clock: "15:48",
         messages: [
-            { from: "out", time: "15:45", text: "Eşim ve 2 çocukla gideceğiz, tek başvuru olur mu?" },
-            { from: "in", time: "15:45", text: "Olur. Dört yolcuyu aynı başvuruya ekliyoruz, %15 aile indirimi düşüyor." },
-            { from: "in", time: "15:46", text: "18 yaş altı yolcular indirimli çocuk vizesiyle işlenir." },
-            { from: "out", time: "15:46", text: "Küçük kızımın soyadı benden farklı, ek belge ister mi?" },
-            { from: "in", time: "15:47", text: "Evet: velinin önlü arkalı kimlik fotoğrafı ve e-Devlet'ten Formül A doğum belgesi." },
-            { from: "out", time: "15:47", text: "Çocuklar tek başına başvurabilir mi?" },
-            { from: "in", time: "15:48", text: "Hayır, 18 yaş altı mutlaka anne veya babayla başvurup seyahat etmeli." },
-            { from: "out", time: "15:48", text: "Anlaşıldı, belgeleri topluyorum" },
+            { from: "in", time: "15:45", text: "Eşim ve 2 çocukla gideceğiz, tek başvuru olur mu?" },
+            { from: "out", time: "15:45", text: "Olur. Dört yolcuyu aynı başvuruya ekliyoruz, %15 aile indirimi düşüyor." },
+            { from: "out", time: "15:46", text: "18 yaş altı yolcular indirimli çocuk vizesiyle işlenir." },
+            { from: "in", time: "15:46", text: "Küçük kızımın soyadı benden farklı, ek belge ister mi?" },
+            { from: "out", time: "15:47", text: "Evet: velinin önlü arkalı kimlik fotoğrafı ve e-Devlet'ten Formül A doğum belgesi." },
+            { from: "in", time: "15:47", text: "Çocuklar tek başına başvurabilir mi?" },
+            { from: "out", time: "15:48", text: "Hayır, 18 yaş altı mutlaka anne veya babayla başvurup seyahat etmeli." },
+            { from: "in", time: "15:48", text: "Anlaşıldı, belgeleri topluyorum" },
         ],
     },
 ];
@@ -201,17 +205,21 @@ export const WhatsAppPhoneMock = ({ href }) => {
                         </span>
                     </div>
 
-                    {/* sohbet basligi */}
+                    {/* sohbet basligi: bizim WhatsApp Business hesabimizdan musteri sohbeti */}
                     <div className="flex items-center gap-2 bg-[#075E54] px-3 pb-2.5 pt-1">
                         <ChevronLeft className="h-5 w-5 shrink-0 text-white/90" aria-hidden="true" />
-                        <img
-                            src="/brand/emblem-512.png"
-                            alt=""
-                            className="h-8 w-8 shrink-0 rounded-full bg-white object-contain p-0.5 sm:h-9 sm:w-9"
-                        />
+                        <span
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/90 text-[12px] font-bold text-[#075E54] sm:h-9 sm:w-9"
+                            aria-hidden="true"
+                        >
+                            {scenario.contact.charAt(0)}
+                        </span>
                         <div className="min-w-0 flex-1 pr-3.5">
-                            <p className="whitespace-nowrap text-[12.5px] font-semibold leading-[15px] text-white sm:text-[13px]">
-                                Dubai Vize Hattı
+                            <p
+                                className="whitespace-nowrap text-[12.5px] font-semibold leading-[15px] text-white sm:text-[13px]"
+                                data-testid="wa-phone-contact"
+                            >
+                                {scenario.contact}
                             </p>
                             <p className="text-[10px] leading-[13px] text-white/70">çevrimiçi</p>
                         </div>

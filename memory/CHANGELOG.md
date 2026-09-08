@@ -2106,3 +2106,8 @@ Kullanıcı: "cepten bakınca cep telefonu çok uzun görünüyor."
 - Sohbet balonu köşeleri gerçek WhatsApp geometrisine çevrildi: köşe yarıçapı 7px, kuyruk
   tarafındaki üst köşe düz (`rounded-tl-none` / `rounded-tr-none`) ve kuyruk artık üçgen
   clipPath değil, WhatsApp'ın kıvrımlı SVG kuyruğu (gelen solda beyaz, giden sağda #D9FDD3).
+- Maket bakış açısı çevrildi (kullanıcı seçimi "a"): artık **bizim WhatsApp Business
+  hesabımızdan** görünüyor — kurum cevapları sağda yeşil (mavi tik), müşteri soruları
+  solda beyaz (kuyruk sol altta). Başlık müşteri adını gösteriyor (senaryo başına
+  Ayşe K. / Mehmet T. / Elif D. / Burak Y.), avatar baş harfli daire
+  (`wa-phone-contact`). Yeşil balonda kuyruk/çıkıntı yok, dört köşe yuvarlak.
