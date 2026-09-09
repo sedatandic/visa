@@ -208,6 +208,29 @@ const SummaryRow = ({ label, value, strong }) => (
     </div>
 );
 
+// Tum indirimlerin toplami: aile + sigorta + seyahat paketi
+const savingsTotal = (q) =>
+    Number(q?.family_discount || 0) +
+    Number(q?.visa_insurance_discount || 0) +
+    Number(q?.bundle_discount || 0);
+
+// Ozetin altinda kazanci vurgulayan seffaf satir
+const SavingsNote = ({ quote, testId }) => {
+    const saved = savingsTotal(quote);
+    if (saved <= 0) return null;
+    return (
+        <div
+            className="mt-3 flex items-center gap-2 rounded-xl border border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.08)] px-3 py-2.5"
+            data-testid={testId}
+        >
+            <Sparkles className="h-4 w-4 shrink-0 text-[hsl(var(--brand-green))]" aria-hidden="true" />
+            <p className="text-xs font-semibold leading-5 text-[hsl(var(--brand-green))]">
+                Bu başvuruda toplam {formatMoney(saved, quote.currency)} tasarruf ettiniz
+            </p>
+        </div>
+    );
+};
+
 export default function Apply() {
     const siteContact = useContact();
     const [searchParams] = useSearchParams();
@@ -3468,6 +3491,7 @@ export default function Apply() {
                                                         />
                                                     )}
                                                     <SummaryRow label="Toplam" value={formatMoney(quote.total, quote.currency)} strong />
+                                                    <SavingsNote quote={quote} testId="breakdown-total-savings" />
                                                 </div>
                                             </div>
                                         )}
@@ -3781,6 +3805,7 @@ export default function Apply() {
                                             </span>
                                         </div>
                                         <div className="pt-1">
+                                            <SavingsNote quote={quote} testId="summary-total-savings" />
                                             <FxNote variant="inline" />
                                         </div>
                                     </div>

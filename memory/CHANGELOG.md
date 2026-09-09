@@ -2721,3 +2721,11 @@ Dogrulama: `/api/pricing/quote` -> 5190 + 560 - 56 = 5694 (%10). Apply Adim 2 ek
 goruntusu: kart rozeti + 560/504 fiyat, ozet satiri "- 56 TL", toplam 5.694 TL. Track
 sayfasi gecici veri ile dogrulandi (sonra geri alindi). PDF/e-posta satirlari python ile
 dogrulandi. pytest: 611 passed / 5 skipped.
+
+## 2026-06-18 (2) · Tasarruf vurgusu (savings note)
+Apply.jsx'e `SavingsNote` bileseni eklendi: aile + sigorta + seyahat paketi indirimlerinin
+toplamini "Bu basvuruda toplam X ₺ tasarruf ettiniz" seklinde yesil satirda gosteriyor.
+Konumlar: sidebar Basvuru ozeti (Toplam'in altinda, `summary-total-savings`) ve Adim 4
+fiyat dokumu (`breakdown-total-savings`). Indirim yoksa hic gorunmuyor.
+Dogrulama: 1 yolcu + 15 gun police -> "Bu basvuruda toplam 56 ₺ tasarruf ettiniz",
+toplam 5.694 ₺ (ekran goruntusu ile teyit).
