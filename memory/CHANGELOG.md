@@ -2179,3 +2179,42 @@ Masaüstü görünüm hiçbir bölümde değişmedi (tüm değişiklikler `sm:`/
      kaldırıldı, alt metin de sadeleştirildi)
   4-5. Aile ve "pasaportunuzu yükleyin" slogancıkları aynı kaldı.
   Beşi de canlı önizlemede tek tek doğrulandı.
+
+## 2026-06-15 (fork · Instagram profesyonelleşme + Tamamliyo cari bakiye + PDF hizalama)
+
+### Instagram gönderileri yeniden tasarlandı (12/12)
+- Eski krem zeminli çizgi illüstrasyonlar bırakıldı; artık **gerçek Dubai fotoğrafı +
+  sinematik lacivert degrade + Anton kalın manşet** düzeni kullanılıyor (ajans görünümü).
+- Yeni betik: `/app/scripts/instagram_pro_posts.py` (3 düzen: `hero`, `band`, `list`/`steps`).
+  Kaynak fotoğraflar `/app/frontend/public/instagram/photos/src-XX.jpg`
+  (10 stok Unsplash/Pexels + 2 Gemini 3.1 Flash üretimi: belge flat-lay, Dubai'de aile).
+- Font: `/app/scripts/fonts/Anton.ttf` (manşet) + Figtree (gövde) — Türkçe glifleri doğrulandı.
+- Her görselde: logo + BAE bayrağı, "TÜRSAB BELGELİ" altın çerçeve etiketi, altın eyebrow,
+  manşet, tek satır destek metni, altta domain + WhatsApp şeridi. 1080x1350 (4:5).
+- `backend/instagram_posts.py`: başlıklar görsellerle eşleştirildi, açıklama metinleri
+  kısaltılıp profesyonelleştirildi, her metnin sonuna sabit CTA (WhatsApp + site) eklendi,
+  hashtag setleri düzenlendi, görsel yolları `?v=2` ile önbellek kırıldı.
+- `site_settings.instagram_calendar` kaydı silinerek yeni metinlerle yeniden tohumlandı.
+- NOT: Instagram hesabı halen AÇILMADI (kullanıcı "login yapamıyorum" dedi; hesabı
+  kullanıcının kendisi açacak — panelde adım adım kurulum kartı duruyor).
+
+### Tamamliyo ödemesi cari bakiyeye alındı (kullanıcı isteği, P0 güvenlik)
+- `tamamliyo.payment_type()` / `balance_mode()`: `TAMAMLIYO_PAYMENT_TYPE` (varsayılan **3 =
+  cari bakiye**, `2` = kurumsal kart). `pay_for_quote` cari bakiye modunda kart alanı GÖNDERMEZ.
+- `.env`: `TAMAMLIYO_CARD_NUMBER/EXPIRY/CVV/NAME/SURNAME` **boşaltıldı** (kart + CVV verisi
+  sunucudan tamamen kaldırıldı), `TAMAMLIYO_PAYMENT_TYPE=3` eklendi.
+- `card_configured()` cari bakiye modunda True → bekleyen poliçe kuyruğu kart yüzünden durmaz.
+- Uyarı/hata metinleri ve `AdminInsurance.jsx` panel metinleri "cari bakiye" diline çevrildi.
+- Bakiye yetersizse davranış: poliçe `waiting_payment` kuyruğunda bekler, 15 dk'da bir tekrar
+  denenir, admine e-posta + WhatsApp uyarısı gider (mevcut mekanizma).
+- Testler: `tests/test_iteration_130_tamamliyo_balance.py` (11 test) + 118/119 kart modu
+  testleri `TAMAMLIYO_PAYMENT_TYPE=2` ile güncellendi. Tüm suite: **551 passed**.
+
+### Başvuru formu PDF düzeltmeleri
+- "HİZMET BEDELİ DÖKÜMÜ" tutarları artık yolcu tablosundaki **Tutar kolonuyla tam aynı
+  hizada** bitiyor (yeni `amount` sağa dayalı paragraf stili; Paragraph'lar TableStyle ALIGN'ı
+  yok saydığı için stil düzeyinde çözüldü).
+- QR bandı tamamen **ortalandı** (QR üstte, başlık/metin/takip kodu altında ortalı) ve metin
+  güncellendi: "Kodunu kamerayla okutun; başvurunuzun güncel durumu anında açılsın."
+- Alt bilgi (footer): "Birleşik Arap Emirlikleri'ndeki grup şirketimiz ... FZE'dir." cümlesi
+  artık tek satırda (açık `<br/>` ile bölündü).

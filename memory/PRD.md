@@ -1588,3 +1588,23 @@ instagram hesaplari ac". Instagram kullanici adi: **dubaivizehatti**.
 - pytest: **540 passed / 3 skipped**. Panelde canli dogrulandi (12 kart, kaydet -> bekleyen 12→11).
 - Otomatik paylasim (Instagram Graph API) henuz YOK: hesap Isletme hesabina cevrilip bir
   Facebook Sayfasi'na baglandiktan sonra Meta erisim jetonu gelirse eklenecek.
+
+
+## 2026-06-15 durum notu (fork)
+### Bu turda tamamlananlar
+1. **Instagram gönderileri profesyonelleştirildi** (kullanıcı isteği: "@dubaivizeal gibi").
+   12 görsel gerçek Dubai fotoğrafı + kalın manşet düzeniyle yeniden üretildi
+   (`/app/scripts/instagram_pro_posts.py`), metinler kısaltılıp sabit CTA eklendi.
+2. **Tamamliyo ödemesi cari bakiyeye** çevrildi ve `.env`'deki kart + CVV verisi silindi
+   (`TAMAMLIYO_PAYMENT_TYPE=3`, kart moduna geri dönüş env ile mümkün).
+3. **Başvuru PDF'i**: hizmet bedeli tutarları Tutar kolonuyla hizalandı, QR bandı ortalandı
+   ve metni güncellendi, footer'daki FZE cümlesi tek satıra alındı.
+
+### Açık işler (öncelik sırası)
+- P0 **Instagram hesabı**: hesap henüz açılmadı; kullanıcı kendi açacak (panelde kurulum
+  adımları + 12 hazır gönderi bekliyor). Meta jetonu gelirse otomatik paylaşım yazılabilir.
+- P0 **WhatsApp botu canlı mod**: Meta Developer App kimlikleri kullanıcı tarafından
+  Admin → WhatsApp → Ayarlar ekranından girilecek (şu an MOCK).
+- P1 **Gerçek IBAN'lar**: banka havalesi için placeholder IBAN'lar kullanıcıdan bekleniyor.
+- P1 **Production deploy**: "Save to Github" + deploy kullanıcı tarafında.
+- P2 Poliçe yenileme akışı, paylaşılabilir aile paketi linki, global İngilizce sürüm.

@@ -27,7 +27,7 @@ def test_plan_12_gonderi_icerir():
 
 def test_her_gonderinin_gorseli_diskte_var():
     for post in instagram_posts.POSTS:
-        path = PUBLIC_DIR + post["image"]
+        path = PUBLIC_DIR + post["image"].split("?")[0]
         assert os.path.exists(path), f"eksik gorsel: {path}"
         assert os.path.getsize(path) > 20_000
 

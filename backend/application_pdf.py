@@ -10,7 +10,7 @@ from xml.sax.saxutils import escape as xml_escape
 from reportlab.graphics.barcode.qr import QrCodeWidget
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
@@ -138,7 +138,25 @@ def _styles() -> dict:
         ),
         "label": ParagraphStyle("l", fontName=reg, fontSize=7, leading=9, textColor=MUTED),
         "value": ParagraphStyle("v", fontName=bold, fontSize=8.5, leading=11, textColor=INK),
+        "amount": ParagraphStyle(
+            "am", fontName=bold, fontSize=8.5, leading=11, textColor=INK, alignment=TA_RIGHT
+        ),
+        "value_center": ParagraphStyle(
+            "vc", fontName=bold, fontSize=8.5, leading=11, textColor=INK, alignment=TA_CENTER
+        ),
         "body": ParagraphStyle("b", fontName=reg, fontSize=8, leading=11, textColor=INK),
+        "body_center": ParagraphStyle(
+            "bc", fontName=reg, fontSize=8, leading=12, textColor=INK, alignment=TA_CENTER
+        ),
+        "section_center": ParagraphStyle(
+            "secc",
+            fontName=bold,
+            fontSize=8,
+            leading=11,
+            textColor=GOLD,
+            spaceAfter=3,
+            alignment=TA_CENTER,
+        ),
         "foot": ParagraphStyle(
             "f", fontName=reg, fontSize=6.5, leading=9, textColor=MUTED, alignment=TA_CENTER
         ),
@@ -289,7 +307,7 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
                 Paragraph(_safe(t.get("passport_no")), st["body"]),
                 Paragraph(_date(t.get("passport_expiry")), st["body"]),
                 Paragraph(_safe(t.get("visa_short_name") or t.get("visa_type_name")), st["body"]),
-                Paragraph(money(t.get("price", 0), t.get("currency", "TRY")), st["value"]),
+                Paragraph(money(t.get("price", 0), t.get("currency", "TRY")), st["amount"]),
             ]
         )
     table = Table(
@@ -379,7 +397,7 @@ def _pricing_rows(app_doc: dict) -> list:
 
 def _price_table(app_doc: dict, st: dict) -> Table:
     rows = [
-        [Paragraph(_safe(label), st["body"]), Paragraph(value, st["value"])]
+        [Paragraph(_safe(label), st["body"]), Paragraph(value, st["amount"])]
         for label, value in _pricing_rows(app_doc)
     ]
     table = Table(rows, colWidths=_cols(140, 40))
@@ -392,6 +410,9 @@ def _price_table(app_doc: dict, st: dict) -> Table:
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                # tutarlar yolcu tablosundaki "Tutar" kolonuyla ayni hizada bitsin
+                ("LEFTPADDING", (0, 0), (0, -1), 4),
+                ("RIGHTPADDING", (1, 0), (1, -1), 6),
                 ("LINEBELOW", (0, 0), (-1, -2), 0.4, LINE),
                 ("LINEABOVE", (0, -1), (-1, -1), 0.8, GOLD),
                 ("TOPPADDING", (0, -1), (-1, -1), 5),
@@ -469,29 +490,36 @@ def _qr_drawing(url: str, side: float) -> Drawing:
 
 
 def _track_band(app_doc: dict, st: dict) -> Table:
-    """Musteri telefonuyla okutup basvuru durumunu goreceklerini anlatan QR bandi."""
+    """Musteri telefonuyla okutup basvuru durumunu goreceklerini anlatan QR bandi (ortalanmis)."""
     url = _track_url(app_doc)
-    info = [
-        Paragraph("TELEFONUNUZDAN BAŞVURU TAKİBİ", st["section"]),
-        Paragraph(
-            "Kodu kamerayla okutun; başvurunuzun güncel durumu anında açılır. "
-            "Dilerseniz takip kodunuzla www.dubaivizehatti.com/takip adresinden de "
-            "sorgulayabilirsiniz.",
-            st["body"],
-        ),
-        Paragraph(f"Takip kodu: {_safe(app_doc.get('reference_code'))}", st["value"]),
+    rows = [
+        [_qr_drawing(url, 19 * mm)],
+        [Paragraph("TELEFONUNUZDAN BAŞVURU TAKİBİ", st["section_center"])],
+        [
+            Paragraph(
+                "Kodunu kamerayla okutun; başvurunuzun güncel durumu anında açılsın.<br/>"
+                "Dilerseniz takip kodunuzla www.dubaivizehatti.com/takip adresinden de "
+                "sorgulayabilirsiniz.",
+                st["body_center"],
+            )
+        ],
+        [Paragraph(f"Takip kodu: {_safe(app_doc.get('reference_code'))}", st["value_center"])],
     ]
-    table = Table([[_qr_drawing(url, 19 * mm), info]], colWidths=_cols(26, 154))
+    table = Table(rows, colWidths=_cols(180))
     table.setStyle(
         TableStyle(
             [
                 ("BACKGROUND", (0, 0), (-1, -1), PANEL),
                 ("BOX", (0, 0), (-1, -1), 0.6, LINE),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 7),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 7),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (0, 0), 10),
+                ("BOTTOMPADDING", (0, 0), (0, 0), 6),
+                ("TOPPADDING", (0, 1), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 1), (-1, -2), 3),
+                ("BOTTOMPADDING", (0, -1), (-1, -1), 10),
             ]
         )
     )
@@ -504,8 +532,9 @@ def _footer_paragraph(st: dict) -> Paragraph:
         f"{COMPANY['phone']} · {COMPANY['email']} · www.dubaivizehatti.com<br/>"
         f"{COMPANY['address']}<br/>"
         f"{BRAND}, {COMPANY['parent_company']} tarafından işletilen bir markadır; "
-        "tüm hizmetler bu şirket üzerinden verilmektedir. Birleşik Arap Emirlikleri'ndeki "
-        f"grup şirketimiz {COMPANY['dubai_company']}'dir.<br/>"
+        "tüm hizmetler bu şirket üzerinden verilmektedir.<br/>"
+        "Birleşik Arap Emirlikleri'ndeki grup şirketimiz "
+        f"{COMPANY['dubai_company']}'dir.<br/>"
         "Bu form başvuru kaydınızın sistem tarafından üretilmiş özetidir; "
         "resmî vize belgesi değildir."
     )

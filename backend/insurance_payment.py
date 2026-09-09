@@ -1,9 +1,10 @@
-"""Tamamliyo police odemesi (kurumsal kart) durum takibi + operator uyarisi.
+"""Tamamliyo police odemesi durum takibi + operator uyarisi.
 
-Police bedeli `odeme-yap` ucundan `odemeTipi=2` ile kurumsal karttan cekilir
-(partner hesabimizda cari bakiye/puan yontemi yok). Iki basarisizlik durumu var:
+Police bedeli `odeme-yap` ucundan varsayilan olarak partner cari bakiyesinden
+dusulur (`odemeTipi=3`); `TAMAMLIYO_PAYMENT_TYPE=2` ile kurumsal karta gecilebilir.
+Iki basarisizlik durumu var:
 
-- **Odeme reddi / kart tanimsiz / limit**: gorev `waiting_payment` kuyruguna alinir,
+- **Odeme reddi / bakiye-limit sorunu**: gorev `waiting_payment` kuyruguna alinir,
   15 dakikada bir yeniden denenir, operatore e-posta + WhatsApp uyarisi gider.
 - **Yanit alinamadi (zaman asimi)**: cekim yapilmis olabilir; gorev `payment_review`
   durumuna alinir ve mukerrer cekim riski nedeniyle OTOMATIK TEKRAR DENENMEZ.
@@ -70,7 +71,7 @@ async def status() -> dict:
     """Panelde gosterilen odeme durumu."""
     state = await _state()
     return {
-        "method": "card",
+        "method": "balance" if tamamliyo.balance_mode() else "card",
         "card_configured": tamamliyo.card_configured(),
         "card_hint": tamamliyo.card_hint(),
         "provider_configured": tamamliyo.configured(),
@@ -113,11 +114,12 @@ def _alert_texts(kind: str, waiting: int, card_configured: bool) -> tuple:
         )
         return subject, html, wa
 
-    reason = (
-        "Kart bilgileri tanımlı olmadığı için ödeme yapılamadı."
-        if not card_configured
-        else "Kurumsal kartla ödeme başarısız oldu (limit/ret olabilir)."
-    )
+    if tamamliyo.balance_mode():
+        reason = "Tamamliyo cari bakiyesinden ödeme yapılamadı (bakiye yetersiz olabilir)."
+    elif not card_configured:
+        reason = "Kart bilgileri tanımlı olmadığı için ödeme yapılamadı."
+    else:
+        reason = "Kurumsal kartla ödeme başarısız oldu (limit/ret olabilir)."
     subject = "ACİL · Tamamliyo poliçe ödemesi başarısız"
     html = (
         '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">'

@@ -318,7 +318,11 @@ async def _save_provider_error(task_id: str, message: str) -> None:
             "poliçeyi elle kesin."
         )
     elif insurance_payment.is_payment_blocked(message):
-        message += " Kurumsal kartın limitini/geçerliliğini kontrol edin, poliçe kuyrukta bekliyor."
+        message += (
+            " Tamamliyo cari bakiyenizi kontrol edin, poliçe kuyrukta bekliyor."
+            if tamamliyo.balance_mode()
+            else " Kurumsal kartın limitini/geçerliliğini kontrol edin, poliçe kuyrukta bekliyor."
+        )
     await insurance_tasks_col.update_one(
         {"id": task_id},
         {

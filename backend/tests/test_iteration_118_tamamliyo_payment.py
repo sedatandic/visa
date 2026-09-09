@@ -91,6 +91,7 @@ class TestPaymentPayload:
 
     @pytest.fixture(autouse=True)
     def card(self, monkeypatch):
+        monkeypatch.setenv("TAMAMLIYO_PAYMENT_TYPE", "2")
         monkeypatch.setenv("TAMAMLIYO_CARD_NUMBER", "4111 1111 1111 1111")
         monkeypatch.setenv("TAMAMLIYO_CARD_EXPIRY", "2030-12-01")
         monkeypatch.setenv("TAMAMLIYO_CARD_CVV", "123")
@@ -277,6 +278,7 @@ class TestProviderErrorHint:
 
     def test_card_error_gets_actionable_hint(self, monkeypatch):
         saved = {}
+        monkeypatch.setenv("TAMAMLIYO_PAYMENT_TYPE", "2")
         monkeypatch.setattr(insurance_provider, "insurance_tasks_col", self.FakeCol(saved))
         run(insurance_provider._save_provider_error("t1", "Kredi kartı limiti yetersiz."))
         assert "Kredi kartı limiti yetersiz." in saved["message"]

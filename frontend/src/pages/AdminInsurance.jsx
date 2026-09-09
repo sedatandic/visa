@@ -281,12 +281,12 @@ const ProviderPanel = ({ status, onChange }) => {
                     </h2>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">
                         Maliyetler günlük çekilir, satış fiyatı %{Math.round((status.markup - 1) * 100)} kâr
-                        marjıyla hesaplanır. Poliçe bedeli her kesimde kurumsal karttan çekilir
-                        (odemeTipi=2); kart bilgisi yalnızca sunucu ortam değişkenlerinde tutulur.
+                        marjıyla hesaplanır. Poliçe bedeli her kesimde Tamamliyo partner cari
+                        bakiyenizden düşülür (odemeTipi=3); sunucuda kart veya CVV bilgisi tutulmaz.
                     </p>
                     <p className="mt-1 text-xs leading-5 text-amber-700" data-testid="insurance-payment-note">
-                        Kart reddedilir veya tanımlı değilse poliçe kesilemez; sipariş kuyruğa alınır ve
-                        ödeme düzelince kendiliğinden kesilip müşteriye gönderilir.
+                        Cari bakiye yetmezse poliçe kesilemez; sipariş kuyruğa alınır ve bakiye
+                        yüklenince kendiliğinden kesilip müşteriye gönderilir.
                     </p>
                 </div>
                 <span
@@ -567,10 +567,10 @@ const ExpensePanel = ({ data }) => {
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 className="flex items-center gap-2 font-heading text-sm font-bold">
-                        <Receipt className="h-4 w-4 text-primary" /> Sigorta gideri · karttan çekilen
+                        <Receipt className="h-4 w-4 text-primary" /> Sigorta gideri · ödenen poliçeler
                     </h2>
                     <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-                        Tamamliyo'ya kurumsal karttan ödenen poliçe bedelleri. Yalnızca gerçekten
+                        Tamamliyo'ya ödenen poliçe bedelleri (cari bakiyeden düşülen). Yalnızca gerçekten
                         çekim yapılan poliçeler listelenir; elle/test kesimleri gidere girmez.
                     </p>
                 </div>
@@ -681,6 +681,7 @@ const PaymentPanel = ({ state, onChange }) => {
 
     const waiting = state.waiting_tasks || 0;
     const review = state.review_tasks || 0;
+    const balance = state.method === "balance";
     const blocked = !state.card_configured;
     const tone = blocked || review
         ? "border-destructive/40 bg-destructive/[0.06]"
@@ -693,12 +694,13 @@ const PaymentPanel = ({ state, onChange }) => {
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 className="flex items-center gap-2 font-heading text-sm font-bold">
-                        <Wallet className="h-4 w-4 text-primary" /> Poliçe ödemesi · kurumsal kart
+                        <Wallet className="h-4 w-4 text-primary" /> Poliçe ödemesi ·{" "}
+                        {balance ? "cari bakiye" : "kurumsal kart"}
                     </h2>
                     <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-                        Tamamliyo poliçe bedeli her kesimde kurumsal karttan çekilir (odemeTipi=2).
-                        Kart bilgileri yalnızca sunucudaki ortam değişkenlerinde tutulur; panelde,
-                        veritabanında ve kayıtlarda görünmez.
+                        {balance
+                            ? "Tamamliyo poliçe bedeli her kesimde partner cari bakiyenizden düşülür (odemeTipi=3). Sunucuda kart veya CVV bilgisi tutulmaz; bakiye yetersizse poliçeler kuyrukta bekler ve size uyarı gider."
+                            : "Tamamliyo poliçe bedeli her kesimde kurumsal karttan çekilir (odemeTipi=2). Kart bilgileri yalnızca sunucudaki ortam değişkenlerinde tutulur; panelde, veritabanında ve kayıtlarda görünmez."}
                     </p>
                 </div>
                 <span
@@ -709,7 +711,11 @@ const PaymentPanel = ({ state, onChange }) => {
                     }`}
                     data-testid="insurance-payment-state"
                 >
-                    {blocked ? "Kart tanımlı değil" : `Kart hazır ${state.card_hint || ""}`}
+                    {balance
+                        ? "Cari bakiye"
+                        : blocked
+                          ? "Kart tanımlı değil"
+                          : `Kart hazır ${state.card_hint || ""}`}
                 </span>
             </div>
 

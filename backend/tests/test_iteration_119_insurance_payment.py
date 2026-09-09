@@ -1,7 +1,8 @@
-"""Iteration 119 (yenilendi 2026-09-08): Tamamliyo kart odemesi kuyrugu + uyarilari.
+"""Iteration 119 (yenilendi 2026-06): Tamamliyo odeme kuyrugu + uyarilari.
 
-Tamamliyo partner hesabimizda cari bakiye yontemi yok; police bedeli her kesimde
-kurumsal karttan cekiliyor (`odeme-yap`, odemeTipi=2). Bu testler:
+Police bedeli varsayilan olarak partner cari bakiyesinden dusuluyor (odemeTipi=3);
+bu dosyadaki testler `TAMAMLIYO_PAYMENT_TYPE=2` ile kurumsal kart modunu dogrular
+(bkz. test_iteration_130_tamamliyo_balance.py cari bakiye testleri). Kapsam:
 - odeme engeli (kart tanimsiz/limit/ret) tespitini,
 - yanit alinamayan cekimin (zaman asimi) ayri "inceleme" durumuna dusmesini,
 - operator uyarilarini (e-posta + WhatsApp, 12 saat sogutma) dogrular.
@@ -51,6 +52,7 @@ def store(monkeypatch):
 
 @pytest.fixture
 def card(monkeypatch):
+    monkeypatch.setenv("TAMAMLIYO_PAYMENT_TYPE", "2")
     monkeypatch.setenv("TAMAMLIYO_CARD_NUMBER", "4111111111111111")
     monkeypatch.setenv("TAMAMLIYO_CARD_EXPIRY", "2030-12-01")
     monkeypatch.setenv("TAMAMLIYO_CARD_CVV", "123")
@@ -87,6 +89,7 @@ class TestStatus:
         assert state["card_hint"] == "**** 1111"
 
     def test_missing_card_is_reported(self, store, monkeypatch):
+        monkeypatch.setenv("TAMAMLIYO_PAYMENT_TYPE", "2")
         monkeypatch.delenv("TAMAMLIYO_CARD_NUMBER", raising=False)
         assert run(insurance_payment.status())["card_configured"] is False
 
@@ -117,6 +120,7 @@ class TestAlerts:
         assert "ACİL" in alerts["whatsapp"][0]
 
     def test_missing_card_reason_is_explicit(self, store, alerts, monkeypatch):
+        monkeypatch.setenv("TAMAMLIYO_PAYMENT_TYPE", "2")
         monkeypatch.delenv("TAMAMLIYO_CARD_NUMBER", raising=False)
         run(insurance_payment.maybe_alert("blocked", waiting=1))
         assert "Kart bilgileri tanımlı olmadığı" in alerts["email"][0]["html"]

@@ -1,7 +1,7 @@
 """Tamamliyo Partner Travel API v3 istemcisi (yurtdisi seyahat saglik sigortasi).
 
 Kimlik dogrulama: partner token, `token` HTTP header'inda gonderilir.
-Akis: fiyat-al -> teklif-olustur -> odeme-yap (kurumsal kart, odemeTipi=2)
+Akis: fiyat-al -> teklif-olustur -> odeme-yap (cari bakiye odemeTipi=3, kart odemeTipi=2)
       -> police-olustur -> police-pdf
 Dokumantasyon kopyasi: /app/memory/tamamliyo/travel_api.txt
 """
@@ -33,7 +33,8 @@ URUN_ID = _configured_urun_id()
 # Gidilecek ulke kodu (Tamamliyo /partner/v1/countries): 784 = Birlesik Arap Emirlikleri.
 # teklif-olustur bu alani zorunlu tutuyor (HATA_2: "ulkeKodu gonderilmesi zorunludur").
 ULKE_KODU_BAE = 784
-PAYMENT_TYPE_CARD = "2"  # odeme-yap: 2 = kurumsal kartla dogrudan cekim (partner hesabimizda cari bakiye yok)
+PAYMENT_TYPE_CARD = "2"  # odeme-yap: 2 = kurumsal kartla dogrudan cekim
+PAYMENT_TYPE_BALANCE = "3"  # odeme-yap: 3 = partner cari bakiyesinden dusum (varsayilan)
 # Kart alanlari <-> .env anahtarlari (kart bilgisi yalnizca ortam degiskeninde tutulur)
 CARD_ENV = {
     "krediKartiNo": "TAMAMLIYO_CARD_NUMBER",
@@ -162,13 +163,28 @@ async def create_quote(
     return await _request("POST", f"{PATH}/teklif-olustur", body)
 
 
+def payment_type() -> str:
+    """Odeme tipi .env'den okunur: 3 = cari bakiye (varsayilan), 2 = kurumsal kart."""
+    raw = (os.environ.get("TAMAMLIYO_PAYMENT_TYPE") or "").strip()
+    return PAYMENT_TYPE_CARD if raw == PAYMENT_TYPE_CARD else PAYMENT_TYPE_BALANCE
+
+
+def balance_mode() -> bool:
+    """Odeme cari bakiyeden mi dusuluyor (kart bilgisi gerekmez)?"""
+    return payment_type() == PAYMENT_TYPE_BALANCE
+
+
 def card_configured() -> bool:
-    """Kurumsal kart bilgileri .env icinde tanimli mi?"""
+    """Odeme yapilabilir durumda mi? Cari bakiye modunda kart bilgisi gerekmez."""
+    if balance_mode():
+        return True
     return all((os.environ.get(env) or "").strip() for env in CARD_ENV.values())
 
 
 def card_hint() -> str:
     """Panelde gosterilecek maskeli kart bilgisi (son 4 hane)."""
+    if balance_mode():
+        return ""
     number = re.sub(r"\D", "", os.environ.get(CARD_ENV["krediKartiNo"]) or "")
     return f"**** {number[-4:]}" if len(number) >= 4 else ""
 
@@ -185,13 +201,17 @@ def _card_fields() -> dict:
 
 
 async def pay_for_quote(quote_id) -> dict:
-    """Teklifin odemesini kurumsal kartla yapar (`odeme-yap`, odemeTipi=2).
+    """Teklifin odemesini yapar (`odeme-yap`): cari bakiye (3) ya da kurumsal kart (2).
 
-    Kart bilgileri yalnizca .env'den okunur; log'lanmaz, veritabanina yazilmaz.
-    Zaman asiminda cekim gerceklesmis olabileceginden istek TEKRARLANMAZ.
+    Kart modunda kart bilgileri yalnizca .env'den okunur; log'lanmaz, veritabanina
+    yazilmaz. Zaman asiminda cekim gerceklesmis olabileceginden istek TEKRARLANMAZ.
     """
-    body = {"odemeTipi": PAYMENT_TYPE_CARD, "teklifId": quote_id, **_card_fields()}
-    logger.info("tamamliyo odeme istegi: teklif %s, kart %s", quote_id, card_hint())
+    body = {"odemeTipi": payment_type(), "teklifId": quote_id}
+    if not balance_mode():
+        body |= _card_fields()
+    logger.info(
+        "tamamliyo odeme istegi: teklif %s, tip %s %s", quote_id, payment_type(), card_hint()
+    )
     return await _request("POST", f"{PATH}/odeme-yap", body, retry=False)
 
 
