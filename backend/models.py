@@ -292,6 +292,20 @@ class CompanyInfoIn(BaseModel):
     founded_year: Optional[str] = Field(default="", max_length=10)
 
 
+class SocialLinkIn(BaseModel):
+    platform: str = Field(..., max_length=30)
+    url: Optional[str] = Field(default="", max_length=400)
+    enabled: bool = True
+    in_dock: bool = True
+    in_footer: bool = True
+    in_contact: bool = True
+    order: int = Field(default=0, ge=0, le=99)
+
+
+class SocialLinksIn(BaseModel):
+    items: List[SocialLinkIn] = Field(default_factory=list)
+
+
 class WhatsAppRequest(BaseModel):
     template: str = Field(default="visa_ready", max_length=40)
     message: Optional[str] = Field(default="", max_length=1000)

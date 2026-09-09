@@ -14,6 +14,7 @@ import {
     Package,
     PanelLeft,
     Send,
+    Share2,
     ShieldCheck,
     Star,
     Tag,
@@ -56,6 +57,7 @@ const NAV_GROUPS = [
             { to: "/admin/ziyaretciler", label: "Ziyaretçiler", icon: Globe2 },
             { to: "/admin/banka", label: "Banka Bilgileri", icon: Landmark },
             { to: "/admin/acente", label: "Acente Bilgileri", icon: Building2 },
+            { to: "/admin/sosyal-medya", label: "Sosyal Medya", icon: Share2 },
         ],
     },
 ];

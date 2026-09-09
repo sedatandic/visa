@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, MapPin, Phone, Clock, Instagram, Star } from "lucide-react";
+import { Mail, MapPin, Phone, Clock, Star } from "lucide-react";
 import { api } from "../lib/api";
 import { AGENCY_DISCLAIMER, COMPANY } from "../lib/site";
 import { TrFlag, UaeFlag } from "./FlagIcons";
@@ -8,6 +8,7 @@ import { TursabBadge } from "./TursabBadge";
 import { GdrfaBadge } from "./GdrfaBadge";
 import { BrandMark } from "./BrandMark";
 import { BoldText } from "./BoldText";
+import { SocialIcon } from "./SocialIcons";
 import { useContact } from "../lib/contact";
 
 export const Footer = () => {
@@ -123,32 +124,31 @@ export const Footer = () => {
                     </li>
                 </ul>
 
-                <div className="mt-5 flex items-center gap-2.5" data-testid="footer-social-links">
-                    {contact.instagram && (
-                        <a
-                            href={contact.instagram}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label="Instagram sayfamız"
-                            data-testid="footer-instagram-link"
-                            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors duration-150 hover:bg-white/20"
-                        >
-                            <Instagram className="h-5 w-5" />
-                        </a>
-                    )}
-                    {contact.googleReview && (
-                        <a
-                            href={contact.googleReview}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label="Google yorumlarımız"
-                            data-testid="footer-google-review-link"
-                            className="flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-white/20"
-                        >
-                            <Star className="h-4 w-4 fill-[hsl(var(--gold))] text-[hsl(var(--gold))]" />
-                            Google Yorumları
-                        </a>
-                    )}
+                <div className="mt-5 flex flex-wrap items-center gap-2.5" data-testid="footer-social-links">
+                    {(contact.socialLinks || [])
+                        .filter((l) => l.in_footer)
+                        .map((link) => (
+                            <a
+                                key={link.platform}
+                                href={link.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label={`${link.label} sayfamız`}
+                                data-testid={`footer-social-${link.platform}`}
+                                className={`flex h-10 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/10 text-white transition-colors duration-150 hover:bg-white/20 ${
+                                    link.platform === "google_review" ? "px-3.5 text-sm font-semibold" : "w-10"
+                                }`}
+                            >
+                                {link.platform === "google_review" ? (
+                                    <>
+                                        <Star className="h-4 w-4 fill-[hsl(var(--gold))] text-[hsl(var(--gold))]" />
+                                        Google Yorumları
+                                    </>
+                                ) : (
+                                    <SocialIcon platform={link.platform} />
+                                )}
+                            </a>
+                        ))}
                 </div>
             </div>
         </div>

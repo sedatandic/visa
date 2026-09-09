@@ -1510,3 +1510,46 @@ Bulgular ve yapilanlar:
   pending/running/overdue/met/missed/closed gecisleri, portal aktarimiyla baslama, ret'in de
   sonuc sayilmasi, baslangic kaydi olmayan onay, datetime/ISO girdi.
 - pytest: 518 passed / 3 skipped. ESLint ve ruff (yeni kod) temiz.
+
+## 2026-06-15 (9) · Admin → Sosyal Medya yonetimi (yeni ozellik)
+Kullanici istegi: "admin panelinden sosyal medya sayfasi yonetme kismi yap, google review ve
+instagram hesaplari ac". Instagram kullanici adi: **dubaivizehatti**.
+
+### Backend
+- Yeni `social_links.py`: 8 platform katalogu (instagram, google_review, facebook, tiktok,
+  youtube, x, linkedin, threads) + `clean_url` (kullanici adi -> tam adres, yalnizca http(s)),
+  `normalize_items` (tek kayit/platform, adres yoksa yayindan duser, siralama),
+  `resolve_items` (panel icin her platforma bir satir; eski `company_info.instagram` /
+  `google_review` degerlerinden geriye uyumlu doldurur), `public_links` (sitede gosterilecekler).
+- `models.py`: `SocialLinkIn` + `SocialLinksIn`.
+- `routes_admin.py`: `GET /api/admin/social` (katalog + satirlar),
+  `PUT /api/admin/social` — **gonderilmeyen platformlar korunur** (merge), kayittan sonra
+  `company_info.instagram/google_review` senkronlanir (eski tuketiciler bozulmaz).
+- `routes_public.py`: `/api/content/site` yanitina `social_links` eklendi.
+- `content.py`: COMPANY instagram -> `instagram.com/dubaivizehatti/`, google_review sorgusu
+  "Dubai Vize Hattı yorumlar" oldu.
+- `scripts/seed_social_links.py`: DB'ye Instagram + Google yorum baglantisini yazar
+  (site_settings koleksiyonu — `db["site_settings"]`, `db.settings` DEGIL).
+
+### Frontend
+- Yeni `pages/AdminSocial.jsx` (route `/admin/sosyal-medya`, AdminLayout → Ayarlar → Sosyal Medya):
+  her platform icin adres girisi, "Yayında" anahtari (adres yoksa kapali), 3 yerlesim onayi
+  (sag alt buton / alt bilgi / iletisim sayfasi), sira, "Bağlantıyı test et" ve yayinda hesap
+  sayaci. Tek "Kaydet" ile hepsi yazilir.
+- Yeni `components/SocialIcons.jsx`: `SocialIcon` (lucide + Google/TikTok/Threads SVG) ve
+  `SOCIAL_ACCENT` (platform renkleri).
+- `SocialDock.jsx`, `Footer.jsx`, `pages/Contact.jsx` artik `contact.socialLinks` uzerinden
+  dinamik render ediyor (yerlesim bayraklarina gore). `lib/contact.js` `socialLinks` tasiyor.
+- `AdminCompany.jsx`: Instagram / Google yorum alanlari kaldirildi, yerine Sosyal Medya
+  ekranina yonlendiren not eklendi (degerler silinmiyor).
+
+### Test / dogrulama
+- `tests/test_iteration_128_social_links.py` (13 test): kullanici adi cevrimi, javascript:
+  adresinin reddi, bos adresin yayindan dusmesi, mukerrer/bilinmeyen platform, siralama,
+  panel listesi, public filtreleme, jetonsuz erisim, kaydet + sitede gorunme + merge.
+- Panelde canli dogrulandi (8 satir, TikTok kullanici adi girildi -> tam adres, sayac 2->3).
+- Site: dock + altbilgi + iletisim sayfasi Instagram/Google baglantilarini gosteriyor.
+- pytest: **531 passed / 3 skipped**.
+- NOT: `test_iteration_116_refactor` backend hata logunda "NameError" arar; gelistirme
+  sirasindaki gecici hot-reload hatasi logda kalirsa log truncate + `supervisorctl restart
+  backend` gerekir (schedulers satirlari yeniden yazilsin).

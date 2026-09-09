@@ -24,7 +24,7 @@ let cache = null;
 let inflight = null;
 const listeners = new Set();
 
-const normalize = (company) => {
+const normalize = (company, socialLinks) => {
     const pick = (key, fallback) => {
         const value = String(company?.[key] ?? "").trim();
         return value || fallback;
@@ -43,12 +43,13 @@ const normalize = (company) => {
         email: pick("email", FALLBACK.email),
         instagram: String(company?.instagram ?? "").trim(),
         googleReview: String(company?.google_review ?? "").trim(),
+        socialLinks: Array.isArray(socialLinks) ? socialLinks : [],
         address: pick("address", FALLBACK.address),
         workingHours: pick("working_hours", FALLBACK.workingHours),
     };
 };
 
-export const contactFallback = normalize({});
+export const contactFallback = normalize({}, []);
 
 const load = () => {
     if (cache) return Promise.resolve(cache);
@@ -56,7 +57,7 @@ const load = () => {
         inflight = api
             .get("/content/site")
             .then(({ data }) => {
-                cache = normalize(data?.company);
+                cache = normalize(data?.company, data?.social_links);
                 return cache;
             })
             .catch(() => {

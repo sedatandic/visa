@@ -17,6 +17,7 @@ import {
 } from "../components/ui/select";
 import { useContact } from "../lib/contact";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
+import { SocialIcon } from "../components/SocialIcons";
 import { formatPhone } from "../lib/phone";
 
 const EMPTY = { name: "", email: "", phone: "", subject: "", message: "" };
@@ -268,6 +269,31 @@ export default function Contact() {
                             value={contact.workingHours}
                             testId="contact-channel-hours"
                         />
+                        {(contact.socialLinks || []).filter((l) => l.in_contact).length > 0 && (
+                            <div
+                                className="rounded-xl border border-border bg-card p-5"
+                                data-testid="contact-social-links"
+                            >
+                                <p className="text-xs text-muted-foreground">Sosyal medyada takip edin</p>
+                                <div className="mt-3 flex flex-wrap gap-2.5">
+                                    {(contact.socialLinks || [])
+                                        .filter((l) => l.in_contact)
+                                        .map((link) => (
+                                            <a
+                                                key={link.platform}
+                                                href={link.url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="flex h-11 items-center gap-2 rounded-full border border-border px-4 text-sm font-bold transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-foreground/25"
+                                                data-testid={`contact-social-${link.platform}`}
+                                            >
+                                                <SocialIcon platform={link.platform} className="h-4 w-4" />
+                                                {link.label}
+                                            </a>
+                                        ))}
+                                </div>
+                            </div>
+                        )}
                         <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
                             <h3 className="font-heading text-base font-bold">Başvurunuz zaten var mı?</h3>
                             <p className="mt-1.5 text-sm leading-6 text-muted-foreground">

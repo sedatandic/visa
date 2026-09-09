@@ -40,6 +40,7 @@ import AdminTestimonials from "./pages/AdminTestimonials";
 import AdminArticles from "./pages/AdminArticles";
 import AdminBankTransfer from "./pages/AdminBankTransfer";
 import AdminCompany from "./pages/AdminCompany";
+import AdminSocial from "./pages/AdminSocial";
 import AdminZami from "./pages/AdminZami";
 import AdminWhatsApp from "./pages/AdminWhatsApp";
 import AdminVisitors from "./pages/AdminVisitors";
@@ -106,6 +107,7 @@ function App() {
                     <Route path="/admin/yazilar" element={<RequireAdmin><AdminArticles /></RequireAdmin>} />
                     <Route path="/admin/banka" element={<RequireAdmin><AdminBankTransfer /></RequireAdmin>} />
                     <Route path="/admin/acente" element={<RequireAdmin><AdminCompany /></RequireAdmin>} />
+                    <Route path="/admin/sosyal-medya" element={<RequireAdmin><AdminSocial /></RequireAdmin>} />
                     <Route path="/admin/zami" element={<RequireAdmin><AdminZami /></RequireAdmin>} />
                     <Route path="/admin/whatsapp" element={<RequireAdmin><AdminWhatsApp /></RequireAdmin>} />
                     <Route path="/admin/ziyaretciler" element={<RequireAdmin><AdminVisitors /></RequireAdmin>} />

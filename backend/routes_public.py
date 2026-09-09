@@ -78,6 +78,7 @@ from visitors import client_ip as visitor_client_ip, is_bot, record_visit
 from store_catalog import MAX_QTY, product_list, tour_schedule
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
 import ocr_metrics
+import social_links
 from passport_ai import apply_background_report, background_report, check_photo, read_passport
 from rate_limit import allow as rate_allow, check as rate_check, client_ip
 import file_access
@@ -327,8 +328,10 @@ async def get_site_content() -> dict:
         await articles_col.find({"published": True}).sort("date", -1).limit(20).to_list(20)
     )
     company = await _company_info()
+    social_doc = await settings_col.find_one({"key": "social_links"})
     return {
         "company": company,
+        "social_links": social_links.public_links(company, (social_doc or {}).get("value")),
         "visa_categories": VISA_CATEGORIES,
         "addons": await addons_with_fx(),
         "fx": await get_fx(),

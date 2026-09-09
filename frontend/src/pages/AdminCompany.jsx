@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Building2, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
@@ -24,8 +25,6 @@ const FIELDS = [
     { key: "dubai_phone", label: "Telefon (Dubai)", placeholder: "+971 ..." },
     { key: "whatsapp", label: "WhatsApp numarası", placeholder: "905xxxxxxxxx" },
     { key: "email", label: "E-posta", placeholder: "destek@..." },
-    { key: "instagram", label: "Instagram bağlantısı", placeholder: "https://www.instagram.com/kullaniciadi/", wide: true },
-    { key: "google_review", label: "Google yorum bağlantısı", placeholder: "https://g.page/r/...", wide: true },
     { key: "working_hours", label: "Çalışma saatleri", placeholder: "Hafta içi 09:00 - 19:00" },
     { key: "founded_year", label: "Kuruluş yılı", placeholder: "2019" },
 ];
@@ -106,6 +105,18 @@ export default function AdminCompany() {
                         {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Kaydet
                     </Button>
+
+                    <p className="mt-4 text-xs leading-6 text-muted-foreground">
+                        Instagram, Google Yorumları ve diğer sosyal medya hesapları{" "}
+                        <Link
+                            to="/admin/sosyal-medya"
+                            className="font-bold text-primary hover:underline"
+                            data-testid="company-social-link"
+                        >
+                            Sosyal Medya
+                        </Link>{" "}
+                        ekranından yönetilir.
+                    </p>
                 </div>
             )}
         </AdminLayout>

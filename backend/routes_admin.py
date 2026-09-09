@@ -21,6 +21,7 @@ from fastapi import (
 from pydantic import BaseModel, Field
 
 import file_access
+import social_links
 import visa_file_number
 from admin_auth import SESSION_DAYS, create_token, hash_code, require_admin
 from application_docs import application_form_bytes, form_filename, visa_pdf_attachment
@@ -68,6 +69,7 @@ from models import (
     CompanyInfoIn,
     ReviewSummaryIn,
     SendVisaRequest,
+    SocialLinksIn,
     StatusUpdate,
     TestimonialIn,
     WhatsAppRequest,
@@ -715,6 +717,53 @@ async def admin_update_company(payload: CompanyInfoIn, admin: dict = Depends(req
         upsert=True,
     )
     return {**COMPANY, **value}
+
+
+# ------------------------------------------------------- Sosyal medya hesaplari
+@router.get("/admin/social")
+async def admin_get_social(admin: dict = Depends(require_admin)) -> dict:
+    company_doc = await settings_col.find_one({"key": "company_info"})
+    company = {**COMPANY, **((company_doc or {}).get("value") or {})}
+    doc = await settings_col.find_one({"key": "social_links"})
+    return {
+        "platforms": social_links.PLATFORMS,
+        "items": social_links.resolve_items(company, (doc or {}).get("value")),
+    }
+
+
+@router.put("/admin/social")
+async def admin_update_social(
+    payload: SocialLinksIn, admin: dict = Depends(require_admin)
+) -> dict:
+    now = datetime.now(timezone.utc)
+    company_doc = await settings_col.find_one({"key": "company_info"})
+    company_value = {**COMPANY, **((company_doc or {}).get("value") or {})}
+    stored_doc = await settings_col.find_one({"key": "social_links"})
+
+    # Gonderilmeyen platformlar mevcut degerleriyle korunur
+    merged = {
+        item["platform"]: item
+        for item in social_links.resolve_items(company_value, (stored_doc or {}).get("value"))
+    }
+    for item in social_links.normalize_items([row.model_dump() for row in payload.items]):
+        merged[item["platform"]] = item
+    items = social_links.normalize_items(list(merged.values()))
+
+    await settings_col.update_one(
+        {"key": "social_links"},
+        {"$set": {"value": items, "updated_at": now}},
+        upsert=True,
+    )
+    # Eski alanlarla uyum: company_info.instagram / google_review ayni kalsin
+    legacy = {item["platform"]: item["url"] if item["enabled"] else "" for item in items}
+    company_value["instagram"] = legacy.get("instagram", "")
+    company_value["google_review"] = legacy.get("google_review", "")
+    await settings_col.update_one(
+        {"key": "company_info"},
+        {"$set": {"value": company_value, "updated_at": now}},
+        upsert=True,
+    )
+    return {"platforms": social_links.PLATFORMS, "items": items}
 
 
 # ------------------------------------------------------- Ziyaretci istatistikleri
