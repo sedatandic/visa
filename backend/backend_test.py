@@ -456,7 +456,7 @@ class MandatoryFieldsTester:
                 
                 # Verify new fields in response
                 traveler = result.get("travelers", [{}])[0]
-                if (traveler.get("marital_status") == "married" and 
+                if (traveler.get("marital_status") == "married" and
                     traveler.get("profession") == "Engineer" and
                     traveler.get("mother_name") == "AYSE YILMAZ" and
                     traveler.get("father_name") == "MEHMET YILMAZ"):

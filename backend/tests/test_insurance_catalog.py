@@ -203,7 +203,7 @@ class TestApplicationStoreItems:
         q = r.json()
         # sadece sigorta -> bundle indirimi uygulanmamalı
         assert q["bundle_discount"] == 0.0
-        store_total = sum(float(l["total"]) for l in q["store_items"])
+        store_total = sum(float(line["total"]) for line in q["store_items"])
         assert store_total == unit
 
     def test_pricing_quote_bundle_insurance_plus_esim(self, session, visa_type_id):
@@ -220,7 +220,7 @@ class TestApplicationStoreItems:
         assert r.status_code == 200, r.text
         q = r.json()
         # sigorta + esim = %10 indirim
-        store_total = sum(float(l["total"]) for l in q["store_items"])
+        store_total = sum(float(line["total"]) for line in q["store_items"])
         assert q["bundle_discount"] > 0, "Bundle indirimi uygulanmadı"
         assert abs(q["bundle_discount"] - round(store_total * 0.10, 2)) < 0.01
 

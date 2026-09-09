@@ -75,8 +75,8 @@ async def require_customer(creds: Optional[HTTPAuthorizationCredentials] = Depen
     payload: dict = {}
     try:
         payload = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGO])
-    except jwt.PyJWTError:
-        raise HTTPException(401, "Oturum suresi doldu. Lutfen tekrar giris yapin.")
+    except jwt.PyJWTError as exc:
+        raise HTTPException(401, "Oturum suresi doldu. Lutfen tekrar giris yapin.") from exc
     if payload.get("role") != "customer":
         raise HTTPException(403, "Bu islem icin yetkiniz yok.")
     return payload.get("sub", "")

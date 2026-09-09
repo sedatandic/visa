@@ -107,19 +107,21 @@ class TestApplicationFourTravelers:
         unit = float(v["price"])
 
         fids = [self._upload_png(s) for _ in range(2)]
-        traveler_tpl = lambda i: {
-            "first_name": f"AHMET{i}",
-            "last_name": "TEST",
-            "birth_date": "1990-05-15",
-            "gender": "male",
-            "applicant_type": "adult",
-            "nationality": "TR",
-            "passport_no": f"U1234567{i}",
-            "passport_expiry": "2032-12-31",
-            "visa_type_id": visa_id,
-            "passport_file_id": fids[0],
-            "photo_file_id": fids[1],
-        }
+
+        def traveler_tpl(i):
+            return {
+                "first_name": f"AHMET{i}",
+                "last_name": "TEST",
+                "birth_date": "1990-05-15",
+                "gender": "male",
+                "applicant_type": "adult",
+                "nationality": "TR",
+                "passport_no": f"U1234567{i}",
+                "passport_expiry": "2032-12-31",
+                "visa_type_id": visa_id,
+                "passport_file_id": fids[0],
+                "photo_file_id": fids[1],
+            }
         payload = {
             "contact": {
                 "full_name": "TEST_iter84 Aile",

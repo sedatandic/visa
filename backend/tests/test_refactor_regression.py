@@ -138,7 +138,7 @@ class TestStoreOrders:
         assert ref.startswith("SV-"), f"bad reference {ref}"
         assert order["currency"] == "TRY"
         expected_items_total = round(
-            sum(l["unit_price"] * l["quantity"] for l in order["items"]), 2
+            sum(line["unit_price"] * line["quantity"] for line in order["items"]), 2
         )
         assert order["items_total"] == expected_items_total
         assert order["price"] == round(order["items_total"] - order["bundle_discount"], 2)

@@ -1336,8 +1336,8 @@ async def admin_update_fx(payload: dict, admin: dict = Depends(require_admin)):
     margin = payload.get("margin_pct")
     try:
         return await update_fx_settings(manual_rate=manual, margin_pct=margin)
-    except (TypeError, ValueError):
-        raise HTTPException(400, "Gecersiz kur veya marj degeri.")
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(400, "Gecersiz kur veya marj degeri.") from exc
 
 
 @router.get("/admin/login-codes")

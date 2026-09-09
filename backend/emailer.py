@@ -1095,8 +1095,8 @@ def order_admin_html(order: dict) -> str:
 def order_delivered_html(order: dict, links: list, message: str = "") -> str:
     """eSIM QR / police teslimati."""
     link_html = "".join(
-        f'<tr><td style="padding:8px 0;"><a href="{l["url"]}" style="color:#B3123A;font-size:14px;font-weight:bold;">{l["label"]}</a></td></tr>'
-        for l in links
+        f'<tr><td style="padding:8px 0;"><a href="{row["url"]}" style="color:#B3123A;font-size:14px;font-weight:bold;">{row["label"]}</a></td></tr>'
+        for row in links
     )
     note = (
         f'<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#3E2A14;">{esc(message)}</p>'

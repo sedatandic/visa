@@ -1,4 +1,6 @@
-import os, re, requests
+import os
+import re
+import requests
 from dotenv import load_dotenv
 from pymongo import MongoClient
 

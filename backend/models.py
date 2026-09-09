@@ -23,8 +23,8 @@ def _iso_date_or_error(value: str, label: str) -> str:
     text = text[:10]
     try:
         date.fromisoformat(text)
-    except ValueError:
-        raise ValueError(f"{label} GG.AA.YYYY olarak eksiksiz girilmelidir")
+    except ValueError as exc:
+        raise ValueError(f"{label} GG.AA.YYYY olarak eksiksiz girilmelidir") from exc
     return text
 
 

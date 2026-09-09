@@ -69,7 +69,7 @@ def test_pricing_quote_tour_qty2(api):
     assert r.status_code == 200, r.text
     data = r.json()
     store_items = data.get("store_items") or []
-    tour_line = next((l for l in store_items if l.get("kind") == "tour"), None)
+    tour_line = next((line for line in store_items if line.get("kind") == "tour"), None)
     assert tour_line, f"tour line missing: {data}"
     unit = float(tour_line["unit_price"])
     total = float(tour_line["total"])

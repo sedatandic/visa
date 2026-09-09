@@ -324,7 +324,7 @@ async def stripe_webhook(request: Request):
         result = await sc.handle_webhook(body, signature)
     except Exception as exc:
         logger.error("webhook error: %s", exc)
-        raise HTTPException(400, "Invalid webhook")
+        raise HTTPException(400, "Invalid webhook") from exc
     if result.payment_status == "paid":
         await _mark_paid(result.session_id)
     return {"status": "ok"}

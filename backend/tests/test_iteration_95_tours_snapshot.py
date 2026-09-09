@@ -25,10 +25,10 @@ if not BASE:
 # read Mongo env
 with open("/app/backend/.env") as f:
     ENV = {}
-    for l in f:
-        l = l.strip()
-        if "=" in l and not l.startswith("#"):
-            k, v = l.split("=", 1)
+    for raw in f:
+        raw = raw.strip()
+        if "=" in raw and not raw.startswith("#"):
+            k, v = raw.split("=", 1)
             ENV[k] = v.strip().strip('"')
 
 TEST_EMAIL = f"delivered+it95_{uuid.uuid4().hex[:6]}@resend.dev"

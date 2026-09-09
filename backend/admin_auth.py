@@ -49,4 +49,4 @@ async def require_admin(
 
 def hash_code(code: str) -> str:
     """Tek kullanimlik giris kodunun DB'de saklanan ozeti."""
-    return sha256(f"{JWT_SECRET}:{code}".encode("utf-8")).hexdigest()
+    return sha256(f"{JWT_SECRET}:{code}".encode()).hexdigest()

@@ -28,7 +28,9 @@ async def main() -> None:
         for html, expected in CASES:
             await page.set_content(f"<body>{html}</body>")
             found = await page.evaluate(
-                "() => { %s; var f = dvoFindSubmit(); return f ? f.selector : null; }" % SUBMIT_FINDER_JS
+                "() => { "
+                + SUBMIT_FINDER_JS
+                + "; var f = dvoFindSubmit(); return f ? f.selector : null; }"
             )
             assert found == expected, f"{html} -> {found} (beklenen {expected})"
             print("ok:", expected)

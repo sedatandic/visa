@@ -2525,3 +2525,28 @@ katmaninda (`phone-mask-hint`) gosteriliyor. Yazma akisi degismedi: 5384838224 -
   KVKK, Gizlilik Politikasi, Iade ve Iptal, Sartlar ve Hizmet Sozlesmesi, Ticari
   Elektronik Ileti Onami) "Hizli Baglantilar" listesinden cikarilip **"Kurumsal ve Yasal"**
   basligi altinda Iletisim kolonunun soluna alindi. Grid `md:grid-cols-2 lg:grid-cols-5`.
+
+### 2026-06-17 (devam) · Backend kod kalitesi raporu degerlendirmesi
+Rapor iddialari ruff 0.16.5 + pyflakes 3.4 ile dogrulandi:
+- "21 undefined variable" -> **DOGRULANMADI**: `ruff --select F821` ve `pyflakes` sifir
+  bulgu veriyor. Rapordaki 21 sayisi muhtemelen E741/B904/E731 turu 21 stil bulgusu.
+- "234 adet `is` ile sabit karsilastirma" -> **DOGRULANMADI**: `ruff --select F632`
+  temiz. Kod tabanindaki tum kullanimlar `is None` / `is True` / `is False` (dogru idiom).
+- "Karmasiklik 18/13/11 fonksiyonlar" -> **DOGRULANMADI**: `ruff --select C901`
+  (max-complexity 10) tum backend'de temiz; `admin_subject`, `save_draft`,
+  `_application_items`, `_application_summary_rows` esigin altinda. Refactor yapilmadi
+  (calisan uretim kodunda gereksiz risk).
+- "Import sayisi 38/32/30" -> mimari degisiklik onerisi; FastAPI route modulleri icin
+  normal. Canli uygulamada 600+ testi riske atacak bolme islemi yapilmadi.
+
+Gercek olan ve duzeltilen bulgular:
+- B904 (4): `models.py`, `routes_account.py`, `routes_admin.py`, `routes_payments.py` ->
+  `raise ... from exc` (traceback zinciri korunuyor).
+- E741 (12): belirsiz `l` degisken adlari -> `row` / `ln` / `line` / `raw`
+  (`emailer.py`, `wa_docs.py` + 6 test dosyasi).
+- E731: `test_iteration_84.py` lambda atamasi -> `def traveler_tpl(i)`.
+- UP012 `admin_auth.py`: gereksiz `encode("utf-8")`; UP031 `test_submit_finder.py`:
+  `%` formati -> string birlestirme; W291/E401 kucuk temizlikler.
+- `routes_store.py` "kullanilmayan import" bulgusu yanlis: `# noqa: F401` ile bilincli
+  re-export (testler bu modulden import ediyor).
+Dogrulama: `pytest` 602 passed / 5 skipped; `order_delivered_html` link render kontrolu ok.

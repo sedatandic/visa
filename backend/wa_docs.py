@@ -170,7 +170,7 @@ async def match_application(fields: dict) -> dict:
         matches = [
             doc
             for doc in candidates
-            if any(f == first and l == last for f, l, _p in _traveler_names(doc))
+            if any(f == first and ln == last for f, ln, _p in _traveler_names(doc))
         ]
         if len(matches) == 1:
             return {"application": matches[0], "confidence": 0.72, "reason": "full_name"}

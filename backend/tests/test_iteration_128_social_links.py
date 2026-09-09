@@ -89,7 +89,7 @@ def test_public_links_sadece_yayinda_olanlari_verir():
         {"platform": "youtube", "url": "https://www.youtube.com/@b", "enabled": False},
     ]
     links = social_links.public_links({}, stored)
-    assert [l["platform"] for l in links] == ["instagram"]
+    assert [line["platform"] for line in links] == ["instagram"]
     assert links[0]["label"] == "Instagram"
     assert links[0]["in_dock"] is True
 
@@ -145,7 +145,7 @@ def test_admin_social_kaydeder_ve_sitede_gorunur(headers):
     assert saved["google_review"]["enabled"] == before["google_review"]["enabled"]
 
     site = requests.get(f"{API}/content/site", timeout=30).json()
-    links = {l["platform"]: l for l in site["social_links"]}
+    links = {line["platform"]: line for line in site["social_links"]}
     assert links["instagram"]["url"] == "https://www.instagram.com/dubaivizehatti"
     assert "tiktok" not in links
     # Eski alanlarla uyum korunur
@@ -155,5 +155,5 @@ def test_admin_social_kaydeder_ve_sitede_gorunur(headers):
 def test_kayittan_sonra_instagram_hesabi_dubaivizehatti(headers):
     """Kullanici istegi: Instagram hesabi dubaivizehatti olmali."""
     site = requests.get(f"{API}/content/site", timeout=30).json()
-    instagram = next(l for l in site["social_links"] if l["platform"] == "instagram")
+    instagram = next(line for line in site["social_links"] if line["platform"] == "instagram")
     assert "dubaivizehatti" in instagram["url"]

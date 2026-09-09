@@ -158,7 +158,7 @@ class TestOrderParity:
         r = requests.post(f"{API}/orders", json=payload, timeout=45)
         assert r.status_code == 200, r.text
         order = r.json()["order"]
-        expected_total = round(sum(float(l["unit_price"]) * l["quantity"] for l in order["items"]), 2)
+        expected_total = round(sum(float(line["unit_price"]) * line["quantity"] for line in order["items"]), 2)
         assert order["items_total"] == expected_total
         assert order["bundle_discount"] == round(expected_total * 0.1, 2)
         assert order["price"] == round(expected_total - order["bundle_discount"], 2)
