@@ -15,7 +15,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 
 from content import (
@@ -28,6 +28,7 @@ from db import cart_snapshots_col, orders_col, serialize_doc, settings_col
 from emailer import order_admin_html, order_received_html, send_email
 from fx import apply_fx_to_list, get_fx
 from models import InsuredIn
+from payment_receipt_pdf import build_receipt_pdf, receipt_filename
 from rate_limit import allow as rate_allow
 from rate_limit import check as rate_check
 from rate_limit import client_ip
@@ -695,16 +696,33 @@ async def sync_application_order_payment(application_id: str, status: str, metho
         logger.warning("linked order payment sync failed: %s", exc)
 
 
-@router.get("/orders/{reference}")
-async def get_order(reference: str, email: str) -> dict:
+async def _find_order_for_customer(reference: str, email: str) -> dict:
+    """Siparis kodu + e-posta eslesmesi; misafir musteri erisimi icin tek kapi."""
     doc = await orders_col.find_one({"reference_code": (reference or "").strip().upper()})
     if not doc:
         raise HTTPException(404, "Siparis bulunamadi.")
     if (doc.get("contact") or {}).get("email", "").lower() != (email or "").strip().lower():
         raise HTTPException(404, "Siparis kodu ve e-posta eslesmiyor.")
+    return doc
+
+
+@router.get("/orders/{reference}")
+async def get_order(reference: str, email: str) -> dict:
+    doc = await _find_order_for_customer(reference, email)
     settings_doc = await settings_col.find_one({"key": "bank_transfer"})
     bank = (settings_doc or {}).get("value") or BANK_TRANSFER
     return {
         "order": serialize_doc(doc),
         "bank": bank if (doc.get("payment") or {}).get("method") == "bank_transfer" else None,
     }
+
+
+@router.get("/orders/{reference}/receipt.pdf")
+async def order_receipt_pdf(reference: str, email: str):
+    """Siparis kodu + e-posta ile odeme ozetini (PDF) indirir."""
+    doc = await _find_order_for_customer(reference, email)
+    return Response(
+        content=build_receipt_pdf(serialize_doc(doc), "order"),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{receipt_filename(doc)}"'},
+    )

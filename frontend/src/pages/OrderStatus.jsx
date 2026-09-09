@@ -199,6 +199,22 @@ export default function OrderStatus() {
                                             {formatMoney(order.price, order.currency)}
                                         </span>
                                     </div>
+                                    {order.payment?.status === "paid" && (
+                                        <Button
+                                            asChild
+                                            variant="secondary"
+                                            className="mt-4 h-10 border border-border"
+                                            data-testid="order-download-receipt-button"
+                                        >
+                                            <a
+                                                href={`${process.env.REACT_APP_BACKEND_URL}/api/orders/${encodeURIComponent(order.reference_code)}/receipt.pdf?email=${encodeURIComponent((order.contact || {}).email || email)}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                <Download className="mr-2 h-4 w-4" /> Ödeme özeti (PDF)
+                                            </a>
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
 

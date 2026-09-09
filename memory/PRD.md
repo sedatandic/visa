@@ -1608,3 +1608,27 @@ instagram hesaplari ac". Instagram kullanici adi: **dubaivizehatti**.
 - P1 **Gerçek IBAN'lar**: banka havalesi için placeholder IBAN'lar kullanıcıdan bekleniyor.
 - P1 **Production deploy**: "Save to Github" + deploy kullanıcı tarafında.
 - P2 Poliçe yenileme akışı, paylaşılabilir aile paketi linki, global İngilizce sürüm.
+
+## 2026-06-16 (fork) · Teklif Linkleri (paylasilabilir teklif)
+Kullanici bu turda yon vermedi ("best judgment"); backlog'daki P2 maddesi
+**"paylasilabilir aile paketi linki"** secildi (kullanici eylemi gerektirmeyen, satis
+sureclerine dogrudan katki saglayan is).
+
+**Ne yapildi**: Yonetici Admin -> Musteri Iletisimi -> **Teklif Linkleri**
+(`/admin/teklifler`) ekraninda yolcu/vize/ekspres/sigorta/eSIM/tur secip canli tutari
+gorerek tek tikla bir teklif linki uretiyor (`/teklif/<token>`, varsayilan 14 gun gecerli).
+Link WhatsApp paylasim metniyle hazir geliyor. Musteri linki acinca tutari ve fiyat
+dokumunu goruyor; "Basvuruyu tamamla" dedigi anda ayni secimler basvuru formuna doluyor
+(`/basvuru?teklif=<token>`) ve basvuru olustugunda teklif "basvuruya donustu" olarak
+isaretleniyor (donusum takibi + goruntulenme sayaci).
+
+Detay ve test sonuclari: CHANGELOG.md 2026-06-16.
+
+### Bu turdan sonra bekleyen isler (oncelik sirasi)
+- P0 **WhatsApp botu canli mod**: Meta Developer App kimlikleri (phone_number_id,
+  access_token, app_secret, verify_token) Admin -> WhatsApp -> Bot Ayarlari'ndan girilecek.
+- P0 **Instagram hesabi**: kullanici kendi acacak; panelde 12 hazir gonderi bekliyor.
+- P1 **Gercek IBAN'lar**: `/vize-tipleri` ve odeme adiminda hala `TR00 0000 ...` yer tutucu.
+- P1 **Production deploy**: "Save to Github" + deploy kullanici tarafinda.
+- P2 Police/vize yenileme hatirlatmasi, global Ingilizce surum.
+- P2 Teknik borc: `AdminOffers.jsx` (535 satir) ve `Apply.jsx` bilesenlere bolunebilir.

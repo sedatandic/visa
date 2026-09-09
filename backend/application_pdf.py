@@ -161,9 +161,9 @@ def _styles() -> dict:
     }
 
 
-def _header(app_doc: dict, st: dict) -> Table:
+def _header(app_doc: dict, st: dict, title_text: str = "Dubai Vizesi<br/>Başvuru Detayları") -> Table:
     """Solda logo (baslik blogu kadar yuksek), ortada iki satirlik baslik."""
-    title = Paragraph("Dubai Vizesi<br/>Başvuru Detayları", st["title_head"])
+    title = Paragraph(title_text, st["title_head"])
     if os.path.exists(LOGO_FILE):
         # Logo, sagdaki iki satirlik basligin ust-alt hizasini tam kaplasin
         height = 2 * TITLE_LEADING
@@ -391,13 +391,13 @@ def _pricing_rows(app_doc: dict) -> list:
     return rows
 
 
-def _price_table(app_doc: dict, st: dict) -> Table:
-    rows = [
+def _amount_table(rows: list, st: dict) -> Table:
+    """Etiket + tutar satirlari; tutar kolonu yolcu tablosundaki "Tutar" ile ayni yerde."""
+    body = [
         [Paragraph(_safe(label), st["body"]), Paragraph(value, st["value"])]
-        for label, value in _pricing_rows(app_doc)
+        for label, value in rows
     ]
-    # tutar kolonu yolcu tablosundaki "Tutar" kolonuyla ayni yerden baslar (sola dayali)
-    table = Table(rows, colWidths=_cols(154, 26))
+    table = Table(body, colWidths=_cols(154, 26))
     table.setStyle(
         TableStyle(
             [
@@ -413,6 +413,10 @@ def _price_table(app_doc: dict, st: dict) -> Table:
         )
     )
     return table
+
+
+def _price_table(app_doc: dict, st: dict) -> Table:
+    return _amount_table(_pricing_rows(app_doc), st)
 
 
 def _documents_paragraph(documents: list, st: dict) -> Paragraph:
@@ -454,7 +458,7 @@ def _draw_frame(canvas, doc) -> None:
     canvas.roundRect(inner, inner, width - 2 * inner, height - 2 * inner, 2.2 * mm)
 
     # Kunye cercevenin alt kenarina sabitlenir (ortali)
-    footer = _footer_paragraph(_styles())
+    footer = _footer_paragraph(_styles(), getattr(doc, "footer_note", FORM_NOTE))
     pad = FRAME_INSET + 6 * mm
     _, _footer_h = footer.wrap(width - 2 * pad, 40 * mm)
     footer.drawOn(canvas, pad, FRAME_INSET + 4 * mm)
@@ -464,6 +468,11 @@ def _draw_frame(canvas, doc) -> None:
 TRACK_BASE = (
     os.environ.get("PUBLIC_SITE_URL") or "https://www.dubaivizehatti.com"
 ).strip().strip('"').rstrip("/")
+
+FORM_NOTE = (
+    "Bu form başvuru kaydınızın sistem tarafından üretilmiş özetidir; "
+    "resmî vize belgesi değildir."
+)
 
 
 def _track_url(app_doc: dict) -> str:
@@ -519,7 +528,7 @@ def _track_band(app_doc: dict, st: dict) -> Table:
     return table
 
 
-def _footer_paragraph(st: dict) -> Paragraph:
+def _footer_paragraph(st: dict, note: str = FORM_NOTE) -> Paragraph:
     # marka/isletici bilgisi tek kaynaktan gelir (content.affiliation_note),
     # her cumle tek satirda kalsin diye cumleler arasina satir sonu konur
     affiliation = affiliation_note().replace("**", "").replace(". Birleşik", ".<br/>Birleşik")
@@ -528,8 +537,7 @@ def _footer_paragraph(st: dict) -> Paragraph:
         f"{COMPANY['phone']} · {COMPANY['email']} · www.dubaivizehatti.com<br/>"
         f"{COMPANY['address']}<br/>"
         f"{affiliation}<br/>"
-        "Bu form başvuru kaydınızın sistem tarafından üretilmiş özetidir; "
-        "resmî vize belgesi değildir."
+        f"{note}"
     )
     return Paragraph(text, st["foot"])
 

@@ -12,6 +12,7 @@ from content import BANK_TRANSFER
 from db import applications_col, payments_col, serialize_doc, settings_col
 from emailer import bank_transfer_html, payment_received_html, send_email, subject_with_ref
 from models import CheckoutRequest
+from payment_receipt_pdf import receipt_attachment
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -55,6 +56,7 @@ async def _mark_order_paid(session_id: str, tx: dict):
             f"Ödemeniz alındı - {fresh['reference_code']}",
             order_received_html(serialize_doc(fresh)),
             kind="order_payment_received",
+            attachments=receipt_attachment(serialize_doc(fresh), "order"),
             meta={"reference_code": fresh["reference_code"]},
         )
     from insurance_tasks import queue_policy_tasks
@@ -131,6 +133,7 @@ async def _notify_application_payment(application_id: str) -> None:
         subject_with_ref(fresh["reference_code"], "için ödemeniz alındı"),
         payment_received_html(serialize_doc(fresh)),
         kind="payment_received",
+        attachments=receipt_attachment(serialize_doc(fresh)),
         meta={"reference_code": fresh["reference_code"]},
     )
 

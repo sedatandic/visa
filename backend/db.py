@@ -35,6 +35,7 @@ saved_travelers_col = db["saved_travelers"]
 products_col = db["store_products"]
 orders_col = db["store_orders"]
 cart_snapshots_col = db["cart_snapshots"]
+offer_links_col = db["offer_links"]
 conversations_col = db["wa_conversations"]
 wa_documents_col = db["wa_documents"]
 zami_logs_col = db["zami_logs"]
@@ -88,3 +89,5 @@ async def ensure_indexes() -> None:
     await visits_col.create_index([("bot", 1), ("created_at", -1)])
     await ip_geo_col.create_index("ip", unique=True)
     await ip_geo_col.create_index("expires_at", expireAfterSeconds=0)
+    await offer_links_col.create_index("token", unique=True)
+    await offer_links_col.create_index("created_at")

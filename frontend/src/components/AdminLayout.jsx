@@ -8,6 +8,7 @@ import {
     Globe2,
     Instagram,
     LayoutDashboard,
+    Link2,
     LogOut,
     Mail,
     MessageCircle,
@@ -39,6 +40,7 @@ const NAV_GROUPS = [
         label: "Müşteri İletişimi",
         items: [
             { to: "/admin/mesajlar", label: "Mesajlar", icon: MessageSquare, badge: "messages" },
+            { to: "/admin/teklifler", label: "Teklif Linkleri", icon: Link2 },
             { to: "/admin/e-postalar", label: "E-postalar", icon: Mail },
             { to: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle, badge: "whatsapp" },
         ],

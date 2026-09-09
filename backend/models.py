@@ -142,6 +142,29 @@ class ApplicationCreate(BaseModel):
     extra_documents: ExtraDocumentsIn = Field(default_factory=ExtraDocumentsIn)
     kvkk_accepted: bool = True
     consents: ConsentsIn = Field(default_factory=ConsentsIn)
+    # Yonetici teklif linkinden gelindiyse donusum takibi icin tasinir
+    offer_token: Optional[str] = Field(default="", max_length=40)
+
+
+class OfferTravelerIn(BaseModel):
+    applicant_type: str = Field(default="adult", pattern="^(adult|child)$")
+    visa_type_id: str = Field(..., min_length=3, max_length=60)
+
+
+class OfferLinkIn(BaseModel):
+    """Yoneticinin hazirladigi, WhatsApp ile paylasilabilir teklif."""
+
+    title: Optional[str] = Field(default="", max_length=120)
+    customer_name: Optional[str] = Field(default="", max_length=120)
+    customer_phone: Optional[str] = Field(default="", max_length=25)
+    customer_email: Optional[str] = Field(default="", max_length=120)
+    travelers: List[OfferTravelerIn] = Field(..., min_length=1, max_length=10)
+    addons: AddonsIn = Field(default_factory=AddonsIn)
+    store_items: List[StoreItemIn] = Field(default_factory=list, max_length=6)
+    arrival_date: Optional[str] = Field(default="", max_length=20)
+    departure_date: Optional[str] = Field(default="", max_length=20)
+    note: Optional[str] = Field(default="", max_length=600)
+    valid_days: int = Field(default=14, ge=1, le=90)
 
 
 class TravelerDocumentIn(BaseModel):

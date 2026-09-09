@@ -705,9 +705,64 @@ export default function Apply() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bundleParam]);
 
-    // Sepetten gelen basvuru (?sepet=1): sigorta / eSIM / tur secimleri forma tasinir
-    const cartImported = useRef(false);
+    // Yoneticinin hazirladigi teklif linki (?teklif=<token>): secimler hazir gelir
+    const offerToken = searchParams.get("teklif") || "";
+    const [offerInfo, setOfferInfo] = useState(null);
+    const offerApplied = useRef(false);
     useEffect(() => {
+        if (!offerToken || offerApplied.current || !storeProducts.length) return;
+        offerApplied.current = true;
+        api.get(`/offers/${offerToken}`)
+            .then(({ data }) => {
+                setOfferInfo(data);
+                if (data.customer_name) {
+                    setContact((c) => ({ ...c, full_name: c.full_name || data.customer_name }));
+                }
+                if (Array.isArray(data.travelers) && data.travelers.length) {
+                    setTravelers(
+                        data.travelers.map((t) => ({
+                            ...newTraveler(t.applicant_type === "child" ? "child" : "adult"),
+                            visa_type_id: t.visa_type_id || "",
+                        }))
+                    );
+                }
+                if (data.arrival_date || data.departure_date) {
+                    setTravel((t) => ({
+                        ...t,
+                        arrival_date: data.arrival_date || t.arrival_date,
+                        departure_date: data.departure_date || t.departure_date,
+                    }));
+                }
+                if (data.addons?.express) setAddons((a) => ({ ...a, express: true }));
+                const esim = {};
+                const tours = {};
+                for (const line of data.store_items || []) {
+                    const product = storeProducts.find((p) => p.id === line.product_id);
+                    if (!product) continue;
+                    if (product.kind === "insurance") setInsurancePick(product.id);
+                    if (product.kind === "esim") esim[product.id] = line.quantity || 1;
+                    if (product.kind === "tour") {
+                        tours[product.id] = line.quantity || 1;
+                        if (line.scheduled_date) {
+                            setTourSchedule((prev) => ({
+                                ...prev,
+                                [product.id]: { date: line.scheduled_date, time: line.scheduled_time || "" },
+                            }));
+                        }
+                    }
+                }
+                if (Object.keys(esim).length) setEsimQty(esim);
+                if (Object.keys(tours).length) setTourQty(tours);
+                toast.success("Size hazırlanan teklif forma yüklendi. Bilgilerinizi tamamlayıp ödemeye geçebilirsiniz.");
+            })
+            .catch(() =>
+                toast.error("Teklif bulunamadı veya süresi doldu. Lütfen danışmanınızla iletişime geçin.")
+            );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [offerToken, storeProducts]);
+
+    // Sepetten gelen basvuru (?sepet=1): sigorta / eSIM / tur secimleri forma tasinir
+    const cartImported = useRef(false);    useEffect(() => {
         if (searchParams.get("sepet") !== "1" || cartImported.current || !storeProducts.length) return;
         cartImported.current = true;
         const esim = {};
@@ -1613,6 +1668,7 @@ export default function Apply() {
                 },
                 kvkk_accepted: true,
                 consents,
+                offer_token: offerToken,
             });
             setCreated(data);
             if (searchParams.get("sepet") === "1") cart.clear();
@@ -1685,6 +1741,25 @@ export default function Apply() {
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
+                    {offerInfo && (
+                        <div
+                            className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-primary/30 bg-primary/5 px-5 py-4"
+                            data-testid="apply-offer-banner"
+                        >
+                            <div className="min-w-0">
+                                <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                                    Size hazırlanan teklif
+                                </p>
+                                <p className="font-heading text-base font-bold">{offerInfo.title}</p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                    Vize, sigorta ve eSIM seçimleriniz forma yüklendi; bilgilerinizi tamamlamanız yeterli.
+                                </p>
+                            </div>
+                            <span className="font-heading text-lg font-extrabold" data-testid="apply-offer-total">
+                                {formatMoney(offerInfo.total, offerInfo.currency)}
+                            </span>
+                        </div>
+                    )}
                     {/* STEPPER */}
                     <div
                         className="sticky top-[86px] z-30 overflow-hidden rounded-[var(--radius-lg)] border border-border/70 bg-card/95 backdrop-blur-xl sm:top-[98px] lg:top-[110px]"

@@ -22,10 +22,12 @@ from pydantic import BaseModel, Field
 
 import file_access
 import instagram_posts
+import offer_links
 import social_links
 import visa_file_number
 from admin_auth import SESSION_DAYS, create_token, hash_code, require_admin
 from application_docs import application_form_bytes, form_filename, visa_pdf_attachment
+from payment_receipt_pdf import build_receipt_pdf, receipt_attachment, receipt_filename
 from content import BANK_TRANSFER, COMPANY, STATUS_LABELS
 from db import (
     admin_login_codes_col,
@@ -36,6 +38,7 @@ from db import (
     email_outbox_col,
     login_codes_col,
     notifications_col,
+    offer_links_col,
     payments_col,
     serialize_doc,
     settings_col,
@@ -69,6 +72,7 @@ from models import (
     BankTransferIn,
     CompanyInfoIn,
     InstagramPlanIn,
+    OfferLinkIn,
     ReviewSummaryIn,
     SendVisaRequest,
     SocialLinksIn,
@@ -692,6 +696,7 @@ async def admin_mark_paid(application_id: str, admin: dict = Depends(require_adm
             subject_with_ref(fresh["reference_code"], "için ödemeniz alındı"),
             payment_received_html(serialize_doc(fresh)),
             kind="payment_received",
+            attachments=receipt_attachment(serialize_doc(fresh)),
             meta={"reference_code": fresh["reference_code"]},
         )
         notification = result.get("status", "skipped")
@@ -1126,6 +1131,19 @@ async def admin_application_form_pdf(application_id: str, admin: dict = Depends(
     )
 
 
+@router.get("/admin/applications/{application_id}/receipt.pdf")
+async def admin_application_receipt_pdf(application_id: str, admin: dict = Depends(require_admin)):
+    """Basvurunun odeme ozeti PDF'i (yonetici indirmesi)."""
+    doc = await applications_col.find_one({"id": application_id})
+    if not doc:
+        raise HTTPException(404, "Basvuru bulunamadi.")
+    return Response(
+        content=build_receipt_pdf(serialize_doc(doc)),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{receipt_filename(doc)}"'},
+    )
+
+
 @router.get("/admin/applications/{application_id}/missing-documents")
 async def admin_missing_documents(application_id: str, admin: dict = Depends(require_admin)) -> dict:
     doc = await applications_col.find_one({"id": application_id})
@@ -1357,3 +1375,37 @@ async def admin_run_draft_reminders(
     body = payload or {}
     origin = _resolve_origin(body.get("origin_url"), request)
     return await run_draft_reminder_sweep(origin, force=bool(body.get("force")))
+
+
+# --------------------------------------------------- teklif linkleri (paylasilabilir)
+@router.get("/admin/offer-links")
+async def admin_list_offer_links(admin: dict = Depends(require_admin)) -> dict:
+    """Son 60 teklif linki: durum, goruntulenme ve paylasim baglantilari."""
+    docs = await offer_links_col.find().sort("created_at", -1).limit(60).to_list(60)
+    items = [offer_links.admin_view(doc) for doc in docs]
+    return {
+        "items": items,
+        "total": len(items),
+        "active": sum(1 for item in items if item["status"] == "active"),
+        "used": sum(1 for item in items if item["status"] == "used"),
+        "site_url": offer_links.site_url(),
+    }
+
+
+@router.post("/admin/offer-links")
+async def admin_create_offer_link(payload: OfferLinkIn, admin: dict = Depends(require_admin)) -> dict:
+    doc = await offer_links.create_offer(payload, created_by=admin.get("sub", ""))
+    logger.info("offer link created: %s (%s)", doc["token"], doc["title"])
+    return offer_links.admin_view(doc)
+
+
+@router.delete("/admin/offer-links/{offer_id}")
+async def admin_disable_offer_link(offer_id: str, admin: dict = Depends(require_admin)) -> dict:
+    """Linki kapatir: musteri actiginda 404 doner (kayit gecmiste kalir)."""
+    result = await offer_links_col.update_one(
+        {"id": offer_id},
+        {"$set": {"active": False, "disabled_at": datetime.now(timezone.utc)}},
+    )
+    if not result.matched_count:
+        raise HTTPException(404, "Teklif bulunamadi.")
+    return {"ok": True, "id": offer_id, "status": "disabled"}

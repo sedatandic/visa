@@ -308,6 +308,22 @@ export default function Track() {    const [searchParams] = useSearchParams();
                                                 <FileDown className="mr-2 h-4 w-4" /> Başvuru formu (PDF)
                                             </a>
                                         </Button>
+                                        {result.payment?.status === "paid" && (
+                                            <Button
+                                                asChild
+                                                variant="secondary"
+                                                className="h-10 border border-border"
+                                                data-testid="tracking-download-receipt-button"
+                                            >
+                                                <a
+                                                    href={`${API}/applications/receipt.pdf?code=${encodeURIComponent(result.reference_code)}&last_name=${encodeURIComponent(lastName)}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                >
+                                                    <FileDown className="mr-2 h-4 w-4" /> Ödeme özeti (PDF)
+                                                </a>
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
 

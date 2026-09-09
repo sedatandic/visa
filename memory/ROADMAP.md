@@ -69,6 +69,9 @@
       143 → 90 satır, C901 düştü, 32 birim testi (`test_iteration_117_zami_fill_steps.py`).
 
 ## P2
+- [x] ~~Paylasilabilir aile paketi / teklif linki~~ -> 2026-06-16: Admin -> Teklif
+      Linkleri (`/admin/teklifler`) + musteri sayfasi `/teklif/<token>` + `?teklif=` ile
+      basvuru on dolumu tamamlandi (bkz. CHANGELOG 2026-06-16).
 - [ ] Eski test dosyalarındaki katalog beklentileri güncellenmeli: `test_visa_categories.py`,
       `test_tour_safari.py`, `test_iteration_48.py::TestVisaPrices`, `test_zami_otp_fix.py`.
 - [ ] `backend_test.py` içindeki çok uzun test fonksiyonlarının bölünmesi.

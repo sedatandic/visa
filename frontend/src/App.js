@@ -25,6 +25,7 @@ import Insurance from "./pages/Insurance";
 import Cart from "./pages/Cart";
 import Tours from "./pages/Tours";
 import OrderStatus from "./pages/OrderStatus";
+import Offer from "./pages/Offer";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import AdminLogin from "./pages/AdminLogin";
@@ -42,6 +43,7 @@ import AdminBankTransfer from "./pages/AdminBankTransfer";
 import AdminCompany from "./pages/AdminCompany";
 import AdminSocial from "./pages/AdminSocial";
 import AdminInstagram from "./pages/AdminInstagram";
+import AdminOffers from "./pages/AdminOffers";
 import AdminZami from "./pages/AdminZami";
 import AdminWhatsApp from "./pages/AdminWhatsApp";
 import AdminVisitors from "./pages/AdminVisitors";
@@ -92,6 +94,7 @@ function App() {
                     <Route path="/sepet" element={<Site><Cart /></Site>} />
                     <Route path="/dubai-turlari" element={<Site><Tours /></Site>} />
                     <Route path="/siparis/:reference" element={<Site><OrderStatus /></Site>} />
+                    <Route path="/teklif/:token" element={<Site><Offer /></Site>} />
                     <Route path="/odeme/basarili" element={<Site><PaymentSuccess /></Site>} />
                     <Route path="/odeme/iptal" element={<Site><PaymentCancel /></Site>} />
 
@@ -110,6 +113,7 @@ function App() {
                     <Route path="/admin/acente" element={<RequireAdmin><AdminCompany /></RequireAdmin>} />
                     <Route path="/admin/sosyal-medya" element={<RequireAdmin><AdminSocial /></RequireAdmin>} />
                     <Route path="/admin/instagram" element={<RequireAdmin><AdminInstagram /></RequireAdmin>} />
+                    <Route path="/admin/teklifler" element={<RequireAdmin><AdminOffers /></RequireAdmin>} />
                     <Route path="/admin/zami" element={<RequireAdmin><AdminZami /></RequireAdmin>} />
                     <Route path="/admin/whatsapp" element={<RequireAdmin><AdminWhatsApp /></RequireAdmin>} />
                     <Route path="/admin/ziyaretciler" element={<RequireAdmin><AdminVisitors /></RequireAdmin>} />

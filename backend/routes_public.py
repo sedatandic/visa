@@ -21,7 +21,7 @@ from fastapi import (
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from application_docs import application_email_bundle, application_form_bytes, form_filename
-
+from payment_receipt_pdf import build_receipt_pdf, receipt_filename
 from content import (
     MARKETING_CONSENT,
     PRIVACY_POLICY,
@@ -57,6 +57,7 @@ from db import (
     applications_col,
     articles_col,
     contact_col,
+    offer_links_col,
     serialize_doc,
     settings_col,
     testimonials_col,
@@ -78,6 +79,7 @@ from visitors import client_ip as visitor_client_ip, is_bot, record_visit
 from store_catalog import MAX_QTY, product_list, tour_schedule
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
 import ocr_metrics
+import offer_links
 import social_links
 from passport_ai import apply_background_report, background_report, check_photo, read_passport
 from rate_limit import allow as rate_allow, check as rate_check, client_ip
@@ -507,6 +509,29 @@ async def pricing_quote(payload: QuoteRequest):
     quote["trip_days"] = trip_day_count(payload.arrival_date, payload.departure_date)
     quote["fx"] = await get_fx()
     return quote
+
+
+@router.get("/offers/{token}")
+async def get_offer_link(token: str, request: Request) -> dict:
+    """Yoneticinin hazirladigi teklif linki: musteriye gosterilecek ozet + guncel fiyat."""
+    rate_check(
+        f"offer-view-ip:{client_ip(request)}",
+        120,
+        3600,
+        "Cok fazla istek. Lutfen birkac dakika sonra tekrar deneyin.",
+    )
+    doc = await offer_links_col.find_one({"token": (token or "").strip()})
+    if not doc or not doc.get("active", True):
+        raise HTTPException(404, "Teklif bulunamadı. Lütfen danışmanınızdan yeni bir bağlantı isteyin.")
+    if offer_links.is_expired(doc):
+        raise HTTPException(
+            404, "Bu teklifin geçerlilik süresi doldu. Güncel fiyat için bize yazabilirsiniz."
+        )
+    await offer_links_col.update_one(
+        {"token": doc["token"]},
+        {"$inc": {"views": 1}, "$set": {"last_viewed_at": datetime.now(timezone.utc)}},
+    )
+    return await offer_links.public_view(doc)
 
 
 # ---------------------------------------------------------------- uploads
@@ -1117,6 +1142,13 @@ async def application_form_pdf(code: str, last_name: str):
     return pdf_response(await application_form_bytes(doc), form_filename(doc))
 
 
+@router.get("/applications/receipt.pdf")
+async def application_receipt_pdf(code: str, last_name: str):
+    """Takip kodu + soyad ile odeme ozetini (PDF) indirir."""
+    doc = await _find_application_for_tracking(code, last_name)
+    return pdf_response(build_receipt_pdf(serialize_doc(doc)), receipt_filename(doc))
+
+
 def _validate_insurance_identity(travelers: list, store_lines: list) -> None:
     """Sigorta secildiyse her yolcu icin gecerli TC kimlik no zorunludur (police sarti)."""
     if not any((line.get("kind") or "") == "insurance" for line in store_lines):
@@ -1164,6 +1196,7 @@ async def create_application(payload: ApplicationCreate, request: Request):
 
     await _link_store_order(doc, store_lines)
     await _after_application_created(doc, travelers)
+    await offer_links.mark_used(payload.offer_token or "", doc)
     email_result = await _send_application_emails(doc, len(travelers))
 
     result = public_application_view(doc)

@@ -455,6 +455,20 @@ export default function AdminApplicationDetail() {
         }
     };
 
+    const downloadReceipt = async () => {
+        try {
+            const res = await api.get(`/admin/applications/${id}/receipt.pdf`, { responseType: "blob" });
+            const url = URL.createObjectURL(res.data);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `Odeme-Ozeti-${a.reference_code}.pdf`;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            toast.error(apiError(e, "Ödeme özeti indirilemedi."));
+        }
+    };
+
     return (
         <AdminLayout>
             <div data-testid="admin-application-detail">
@@ -462,9 +476,14 @@ export default function AdminApplicationDetail() {
                     <Button variant="secondary" className="h-10 border border-border" onClick={() => navigate("/admin")} data-testid="admin-back-to-list">
                         <ArrowLeft className="mr-2 h-4 w-4" /> Başvurular
                     </Button>
-                    <Button variant="secondary" className="h-10 border border-border" onClick={downloadForm} data-testid="admin-download-form-button">
-                        <FileDown className="mr-2 h-4 w-4" /> Başvuru formu (PDF)
-                    </Button>
+                    <div className="flex flex-wrap gap-2.5">
+                        <Button variant="secondary" className="h-10 border border-border" onClick={downloadForm} data-testid="admin-download-form-button">
+                            <FileDown className="mr-2 h-4 w-4" /> Başvuru formu (PDF)
+                        </Button>
+                        <Button variant="secondary" className="h-10 border border-border" onClick={downloadReceipt} data-testid="admin-download-receipt-button">
+                            <FileDown className="mr-2 h-4 w-4" /> Ödeme özeti (PDF)
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="mt-5 flex flex-wrap items-start justify-between gap-4">

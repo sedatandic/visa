@@ -2246,3 +2246,54 @@ Masaüstü görünüm hiçbir bölümde değişmedi (tüm değişiklikler `sm:`/
   genişletildi. Tüm suite: **555 passed / 5 skipped**.
 - Kullanıcı aksiyonu: canlıda numara ya bir sonraki deploy'da kendiliğinden düzelir ya da
   hemen Admin → Acente Bilgileri ekranından güncellenebilir.
+
+## 2026-06-16 (fork) · Teklif Linkleri (paylasilabilir teklif · P2 backlog)
+Roadmap'teki "paylasilabilir aile paketi linki" maddesi hayata gecirildi: yonetici
+WhatsApp'ta konusurken hazir bir teklif olusturuyor, musteri linki acip tutari goruyor ve
+tek tikla ayni secimlerle basvuru formuna geciyor.
+
+### Backend
+- Yeni `backend/offer_links.py`: 12 karakterlik tahmin edilemez jeton (`secrets.token_urlsafe`),
+  gecerlilik (varsayilan 14 gun, en fazla 90), durum makinesi (`active` > `used` > `expired` >
+  `disabled`), `wa_number()` TR numara normalizasyonu, hazir WhatsApp paylasim metni,
+  `price_offer()` (fiyat basvuru akisiyla ayni: `compute_pricing` + `resolve_store_lines` +
+  `addon_prices_try`), `public_view()` (her goruntulemede yeniden fiyatlar; urun pasife
+  alinmissa kayitli tutara duser), `mark_used()` donusum takibi.
+- `db.py`: `offer_links` koleksiyonu + `token` unique index.
+- `models.py`: `OfferTravelerIn`, `OfferLinkIn`; `ApplicationCreate.offer_token`.
+- Admin uclari (`routes_admin.py`): `GET/POST /api/admin/offer-links`,
+  `DELETE /api/admin/offer-links/{id}` (linki kapatir, kayit gecmiste kalir).
+- Musteri ucu (`routes_public.py`): `GET /api/offers/{token}` — IP basina saatte 120 istek
+  siniri, goruntulenme sayaci, kapatilmis/suresi dolmus/bilinmeyen jeton icin 404 (ayri metin).
+  `POST /api/applications` icinde `offer_links.mark_used()` ile teklif basvuruya baglanir.
+- **Gizlilik**: public yanitta yalniz musteri ADI var; telefon/e-posta gonderilmez (link
+  sizarsa kisisel veri acilmasin). Basvuru formu da yalniz adi on dolduruyor.
+
+### Frontend
+- Yeni `pages/AdminOffers.jsx` + route `/admin/teklifler` (menu: Musteri Iletisimi ->
+  "Teklif Linkleri"): yolcu satirlari (yetiskin/cocuk + vize tipi), ekspres anahtari,
+  sigorta/eSIM/tur secimi, opsiyonel tarihler, musteriye gorunen not, gecerlilik gunu;
+  `POST /api/pricing/quote` ile CANLI tutar; olusturunca link panoya kopyalanir ve
+  "WhatsApp'tan gonder" butonu hazir metinle wa.me'yi acar. Liste: durum rozeti, tutar,
+  goruntulenme, donusen basvurunun referans kodu, Kopyala / Kapat.
+- Yeni `pages/Offer.jsx` + route `/teklif/:token` (noindex): teklif tutari, yolcu ve vize
+  satirlari, fiyat dokumu (aile/paket/sigorta indirimleri dahil), gecerlilik etiketi, not,
+  "Basvuruyu tamamla" CTA'si, WhatsApp'tan soru sor, TURSAB guven satiri; hata durumunda
+  offer-error karti + yeni teklif isteme CTA'si.
+- `Apply.jsx`: `?teklif=<token>` okunup yolcu sayisi/vize tipleri, ekspres, sigorta, eSIM,
+  tur (tarih/saat) ve tarihler forma yukleniyor; ustte "Size hazirlanan teklif" bandi
+  (`apply-offer-banner`) ve gonderimde `offer_token` tasiniyor.
+- **Onemli kural**: sihirbaz sigortayi her zaman kisi basi ekliyor; teklif formunda sigorta
+  adedi yolcu sayisina esitlendi -> teklif tutari ile basvuru ozeti birebir ayni.
+
+### Test
+- `backend/tests/test_iteration_133_offer_links.py` (15 test): jeton/durum/wa numarasi/paylasim
+  metni, admin olusturma, tutarin `/pricing/quote` ile ayni olmasi, listeleme, jetonsuz erisim,
+  gecersiz vize tipi 400, musteri ucu + goruntulenme sayaci, kapatma/suresi dolma/bilinmeyen
+  jeton 404, `mark_used` donusumu. Tum suite: **590 passed / 3 skipped**.
+- testing_agent iteration_118: frontend **%100** (9/9 senaryo, defect yok). Dogrulandi: canli
+  tutar 5.190 -> 15.364 ₺ akisi, WA href, teklif sayfasi, basvuru on dolumu ve
+  `apply-offer-total` = `wizard-stepper-total` = `summary-total-price` esitligi.
+- Test sirasinda olusan 13 teklif kaydi DB'den silindi (panel temiz).
+- Teknik borc (testing_agent notu): `AdminOffers.jsx` 535 satir; OfferForm/OfferList/
+  useLiveQuote olarak bolunebilir (islev etkilenmiyor).
