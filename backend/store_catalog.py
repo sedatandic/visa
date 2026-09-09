@@ -131,6 +131,25 @@ INSURANCE_PRODUCTS = [
     _insurance("ins_60d", 60, 367.55, order=4),
 ]
 
+DESERT_GALLERY = [
+    {
+        "url": "https://images.unsplash.com/photo-1506645728556-ac574e628eca?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+        "caption": "4×4 Land Cruiser ile kumul safarisi",
+    },
+    {
+        "url": "https://images.unsplash.com/photo-1624062999803-976e1adc8ea2?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+        "caption": "ATV (quad) safari",
+    },
+    {
+        "url": "https://images.unsplash.com/photo-1760529697940-45dfa4f1cd84?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+        "caption": "Gün batımında deve turu",
+    },
+    {
+        "url": "https://images.unsplash.com/photo-1553522988-49daec855a59?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+        "caption": "Bedevi kampı ve akşam programı",
+    },
+]
+
 # Dubai aktiviteleri: teslimat/rezervasyon acente eliyle yapilir
 DESERT_ITINERARY = [
     "15:00 · Otelinizden alınış, çöl bölgesine yaklaşık 40 dakika yolculuk",
@@ -157,8 +176,9 @@ TOUR_PRODUCTS = [
             "30 dakika kumul safarisi ve kum sörfü",
             "Bedevi kampında deve turu, kına ve açık büfe akşam yemeği",
             "Ateş ve dans gösterileriyle akşam programı",
-            "Ortalama 7–8 saat · otelden alınış 15:00",
+            "Ortalama 6–7 saat · otelden alınış 15:00, dönüş 21:00 – 22:00",
         ],
+        "gallery": DESERT_GALLERY,
         "itinerary": DESERT_ITINERARY[:2]
         + ["İsteğe bağlı 30 dakika ATV safari (+40 USD); istemeyen misafirler dinlenme ve alışveriş alanında vakit geçirir"]
         + DESERT_ITINERARY[2:],
@@ -179,8 +199,9 @@ TOUR_PRODUCTS = [
             "30 dakika ATV (quad) safari ve kum sörfü dahil",
             "VIP kamp masası, sınırsız içecek ikramı",
             "Ateş gösterisi, tanura ve canlı müzik",
-            "Ortalama 7–8 saat · otelden alınış 15:00",
+            "Ortalama 6–7 saat · otelden alınış 15:00, dönüş 21:00 – 22:00",
         ],
+        "gallery": DESERT_GALLERY,
         "itinerary": DESERT_ITINERARY[:2]
         + ["30 dakika ATV (quad) safari · VIP pakete dahil, ek ücret yok"]
         + DESERT_ITINERARY[2:],

@@ -396,7 +396,7 @@ function buildStaticPages(ctx) {
             changefreq: "monthly",
             title: `Dubai Çöl Safarisi | ${BRAND}`,
             description:
-                "Dubai çöl safarisi: 4×4 Land Cruiser ile kumul turu, kum sörfü, deve turu ve Bedevi kampında açık büfe akşam yemeği. Otelden alınış 15:00.",
+                "Dubai çöl safarisi: 4×4 Land Cruiser ile kumul turu, kum sörfü, deve turu ve Bedevi kampında açık büfe akşam yemeği. Otelden alınış 15:00, dönüş 21:00 – 22:00.",
             h1: "Dubai Çöl Safarisi",
             intro: [
                 "Dubai çöl safarisi turunu tarih seçerek sepete ekleyin; rezervasyonunuzu biz yapar, kupon ve buluşma bilgilerini e-postanıza göndeririz.",

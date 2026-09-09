@@ -2621,3 +2621,16 @@ Dogrulama: `pytest` 602 passed / 5 skipped; `order_delivered_html` link render k
   15:00 slotu, 8 adimli program), /basvuru ozet kart genisligi.
 - NOT (kullaniciya soruldu): 15:00 alinis + 21:00-22:00 donus ~6-7 saat ediyor ama
   metinde "Ortalama 7–8 saat" yaziyor; kullanici onayina birakildi.
+
+### 2026-06-17 (devam) · Tur suresi tutarliligi + col safarisi foto galerisi
+- **Sure duzeltildi**: 15:00 alinis + 21:00-22:00 donus ile uyumlu olacak sekilde tum
+  metinler "Ortalama 6–7 saat · otelden alinis 15:00, donus 21:00 – 22:00" oldu
+  (store_catalog features x2, HomeTourStrip highlight, Tours.jsx PageHeader + setMeta,
+  seo-pages.js description, DB dokumanlari).
+- **Foto galerisi**: urunlere `gallery` alani eklendi (4 gercek col safarisi fotografi:
+  4×4 kumul safarisi, ATV, deve turu, Bedevi kampi). Tours.jsx TourCard'da ana gorsel
+  + 5 kucuk kare (`tour-gallery-<id>`, `tour-gallery-thumb-<id>-<i>`); tiklaninca ana
+  gorsel degisiyor, alt kisimda Turkce aciklama gorunuyor (animate-in fade-in).
+  Gorseller image_selector_tool ile Unsplash'ten secildi, hepsi HTTP 200.
+- Dogrulama: pytest 25 tur testi gecti; /dubai-turlari 1440px ekran goruntusu (galeri
+  gecisi, tek 15:00 slotu, guncel sure metni), kirik gorsel yok.

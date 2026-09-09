@@ -19,6 +19,11 @@ const TourCard = ({ product, onAdd, inCart }) => {
     const [slot, setSlot] = useState((product.time_slots || [])[0] || "");
     const [qty, setQty] = useState(1);
     const [planOpen, setPlanOpen] = useState(false);
+    const shots = [{ url: product.image_url, caption: product.name }, ...(product.gallery || [])].filter(
+        (s) => s.url
+    );
+    const [shotIndex, setShotIndex] = useState(0);
+    const shot = shots[Math.min(shotIndex, shots.length - 1)];
 
     return (
         <div
@@ -28,12 +33,13 @@ const TourCard = ({ product, onAdd, inCart }) => {
             style={{ boxShadow: product.popular ? "var(--shadow-soft)" : "var(--shadow-card)" }}
             data-testid={`tour-card-${product.id}`}
         >
-            {product.image_url && (
+            {shot && (
                 <div className="relative aspect-[16/9] w-full overflow-hidden">
                     <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="absolute inset-0 h-full w-full object-cover"
+                        key={shot.url}
+                        src={shot.url}
+                        alt={shot.caption || product.name}
+                        className="absolute inset-0 h-full w-full object-cover animate-in fade-in duration-500"
                         loading="lazy"
                     />
                     {(product.popular || inCart) && (
@@ -48,6 +54,38 @@ const TourCard = ({ product, onAdd, inCart }) => {
                             {inCart ? `Sepette · ${inCart.quantity} kişi` : "En çok tercih edilen"}
                         </span>
                     )}
+                    {shotIndex > 0 && shot.caption && (
+                        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-8 text-xs font-semibold text-white">
+                            {shot.caption}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {shots.length > 1 && (
+                <div className="flex gap-2 px-4 pt-4" data-testid={`tour-gallery-${product.id}`}>
+                    {shots.map((s, i) => (
+                        <button
+                            key={s.url}
+                            type="button"
+                            onClick={() => setShotIndex(i)}
+                            aria-label={s.caption || `Fotoğraf ${i + 1}`}
+                            aria-current={i === shotIndex}
+                            className={`relative h-12 flex-1 overflow-hidden rounded-lg border-2 transition-[border-color,opacity] duration-200 ${
+                                i === shotIndex
+                                    ? "border-primary opacity-100"
+                                    : "border-transparent opacity-70 hover:opacity-100"
+                            }`}
+                            data-testid={`tour-gallery-thumb-${product.id}-${i}`}
+                        >
+                            <img
+                                src={s.url}
+                                alt=""
+                                className="absolute inset-0 h-full w-full object-cover"
+                                loading="lazy"
+                            />
+                        </button>
+                    ))}
                 </div>
             )}
 
@@ -190,7 +228,7 @@ export default function Tours() {
     useEffect(() => {
         setMeta(
             "Dubai Çöl Safarisi | Dubai Vize Hattı",
-            "Dubai çöl safarisi: 4×4 Land Cruiser ile kumul turu, kum sörfü, deve turu ve Bedevi kampında açık büfe akşam yemeği. Otelden alınış 15:00, ortalama 7–8 saat.",
+            "Dubai çöl safarisi: 4×4 Land Cruiser ile kumul turu, kum sörfü, deve turu ve Bedevi kampında açık büfe akşam yemeği. Otelden alınış 15:00, ortalama 6–7 saat.",
             { canonicalPath: "/dubai-turlari" }
         );
     }, []);
@@ -231,7 +269,7 @@ export default function Tours() {
             <PageHeader
                 eyebrow="Dubai turları"
                 title="Dubai Çöl Safarisi"
-                description="Dubai çöl safarisi turunu tarih seçerek sepete ekleyin; otelinizden alınış saati 15:00, tur ortalama 7–8 saat sürer. Rezervasyonunuzu biz yapar, kupon ve buluşma bilgilerini e-postanıza göndeririz."
+                description="Dubai çöl safarisi turunu tarih seçerek sepete ekleyin; otelinizden alınış 15:00, dönüş 21:00 – 22:00 (ortalama 6–7 saat). Rezervasyonunuzu biz yapar, kupon ve buluşma bilgilerini e-postanıza göndeririz."
             />
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
