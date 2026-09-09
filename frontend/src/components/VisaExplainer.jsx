@@ -295,12 +295,12 @@ export const VisaExplainer = () => {
                             </div>
 
                             {scene.cta && (
-                                <div className="mt-4 flex items-center gap-2.5">
+                                <div className="mt-4 flex flex-wrap items-center gap-2.5">
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: 0.35, duration: 0.4 }}
-                                        className="flex shrink-0 items-center gap-2 rounded-xl border border-primary/25 bg-white/90 px-2.5 py-1.5 shadow-sm"
+                                        className="flex min-w-0 items-center gap-2 rounded-xl border border-primary/25 bg-white/90 px-2.5 py-1.5 shadow-sm"
                                         data-testid="explainer-tursab-seal"
                                     >
                                         <img

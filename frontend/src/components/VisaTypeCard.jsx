@@ -4,13 +4,24 @@ import { ArrowRight, Check, Clock, Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { applyPath, formatMoney, formatUsd } from "../lib/site";
 
-export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false, hasGuide = false }) => {
+export const VisaTypeCard = ({
+    visa,
+    onSelect,
+    onHighlight,
+    selected = false,
+    compact = false,
+    hasGuide = false,
+}) => {
     const isPopular = !!visa.popular;
+    // Bilgilendirme sayfalarinda kart tiklaninca yalnizca cerceve vurgulanir (onHighlight);
+    // basvuru formunda ise vize gercekten secilir (onSelect).
+    const pick = onSelect || onHighlight;
+    const popularEmphasis = isPopular && !onHighlight;
 
     // Kart yalnizca secim modunda (basvuru formu) tiklanabilir; bilgilendirme
     // sayfalarinda kullanicinin istemeden forma yonlendirilmesini engellemek icin
     // yalnizca "Basvuruya basla" butonu yonlendirir.
-    const clickable = !!onSelect;
+    const clickable = !!pick;
 
     return (
         <div
@@ -18,15 +29,16 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
             role={clickable ? "button" : undefined}
             tabIndex={clickable ? 0 : undefined}
             aria-label={clickable ? `${visa.name} vizesini seç` : undefined}
+            aria-pressed={onHighlight ? selected : undefined}
             onClick={clickable ? (e) => {
                 if (e.target.closest("a,button")) return;
-                onSelect(visa);
+                pick(visa);
             } : undefined}
             onKeyDown={clickable ? (e) => {
                 if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     if (e.target.closest("a,button")) return;
-                    onSelect(visa);
+                    pick(visa);
                 }
             } : undefined}
             className={`group relative flex h-full flex-col overflow-hidden rounded-[var(--radius-lg)] border bg-card transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] focus-visible:outline-none ${
@@ -34,18 +46,18 @@ export const VisaTypeCard = ({ visa, onSelect, selected = false, compact = false
             } ${
                 selected
                     ? "border-primary ring-2 ring-primary/25"
-                    : isPopular
+                    : popularEmphasis
                       ? "border-foreground/25 ring-1 ring-foreground/10"
                       : "border-border hover:border-foreground/20"
             }`}
-            style={{ boxShadow: isPopular || selected ? "var(--shadow-soft)" : "var(--shadow-card)" }}
+            style={{ boxShadow: popularEmphasis || selected ? "var(--shadow-soft)" : "var(--shadow-card)" }}
         >
             <span
                 className={`h-1 w-full shrink-0 ${
-                    selected
+                    selected || popularEmphasis
                         ? "bg-primary"
                         : isPopular
-                          ? "bg-primary"
+                          ? "bg-primary/40"
                           : "bg-border"
                 }`}
                 aria-hidden="true"

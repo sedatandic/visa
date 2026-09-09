@@ -1426,3 +1426,33 @@ Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
    `title_head` stili); yolcu tablosu "Son Gecerlilik Tarihi" -> "Gecerlilik Tarihi"
    (kolonlar 6/40/22/26/24/36/26 mm).
 - pytest 505 passed / 5 skipped; ana sayfa + /vize-tipleri ekran goruntuleriyle dogrulandi.
+
+## 2026-06-15 (5) · Mobil rotuslar + kart secimi + extras gorseli
+1. **extras.png yer degistirildi**: kalkan (seyahat sagligi sigortasi) SOLA, telefon (eSIM)
+   SAGA alindi — sahne basligi "Seyahat sigortasi ve Dubai eSIM" ile ayni sira.
+   `scripts/swap_extras_sides.py`: gorsel yatay aynalanir, dort metin ogesi (iki etiket,
+   rozet yazisi, cip ici "eSIM") genisletilmis maskeyle temizlenip blok halinde duz yazilir.
+   Yedek: /tmp/extras.prev.png (orijinal frontend/public/explainer/extras.old.jpg da duruyor).
+2. **Anlatim CTA butonu mobilde tam gorunuyor**: `VisaExplainer` cta satiri `flex-wrap`,
+   TURSAB muhru `shrink-0` yerine `min-w-0` — buton alt satira sarkiyor, kesilmiyor.
+3. **Paket kartlari mobilde ekrana sigiyor**: `HomeBundleStrip` kart genisligi
+   `w-[87
+## 2026-06-15 (5) · Mobil rotuslar + kart secimi + extras gorseli
+1. **extras.png yer degistirildi**: kalkan (seyahat sagligi sigortasi) SOLA, telefon (eSIM)
+   SAGA alindi — sahne basligi "Seyahat sigortasi ve Dubai eSIM" ile ayni sira.
+   `scripts/swap_extras_sides.py`: gorsel yatay aynalanir, dort metin ogesi (iki etiket,
+   rozet yazisi, cip ici "eSIM") genisletilmis maskeyle temizlenip blok halinde duz yazilir.
+   Yedek: /tmp/extras.prev.png (extras.old.jpg da duruyor).
+2. **Anlatim CTA butonu mobilde tam gorunuyor**: `VisaExplainer` cta satiri `flex-wrap`,
+   TURSAB muhru `shrink-0` yerine `min-w-0` — buton alt satira sarkiyor, kesilmiyor.
+3. **Paket kartlari mobilde ekrana sigiyor**: `HomeBundleStrip` kart genisligi
+   `w-[87%]` -> `w-full` (lg`de grid ayni); kaydirma ipucu duruyor.
+4. **Vize karti secimi (kullanici istegi)**: /vize-tipleri sayfasinda "en cok tercih edilen"
+   kart kalici vurgulu kaliyordu. `VisaTypeCard` yeni `onHighlight` prop`u aldi (secim
+   modundan ayri: yalnizca cerceve vurgular, CTA metni degismez); populer vurgusu artik
+   `popularEmphasis = isPopular && !onHighlight`. `PricingTabs` `pickedId` state`i tutuyor;
+   baslangicta populer kart vurgulu, tiklanan kart vurguyu aliyor, sekme degisince sifirlanir.
+- Dogrulama: 390px viewport`ta CTA butonu tam (x=58 w=148), paket karti 358px genislikte
+  (ekrana sigiyor), extras sahnesi ekran goruntusuyle kontrol edildi; /vize-tipleri
+  tiklama oncesi/sonrasi computed border renkleri dogrulandi (populer -> notr,
+  tiklanan -> primary).

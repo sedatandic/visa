@@ -19,6 +19,7 @@ export const PricingTabs = ({ compactHeading = false }) => {
     const [discountText, setDiscountText] = useState("");
     const [guideSlugs, setGuideSlugs] = useState([]);
     const [active, setActive] = useState("single");
+    const [pickedId, setPickedId] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -35,6 +36,11 @@ export const PricingTabs = ({ compactHeading = false }) => {
     }, []);
 
     const visible = visaTypes.filter((v) => (v.category || "single") === active);
+    // Baslangicta "en cok tercih edilen" kart vurgulu gelir; kullanici baska bir karta
+    // tiklarsa vurgu o karta gecer.
+    const highlightedId = visible.some((v) => v.id === pickedId)
+        ? pickedId
+        : visible.find((v) => v.popular)?.id;
 
     return (
         <div data-testid="pricing-tabs">
@@ -50,7 +56,10 @@ export const PricingTabs = ({ compactHeading = false }) => {
                             type="button"
                             role="tab"
                             aria-selected={active === c.id}
-                            onClick={() => setActive(c.id)}
+                            onClick={() => {
+                                setActive(c.id);
+                                setPickedId(null);
+                            }}
                             data-testid={`pricing-tab-${c.id}`}
                             className={`min-h-[44px] rounded-xl px-4 text-sm font-bold transition-colors duration-150 focus-visible:outline-none ${
                                 active === c.id
@@ -103,6 +112,8 @@ export const PricingTabs = ({ compactHeading = false }) => {
                               key={visa.id}
                               visa={visa}
                               hasGuide={guideSlugs.includes(visa.slug)}
+                              selected={visa.id === highlightedId}
+                              onHighlight={(v) => setPickedId(v.id)}
                           />
                       ))}
             </div>

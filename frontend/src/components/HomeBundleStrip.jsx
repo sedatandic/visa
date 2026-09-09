@@ -320,7 +320,7 @@ export const HomeBundleStrip = () => {
 
                 <div className="mt-7 -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0 lg:pb-0">
                     {bundles.map((b) => (
-                        <div key={b.id} className="w-[87%] shrink-0 snap-start lg:w-auto">
+                        <div key={b.id} className="w-full shrink-0 snap-start lg:w-auto">
                             <BundleCard bundle={b} highlighted={b.id === popularId} />
                         </div>
                     ))}

@@ -66,6 +66,14 @@ MARITAL_LABELS = {
     "divorced": "Boşanmış",
     "widowed": "Eşi vefat etmiş",
 }
+NATIONALITY_LABELS = {
+    "TR": "Türkiye",
+    "TUR": "Türkiye",
+    "TURKEY": "Türkiye",
+    "TÜRKIYE": "Türkiye",
+    "TURKIYE": "Türkiye",
+    "TÜRKİYE": "Türkiye",
+}
 TRAVEL_WINDOWS = {
     "this_month": "Bu ay içinde",
     "1_3_months": "1-3 ay içinde",
@@ -94,6 +102,12 @@ def _safe(value) -> str:
     """Kullanici metnini ReportLab markup'ina karsi kacisir (etiket enjeksiyonu/dis kaynak yok)."""
     text = str(value).strip() if value not in (None, "") else "-"
     return xml_escape(text)
+
+
+def _nationality(value) -> str:
+    """Pasaport/uyruk kodunu okunur ulke adina cevirir (TR -> Türkiye)."""
+    raw = str(value or "").strip()
+    return NATIONALITY_LABELS.get(raw.upper(), raw)
 
 
 def _date(value) -> str:
@@ -126,19 +140,17 @@ def _styles() -> dict:
 
 
 def _header(app_doc: dict, st: dict) -> Table:
-    right = [Paragraph("Dubai Vizesi<br/>Başvuru Detayları", st["title_head"])]
-    cells = []
+    """Solda logo, ortada (sayfa merkezinde) iki satirlik baslik."""
     if os.path.exists(LOGO_FILE):
-        cells.append(Image(LOGO_FILE, width=52 * mm, height=52 * mm * 0.23, kind="proportional"))
+        logo = Image(LOGO_FILE, width=52 * mm, height=52 * mm * 0.23, kind="proportional")
     else:
-        cells.append(Paragraph(BRAND, st["title"]))
-    cells.append(right)
-    table = Table([cells], colWidths=_cols(56, 124))
+        logo = Paragraph(BRAND, st["title"])
+    title = Paragraph("Dubai Vizesi<br/>Başvuru Detayları", st["title_head"])
+    table = Table([[logo, title, ""]], colWidths=_cols(56, 68, 56))
     table.setStyle(
         TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (1, 0), (1, 0), "RIGHT"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                 ("LINEBELOW", (0, 0), (-1, -1), 1.4, GOLD),
@@ -302,7 +314,7 @@ def _traveler_extra_pairs(app_doc: dict) -> list:
         return []
     t = travelers[0]
     return [
-        ("Uyruk", t.get("nationality")),
+        ("Uyruğu", _nationality(t.get("nationality"))),
         ("Doğum yeri", t.get("birth_place")),
         ("Medeni hal", MARITAL_LABELS.get(t.get("marital_status") or "", t.get("marital_status"))),
         ("Meslek", t.get("profession")),
