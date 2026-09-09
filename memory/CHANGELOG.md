@@ -2381,3 +2381,50 @@ Ayrica yeni build'in JSON-LD telefonu **+90 538 483 82 24** (canlidaki eski buil
 +90 532 588 26 30 kalmisti) -> **bir sonraki deploy structured data telefonunu da duzeltir.**
 
 **NOT**: Duzeltme build zamaninda uretildigi icin canliya ancak **yeni bir deploy** ile iner.
+
+## 2026-06-16 · Adres degisikligi, e-posta kunyesi, konu satiri ve iletisim sayfasi sadelestirme
+
+### 1. Yeni sirket adresi (site + e-posta + PDF)
+Eski: "Maltepe Mah., Eski Çırpıcı Yolu Sk. No:8, Parima Plaza Kat:12 Ofis:146, 34010
+Zeytinburnu / İstanbul". Yeni: **"Büyükdere Caddesi Nurol Plaza No:255/B02, 34450 Sarıyer /
+İstanbul - Türkiye"**.
+- `content.py` COMPANY["address"] guncellendi (PDF, e-posta ve yasal metinlerin kaynagi).
+- Admin API (`PUT /api/admin/company`) uzerinden **hem preview hem CANLI (prod) veritabani**
+  guncellendi. DIKKAT: bu uc gonderilmeyen alanlari bos string ile ezebiliyor; bu yuzden once
+  `GET /api/admin/company` ile mevcut kayit okunup tam nesne geri yazildi (telefon/e-posta/
+  calisma saatleri korundu). Ayni yontem ileride de kullanilmali.
+  (urllib ile cagrida `User-Agent` sart: varsayilan python-urllib UA'sina ingress 403 veriyor.)
+- Frontend metinleri: `Contact.jsx` meta aciklamasi ve `CommitmentsStrip.jsx` "İstanbul ·
+  Zeytinburnu" -> "İstanbul · Sarıyer".
+- Dogrulama: form PDF + fatura PDF metninde yeni adres var/eski adres yok; canli
+  `/iletisim` sayfasi ve `/api/content/site` yeni adresi donuyor.
+- NOT: canli **yasal sayfalar (KVKK vb.)** ve prod surecinin urettigi PDF/e-posta alt bilgisi
+  `content.py` sabitini bellekte tuttugu icin **yeni deploy'a kadar** eski adresi gosterebilir.
+
+### 2. E-posta alt bilgisi artik PDF kunyesiyle birebir ayni
+- Yeni tek kaynak: `content.brand_footer_lines()` -> 4 satir (unvan · TÜRSAB üyesi A Grubu ·
+  telefon · e-posta · site / adres / marka-isletici notu / BAE grup sirketi).
+- `application_pdf._footer_paragraph()` bu fonksiyonu kullaniyor (PDF cikitisi ayni kaldi,
+  form/fatura notu en sona ekleniyor).
+- `emailer._contact_footer()` yeniden duzenlendi: ust blokta marka + tiklanabilir iletisim
+  linkleri + Dubai ofisi/calisma saatleri, en altta cizgiyle ayrilmis kunye blogu ve
+  "Bu e-posta ... yanitlayabilirsiniz" notu. Tekrar eden unvan/TÜRSAB satirlari ve ikinci
+  Istanbul adresi kaldirildi (adres kunyede 1 kez geciyor).
+
+### 3. Yonetici bildirimi konu satirinda yolcu adi ve alinan hizmetler
+- `emailer.admin_subject(doc)`: `Yeni başvuru: DV-PD884784 - Ekrem Sayaner - Vize + eSIM
+  (1 yolcu)`. Isim ilk yolcudan (yoksa iletisim adindan), hizmetler `store_items` kind'larindan
+  (Sigorta / eSIM / Tur) ve `addons.express` (Ekspres) ile uretilir.
+- `routes_public._send_application_emails` artik bu fonksiyonu kullaniyor.
+
+### 4. Iletisim sayfasi sadelestirildi (kullanici talebi)
+- Sag kolondaki **"Sosyal medyada takip edin"** karti ve **"Başvurunuz zaten var mı? /
+  Başvuru takip sayfası"** karti kaldirildi (`Contact.jsx`); kullanilmayan `SocialIcon`
+  import'u temizlendi.
+
+### 5. Kur kaynakli kirilgan test duzeltildi
+- `tests/test_iteration_102_family_quote.py`: tur/sigorta/eSIM tutarlari sabit yazildigi icin
+  USD kuru degisince (tur 2.220 -> 2.230 TL) 2 test kiriliyordu. Beklenen tutarlar artik
+  API'nin donen birim fiyatlarindan hesaplaniyor (indirim orani ve vize tutarlari sabit kaldi).
+- Suite: **591 passed / 3 skipped** (tek kalan hata, ust uste calistirmada tetiklenen
+  60 sn hesap kodu bekleme siniri; tek basina PASS).

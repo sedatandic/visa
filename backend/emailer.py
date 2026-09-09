@@ -15,6 +15,7 @@ from urllib.parse import quote
 
 from content import (
     COMPANY,
+    brand_footer_lines,
     GDRFA_HELPER_INTRO,
     GDRFA_INTRO,
     GDRFA_STATUS_URL,
@@ -81,6 +82,35 @@ def subject_with_ref(reference: str, tail: str) -> str:
     return f"{prefix}Dubai vize başvurunuz {tail}".strip()
 
 
+def admin_subject(doc: dict) -> str:
+    """Yonetici bildirimi konusu: 'Yeni başvuru: KOD - Yolcu Adı - Vize + eSIM (2 yolcu)'."""
+    travelers = doc.get("travelers") or []
+    name = ""
+    if travelers:
+        first = travelers[0]
+        name = " ".join(
+            str(first.get(key) or "").strip() for key in ("first_name", "last_name")
+        ).strip()
+    name = name or str((doc.get("contact") or {}).get("full_name") or "").strip()
+
+    kinds = {str(line.get("kind") or "") for line in (doc.get("store_items") or [])}
+    items = ["Vize"]
+    if "insurance" in kinds:
+        items.append("Sigorta")
+    if "esim" in kinds:
+        items.append("eSIM")
+    if "tour" in kinds:
+        items.append("Tur")
+    if (doc.get("addons") or {}).get("express"):
+        items.append("Ekspres")
+
+    parts = [f"Yeni başvuru: {str(doc.get('reference_code') or '').strip()}".strip()]
+    if name:
+        parts.append(name)
+    parts.append(" + ".join(items))
+    return f"{' - '.join(parts)} ({max(len(travelers), 1)} yolcu)"
+
+
 def _contact_footer() -> str:
     """Marka kunyesi: sirket unvanlari + telefon, WhatsApp, e-posta, adresler."""
     site = SITE_URL or "https://www.dubaivizehatti.com"
@@ -89,11 +119,6 @@ def _contact_footer() -> str:
     return f"""
     <tr><td style="padding:22px 26px 6px;background-color:#FBF6EC;border-top:1px solid {LINE};">
       <div style="font-size:13px;font-weight:bold;color:{INK};letter-spacing:.3px;">{BRAND}</div>
-      <div style="margin-top:5px;font-size:12px;line-height:19px;color:{MUTED};">
-        {COMPANY['legal_name']}<br />
-        BAE iştiraki: {COMPANY['dubai_company']}<br />
-        TÜRSAB üyesi {COMPANY['tursab_type']}
-      </div>
       <div style="margin-top:13px;font-size:12px;line-height:21px;">
         <a href="tel:{COMPANY['phone'].replace(' ', '')}" style="{link}">{COMPANY['phone']}</a>
         <span style="color:{LINE};">&nbsp;|&nbsp;</span>
@@ -104,13 +129,15 @@ def _contact_footer() -> str:
         <a href="{site}" style="{link}">{site_label}</a>
       </div>
       <div style="margin-top:11px;font-size:11px;line-height:18px;color:{FAINT};">
-        İstanbul: {COMPANY['address']}<br />
         Dubai: {COMPANY['dubai_address']} · {COMPANY['dubai_phone']}<br />
         Çalışma saatleri: {COMPANY['working_hours']}
       </div>
     </td></tr>
-    <tr><td style="padding:14px 26px 22px;background-color:#FBF6EC;font-size:11px;line-height:18px;color:{FAINT};">
-      Bu e-posta {BRAND} tarafından gönderilmiştir; sorularınız için doğrudan yanıtlayabilirsiniz.
+    <tr><td style="padding:14px 26px 22px;background-color:#FBF6EC;border-top:1px solid {LINE};font-size:11px;line-height:18px;color:{FAINT};">
+      {"<br />".join(brand_footer_lines(site_label=site_label))}
+      <div style="margin-top:9px;">
+        Bu e-posta {BRAND} tarafından gönderilmiştir; sorularınız için doğrudan yanıtlayabilirsiniz.
+      </div>
     </td></tr>
     """
 

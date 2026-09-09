@@ -558,7 +558,7 @@ COMPANY = {
     "email": "info@dubaivizehatti.com",
     "instagram": "https://www.instagram.com/dubaivizehatti/",
     "google_review": "https://www.google.com/search?q=Dubai+Vize+Hatt%C4%B1+yorumlar",
-    "address": "Maltepe Mahallesi, Eski Çırpıcı Yolu Sokak No:8, Parima Plaza Kat:12 Ofis:146, 34010 Zeytinburnu / İstanbul - Türkiye",
+    "address": "Büyükdere Caddesi Nurol Plaza No:255/B02, 34450 Sarıyer / İstanbul - Türkiye",
     "dubai_address": "Level 27, Unit 2705, Marina Plaza, Dubai Marina, Dubai - United Arab Emirates",
     "dubai_phone": "+971 50 867 26 30",
     "working_hours": "Hafta içi 09:00 - 19:00, Cumartesi 10:00 - 16:00",
@@ -599,6 +599,25 @@ def affiliation_note(company: dict | None = None) -> str:
         f"operasyonlar bu şirket tarafından yürütülmektedir. Birleşik Arap "
         f"Emirlikleri'ndeki grup şirketimiz **{dubai}**'dir."
     )
+
+
+def brand_footer_lines(company: dict | None = None, site_label: str = "www.dubaivizehatti.com") -> list:
+    """PDF ve e-postalarin en altinda kullanilan kunye satirlari (tek kaynak).
+
+    1) unvan · acente turu · telefon · e-posta · site
+    2) Istanbul ofis adresi
+    3) marka/isletici bilgisi
+    4) BAE grup sirketi
+    """
+    c = {**COMPANY, **(company or {})}
+    note = affiliation_note(c).replace("**", "")
+    first, _, second = note.partition("Birleşik Arap")
+    return [
+        f"{c['legal_name']} · TÜRSAB Üyesi {c['tursab_type']} · {c['phone']} · {c['email']} · {site_label}",
+        c["address"],
+        first.strip(),
+        f"Birleşik Arap{second}".strip(),
+    ]
 
 
 def family_discount_rate(traveler_count: int) -> float:

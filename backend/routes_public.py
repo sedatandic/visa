@@ -67,6 +67,7 @@ from db import (
 )
 from emailer import (
     admin_notify_html,
+    admin_subject,
     applicant_received_html,
     contact_admin_html,
     documents_completed_admin_html,
@@ -1031,7 +1032,7 @@ async def _send_application_emails(doc: dict, traveler_count: int) -> dict:
     if admin_email:
         await send_email(
             admin_email,
-            f"Yeni başvuru: {reference_code} ({traveler_count} yolcu)",
+            admin_subject(view),
             admin_notify_html(view, bundle["documents"], bundle["form_filename"]),
             kind="admin_new_application",
             meta={"reference_code": reference_code},

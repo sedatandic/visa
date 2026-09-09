@@ -24,7 +24,7 @@ const HIGHLIGHTS = [
 export const CommitmentsStrip = () => {
     const contact = useContact();
     const rows = [
-        { icon: MapPin, label: "Ofis", value: contact?.address ? "İstanbul · Zeytinburnu" : "İstanbul" },
+        { icon: MapPin, label: "Ofis", value: contact?.address ? "İstanbul · Sarıyer" : "İstanbul" },
         { icon: Tag, label: "Başvuru takibi", value: "Her başvuruya referans kodu" },
         { icon: Trash2, label: "Belge saklama", value: "90 gün, sonra içerik imha edilir" },
         { icon: Clock3, label: "Çalışma saatleri", value: contact?.workingHours || "Hafta içi 09:00 - 19:00" },

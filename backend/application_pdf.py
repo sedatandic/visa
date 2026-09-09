@@ -26,7 +26,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from content import COMPANY, affiliation_note
+from content import brand_footer_lines
 from emailer import BRAND
 from emailer import money as _money_html
 from phone_format import format_phone
@@ -529,16 +529,8 @@ def _track_band(app_doc: dict, st: dict) -> Table:
 
 
 def _footer_paragraph(st: dict, note: str = FORM_NOTE) -> Paragraph:
-    # marka/isletici bilgisi tek kaynaktan gelir (content.affiliation_note),
-    # her cumle tek satirda kalsin diye cumleler arasina satir sonu konur
-    affiliation = affiliation_note().replace("**", "").replace(". Birleşik", ".<br/>Birleşik")
-    text = (
-        f"{COMPANY['legal_name']} · TÜRSAB Üyesi {COMPANY['tursab_type']} · "
-        f"{COMPANY['phone']} · {COMPANY['email']} · www.dubaivizehatti.com<br/>"
-        f"{COMPANY['address']}<br/>"
-        f"{affiliation}<br/>"
-        f"{note}"
-    )
+    # Kunye tek kaynaktan gelir (content.brand_footer_lines); her satir alt alta yazilir
+    text = "<br/>".join(brand_footer_lines() + [note])
     return Paragraph(text, st["foot"])
 
 

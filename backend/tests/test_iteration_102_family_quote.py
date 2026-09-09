@@ -46,30 +46,37 @@ class TestQuoteFamily:
         assert r.status_code == 200
         it = r.json()["item"]
         assert it["quantities"] == {"insurance": 3, "esim": 2, "tour": 3}
-        # extras 3160 + tour 3*2220=6660 = 9820 ; discount 982 ; price 8838
-        assert it["list_total"] == 9820.0
-        assert it["discount"] == 982.0
-        assert it["price"] == 8838.0
+        # Tur fiyati USD'ye bagli oldugu icin beklenen tutar guncel birim fiyattan turetilir
+        tour_unit = it["tour"]["price"]
+        extras = 3 * it["insurance"]["price"] + 2 * it["esim"]["price"]
+        tour_total = round(3 * tour_unit, 2)
+        list_total = round(extras + tour_total, 2)
+        assert it["tour"]["total"] == tour_total
+        assert it["list_total"] == list_total
+        assert it["discount"] == round(list_total * 0.1, 2)
+        assert it["price"] == round(list_total * 0.9, 2)
         assert it["tour"]["selected"] is True
-        assert it["tour"]["total"] == 6660.0
         # visa untouched
         assert it["family"]["visa_subtotal"] == 12850.0
         assert it["family"]["visa_discount"] == 1285.0
-        assert it["total_with_visa"] == 20403.0
+        assert it["total_with_visa"] == round(12850.0 - 1285.0 + list_total * 0.9, 2)
 
     def test_3a_2c_with_tour_family_tier_15pct(self):
         r = _quote(bundle_id="pack_family", adults=3, children=2, tour="true")
         assert r.status_code == 200
         it = r.json()["item"]
         assert it["quantities"] == {"insurance": 5, "esim": 3, "tour": 5}
-        # extras: 5*560 + 3*740 = 2800+2220=5020 ; tour: 5*2220=11100 ; list 16120 ; disc 1612 ; price 14508
-        assert it["price"] == 14508.0
+        list_total = round(
+            5 * it["insurance"]["price"] + 3 * it["esim"]["price"] + 5 * it["tour"]["price"], 2
+        )
+        assert it["list_total"] == list_total
+        assert it["price"] == round(list_total * 0.9, 2)
         f = it["family"]
         assert f["visa_discount_rate"] == 0.15
         # visa subtotal 3*5190 + 2*2470 = 15570+4940 = 20510 ; 15% = 3076.5
         assert f["visa_subtotal"] == 20510.0
         assert f["visa_discount"] == 3076.5
-        assert it["total_with_visa"] == 31941.5
+        assert it["total_with_visa"] == round(20510.0 - 3076.5 + list_total * 0.9, 2)
 
     def test_4a_2c_15pct_tier(self):
         r = _quote(bundle_id="pack_family", adults=4, children=2, tour="false")
