@@ -2651,3 +2651,15 @@ Dogrulama: `pytest` 602 passed / 5 skipped; `order_delivered_html` link render k
 - Dogrulama: 11 gunluk seyahat + 30 gunluk vize -> sigorta 15/30 gun (7 gun yok),
   eSIM 15 gun / 10 GB-30 gun / Sinirsiz-30 gun; hepsinde "11 gunluk seyahatinizin
   tamamini kapsar" notu. Konsol hatasi yok.
+
+### 2026-06-17 (devam) · Uzun seyahatlerde 60 gunluk police secilebilir
+- `insuranceProducts` (Apply.jsx): vize suresi ust siniri korunuyor, ancak vize
+  suresinden UZUN seyahatlerde seyahati kapsayan uzun policeler (60 gun) listeye
+  ekleniyor. Boylece 35 gunluk seyahatte 30 gunluk vizeyle bile 60 gunluk police
+  secilebiliyor; kisa seyahatlerde (11 gun) 60 gunluk police yine listelenmiyor.
+- `coveringOnly` yedegi iyilestirildi: hicbir paket seyahati kapsamiyorsa (orn. eSIM'de
+  en uzun paket 30 gun) tum liste degil yalnizca **en uzun sureli paketler** gosteriliyor.
+- Dogrulama (Playwright, 3 senaryo): 60 gun vize + 35 gun -> sigorta [ins_60d],
+  eSIM [10GB/30, Sinirsiz/30]; 30 gun vize + 35 gun -> sigorta [ins_60d] (eskiden
+  7/15/30 cikiyordu); 30 gun vize + 11 gun -> sigorta [15, 30], eSIM 3 paket (regresyon
+  temiz). Konsol hatasi yok.

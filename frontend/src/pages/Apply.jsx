@@ -534,12 +534,19 @@ export default function Apply() {
         return visaDays.length ? Math.max(...visaDays) : null;
     }, [travelers, visaTypes]);
 
-    const insuranceProducts = useMemo(() => {        if (!visaCoverDays) return allInsuranceProducts;
-        const fitting = allInsuranceProducts.filter(
+    const insuranceProducts = useMemo(() => {
+        if (!visaCoverDays) return allInsuranceProducts;
+        const withinVisa = allInsuranceProducts.filter(
             (p) => Number(p.validity_days) <= visaCoverDays
         );
-        return fitting.length ? fitting : allInsuranceProducts;
-    }, [allInsuranceProducts, visaCoverDays]);
+        const coversTrip = (list) => list.some((p) => Number(p.validity_days) >= (tripDays || 0));
+        if (!tripDays || coversTrip(withinVisa)) {
+            return withinVisa.length ? withinVisa : allInsuranceProducts;
+        }
+        // Seyahat, vize suresinden uzun: kapsayan uzun policeler (orn. 60 gun) de secilebilir
+        const longer = allInsuranceProducts.filter((p) => Number(p.validity_days) >= tripDays);
+        return longer.length ? [...withinVisa, ...longer] : allInsuranceProducts;
+    }, [allInsuranceProducts, visaCoverDays, tripDays]);
 
     const productWindow = (product) => {
         if (!travel.arrival_date) return null;
@@ -624,9 +631,12 @@ export default function Apply() {
 
     // Seyahat suresinden (yoksa vize suresinden) KISA paketler hic teklif edilmez
     const coveringOnly = (list) => {
-        if (!coverDays) return list;
+        if (!coverDays || !list.length) return list;
         const covering = list.filter((p) => Number(p.validity_days) >= coverDays);
-        return covering.length ? covering : list;
+        if (covering.length) return covering;
+        // Hicbiri kapsamiyorsa yalnizca en uzun sureli paket(ler) gosterilir
+        const maxDays = Math.max(...list.map((p) => Number(p.validity_days) || 0));
+        return list.filter((p) => Number(p.validity_days) === maxDays);
     };
 
     const eligibleInsurance = useMemo(
