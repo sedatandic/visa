@@ -595,9 +595,9 @@ def affiliation_note(company: dict | None = None) -> str:
     parent = c.get("parent_company") or COMPANY["parent_company"]
     dubai = c.get("dubai_company") or COMPANY["dubai_company"]
     return (
-        f"Dubai Vize Hattı, **{parent}** tarafından işletilen bir markadır; tüm satışlar "
-        f"bu şirket üzerinden yapılmaktadır. Birleşik Arap Emirlikleri'ndeki grup "
-        f"şirketimiz **{dubai}**'dir."
+        f"Dubai Vize Hattı, **{parent}**'nin tescilli markası olup, tüm hizmet ve "
+        f"operasyonlar bu şirket tarafından yürütülmektedir. Birleşik Arap "
+        f"Emirlikleri'ndeki grup şirketimiz **{dubai}**'dir."
     )
 
 

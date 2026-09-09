@@ -2218,3 +2218,14 @@ Masaüstü görünüm hiçbir bölümde değişmedi (tüm değişiklikler `sm:`/
   güncellendi: "Kodunu kamerayla okutun; başvurunuzun güncel durumu anında açılsın."
 - Alt bilgi (footer): "Birleşik Arap Emirlikleri'ndeki grup şirketimiz ... FZE'dir." cümlesi
   artık tek satırda (açık `<br/>` ile bölündü).
+
+### Marka/işletici bildirimi metni güncellendi (2026-06-15)
+- `content.affiliation_note()` yeni metin: "Dubai Vize Hattı, **Moruya Travel Solutions Turizm
+  Ltd. Şti.**'nin tescilli markası olup, tüm hizmet ve operasyonlar bu şirket tarafından
+  yürütülmektedir. Birleşik Arap Emirlikleri'ndeki grup şirketimiz **Moruya Travel Solutions
+  FZE**'dir." → site alt bilgisi (Footer), Hakkımızda, KVKK ve Şartlar sayfaları tek kaynaktan
+  bu metni okuyor (`/api/content/site`, `/api/content/legal`).
+- `application_pdf._footer_paragraph` artık aynı metni `affiliation_note()`'tan alıyor
+  (yıldız işaretleri temizlenip cümleler ayrı satırlara bölünüyor) — PDF ve site birebir aynı.
+- Not: tekrarlanan tam suite koşularında `/api/contact` 429 (saatlik IP limiti) verip
+  contact testlerini düşürebiliyor; backend restart sayaçları sıfırlıyor (ortam artefaktı).

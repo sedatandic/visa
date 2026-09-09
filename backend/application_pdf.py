@@ -26,7 +26,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from content import COMPANY
+from content import COMPANY, affiliation_note
 from emailer import BRAND
 from emailer import money as _money_html
 from phone_format import format_phone
@@ -527,14 +527,14 @@ def _track_band(app_doc: dict, st: dict) -> Table:
 
 
 def _footer_paragraph(st: dict) -> Paragraph:
+    # marka/isletici bilgisi tek kaynaktan gelir (content.affiliation_note),
+    # her cumle tek satirda kalsin diye cumleler arasina satir sonu konur
+    affiliation = affiliation_note().replace("**", "").replace(". Birleşik", ".<br/>Birleşik")
     text = (
         f"{COMPANY['legal_name']} · TÜRSAB Üyesi {COMPANY['tursab_type']} · "
         f"{COMPANY['phone']} · {COMPANY['email']} · www.dubaivizehatti.com<br/>"
         f"{COMPANY['address']}<br/>"
-        f"{BRAND}, {COMPANY['parent_company']} tarafından işletilen bir markadır; "
-        "tüm hizmetler bu şirket üzerinden verilmektedir.<br/>"
-        "Birleşik Arap Emirlikleri'ndeki grup şirketimiz "
-        f"{COMPANY['dubai_company']}'dir.<br/>"
+        f"{affiliation}<br/>"
         "Bu form başvuru kaydınızın sistem tarafından üretilmiş özetidir; "
         "resmî vize belgesi değildir."
     )
