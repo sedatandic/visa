@@ -2559,3 +2559,22 @@ Dogrulama: `pytest` 602 passed / 5 skipped; `order_delivered_html` link render k
   `paused` state'i kullanildigi icin ikisi senkron.
 - Dogrulama (Playwright): oynat -> katman var, aria-label "Anlatimi duraklat"; tik ->
   `audio.paused === true`, aria-label "Anlatimi devam ettir"; tekrar tik -> ses devam.
+
+### 2026-06-17 (devam) · Anlatim ilerleme cizgisi + sigorta rozeti keskinlestirildi
+- **Ilerleme cizgisi**: `VisaExplainer.jsx` cizim alaninin **altinda** ince cizgi + sag
+  tarafta "m:ss kaldi" (`explainer-progress`, `explainer-progress-bar`,
+  `explainer-remaining-time`). Ses acikken mp3 saatinden (`onLoadedMetadata` +
+  `onTimeUpdate`), sessiz modda sahne surelerinden hesaplaniyor; satir sabit 28px
+  yukseklikte oldugu icin layout kaymasi yok. Ilk denemede cizgi gorselin ustune
+  bindigi icin katman disina, cizimin altina tasindi.
+- **Metin guncellemesi (kullanici)**: 2. sahne altyazisi "...yapmaniz yeterli. ...
+  gerek yok." olarak kisaltildi (onceki: "yeterlidir / yoktur").
+- **"30.000 € TEMINAT" rozeti**: `public/explainer/extras.png` icindeki rozet, onceki
+  ayna+metin duzenlemesinden kalan **yari saydam dikdortgen yamayi** ve yumusak
+  kenarlari tasiyordu. PIL ile 4x supersampling kullanilarak ayni konumda
+  (merkez 125,230 · r=119) yeniden cizildi: keskin daire, altin ic halka (r 99.5-106.5),
+  halkaya sigacak sekilde otomatik punto secimi (39pt) ve daire disinda kalan
+  yama kalintilarinin temizlenmesi. Yedek: `memory/brand_backup/extras.beforesealfix.png`,
+  script: `memory/brand_backup/fix_seal_extras.py`.
+- Dogrulama: masaustu + mobil (414px) Playwright ekran goruntuleri; kalan sure
+  1:03 -> 0:24 dogru sayiyor, cizgi cizimin altinda, rozet keskin.

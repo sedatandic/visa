@@ -60,7 +60,7 @@ const SCENES = [
         title: "Yükleyin ve ödemeyi tamamlayın",
         note: "Uçak bileti veya otel rezervasyonu gerekmiyor",
         subtitle:
-            "Belgelerinizi yükleyip ödemenizi yapmanız yeterlidir. Üstelik Dubai vizeniz onaylanmadan önce uçak bileti ya da otel rezervasyonu yaptırmanıza da gerek yoktur.",
+            "Belgelerinizi yükleyip ödemenizi yapmanız yeterli. Üstelik Dubai vizeniz onaylanmadan önce uçak bileti ya da otel rezervasyonu yaptırmanıza da gerek yok.",
         alt: "Belgelerin bulut simgesine yüklendiği çizim",
         silentMs: 10000,
         voiceMs: 9880,
@@ -104,8 +104,11 @@ const SCENES = [
     },
 ];
 
-const Subtitle = ({ text, durationMs, paused, sceneKey, progress }) => {
-    const words = text.split(" ");
+const SILENT_TOTAL_MS = SCENES.reduce((sum, s) => sum + s.silentMs, 0);
+
+const clock = (totalSec) => `${Math.floor(totalSec / 60)}:${String(totalSec % 60).padStart(2, "0")}`;
+
+const Subtitle = ({ text, durationMs, paused, sceneKey, progress }) => {    const words = text.split(" ");
     const step = Math.max(0.1, durationMs / 1000 / (words.length + 2));
     const spoken = progress === null ? -1 : Math.round(progress * words.length);
     return (
@@ -138,6 +141,8 @@ export const VisaExplainer = () => {
     const [soundOn, setSoundOn] = useState(false);
     const [captions, setCaptions] = useState(true);
     const [audioProgress, setAudioProgress] = useState(0);
+    const [audioTime, setAudioTime] = useState(0);
+    const [audioDuration, setAudioDuration] = useState(0);
     const [timeline, setTimeline] = useState(null);
     const [playing, setPlaying] = useState(false);
     const audioRef = useRef(null);
@@ -151,6 +156,16 @@ export const VisaExplainer = () => {
             ? Math.round((window_.end - window_.start) * 1000)
             : scene.voiceMs
         : scene.silentMs;
+
+    // Ilerleme cizgisi: ses acikken mp3 saatinden, sessiz modda sahne suresinden hesaplanir.
+    const audioClock = soundOn && audioDuration > 0;
+    const silentElapsedMs = SCENES.slice(0, index).reduce((sum, s) => sum + s.silentMs, 0);
+    const progressPct = audioClock
+        ? Math.min(100, (audioTime / audioDuration) * 100)
+        : ((silentElapsedMs + (paused ? 0 : scene.silentMs)) / SILENT_TOTAL_MS) * 100;
+    const remainingSec = audioClock
+        ? Math.max(0, Math.round(audioDuration - audioTime))
+        : Math.max(0, Math.round((SILENT_TOTAL_MS - silentElapsedMs) / 1000));
 
     useEffect(() => {
         fetch("/audio/explainer/full.json")
@@ -179,7 +194,10 @@ export const VisaExplainer = () => {
     const goToScene = (i) => {
         setIndex(i);
         const audio = audioRef.current;
-        if (audio && timeline?.[i]) audio.currentTime = timeline[i].start;
+        if (audio && timeline?.[i]) {
+            audio.currentTime = timeline[i].start;
+            setAudioTime(timeline[i].start);
+        }
     };
 
     // Kapaktaki tek dokunusla anlatimi bastan baslatir (autoplay engelini asar).
@@ -191,6 +209,7 @@ export const VisaExplainer = () => {
         setIndex(0);
         if (!audio) return;
         audio.currentTime = 0;
+        setAudioTime(0);
         audio.play().catch(() => {});
     };
 
@@ -201,7 +220,8 @@ export const VisaExplainer = () => {
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="relative order-1 aspect-[3/2] w-full overflow-hidden sm:order-2 sm:aspect-auto sm:h-[386px] sm:w-full">
+            <div className="relative order-1 flex w-full flex-col sm:order-2">
+                <div className="relative aspect-[3/2] w-full overflow-hidden sm:aspect-auto sm:h-[386px] sm:w-full">
                 <AnimatePresence initial={false}>
                     <motion.img
                         key={scene.key}
@@ -274,6 +294,41 @@ export const VisaExplainer = () => {
                         )}
                     </button>
                 )}
+                </div>
+
+                {/* INCE ILERLEME CIZGISI + KALAN SURE: animasyonun altinda */}
+                <div
+                    className="flex h-7 items-center gap-2 px-3 sm:px-4 sm:pr-9"
+                    data-testid="explainer-progress"
+                >
+                    {started && (
+                        <>
+                            <span className="relative h-1 flex-1 overflow-hidden rounded-full bg-foreground/15">
+                                <motion.span
+                                    key={audioClock ? "audio-clock" : `${scene.key}-${paused}`}
+                                    initial={{
+                                        width: audioClock
+                                            ? `${progressPct}%`
+                                            : `${(silentElapsedMs / SILENT_TOTAL_MS) * 100}%`,
+                                    }}
+                                    animate={{ width: `${progressPct}%` }}
+                                    transition={{
+                                        duration: audioClock ? 0.3 : paused ? 0 : scene.silentMs / 1000,
+                                        ease: "linear",
+                                    }}
+                                    className="absolute inset-y-0 left-0 block rounded-full bg-primary"
+                                    data-testid="explainer-progress-bar"
+                                />
+                            </span>
+                            <span
+                                className="text-[10px] font-bold tabular-nums text-muted-foreground"
+                                data-testid="explainer-remaining-time"
+                            >
+                                {clock(remainingSec)} kaldı
+                            </span>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* METIN KATMANI */}
@@ -438,12 +493,14 @@ export const VisaExplainer = () => {
                 preload="auto"
                 onTimeUpdate={(e) => {
                     const t = e.currentTarget.currentTime;
+                    setAudioTime(t);
                     if (!timeline) return;
                     const i = timeline.findIndex((w) => t >= w.start && t < w.end);
                     if (i >= 0 && i !== index) setIndex(i);
                     const w = timeline[i >= 0 ? i : index];
                     if (w) setAudioProgress(Math.min(1, Math.max(0, (t - w.start) / (w.end - w.start))));
                 }}
+                onLoadedMetadata={(e) => setAudioDuration(e.currentTarget.duration || 0)}
                 onPlay={() => setPlaying(true)}
                 onPause={() => setPlaying(false)}
                 onEnded={() => {
