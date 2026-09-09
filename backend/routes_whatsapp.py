@@ -6,6 +6,7 @@
 """
 
 import logging
+import re
 import time
 from datetime import datetime, timezone
 from hmac import compare_digest
@@ -401,13 +402,14 @@ async def search_applications(q: str = "", admin: dict = Depends(require_admin))
     """Belge atamasi icin basvuru arama (kod, ad, soyad, pasaport)."""
     query: dict = {}
     if q:
+        term = re.escape(q.strip())[:80]
         query = {
             "$or": [
-                {"reference_code": {"$regex": q, "$options": "i"}},
-                {"travelers.first_name": {"$regex": q, "$options": "i"}},
-                {"travelers.last_name": {"$regex": q, "$options": "i"}},
-                {"travelers.passport_no": {"$regex": q, "$options": "i"}},
-                {"contact.email": {"$regex": q, "$options": "i"}},
+                {"reference_code": {"$regex": term, "$options": "i"}},
+                {"travelers.first_name": {"$regex": term, "$options": "i"}},
+                {"travelers.last_name": {"$regex": term, "$options": "i"}},
+                {"travelers.passport_no": {"$regex": term, "$options": "i"}},
+                {"contact.email": {"$regex": term, "$options": "i"}},
             ]
         }
     docs = await applications_col.find(query).sort("created_at", -1).to_list(30)

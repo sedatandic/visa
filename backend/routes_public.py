@@ -550,7 +550,17 @@ def _store_upload(path: str, data: bytes, content_type: str) -> dict:
     return result
 
 @router.post("/uploads")
-async def upload_document(file: UploadFile = File(...), doc_type: str = Form("passport")) -> dict:
+async def upload_document(
+    request: Request, file: UploadFile = File(...), doc_type: str = Form("passport")
+) -> dict:
+    # Kimlik dogrulamasiz uc: ayni IP'den depolama sismesini onler
+    # (bir aile basvurusu tipik olarak 12-14 dosya yukler)
+    rate_check(
+        f"upload:{client_ip(request)}",
+        150,
+        60,
+        "Cok fazla dosya yuklediniz. Lutfen birkac dakika sonra tekrar deneyin.",
+    )
     filename = file.filename or "dosya"
     data = await file.read()
     ext = _validate_upload(filename, data)
@@ -1187,7 +1197,14 @@ async def _find_application_for_tracking(code: str, last_name: str) -> dict:
 
 
 @router.get("/applications/track")
-async def track_application(code: str, last_name: str):
+async def track_application(code: str, last_name: str, request: Request):
+    # Takip kodu tahmin denemelerini yavaslatir (kod + soyad zaten gerekli)
+    rate_check(
+        f"track:{client_ip(request)}",
+        60,
+        300,
+        "Cok fazla sorgu yaptiniz. Lutfen birkac dakika sonra tekrar deneyin.",
+    )
     doc = await _find_application_for_tracking(code, last_name)
     view = public_application_view(doc)
     view["missing_documents"] = missing_documents(doc)

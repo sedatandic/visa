@@ -1456,3 +1456,17 @@ Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
   (ekrana sigiyor), extras sahnesi ekran goruntusuyle kontrol edildi; /vize-tipleri
   tiklama oncesi/sonrasi computed border renkleri dogrulandi (populer -> notr,
   tiklanan -> primary).
+
+## 2026-06-15 (6) · Guvenlik denetimi (security_audit_agent) — CONDITIONAL PASS
+Detay: `memory/security_audit_2026-06-15.md`. Ozet:
+- Onceki SEC-001..004 duzeltmeleri dogrulandi (OTP girisi, kacisli bookmarklet, imzali
+  dosya jetonlari, hiz sinirlari, Stripe/WhatsApp webhook imzalari) — hepsi yerinde.
+- Uygulanan yeni sertlestirmeler: `/api/applications/track` 60/5dk, `POST /api/uploads`
+  150/60sn, `POST /api/admin/request-code` 30/saat (IP basina); `re.escape` ile
+  routes_account (2 sorgu) ve routes_whatsapp arama (q 80 karaktere kirpilir).
+- pytest 505 passed / 5 skipped (hiz sinirlari test paketini bozmuyor).
+- ACIK P2 (kullanici karari): `backend/.env` icinde Tamamliyo kurumsal kart no + **CVV**
+  ve tek `JWT_SECRET` duruyor; .env deploy icin repoda tutulmak zorunda. Secenekler:
+  cari bakiye moduna (odemeTipi=3) gecmek / CVV'yi kaldirmak / anahtar rotasyonu.
+- P3 kabul: CORS platform alt alanlarina acik (Bearer token kullanildigi icin etkisi dusuk),
+  hiz sinirlari surec ici (cok replikada Redis gerekir).

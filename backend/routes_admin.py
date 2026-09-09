@@ -112,6 +112,13 @@ async def admin_request_code(payload: AdminCodeRequest, request: Request) -> dic
     E-posta yonetici adresi olmasa bile ayni yanit doner (adres sizdirilmaz).
     """
     email = payload.email.strip().lower()
+    # E-posta bazli sinirin yaninda IP bazli sinir: sahte adreslerle kayit sismesini onler
+    rate_check(
+        f"admin-code:{client_ip(request)}",
+        30,
+        3600,
+        "Cok fazla kod talebi. Lutfen bir saat sonra tekrar deneyin.",
+    )
     now = datetime.now(timezone.utc)
     doc = await admin_login_codes_col.find_one({"email": email})
     window_start, count = _check_code_rate_limit(doc, now)

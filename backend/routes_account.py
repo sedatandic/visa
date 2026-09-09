@@ -11,6 +11,7 @@ oldugu icin hesap devralmaya aciktir). Kod yalnizca hash'lenmis saklanir.
 import hashlib
 import logging
 import os
+import re
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -106,7 +107,7 @@ def _application_summary(doc: dict) -> dict:
 
 async def _applications_for_email(email: str) -> list:
     cursor = applications_col.find(
-        {"contact.email": {"$regex": f"^{email}$", "$options": "i"}}
+        {"contact.email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}}
     ).sort("created_at", -1)
     return [_application_summary(doc) async for doc in cursor]
 
@@ -256,9 +257,9 @@ async def account_orders(email: str = Depends(require_customer)) -> dict:
     """eSIM / sigorta siparisleri."""
     from db import orders_col
 
-    cursor = orders_col.find({"contact.email": {"$regex": f"^{email}$", "$options": "i"}}).sort(
-        "created_at", -1
-    )
+    cursor = orders_col.find(
+        {"contact.email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}}
+    ).sort("created_at", -1)
     items = [serialize_doc(doc) async for doc in cursor]
     return {"items": items}
 
