@@ -10,7 +10,7 @@ from xml.sax.saxutils import escape as xml_escape
 from reportlab.graphics.barcode.qr import QrCodeWidget
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
@@ -138,9 +138,6 @@ def _styles() -> dict:
         ),
         "label": ParagraphStyle("l", fontName=reg, fontSize=7, leading=9, textColor=MUTED),
         "value": ParagraphStyle("v", fontName=bold, fontSize=8.5, leading=11, textColor=INK),
-        "amount": ParagraphStyle(
-            "am", fontName=bold, fontSize=8.5, leading=11, textColor=INK, alignment=TA_RIGHT
-        ),
         "value_center": ParagraphStyle(
             "vc", fontName=bold, fontSize=8.5, leading=11, textColor=INK, alignment=TA_CENTER
         ),
@@ -307,7 +304,7 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
                 Paragraph(_safe(t.get("passport_no")), st["body"]),
                 Paragraph(_date(t.get("passport_expiry")), st["body"]),
                 Paragraph(_safe(t.get("visa_short_name") or t.get("visa_type_name")), st["body"]),
-                Paragraph(money(t.get("price", 0), t.get("currency", "TRY")), st["amount"]),
+                Paragraph(money(t.get("price", 0), t.get("currency", "TRY")), st["value"]),
             ]
         )
     table = Table(
@@ -322,7 +319,6 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
                 ("BOX", (0, 0), (-1, -1), 0.5, LINE),
                 ("INNERGRID", (0, 0), (-1, -1), 0.4, LINE),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (-1, 0), (-1, -1), "RIGHT"),
                 ("TOPPADDING", (0, 0), (-1, -1), 4),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                 ("LEFTPADDING", (0, 0), (-1, -1), 4),
@@ -397,22 +393,19 @@ def _pricing_rows(app_doc: dict) -> list:
 
 def _price_table(app_doc: dict, st: dict) -> Table:
     rows = [
-        [Paragraph(_safe(label), st["body"]), Paragraph(value, st["amount"])]
+        [Paragraph(_safe(label), st["body"]), Paragraph(value, st["value"])]
         for label, value in _pricing_rows(app_doc)
     ]
-    table = Table(rows, colWidths=_cols(140, 40))
+    # tutar kolonu yolcu tablosundaki "Tutar" kolonuyla ayni yerden baslar (sola dayali)
+    table = Table(rows, colWidths=_cols(154, 26))
     table.setStyle(
         TableStyle(
             [
-                ("ALIGN", (1, 0), (1, -1), "RIGHT"),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("TOPPADDING", (0, 0), (-1, -1), 3),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                # tutarlar yolcu tablosundaki "Tutar" kolonuyla ayni hizada bitsin
-                ("LEFTPADDING", (0, 0), (0, -1), 4),
-                ("RIGHTPADDING", (1, 0), (1, -1), 6),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
                 ("LINEBELOW", (0, 0), (-1, -2), 0.4, LINE),
                 ("LINEABOVE", (0, -1), (-1, -1), 0.8, GOLD),
                 ("TOPPADDING", (0, -1), (-1, -1), 5),
