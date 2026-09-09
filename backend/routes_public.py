@@ -76,7 +76,12 @@ from emailer import (
 from models import ApplicationCreate, ContactCreate, DocumentSubmission, QuoteRequest, VisitIn
 from doc_reminders import missing_documents
 from visitors import client_ip as visitor_client_ip, is_bot, record_visit
-from store_catalog import MAX_QTY, product_list, tour_schedule
+from store_catalog import (
+    get_visa_type,
+    parse_iso_date,
+    resolve_store_lines,
+    trip_day_count,
+)
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
 import ocr_metrics
 import offer_links
@@ -210,15 +215,6 @@ def public_application_view(doc: dict) -> dict:
     for key in ("zami_status_raw", "zami_reference", "linked_order_id"):
         d.pop(key, None)
     return d
-
-
-async def get_visa_type(visa_type_id: str):
-    visa = await visa_types_col.find_one({"id": visa_type_id})
-    if not visa:
-        visa = next((v for v in VISA_TYPES if v["id"] == visa_type_id), None)
-    if not visa:
-        return None
-    return await apply_fx_to_visa(serialize_doc(visa))
 
 
 # ---------------------------------------------------------------- content
@@ -405,89 +401,6 @@ async def get_article(slug: str) -> dict:
         .to_list(3)
     )
     return {"article": article, "related": serialize_doc(related)}
-
-
-def _parse_iso_date(value: str | None):
-    try:
-        return date.fromisoformat((value or "").strip()[:10])
-    except Exception:
-        return None
-
-
-def trip_day_count(arrival: str | None, departure: str | None) -> int | None:
-    """Seyahat suresi (gun). Giris ve donus gunleri dahil."""
-    start = _parse_iso_date(arrival)
-    end = _parse_iso_date(departure)
-    if not start or not end or end < start:
-        return None
-    return (end - start).days + 1
-
-
-def _store_line_validity(start: date | None, validity_days: int, trip_days: int | None) -> dict:
-    """Ek urunun gecerlilik penceresini ve seyahati kapsayip kapsamadigini hesaplar."""
-    starts_on = start.isoformat() if start else None
-    ends_on = None
-    if start and validity_days > 0:
-        ends_on = (start + timedelta(days=validity_days - 1)).isoformat()
-    covers_trip = None
-    if trip_days and validity_days:
-        covers_trip = trip_days <= validity_days
-    return {
-        "validity_days": validity_days,
-        "starts_on": starts_on,
-        "ends_on": ends_on,
-        "trip_days": trip_days,
-        "covers_trip": covers_trip,
-    }
-
-
-def _store_line(product: dict, quantity: int, validity: dict) -> dict:
-    unit_price = float(product["price"])
-    return {
-        "product_id": product["id"],
-        "kind": product.get("kind", ""),
-        "kind_label": product.get("kind_label", ""),
-        "name": product["name"],
-        "quantity": quantity,
-        "unit_price": unit_price,
-        "unit_price_usd": float(product.get("price_usd") or 0),
-        "total": round(unit_price * quantity, 2),
-        **validity,
-    }
-
-
-async def resolve_store_lines(items, arrival_date: str | None = None, departure_date: str | None = None) -> list:
-    """Basvuru icinde secilen eSIM / sigorta urunlerini magaza katalogundan fiyatlar.
-
-    Urunlerin gecerlilik tarihleri seyahatin giris tarihinden baslatilir.
-    """
-    if not items:
-        return []
-
-    catalog = {p["id"]: p for p in await product_list()}
-    start = _parse_iso_date(arrival_date)
-    end = _parse_iso_date(departure_date)
-    trip_days = trip_day_count(arrival_date, departure_date)
-
-    lines = []
-    for item in items:
-        product = catalog.get(item.product_id)
-        if not product:
-            raise HTTPException(400, "Secilen ek urun bulunamadi veya satista degil.")
-        quantity = max(1, min(int(item.quantity), MAX_QTY))
-        validity = _store_line_validity(start, int(product.get("validity_days") or 0), trip_days)
-        line = _store_line(product, quantity, validity)
-        line.update(
-            tour_schedule(
-                product,
-                getattr(item, "scheduled_date", None),
-                getattr(item, "scheduled_time", None),
-                start=start,
-                end=end,
-            )
-        )
-        lines.append(line)
-    return lines
 
 
 @router.post("/pricing/quote")
@@ -924,8 +837,8 @@ def _age_on(birth_date, reference) -> float | None:
 
 def _travel_window(travel) -> tuple:
     """Gidis/donus tarihlerini dogrular; tarih belli degilse kalis suresi None doner."""
-    arrival = _parse_iso_date(travel.arrival_date)
-    departure = _parse_iso_date(travel.departure_date)
+    arrival = parse_iso_date(travel.arrival_date)
+    departure = parse_iso_date(travel.departure_date)
     if bool(getattr(travel, "dates_unknown", False)):
         return arrival, departure, None
     if not arrival or not departure:
@@ -961,7 +874,7 @@ def _validate_stay_within_visa(name: str, traveler: dict, stay_days: int | None)
 
 def _validate_passport_validity(name: str, traveler: dict, reference, has_departure: bool) -> None:
     """Pasaport, donus (ya da tarih yoksa bugun) itibariyla en az 6 ay gecerli olmalidir."""
-    expiry = _parse_iso_date(traveler.get("passport_expiry"))
+    expiry = parse_iso_date(traveler.get("passport_expiry"))
     if expiry and (expiry - reference).days < PASSPORT_MIN_VALID_DAYS:
         basis = "donus tarihinden" if has_departure else "bugunden"
         raise HTTPException(400, f"{name}: pasaportunuz {basis} itibaren en az 6 ay gecerli olmalidir.")
@@ -979,7 +892,7 @@ def _validate_travel_rules(travel, travelers: list) -> None:
     for traveler in travelers:
         name = f"{traveler.get('first_name', '')} {traveler.get('last_name', '')}".strip()
         if traveler.get("applicant_type") == "child":
-            age = _age_on(_parse_iso_date(traveler.get("birth_date")), age_reference)
+            age = _age_on(parse_iso_date(traveler.get("birth_date")), age_reference)
             _validate_child_traveler(name, age, has_adult)
         _validate_stay_within_visa(name, traveler, stay_days)
         _validate_passport_validity(name, traveler, expiry_reference, bool(departure))

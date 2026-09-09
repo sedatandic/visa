@@ -69,6 +69,9 @@
       143 → 90 satır, C901 düştü, 32 birim testi (`test_iteration_117_zami_fill_steps.py`).
 
 ## P2
+- [ ] `routes_admin.py` (1375 satir / 30 import) ve `routes_public.py` (1390 satir)
+      domain bazli bolunebilir (2026-06-16 kod incelemesi). Teklif uclari `routes_admin_offers.py`
+      olarak ayrildi; kalan alanlar (basvurular, icerik, e-posta) ayni yontemle bolunebilir.
 - [x] ~~Paylasilabilir aile paketi / teklif linki~~ -> 2026-06-16: Admin -> Teklif
       Linkleri (`/admin/teklifler`) + musteri sayfasi `/teklif/<token>` + `?teklif=` ile
       basvuru on dolumu tamamlandi (bkz. CHANGELOG 2026-06-16).

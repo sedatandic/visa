@@ -59,6 +59,44 @@ def created(headers, visa_id):
 
 
 # ---------------------------------------------------------------- yardimcilar
+def test_modul_seviyesinde_dairesel_import_yok():
+    """Kod incelemesi tekrar 'circular import' bildirmesin: graf dongusuz olmali.
+
+    Fiyatlama yardimcilari (`resolve_store_lines`, `trip_day_count`, `get_visa_type`)
+    `store_catalog` icinde durur; `offer_links` route modullerini import etmez.
+    """
+    import ast
+    import collections
+    import pathlib
+
+    root = pathlib.Path("/app/backend")
+    modules = {p.stem for p in root.glob("*.py")}
+    edges = collections.defaultdict(set)
+    for name in modules:
+        tree = ast.parse((root / f"{name}.py").read_text())
+        for node in tree.body:  # yalniz modul seviyesi importlar
+            if isinstance(node, ast.Import):
+                edges[name] |= {a.name for a in node.names if a.name in modules}
+            elif isinstance(node, ast.ImportFrom) and node.module in modules:
+                edges[name].add(node.module)
+
+    cycles = []
+
+    def walk(start, node, path, seen):
+        for nxt in edges[node]:
+            if nxt == start:
+                cycles.append(" -> ".join(path + [nxt]))
+            elif nxt not in seen:
+                walk(start, nxt, path + [nxt], seen | {nxt})
+
+    for name in sorted(modules):
+        walk(name, name, [name], {name})
+    assert not cycles, f"dairesel import: {cycles[:5]}"
+
+    assert "routes_public" not in edges["offer_links"]
+    assert "store_catalog" in edges["offer_links"]
+
+
 def test_status_durumlari():
     now = datetime.now(timezone.utc)
     assert offer_links.status_of({"active": True}, now) == "active"

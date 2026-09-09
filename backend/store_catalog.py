@@ -5,7 +5,7 @@ birbirini import ediyordu (dairesel bagimlilik). Katalog burada tek yerde durur;
 modul de buradan import eder.
 """
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
 
 from fastapi import HTTPException
@@ -227,3 +227,106 @@ def tour_schedule(product: dict, scheduled_date, scheduled_time, start=None, end
     if slots and time_value not in slots:
         raise HTTPException(400, f"{product['name']} için geçerli bir saat seçmelisiniz.")
     return {"scheduled_date": picked.isoformat(), "scheduled_time": time_value or None}
+
+
+# ------------------------------------------------------- tarih / satir yardimcilari
+# NOT: Bu yardimcilar `routes_public` icindeydi; `offer_links` de ayni fiyatlama
+# kurallarina ihtiyac duydugu icin (dairesel import olusmasin diye) katalog modulune
+# tasindi. Tek kural noktasi: hem basvuru, hem siparis, hem teklif buradan gecer.
+def parse_iso_date(value: str | None):
+    try:
+        return date.fromisoformat((value or "").strip()[:10])
+    except Exception:
+        return None
+
+
+def trip_day_count(arrival: str | None, departure: str | None) -> Optional[int]:
+    """Seyahat suresi (gun). Giris ve donus gunleri dahil."""
+    start = parse_iso_date(arrival)
+    end = parse_iso_date(departure)
+    if not start or not end or end < start:
+        return None
+    return (end - start).days + 1
+
+
+def _store_line_validity(start, validity_days: int, trip_days: Optional[int]) -> dict:
+    """Ek urunun gecerlilik penceresini ve seyahati kapsayip kapsamadigini hesaplar."""
+    starts_on = start.isoformat() if start else None
+    ends_on = None
+    if start and validity_days > 0:
+        ends_on = (start + timedelta(days=validity_days - 1)).isoformat()
+    covers_trip = None
+    if trip_days and validity_days:
+        covers_trip = trip_days <= validity_days
+    return {
+        "validity_days": validity_days,
+        "starts_on": starts_on,
+        "ends_on": ends_on,
+        "trip_days": trip_days,
+        "covers_trip": covers_trip,
+    }
+
+
+def _store_line(product: dict, quantity: int, validity: dict) -> dict:
+    unit_price = float(product["price"])
+    return {
+        "product_id": product["id"],
+        "kind": product.get("kind", ""),
+        "kind_label": product.get("kind_label", ""),
+        "name": product["name"],
+        "quantity": quantity,
+        "unit_price": unit_price,
+        "unit_price_usd": float(product.get("price_usd") or 0),
+        "total": round(unit_price * quantity, 2),
+        **validity,
+    }
+
+
+async def resolve_store_lines(
+    items, arrival_date: Optional[str] = None, departure_date: Optional[str] = None
+) -> list:
+    """Secilen eSIM / sigorta / tur urunlerini katalogdan fiyatlar.
+
+    Urunlerin gecerlilik tarihleri seyahatin giris tarihinden baslatilir.
+    """
+    if not items:
+        return []
+
+    catalog = {p["id"]: p for p in await product_list()}
+    start = parse_iso_date(arrival_date)
+    end = parse_iso_date(departure_date)
+    trip_days = trip_day_count(arrival_date, departure_date)
+
+    lines = []
+    for item in items:
+        product = catalog.get(item.product_id)
+        if not product:
+            raise HTTPException(400, "Secilen ek urun bulunamadi veya satista degil.")
+        quantity = max(1, min(int(item.quantity), MAX_QTY))
+        validity = _store_line_validity(start, int(product.get("validity_days") or 0), trip_days)
+        line = _store_line(product, quantity, validity)
+        line.update(
+            tour_schedule(
+                product,
+                getattr(item, "scheduled_date", None),
+                getattr(item, "scheduled_time", None),
+                start=start,
+                end=end,
+            )
+        )
+        lines.append(line)
+    return lines
+
+
+async def get_visa_type(visa_type_id: str):
+    """Vize tipini DB'den (yoksa statik katalogdan) okur, guncel kurla fiyatlar."""
+    from content import VISA_TYPES
+    from db import visa_types_col
+    from fx import apply_fx_to_visa
+
+    visa = await visa_types_col.find_one({"id": visa_type_id})
+    if not visa:
+        visa = next((v for v in VISA_TYPES if v["id"] == visa_type_id), None)
+    if not visa:
+        return None
+    return await apply_fx_to_visa(serialize_doc(visa))

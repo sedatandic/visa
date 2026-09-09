@@ -226,6 +226,47 @@ async def _products() -> list:
     )
 
 
+def _price_fixed_event(row: dict, now, reason: str) -> dict:
+    return {
+        "kind": "price_fixed",
+        "at": now,
+        "reason": reason,
+        "product_id": row["id"],
+        "name": row["name"],
+        "cost_try": row["cost_try"],
+        "old_price_try": row["price_try"],
+        "new_price_try": row["new_price_try"],
+    }
+
+
+def _low_margin_event(row: dict, now, reason: str) -> dict:
+    return {
+        "kind": "low_margin",
+        "at": now,
+        "reason": reason,
+        "product_id": row["id"],
+        "name": row["name"],
+        "cost_try": row["cost_try"],
+        "price_try": row["price_try"],
+        "margin_pct": row["margin_pct"],
+    }
+
+
+async def _apply_price_guard(row: dict, now, reason: str) -> dict:
+    """Zarar eden urunun satis fiyatini onerilen fiyata yukseltir."""
+    await products_col.update_one(
+        {"id": row["id"]},
+        {
+            "$set": {
+                "price_try": row["suggested_price_try"],
+                "price_guard_at": now,
+                "price_guard_reason": reason,
+            }
+        },
+    )
+    return {**row, "new_price_try": row["suggested_price_try"]}
+
+
 async def guard_products(reason: str = "sync") -> dict:
     """Zarar eden urunun fiyatini yukseltir, ince marjli urunler icin uyarir."""
     now = datetime.now(timezone.utc)
@@ -233,46 +274,14 @@ async def guard_products(reason: str = "sync") -> dict:
     for product in await _products():
         row = _row(product)
         if row["state"] == "loss":
-            await products_col.update_one(
-                {"id": row["id"]},
-                {
-                    "$set": {
-                        "price_try": row["suggested_price_try"],
-                        "price_guard_at": now,
-                        "price_guard_reason": reason,
-                    }
-                },
-            )
-            fixed.append({**row, "new_price_try": row["suggested_price_try"]})
+            fixed.append(await _apply_price_guard(row, now, reason))
         elif row["state"] == "low":
             low.append(row)
 
-    events = [
-        {
-            "kind": "price_fixed",
-            "at": now,
-            "reason": reason,
-            "product_id": row["id"],
-            "name": row["name"],
-            "cost_try": row["cost_try"],
-            "old_price_try": row["price_try"],
-            "new_price_try": row["new_price_try"],
-        }
-        for row in fixed
-    ] + [
-        {
-            "kind": "low_margin",
-            "at": now,
-            "reason": reason,
-            "product_id": row["id"],
-            "name": row["name"],
-            "cost_try": row["cost_try"],
-            "price_try": row["price_try"],
-            "margin_pct": row["margin_pct"],
-        }
-        for row in low
-    ]
-    await _push_events(events)
+    await _push_events(
+        [_price_fixed_event(row, now, reason) for row in fixed]
+        + [_low_margin_event(row, now, reason) for row in low]
+    )
     await _save({"last_check_at": now})
 
     alert = {"sent": False, "reason": "no_risk"}

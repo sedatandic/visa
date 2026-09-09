@@ -2297,3 +2297,54 @@ tek tikla ayni secimlerle basvuru formuna geciyor.
 - Test sirasinda olusan 13 teklif kaydi DB'den silindi (panel temiz).
 - Teknik borc (testing_agent notu): `AdminOffers.jsx` 535 satir; OfferForm/OfferList/
   useLiveQuote olarak bolunebilir (islev etkilenmiyor).
+
+## 2026-06-16 · Kod inceleme raporu: 3 gercek duzeltme + 2 yanlis pozitif (olcumlu)
+Kullanicinin paylastigi rapor madde madde **olculdu**; yalniz gercek olanlar duzeltildi.
+
+### Duzeltilenler
+1. **Dairesel import (GERCEK, yapisal duzeltme)**: `offer_links` fiyatlama icin
+   `routes_public`'i fonksiyon icinde (lazy) import ediyordu; `routes_public` da
+   `offer_links`'i import ediyordu -> grafta dongu. Cozum: ortak fiyatlama yardimcilari
+   route dosyasindan **`store_catalog.py`**'ye tasindi:
+   `parse_iso_date`, `trip_day_count`, `_store_line_validity`, `_store_line`,
+   `resolve_store_lines`, `get_visa_type`. `routes_public` bunlari artik katalogdan import
+   ediyor (9 `_parse_iso_date` cagrisi `parse_iso_date` olarak guncellendi), `offer_links`
+   ise **modul seviyesinde** `store_catalog`/`content`/`fx`/`models` import ediyor.
+   Sonuc: tum backend'de **modul seviyesi dongu = 0** (ast ile dogrulandi) ve
+   `offer_links -> routes_public` bagi tamamen kalkti. Tekrarlamamasi icin regresyon testi:
+   `test_iteration_133_offer_links.py::test_modul_seviyesinde_dairesel_import_yok`.
+2. **Rota dosyasi ayrimi (kismi)**: teklif uclari `routes_admin.py`'den cikarilip yeni
+   **`routes_admin_offers.py`** (53 satir, 7 import) dosyasina alindi ve `server.py`'de
+   ayri router olarak baglandi. `routes_admin.py` import sayisi 39 -> **30**,
+   `routes_public.py` 32 -> **30**.
+3. **Uzun fonksiyonlar (GERCEK)**:
+   - `insurance_margin.guard_products` 54 -> **23 satir** (`_apply_price_guard`,
+     `_price_fixed_event`, `_low_margin_event` cikarildi). NOT: ilk denemede yardimciya
+     `_raise_price` adi verildi, dosyada ayni isimde baska fonksiyon vardi ve
+     `test_iteration_124` 3 testi kirildi -> `_apply_price_guard` olarak yeniden adlandirildi.
+   - `insurance_provider.sync_prices` 51 -> **21 satir** (`_sync_product`,
+     `_save_sync_state`).
+   - `offer_links`: `price_offer` (`_visa_row`/`_visa_rows`), `create_offer`
+     (`_customer_fields`/`_tracking_fields`), `public_view` (`_repriced`) olarak bolundu;
+     hepsi 34 satirin altinda ve mccabe karmasikligi 1.
+
+### Yanlis pozitifler (olculdu, kod degistirilmedi)
+- **"20 tanimsiz degisken"** -> `ruff check --select F821` = **0 hata**; `import server` temiz.
+- **"230 hatali esitlik karsilastirmasi (`is` vs `==`)"** -> raporlanan 14 satirin tamami
+  `is None` / `is not None` / `is False` (dogru Python deyimi). `ruff --select F632,E711,E712`
+  = **0 hata**. (Bu bulgu 3. kez geldi; `visitors.py:67` `is False` bilincli:
+  `None` ile `False`'i ayirt ediyor.)
+- **"Yuksek karmasiklik"** -> `payment_receipt_pdf._application_items` iddia 11, olculen **5**;
+  `_application_summary_rows` iddia 13, olculen **3**; `offer_links` fonksiyonlari **1**.
+  (ruff mccabe, esik 10 ile hicbir uyari yok.) Fatura PDF'i kirilma riski nedeniyle
+  dokunulmadi.
+- `routes_admin.py`/`routes_public.py`'nin domain bazli tam bolunmesi **yapilmadi**
+  (yuksek regresyon riski, dusuk kazanc) -> ROADMAP P2 teknik borcunda duruyor.
+
+### Dogrulama
+- `pytest`: **589 passed / 3 skipped** (aynı saatte ust uste 3 kez calistirilinca
+  `/api/contact` saatlik IP limiti 429 verip 4-6 testi dusuruyor — ortam artefakti;
+  backend restart sonrasi ilgili 52 test yeniden PASS).
+- Uctan uca: teklif olustur -> `/teklif/<token>` -> `/basvuru?teklif=` akisi cocuk vizeli
+  ornekle yeniden dogrulandi (13.312 ₺ teklif = banner = sihirbaz toplami).
+- Test verileri temizlendi (25 teklif kaydi silindi).

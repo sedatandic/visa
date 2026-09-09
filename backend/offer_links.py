@@ -18,7 +18,11 @@ from urllib.parse import quote
 
 from fastapi import HTTPException
 
+from content import compute_pricing
 from db import offer_links_col, serialize_doc
+from fx import addon_prices_try, get_fx
+from models import StoreItemIn
+from store_catalog import get_visa_type, resolve_store_lines, trip_day_count
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +117,28 @@ def auto_title(travelers: list) -> str:
     return f"{count} kişi · {visa}" if count > 1 else visa
 
 
+def _visa_row(visa: dict, applicant_type: str) -> dict:
+    return {
+        "applicant_type": "child" if applicant_type == "child" else "adult",
+        "visa_type_id": visa["id"],
+        "visa_name": visa["name"],
+        "visa_short_name": visa.get("short_name") or visa["name"],
+        "price": float(visa["price"]),
+    }
+
+
+async def _visa_rows(travelers: list) -> list:
+    rows = []
+    for item in travelers or []:
+        visa = await get_visa_type(item.get("visa_type_id") or "")
+        if not visa:
+            raise HTTPException(400, f"Geçersiz vize tipi: {item.get('visa_type_id')}")
+        rows.append(_visa_row(visa, item.get("applicant_type") or "adult"))
+    if not rows:
+        raise HTTPException(400, "Teklife en az bir yolcu eklemelisiniz.")
+    return rows
+
+
 async def price_offer(
     travelers: list,
     addons: dict,
@@ -121,34 +147,12 @@ async def price_offer(
     departure_date: str = "",
 ) -> dict:
     """Teklifin guncel fiyatini basvuru akisiyla ayni kurallarla hesaplar."""
-    from content import compute_pricing
-    from fx import addon_prices_try, get_fx
-    from models import StoreItemIn
-    from routes_public import get_visa_type, resolve_store_lines, trip_day_count
-
-    prices, rows = [], []
-    for item in travelers or []:
-        visa = await get_visa_type(item.get("visa_type_id") or "")
-        if not visa:
-            raise HTTPException(400, f"Geçersiz vize tipi: {item.get('visa_type_id')}")
-        prices.append(float(visa["price"]))
-        rows.append(
-            {
-                "applicant_type": "child" if item.get("applicant_type") == "child" else "adult",
-                "visa_type_id": visa["id"],
-                "visa_name": visa["name"],
-                "visa_short_name": visa.get("short_name") or visa["name"],
-                "price": float(visa["price"]),
-            }
-        )
-    if not rows:
-        raise HTTPException(400, "Teklife en az bir yolcu eklemelisiniz.")
-
+    rows = await _visa_rows(travelers)
     lines = await resolve_store_lines(
         [StoreItemIn(**item) for item in (store_items or [])], arrival_date, departure_date
     )
     quote = compute_pricing(
-        prices,
+        [row["price"] for row in rows],
         dict(addons or {}),
         addon_prices=await addon_prices_try(),
         store_lines=lines,
@@ -158,13 +162,33 @@ async def price_offer(
     return {"travelers": rows, "quote": quote}
 
 
+def _customer_fields(payload) -> dict:
+    return {
+        "customer_name": (payload.customer_name or "").strip(),
+        "customer_phone": (payload.customer_phone or "").strip(),
+        "customer_email": (payload.customer_email or "").strip().lower(),
+    }
+
+
+def _tracking_fields(created_by: str) -> dict:
+    return {
+        "active": True,
+        "views": 0,
+        "conversions": 0,
+        "application_id": None,
+        "reference_code": None,
+        "used_at": None,
+        "created_by": created_by,
+    }
+
+
 async def create_offer(payload, created_by: str = "") -> dict:
     """Teklifi fiyatlandirip kaydeder ve dokumani dondurur."""
-    travelers = [t.model_dump() for t in payload.travelers]
     store_items = [i.model_dump() for i in payload.store_items]
+    addons = payload.addons.model_dump()
     priced = await price_offer(
-        travelers,
-        payload.addons.model_dump(),
+        [t.model_dump() for t in payload.travelers],
+        addons,
         store_items,
         payload.arrival_date,
         payload.departure_date,
@@ -175,11 +199,9 @@ async def create_offer(payload, created_by: str = "") -> dict:
         "id": str(uuid.uuid4()),
         "token": new_token(),
         "title": (payload.title or "").strip() or auto_title(priced["travelers"]),
-        "customer_name": (payload.customer_name or "").strip(),
-        "customer_phone": (payload.customer_phone or "").strip(),
-        "customer_email": (payload.customer_email or "").strip().lower(),
+        **_customer_fields(payload),
         "travelers": priced["travelers"],
-        "addons": payload.addons.model_dump(),
+        "addons": addons,
         "store_items": store_items,
         "arrival_date": payload.arrival_date or "",
         "departure_date": payload.departure_date or "",
@@ -187,13 +209,7 @@ async def create_offer(payload, created_by: str = "") -> dict:
         "quote": priced["quote"],
         "total": priced["quote"]["total"],
         "currency": priced["quote"].get("currency", "TRY"),
-        "active": True,
-        "views": 0,
-        "conversions": 0,
-        "application_id": None,
-        "reference_code": None,
-        "used_at": None,
-        "created_by": created_by,
+        **_tracking_fields(created_by),
         "created_at": now,
         "expires_at": now + timedelta(days=valid_days),
     }
@@ -219,20 +235,24 @@ def admin_view(doc: dict, base: str = "") -> dict:
     return out
 
 
-async def public_view(doc: dict) -> dict:
-    """Musteriye gosterilecek teklif: guncel fiyat, kisisel veri en aza indirilmis."""
+async def _repriced(doc: dict) -> dict:
+    """Guncel fiyati hesaplar; urun/vize pasife alinmissa kayitli tutara duser."""
     try:
-        priced = await price_offer(
+        return await price_offer(
             doc.get("travelers") or [],
             doc.get("addons") or {},
             doc.get("store_items") or [],
             doc.get("arrival_date") or "",
             doc.get("departure_date") or "",
         )
-    except Exception as exc:  # urun/vize pasife alinmis olabilir: kayitli tutar gosterilir
+    except Exception as exc:
         logger.info("offer %s repricing failed: %s", doc.get("token"), exc)
-        priced = {"travelers": doc.get("travelers") or [], "quote": doc.get("quote") or {}}
+        return {"travelers": doc.get("travelers") or [], "quote": doc.get("quote") or {}}
 
+
+async def public_view(doc: dict) -> dict:
+    """Musteriye gosterilecek teklif: guncel fiyat, kisisel veri en aza indirilmis."""
+    priced = await _repriced(doc)
     quote = priced["quote"]
     return {
         "token": doc.get("token"),

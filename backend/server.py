@@ -386,6 +386,7 @@ async def health() -> dict:
 
 import routes_account
 import routes_admin  # noqa: E402
+import routes_admin_offers  # noqa: E402
 import routes_admin_store  # noqa: E402
 import routes_store  # noqa: E402
 import routes_payments  # noqa: E402
@@ -399,6 +400,7 @@ api_router.include_router(routes_account.router, tags=["account"])
 api_router.include_router(routes_store.router, tags=["store"])
 api_router.include_router(routes_admin.router, tags=["admin"])
 api_router.include_router(routes_admin_store.router, tags=["admin"])
+api_router.include_router(routes_admin_offers.router, tags=["admin"])
 api_router.include_router(routes_whatsapp.router, tags=["whatsapp"])
 api_router.include_router(routes_zami.router, tags=["zami"])
 

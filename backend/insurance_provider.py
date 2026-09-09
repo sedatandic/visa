@@ -57,39 +57,32 @@ async def fetch_cost(days: int) -> dict:
     }
 
 
-async def sync_prices() -> dict:
-    """4 sigorta urununun maliyet ve satis fiyatini canli tarifeden gunceller."""
-    now = datetime.now(timezone.utc)
-    rows, errors = [], []
-    for product in INSURANCE_PRODUCTS:
-        try:
-            quote = await fetch_cost(int(product["validity_days"]))
-        except Exception as exc:
-            errors.append({"product_id": product["id"], "error": str(exc)})
-            logger.warning("sigorta fiyat senkronu basarisiz (%s): %s", product["id"], exc)
-            continue
-        await products_col.update_one(
-            {"id": product["id"]},
-            {
-                "$set": {
-                    "cost_try": quote["cost"],
-                    "price_try": quote["price"],
-                    "provider": "tamamliyo",
-                    "provider_urun_id": tamamliyo.URUN_ID,
-                    "provider_product_name": quote["product_name"],
-                    "cost_synced_at": now,
-                    "active": True,
-                }
-            },
-            upsert=False,
-        )
-        rows.append({"product_id": product["id"], **quote})
-
-    # Katalogdan cikarilan eski sigorta urunlerini vitrinden kaldir
-    keep = [p["id"] for p in INSURANCE_PRODUCTS]
-    retired = await products_col.update_many(
-        {"kind": "insurance", "id": {"$nin": keep}}, {"$set": {"active": False}}
+async def _sync_product(product: dict, now) -> tuple[dict | None, dict | None]:
+    """Tek urunun canli maliyet/satis fiyatini gunceller; hata olursa (None, hata)."""
+    try:
+        quote = await fetch_cost(int(product["validity_days"]))
+    except Exception as exc:
+        logger.warning("sigorta fiyat senkronu basarisiz (%s): %s", product["id"], exc)
+        return None, {"product_id": product["id"], "error": str(exc)}
+    await products_col.update_one(
+        {"id": product["id"]},
+        {
+            "$set": {
+                "cost_try": quote["cost"],
+                "price_try": quote["price"],
+                "provider": "tamamliyo",
+                "provider_urun_id": tamamliyo.URUN_ID,
+                "provider_product_name": quote["product_name"],
+                "cost_synced_at": now,
+                "active": True,
+            }
+        },
+        upsert=False,
     )
+    return {"product_id": product["id"], **quote}, None
+
+
+async def _save_sync_state(now, rows: list, errors: list) -> None:
     await settings_col.update_one(
         {"key": SETTINGS_KEY},
         {
@@ -102,6 +95,22 @@ async def sync_prices() -> dict:
         },
         upsert=True,
     )
+
+
+async def sync_prices() -> dict:
+    """4 sigorta urununun maliyet ve satis fiyatini canli tarifeden gunceller."""
+    now = datetime.now(timezone.utc)
+    rows, errors = [], []
+    for product in INSURANCE_PRODUCTS:
+        row, error = await _sync_product(product, now)
+        (rows if row else errors).append(row or error)
+
+    # Katalogdan cikarilan eski sigorta urunlerini vitrinden kaldir
+    keep = [p["id"] for p in INSURANCE_PRODUCTS]
+    retired = await products_col.update_many(
+        {"kind": "insurance", "id": {"$nin": keep}}, {"$set": {"active": False}}
+    )
+    await _save_sync_state(now, rows, errors)
     return {
         "synced_at": now.isoformat(),
         "rows": rows,
