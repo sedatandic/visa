@@ -2696,3 +2696,28 @@ Uygulanmayan (bilincli) oneriler: siparis/makbuz URL'lerindeki e-posta parametre
 imzali token'a cevrilmesi, e-postadaki imzali dosya linklerinin 180 gunden kisaltilmasi
 (musteri deneyimini etkiler), Redis tabanli dagitik limiter, TAMAMLIYO kart bilgilerinin
 harici secret manager'a tasinmasi (platformda .env tek secret store).
+
+## 2026-06-18 · "Toplam neden 5.550?" — gizli sigorta indirimi artik dokumde gorunuyor
+Kullanici sikayeti: Vize 5.190 + Sigorta 450 = 5.640 beklenirken toplam 5.550 cikiyordu.
+Kok neden: `content.py:WITH_VISA_INSURANCE_DISCOUNT` (vize ile birlikte alinan policeye
+indirim) toplamdan dusuluyor ama fiyat dokumunde HIC gosterilmiyordu (yalniz Offer.jsx
+sayfasinda satiri vardi). Fark = police bedelinin %20'si (90 TL).
+
+Yapilanlar:
+- Indirim orani kullanici talebiyle **%20 -> %10** dusuruldu (`content.py`, badge/note
+  metinleri + yeni `card_badge` anahtari).
+- `/api/products` yanitina `visa_insurance` blogu eklendi (routes_store.py) - frontend
+  orani/rozet metnini sabit yazmak yerine backend'den okuyor.
+- Indirim satiri artik her yerde: Apply sidebar ozeti (`summary-insurance-discount`),
+  Adim 4 fiyat dokumu, Track sayfasi (`tracking-insurance-discount`), Admin basvuru
+  detayi, basvuru formu PDF (`application_pdf._pricing_rows`), odeme makbuzu PDF
+  (`payment_receipt_pdf._application_summary_rows`), e-posta ozeti (`emailer._pricing_block`).
+- Sigorta secim kartlarinda rozet + ustu cizili fiyat: `ExtraOptions.jsx` OptionCard'a
+  `discount` prop'u eklendi (560 TL ustu cizili -> 504 TL, "Vize ile birlikte %10 indirim").
+- Ek bulgu duzeltildi: Track sayfasindaki fiyat dokumu magaza (sigorta/eSIM) satirlarini
+  hic listelemiyordu; store_items + paket indirimi satirlari eklendi.
+
+Dogrulama: `/api/pricing/quote` -> 5190 + 560 - 56 = 5694 (%10). Apply Adim 2 ekran
+goruntusu: kart rozeti + 560/504 fiyat, ozet satiri "- 56 TL", toplam 5.694 TL. Track
+sayfasi gecici veri ile dogrulandi (sonra geri alindi). PDF/e-posta satirlari python ile
+dogrulandi. pytest: 611 passed / 5 skipped.

@@ -247,6 +247,8 @@ export default function Apply() {
     // Vize basvurusu icinde satilan ek urunler (magaza katalogundan)
     const [storeProducts, setStoreProducts] = useState([]);
     const [bundleInfo, setBundleInfo] = useState(null);
+    // Vize basvurusuyla birlikte alinan policeye uygulanan indirim bilgisi
+    const [visaInsuranceInfo, setVisaInsuranceInfo] = useState(null);
     const [insurancePick, setInsurancePick] = useState(null);
     const [esimQty, setEsimQty] = useState({});
     const [tourQty, setTourQty] = useState({});
@@ -499,6 +501,7 @@ export default function Apply() {
             .then(({ data }) => {
                 setStoreProducts(data.items || []);
                 if (data.bundle) setBundleInfo(data.bundle);
+                if (data.visa_insurance) setVisaInsuranceInfo(data.visa_insurance);
             })
             .catch(() => {});
     }, []);
@@ -1023,10 +1026,24 @@ export default function Apply() {
         );
     };
 
+    // Vize ile birlikte alinan policede indirim: kartta ustu cizili fiyat + rozet
+    const insuranceDiscountRate = Number(visaInsuranceInfo?.rate || 0);
+    const insuranceDiscountFor = (product) => {
+        if (!(insuranceDiscountRate > 0)) return null;
+        const price = Number(product.price) || 0;
+        return {
+            label:
+                visaInsuranceInfo?.card_badge ||
+                `Vize ile birlikte %${Math.round(insuranceDiscountRate * 100)} indirim`,
+            finalPrice: Math.round(price * (1 - insuranceDiscountRate) * 100) / 100,
+        };
+    };
+
     const insuranceOptions = visibleInsurance.map((p) => ({
         id: p.id,
         product: p,
         badges: badgesFor(p, visibleInsurance, recommendedInsuranceId, `insurance-recommended-${p.id}`),
+        discount: insuranceDiscountFor(p),
         fit: fitNoteFor(p),
         highlight: [p.coverage, `${p.validity_days} gün geçerli`].filter(Boolean).join(" · "),
         features: (p.features || []).slice(0, 2),
@@ -3438,6 +3455,12 @@ export default function Apply() {
                                                             value={formatMoney(s.total, quote.currency)}
                                                         />
                                                     ))}
+                                                    {quote.visa_insurance_discount > 0 && (
+                                                        <SummaryRow
+                                                            label={`${quote.visa_insurance_discount_title || "Sigorta dahil vize indirimi"} (%${Math.round((quote.visa_insurance_discount_rate || 0) * 100)})`}
+                                                            value={`- ${formatMoney(quote.visa_insurance_discount, quote.currency)}`}
+                                                        />
+                                                    )}
                                                     {quote.bundle_discount > 0 && (
                                                         <SummaryRow
                                                             label={`${quote.bundle_discount_title || "Seyahat paketi indirimi"} (%${Math.round((quote.bundle_discount_rate || 0) * 100)})`}
@@ -3731,6 +3754,20 @@ export default function Apply() {
                                                 <span className="font-semibold">{formatMoney(s.total, quote.currency)}</span>
                                             </div>
                                         ))}
+                                        {quote.visa_insurance_discount > 0 && (
+                                            <div
+                                                className="flex justify-between text-[hsl(var(--brand-green))]"
+                                                data-testid="summary-insurance-discount"
+                                            >
+                                                <span>
+                                                    {quote.visa_insurance_discount_title || "Sigorta dahil vize indirimi"} (%
+                                                    {Math.round((quote.visa_insurance_discount_rate || 0) * 100)})
+                                                </span>
+                                                <span className="font-semibold">
+                                                    - {formatMoney(quote.visa_insurance_discount, quote.currency)}
+                                                </span>
+                                            </div>
+                                        )}
                                         {quote.bundle_discount > 0 && (
                                             <div className="flex justify-between text-[hsl(var(--brand-green))]" data-testid="summary-bundle-discount">
                                                 <span>Paket indirimi (%{Math.round((quote.bundle_discount_rate || 0) * 100)})</span>

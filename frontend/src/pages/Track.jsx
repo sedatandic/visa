@@ -482,6 +482,44 @@ export default function Track() {    const [searchParams] = useSearchParams();
                                                 <span className="font-semibold">{formatMoney(a.total, pricing.currency)}</span>
                                             </div>
                                         ))}
+                                        {(pricing.store_items || []).map((s) => (
+                                            <div key={s.product_id} className="flex justify-between gap-3" data-testid={`tracking-store-line-${s.product_id}`}>
+                                                <span className="text-muted-foreground">
+                                                    {s.name} x{s.quantity}
+                                                    {(s.scheduled_date || s.starts_on) && (
+                                                        <span className="block text-xs">
+                                                            {formatDate(s.scheduled_date || s.starts_on)}
+                                                            {s.scheduled_date
+                                                                ? s.scheduled_time
+                                                                    ? ` · ${s.scheduled_time}`
+                                                                    : ""
+                                                                : s.ends_on
+                                                                  ? ` – ${formatDate(s.ends_on)}`
+                                                                  : " itibaren"}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                <span className="font-semibold">{formatMoney(s.total, pricing.currency)}</span>
+                                            </div>
+                                        ))}
+                                        {pricing.visa_insurance_discount > 0 && (
+                                            <div className="flex justify-between text-[hsl(var(--brand-green))]" data-testid="tracking-insurance-discount">
+                                                <span>
+                                                    {pricing.visa_insurance_discount_title || "Sigorta dahil vize indirimi"} (%
+                                                    {Math.round((pricing.visa_insurance_discount_rate || 0) * 100)})
+                                                </span>
+                                                <span className="font-semibold">- {formatMoney(pricing.visa_insurance_discount, pricing.currency)}</span>
+                                            </div>
+                                        )}
+                                        {pricing.bundle_discount > 0 && (
+                                            <div className="flex justify-between text-[hsl(var(--brand-green))]" data-testid="tracking-bundle-discount">
+                                                <span>
+                                                    {pricing.bundle_discount_title || "Seyahat paketi indirimi"} (%
+                                                    {Math.round((pricing.bundle_discount_rate || 0) * 100)})
+                                                </span>
+                                                <span className="font-semibold">- {formatMoney(pricing.bundle_discount, pricing.currency)}</span>
+                                            </div>
+                                        )}
                                         <div className="flex items-end justify-between border-t border-border pt-2">
                                             <span className="font-semibold">Toplam</span>
                                             <span className="font-heading text-xl font-bold">{formatMoney(pricing.total, pricing.currency)}</span>

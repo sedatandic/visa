@@ -20,6 +20,7 @@ const OptionCard = ({ option, disabled, unitLabel, testId }) => {
     const {
         product,
         badges = [],
+        discount,
         fit,
         highlight,
         features = [],
@@ -49,6 +50,14 @@ const OptionCard = ({ option, disabled, unitLabel, testId }) => {
             data-testid={testId}
         >
             <div className="mb-3 flex min-h-[22px] flex-wrap gap-1.5">
+                {discount && (
+                    <span
+                        className="rounded-full bg-[hsl(var(--brand-green)/0.12)] px-2 py-0.5 text-[11px] font-semibold text-[hsl(var(--brand-green))]"
+                        data-testid={`${testId}-discount-badge`}
+                    >
+                        {discount.label}
+                    </span>
+                )}
                 {badges.map((b) => (
                     <span
                         key={b.label}
@@ -105,10 +114,33 @@ const OptionCard = ({ option, disabled, unitLabel, testId }) => {
             )}
             <div className="flex-1" />
             {dateNote}
-            <p className="mt-3 font-heading text-base font-extrabold text-primary">
-                {formatMoney(product.price, product.currency)}
-                <span className="ml-1 text-xs font-semibold text-muted-foreground">/ {unitLabel}</span>
-            </p>
+            {discount ? (
+                <div className="mt-3">
+                    <p className="font-heading text-base font-extrabold text-primary">
+                        <span
+                            className="mr-2 text-sm font-semibold text-muted-foreground line-through"
+                            data-testid={`${testId}-list-price`}
+                        >
+                            {formatMoney(product.price, product.currency)}
+                        </span>
+                        <span data-testid={`${testId}-final-price`}>
+                            {formatMoney(discount.finalPrice, product.currency)}
+                        </span>
+                        <span className="ml-1 text-xs font-semibold text-muted-foreground">/ {unitLabel}</span>
+                    </p>
+                    <p
+                        className="mt-1 text-[11px] font-semibold text-[hsl(var(--brand-green))]"
+                        data-testid={`${testId}-discount-note`}
+                    >
+                        Vize başvurunuzla birlikte alındığı için indirimli
+                    </p>
+                </div>
+            ) : (
+                <p className="mt-3 font-heading text-base font-extrabold text-primary">
+                    {formatMoney(product.price, product.currency)}
+                    <span className="ml-1 text-xs font-semibold text-muted-foreground">/ {unitLabel}</span>
+                </p>
+            )}
             {selected && onQtyChange && (
                 <div
                     className="mt-3 flex items-center justify-between gap-2"

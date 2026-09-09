@@ -170,6 +170,16 @@ def _application_summary_rows(doc: dict) -> list:
                 "- " + money(pricing["family_discount"], currency),
             )
         )
+    if pricing.get("visa_insurance_discount"):
+        rows.append(
+            (
+                _discount_label(
+                    pricing.get("visa_insurance_discount_title") or "Sigorta dahil vize indirimi",
+                    pricing.get("visa_insurance_discount_rate"),
+                ),
+                "- " + money(pricing["visa_insurance_discount"], currency),
+            )
+        )
     if pricing.get("bundle_discount"):
         rows.append(
             (

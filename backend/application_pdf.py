@@ -378,6 +378,15 @@ def _pricing_rows(app_doc: dict) -> list:
                 )
             )
         rows += _extras_rows(pricing, currency)
+        if pricing.get("visa_insurance_discount"):
+            rows.append(
+                _discount_row(
+                    pricing.get("visa_insurance_discount_title") or "Sigorta dahil vize indirimi",
+                    pricing["visa_insurance_discount"],
+                    pricing.get("visa_insurance_discount_rate"),
+                    currency,
+                )
+            )
         if pricing.get("bundle_discount"):
             rows.append(
                 _discount_row(

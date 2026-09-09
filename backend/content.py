@@ -639,10 +639,11 @@ BUNDLE_DISCOUNT = {
 # Sigortayi vize basvurusuyla birlikte alan musteriye poliçe bedelinde indirim
 # (tek basina magazadan alimda gecerli degil - amac vize + sigorta paketini cazip kilmak)
 WITH_VISA_INSURANCE_DISCOUNT = {
-    "rate": 0.20,
+    "rate": 0.10,
     "title": "Sigorta dahil vize indirimi",
-    "badge": "Vize + sigorta = poliçede %20 indirim",
-    "note": "Sigortayı vize başvurunuzla birlikte alın, poliçe bedelinde %20 indirim uygulanır.",
+    "badge": "Vize + sigorta = poliçede %10 indirim",
+    "card_badge": "Vize ile birlikte %10 indirim",
+    "note": "Sigortayı vize başvurunuzla birlikte alın, poliçe bedelinde %10 indirim uygulanır.",
 }
 
 

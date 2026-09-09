@@ -1655,3 +1655,20 @@ Detay ve test sonuclari: CHANGELOG.md 2026-06-16.
 - P1 **Dubai ofis adresi dogrulama**: varsayilan adres kullanildi; gercek adres farkliysa
   Admin -> Sirket ekranindan guncellenmeli.
 - P1 Teklif linkleri donusum raporu; P2 police yenileme, global Ingilizce surum.
+
+## 2026-06-18 (fork) · Fiyat dokumu seffafligi: sigorta indirimi satiri + oran %10
+Kullanici sorusu: "Vize 5.190 + Sigorta 450 iken toplam nasil 5.550 oluyor?"
+Kok neden: vize ile birlikte alinan police icin uygulanan indirim (o zaman %20) toplamdan
+dusuluyordu ama hicbir fiyat dokumunde satir olarak gosterilmiyordu.
+
+Karar ve uygulama (detay: CHANGELOG.md 2026-06-18):
+- Indirim orani %20 -> **%10** (content.py `WITH_VISA_INSURANCE_DISCOUNT`).
+- Indirim satiri tum yuzeylerde gorunur: Apply ozeti + Adim 4, Track, Admin detay,
+  basvuru PDF, makbuz PDF, e-posta ozeti.
+- Sigorta kartlarinda rozet + ustu cizili liste fiyati (560 -> 504).
+- Track fiyat dokumune magaza (sigorta/eSIM) satirlari eklendi (eksikti).
+Durum: DONE · pytest 611 passed / 5 skipped · UI 3 yuzeyde ekran goruntusu ile dogrulandi.
+
+Siradaki bekleyenler (degismedi): gercek IBAN'lar, WhatsApp canli mod (Meta kimlik
+bilgileri), teklif linki donusum raporu, teklif geri sayimi, makbuz linki imzali kod,
+gercek tur fotograflari, ATV +40 USD ek secenek.

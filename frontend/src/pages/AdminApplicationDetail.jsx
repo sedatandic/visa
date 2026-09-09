@@ -649,6 +649,12 @@ export default function AdminApplicationDetail() {
                                     {a.linked_order_reference && (
                                         <Row label="Bağlı sipariş (teslimat)" value={a.linked_order_reference} />
                                     )}
+                                    {pricing.visa_insurance_discount > 0 && (
+                                        <Row
+                                            label={`${pricing.visa_insurance_discount_title || "Sigorta dahil vize indirimi"} (%${Math.round((pricing.visa_insurance_discount_rate || 0) * 100)})`}
+                                            value={`- ${formatMoney(pricing.visa_insurance_discount, pricing.currency)}`}
+                                        />
+                                    )}
                                     {pricing.bundle_discount > 0 && (
                                         <Row
                                             label={`${pricing.bundle_discount_title || "Seyahat paketi indirimi"} (%${Math.round((pricing.bundle_discount_rate || 0) * 100)})`}

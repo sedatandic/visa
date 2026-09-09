@@ -399,6 +399,15 @@ def _pricing_block(app_doc: dict) -> str:
         _row(_store_item_label(s), money(s["total"], currency))
         for s in p.get("store_items") or []
     ]
+    if p.get("visa_insurance_discount"):
+        lines.append(
+            _discount_row(
+                p.get("visa_insurance_discount_title") or "Sigorta dahil vize indirimi",
+                p["visa_insurance_discount"],
+                p.get("visa_insurance_discount_rate", 0),
+                currency,
+            )
+        )
     if p.get("bundle_discount"):
         lines.append(
             _discount_row(

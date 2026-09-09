@@ -21,6 +21,7 @@ from pydantic import BaseModel, EmailStr, Field
 from content import (
     BANK_TRANSFER,
     BUNDLE_DISCOUNT,
+    WITH_VISA_INSURANCE_DISCOUNT,
     bundle_discount_amount,
     family_discount_rate,
 )
@@ -348,7 +349,12 @@ async def get_products(kind: Optional[str] = None) -> dict:
     if kind and kind not in KIND_LABELS:
         raise HTTPException(400, "Gecersiz urun tipi.")
     items = await product_list(kind)
-    return {"items": items, "fx": await get_fx(), "bundle": BUNDLE_DISCOUNT}
+    return {
+        "items": items,
+        "fx": await get_fx(),
+        "bundle": BUNDLE_DISCOUNT,
+        "visa_insurance": WITH_VISA_INSURANCE_DISCOUNT,
+    }
 
 
 @router.get("/bundles")
