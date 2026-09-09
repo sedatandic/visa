@@ -2578,3 +2578,46 @@ Dogrulama: `pytest` 602 passed / 5 skipped; `order_delivered_html` link render k
   script: `memory/brand_backup/fix_seal_extras.py`.
 - Dogrulama: masaustu + mobil (414px) Playwright ekran goruntuleri; kalan sure
   1:03 -> 0:24 dogru sayiyor, cizgi cizimin altinda, rozet keskin.
+
+### 2026-06-17 (devam) · Seslendirme ile altyazi birebir eslestirildi
+- Kullanici bildirimi: "yazilar ve konusmalar ayni degil". Kok neden: altyazi metinleri
+  (`VisaExplainer.jsx` SCENES.subtitle) sonradan guncellenmis, ses ise eski
+  `scripts/generate_narration_eleven.py` metniyle uretilmisti (upload sahnesinde
+  "yeterlidir/yoktur", extras sahnesinde eksik "ve").
+- Script metinleri altyazilarla birebir ayni hale getirildi ve dogrulama icin
+  JSX <-> script karsilastirmasi yapildi (7/7 sahne AYNI; sadece TTS icin "36" ->
+  "otuz alti" yaziliyor, okunusu ayni).
+- ElevenLabs (eleven_v3, Fusun Tuncer) ile tek parca ses yeniden uretildi:
+  `full.mp3` 68.1 sn (onceki 65.7) + `full.json` sahne pencereleri guncellendi.
+  Yedek: /tmp/full.prev.mp3 (kalici saklama gerekirse memory/brand_backup'a alinabilir).
+- Bagimsiz dogrulama: OpenAI Whisper (Emergent LLM key) ile yeni ses transkribe edildi;
+  cikan metin altyazilarla birebir ayni (STT'nin "TURSAP / Beyaz Fon'da" gibi kucuk
+  yazim yorumlari haric).
+- Tarayici kontrolu: audio.duration 68.1, sahne atlamasi (upload -> 22.8 sn) ve
+  "0:45 kaldi" sayaci dogru.
+
+### 2026-06-17 (devam) · Dubai Col Safarisi icerik guncellemesi + ozet kart genisligi
+- **Isimlendirme**: "Col safarisi ve Dubai aktiviteleri" -> **"Dubai Col Safarisi"**
+  (Tours.jsx PageHeader + setMeta, seo-pages.js h1/title/description, Navbar ve Footer
+  linki "Col Safarisi & Turlar" -> "Dubai Col Safarisi"). Urun adlari da
+  "Dubai Col Safarisi · Aksam Turu" / "· VIP Aksam Turu" oldu.
+- **"Turkce konusan rehber" ibaresi kaldirildi**: store_catalog.py features,
+  HomeTourStrip highlight, Tours.jsx aciklama/meta, seo-pages.js (3 yer).
+- **Otelden alinis saati tek saat**: `time_slots` 5 secenek yerine `["15:00"]`.
+  Backend `tour_schedule` saati time_slots'a gore dogruladigi icin testler de
+  guncellendi (test_iteration_79: 1 slot + "15:00", test_iteration_95: slot listesi
+  ve scheduled_time, test_iteration_102: 14:00 -> 15:00).
+- **Yeni bilgiler**: "Ortalama 7–8 saat", "7 kisilik 4×4 Land Cruiser" feature ve
+  strip highlight olarak eklendi.
+- **Tur programi ozeti**: urunlere `itinerary` alani eklendi (8 adim; ATV standart
+  turda +40 USD opsiyonel, VIP'te dahil). Tours.jsx kartlarinda "Tur programi (ozet)"
+  aciir/kapanir liste (`tour-plan-toggle-<id>`, `tour-plan-<id>`); seo-pages.js
+  "Tur programinda neler var?" listesi de bu ozetle guncellendi.
+- DB: `store_products` icindeki iki tur dokumani yeni ad/summary/features/itinerary/
+  time_slots ile guncellendi (API dogrulandi).
+- **Basvuru ozeti karti genisletildi**: Apply.jsx grid `1.4fr_0.6fr` -> `1.25fr_0.75fr`
+  (1520px'te 330px -> 402px).
+- Dogrulama: pytest 602 passed / 5 skipped; /dubai-turlari ekran goruntusu (H1, tek
+  15:00 slotu, 8 adimli program), /basvuru ozet kart genisligi.
+- NOT (kullaniciya soruldu): 15:00 alinis + 21:00-22:00 donus ~6-7 saat ediyor ama
+  metinde "Ortalama 7–8 saat" yaziyor; kullanici onayina birakildi.

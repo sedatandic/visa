@@ -83,7 +83,7 @@ def test_products_tour_kind(s):
     for it in items:
         if it["id"].startswith("tour_"):
             assert it.get("needs_schedule") is True
-            assert it.get("time_slots") == ["14:00", "14:30", "15:00", "15:30", "16:00"]
+            assert it.get("time_slots") == ["15:00"]
             assert it["currency"] == "TRY"
             assert it["price"] > 0
             assert it.get("image_url", "").startswith("http")
@@ -141,7 +141,7 @@ def test_tour_order_happy_path(s):
                     "product_id": "tour_desert_safari",
                     "quantity": 2,
                     "scheduled_date": future,
-                    "scheduled_time": "14:30",
+                    "scheduled_time": "15:00",
                 }
             ]
         ),
@@ -151,7 +151,7 @@ def test_tour_order_happy_path(s):
     CREATED_ORDER_REFS.append(order["reference_code"])
     line = order["items"][0]
     assert line["scheduled_date"] == future
-    assert line["scheduled_time"] == "14:30"
+    assert line["scheduled_time"] == "15:00"
     assert line["kind"] == "tour"
 
 

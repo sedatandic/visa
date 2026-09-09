@@ -2180,7 +2180,7 @@ export default function Apply() {
                         </div>
                     </div>
 
-                    <div className="mt-8 grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
+                    <div className="mt-8 grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
                         <motion.div
                             key={step}
                             initial={{ opacity: 0, y: 10 }}

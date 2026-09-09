@@ -55,7 +55,7 @@ const MENU_GROUPS = [
         items: [
             { to: "/esim", label: "Dubai eSIM", icon: Smartphone },
             { to: "/seyahat-sigortasi", label: "Dubai Seyahat Sigortası", icon: ShieldCheck },
-            { to: "/dubai-turlari", label: "Çöl Safarisi & Turlar", icon: Palmtree },
+            { to: "/dubai-turlari", label: "Dubai Çöl Safarisi", icon: Palmtree },
         ],
     },
     {

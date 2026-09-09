@@ -69,8 +69,8 @@ SCENES = [
     {
         "key": "upload",
         "sentences": [
-            "[energetic] Belgelerinizi yükleyip ödemenizi yapmanız yeterlidir.",
-            "[emphatic] Üstelik Dubai vizeniz onaylanmadan önce uçak bileti ya da otel rezervasyonu yaptırmanıza da gerek yoktur.",
+            "[energetic] Belgelerinizi yükleyip ödemenizi yapmanız yeterli.",
+            "[emphatic] Üstelik Dubai vizeniz onaylanmadan önce uçak bileti ya da otel rezervasyonu yaptırmanıza da gerek yok.",
         ],
     },
     {
@@ -83,7 +83,7 @@ SCENES = [
         "key": "extras",
         "sentences": [
             "[energetic] Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de başvurunuza ekleyebilirsiniz.",
-            "[informative] Böylece Dubai'ye vardığınız anda internet bağlantınız hazır olur, seyahat sigortanız anında devreye girer.",
+            "[informative] Böylece Dubai'ye vardığınız anda internet bağlantınız hazır olur ve seyahat sigortanız anında devreye girer.",
         ],
     },
     {

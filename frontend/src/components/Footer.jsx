@@ -68,7 +68,7 @@ export const Footer = () => {
                     <li><Link to="/hizmetler" className="transition-colors hover:text-primary">Hizmetlerimiz</Link></li>
                     <li><Link to="/esim" className="transition-colors hover:text-primary" data-testid="footer-esim-link">Dubai eSIM</Link></li>
                     <li><Link to="/seyahat-sigortasi" className="transition-colors hover:text-primary" data-testid="footer-insurance-link">Dubai Seyahat Sigortası</Link></li>
-                    <li><Link to="/dubai-turlari" className="transition-colors hover:text-primary" data-testid="footer-tours-link">Çöl Safarisi & Turlar</Link></li>
+                    <li><Link to="/dubai-turlari" className="transition-colors hover:text-primary" data-testid="footer-tours-link">Dubai Çöl Safarisi</Link></li>
                     <li><Link to="/gelismeler" className="transition-colors hover:text-primary">Dubai'den Haberler</Link></li>
                     <li><Link to="/sss" className="transition-colors hover:text-primary">Sıkça Sorulan Sorular</Link></li>
                     <li><Link to="/takip" className="transition-colors hover:text-primary">Başvuru Takip</Link></li>

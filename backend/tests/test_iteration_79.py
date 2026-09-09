@@ -145,7 +145,8 @@ class TestVipSafari:
             assert fx > 0, "missing fx on response"
             assert p.get("needs_schedule") is True, f"{p['id']} needs_schedule should be True"
             slots = p.get("time_slots") or []
-            assert len(slots) == 5, f"{p['id']} expected 5 time_slots, got {len(slots)}"
+            assert len(slots) == 1, f"{p['id']} expected single 15:00 pickup slot, got {slots}"
+            assert slots[0] == "15:00", f"{p['id']} pickup slot should be 15:00, got {slots}"
 
     def test_vip_order_with_schedule_succeeds(self, api):
         """POST /api/orders with scheduled_date + scheduled_time succeeds and stores schedule."""

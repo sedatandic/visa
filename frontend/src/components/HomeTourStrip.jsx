@@ -8,8 +8,8 @@ import { Button } from "./ui/button";
 
 const HIGHLIGHTS = [
     { icon: MapPin, text: "Otelinizden alış ve dönüş dahil" },
-    { icon: Users, text: "Türkçe konuşan rehber eşliğinde" },
-    { icon: Clock, text: "Yaklaşık 7 saat · öğleden sonra başlar" },
+    { icon: Users, text: "7 kişilik 4×4 Land Cruiser" },
+    { icon: Clock, text: "Ortalama 7–8 saat · alınış 15:00" },
 ];
 
 /** Ana sayfa çöl safarisi tanıtım şeridi: turları gösterir, sepete yönlendirir. */

@@ -18,6 +18,7 @@ const TourCard = ({ product, onAdd, inCart }) => {
     const [date, setDate] = useState("");
     const [slot, setSlot] = useState((product.time_slots || [])[0] || "");
     const [qty, setQty] = useState(1);
+    const [planOpen, setPlanOpen] = useState(false);
 
     return (
         <div
@@ -62,6 +63,38 @@ const TourCard = ({ product, onAdd, inCart }) => {
                         </li>
                     ))}
                 </ul>
+
+                {(product.itinerary || []).length > 0 && (
+                    <div className="mt-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
+                        <button
+                            type="button"
+                            onClick={() => setPlanOpen((o) => !o)}
+                            className="flex w-full items-center justify-between gap-3 text-left"
+                            aria-expanded={planOpen}
+                            data-testid={`tour-plan-toggle-${product.id}`}
+                        >
+                            <span className="font-heading text-sm font-bold">Tur programı (özet)</span>
+                            <span className="text-xs font-semibold text-primary">
+                                {planOpen ? "Kapat" : "Göster"}
+                            </span>
+                        </button>
+                        {planOpen && (
+                            <ol
+                                className="mt-3 space-y-2 border-t border-border/70 pt-3"
+                                data-testid={`tour-plan-${product.id}`}
+                            >
+                                {product.itinerary.map((step, i) => (
+                                    <li key={step} className="flex gap-2.5 text-xs leading-5 text-muted-foreground">
+                                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/12 text-[10px] font-bold text-primary">
+                                            {i + 1}
+                                        </span>
+                                        <span>{step}</span>
+                                    </li>
+                                ))}
+                            </ol>
+                        )}
+                    </div>
+                )}
 
                 <div className="mt-6 space-y-4 border-t border-border pt-5">
                     <div className="space-y-2">
@@ -156,8 +189,8 @@ export default function Tours() {
 
     useEffect(() => {
         setMeta(
-            "Dubai Turları ve Çöl Safarisi | Dubai Vize Hattı",
-            "Türkçe rehberli Dubai çöl safarisi turları: kumul turu, deve gezisi, kum sörfü ve Arap kampında akşam yemeği. Tarih ve saat seçip sepete ekleyin.",
+            "Dubai Çöl Safarisi | Dubai Vize Hattı",
+            "Dubai çöl safarisi: 4×4 Land Cruiser ile kumul turu, kum sörfü, deve turu ve Bedevi kampında açık büfe akşam yemeği. Otelden alınış 15:00, ortalama 7–8 saat.",
             { canonicalPath: "/dubai-turlari" }
         );
     }, []);
@@ -197,8 +230,8 @@ export default function Tours() {
         <div data-testid="tours-page">
             <PageHeader
                 eyebrow="Dubai turları"
-                title="Çöl safarisi ve Dubai aktiviteleri"
-                description="Türkçe konuşan rehber eşliğinde çöl safarisi turlarını tarih ve saat seçerek sepete ekleyin; rezervasyonunuzu biz yapar, kupon ve buluşma bilgilerini e-postanıza göndeririz."
+                title="Dubai Çöl Safarisi"
+                description="Dubai çöl safarisi turunu tarih seçerek sepete ekleyin; otelinizden alınış saati 15:00, tur ortalama 7–8 saat sürer. Rezervasyonunuzu biz yapar, kupon ve buluşma bilgilerini e-postanıza göndeririz."
             />
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">

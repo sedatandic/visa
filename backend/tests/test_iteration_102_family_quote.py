@@ -143,7 +143,7 @@ class TestOrderParity:
             "items": [
                 {"product_id": "ins_15d", "quantity": 3},
                 {"product_id": "esim_3gb", "quantity": 2},
-                {"product_id": "tour_desert_safari", "quantity": 3, "scheduled_date": "2026-10-12", "scheduled_time": "14:00"},
+                {"product_id": "tour_desert_safari", "quantity": 3, "scheduled_date": "2026-10-12", "scheduled_time": "15:00"},
             ],
             "contact": {
                 "full_name": "TEST Iter102",

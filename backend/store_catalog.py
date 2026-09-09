@@ -132,42 +132,58 @@ INSURANCE_PRODUCTS = [
 ]
 
 # Dubai aktiviteleri: teslimat/rezervasyon acente eliyle yapilir
+DESERT_ITINERARY = [
+    "15:00 · Otelinizden alınış, çöl bölgesine yaklaşık 40 dakika yolculuk",
+    "30 dakika 4×4 kumul safarisi (dune bashing)",
+    "Kum sörfü (sandboarding) ve çölün en iyi fotoğraf noktalarında mola",
+    "Gün batımının ardından yerel Bedevi kampına geçiş",
+    "Kamp girişinde kısa deve turu ve fotoğraf çekimi",
+    "Açık büfe akşam yemeği, ateş ve dans gösterileri; kadın misafirlere kına",
+    "21:00 – 22:00 · Otelinize dönüş",
+]
+
 TOUR_PRODUCTS = [
     {
         "id": "tour_desert_safari",
         "kind": "tour",
-        "name": "Çöl Safarisi · Akşam Turu",
-        "summary": "4x4 araçlarla kumul turu, deve gezisi, kum sörfü ve geleneksel Arap kampında açık büfe akşam yemeği.",
+        "name": "Dubai Çöl Safarisi · Akşam Turu",
+        "summary": "7 kişilik 4×4 Land Cruiser ile kumul safarisi, kum sörfü, deve turu ve Bedevi kampında açık büfe akşam yemeği.",
         "price_usd": 45.0,
         "image_url": "https://images.unsplash.com/photo-1763535539149-53eddcfa20dd?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
         "needs_schedule": True,
-        "time_slots": ["14:00", "14:30", "15:00", "15:30", "16:00"],
+        "time_slots": ["15:00"],
         "features": [
-            "Otelinizden alış ve dönüş dahil",
-            "Kum sörfü, deve gezisi ve gün batımı molası",
-            "Geleneksel kampta açık büfe akşam yemeği",
-            "Türkçe konuşan rehber eşliğinde",
-            "Yaklaşık 7 saat sürer, öğleden sonra başlar",
+            "Otelinizden alış ve dönüş dahil · 7 kişilik 4×4 Land Cruiser",
+            "30 dakika kumul safarisi ve kum sörfü",
+            "Bedevi kampında deve turu, kına ve açık büfe akşam yemeği",
+            "Ateş ve dans gösterileriyle akşam programı",
+            "Ortalama 7–8 saat · otelden alınış 15:00",
         ],
+        "itinerary": DESERT_ITINERARY[:2]
+        + ["İsteğe bağlı 30 dakika ATV safari (+40 USD); istemeyen misafirler dinlenme ve alışveriş alanında vakit geçirir"]
+        + DESERT_ITINERARY[2:],
         "order": 1,
         "popular": True,
     },
     {
         "id": "tour_desert_safari_vip",
         "kind": "tour",
-        "name": "Çöl Safarisi · VIP Akşam Turu",
-        "summary": "Özel araçta kumul turu, quad bike denemesi, VIP kamp masası ve ateş başında canlı gösteriler.",
+        "name": "Dubai Çöl Safarisi · VIP Akşam Turu",
+        "summary": "Özel 4×4 Land Cruiser ile kumul safarisi, ATV (quad) sürüşü, VIP kamp masası ve ateş başında canlı gösteriler.",
         "price_usd": 55.0,
         "image_url": "https://images.unsplash.com/photo-1631730690491-d2efef90fc21?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
         "needs_schedule": True,
-        "time_slots": ["14:00", "14:30", "15:00", "15:30", "16:00"],
+        "time_slots": ["15:00"],
         "features": [
-            "Otelinizden özel araçla alış ve dönüş",
-            "Quad bike denemesi ve kum sörfü dahil",
+            "Otelinizden özel 4×4 Land Cruiser ile alış ve dönüş",
+            "30 dakika ATV (quad) safari ve kum sörfü dahil",
             "VIP kamp masası, sınırsız içecek ikramı",
             "Ateş gösterisi, tanura ve canlı müzik",
-            "Türkçe konuşan rehber · yaklaşık 7 saat",
+            "Ortalama 7–8 saat · otelden alınış 15:00",
         ],
+        "itinerary": DESERT_ITINERARY[:2]
+        + ["30 dakika ATV (quad) safari · VIP pakete dahil, ek ücret yok"]
+        + DESERT_ITINERARY[2:],
         "order": 2,
         "popular": False,
     },
