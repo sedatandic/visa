@@ -1406,3 +1406,23 @@ Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
   yeniden calistirilmali (ElevenLabs kredisi harcar) — kullaniciya soruldu.
 - Dogrulama: /api/visa-types 36 saatte donuyor, /vize-tipleri ekran goruntusu,
   pytest 507 passed / 3 skipped.
+
+## 2026-06-15 (4) · Seslendirme 36 saat, garanti rozeti, PDF baslik/etiket
+1. **Seslendirme yenilendi**: `scripts/generate_narration_eleven.py` track cumlesi
+   "ortalama iki is gunu" -> "otuz alti saat"; tek parca full.mp3 yeniden uretildi
+   (65.7 sn, eleven_v3). Sahne pencereleri full.json ile guncel; `VisaExplainer` voiceMs
+   degerleri yeni pencerelere gore (7340/5070/8300/9880/9610/12160/13340) ve etiket
+   "1,5 dakika" -> "1 dakika". Ekran metni + altyazi da "36 saat" oldu.
+   Dogrulama: /tmp/full_align.json icinde "otuz alti saat icinde" gecti, tarayicida
+   full.mp3 duration 65.7 okundu.
+2. **36 saat garantisi rozeti (yeni)**: `components/GuaranteeBadge.jsx`
+   (compact pill + kart varyanti). Hero altinda pill, /vize-tipleri fiyat tablosu altinda
+   kart. Kosullar tek kaynakta: content.py SSS ("36 saat garantisi nasil isliyor?") +
+   REFUND_TERMS yeni "36 saat garantisi" bolumu (/iade-kosullari).
+   Taahhut: sure asilirsa ekspres bedeli iade, ekspres alinmadiysa ucretsiz ekspres sira;
+   sure belgeler onaylanip basvuru mercilere iletildigi anda baslar, resmi tatil ve ek
+   inceleme talepleri haric.
+3. **PDF**: baslik iki satir + ortali ("Dubai Vizesi" / "Basvuru Detaylari", yeni
+   `title_head` stili); yolcu tablosu "Son Gecerlilik Tarihi" -> "Gecerlilik Tarihi"
+   (kolonlar 6/40/22/26/24/36/26 mm).
+- pytest 505 passed / 5 skipped; ana sayfa + /vize-tipleri ekran goruntuleriyle dogrulandi.

@@ -76,7 +76,7 @@ SCENES = [
     {
         "key": "track",
         "sentences": [
-            "[confident] Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyor ve onaylanan Dubai vizenizi ortalama iki iş günü içinde e-mail adresinize ve WhatsApp ile gönderiyoruz.",
+            "[confident] Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyor ve onaylanan Dubai vizenizi otuz altı saat içinde e-mail adresinize ve WhatsApp ile gönderiyoruz.",
         ],
     },
     {

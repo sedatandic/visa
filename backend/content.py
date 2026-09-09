@@ -413,6 +413,10 @@ FAQ = [
         "a": "Belgeleriniz eksiksiz olduğunda standart başvurular 36 saat içinde sonuçlanır. Ekspres vize hizmetiyle sonuç 12 saat içinde çıkar.",
     },
     {
+        "q": "36 saat garantisi nasıl işliyor?",
+        "a": "Belgeleriniz eksiksizse başvurunuzun 36 saat içinde sonuçlanacağını taahhüt ediyoruz. Süre aşılırsa ödediğiniz ekspres hizmet bedelini iade ediyoruz; ekspres hizmet almadıysanız başvurunuzu ücretsiz olarak ekspres sıraya alıyoruz. Süre, belgeleriniz onaylanıp başvurunuz resmî mercilere iletildiği anda başlar; resmî tatiller ile mercilerin ek belge veya inceleme talepleri süreye dahil değildir.",
+    },
+    {
         "q": "Pasaportumu göndermem gerekiyor mu?",
         "a": "Hayır. BAE vizesi elektronik olarak düzenlenir ve pasaportunuza işlenmez. Onaylanan vizeniz PDF olarak tarafınıza iletilir; sınır kapısında bu belgeyi göstermeniz yeterlidir.",
     },
@@ -798,6 +802,14 @@ REFUND_TERMS = {
             "items": [
                 "Başvurunuz henüz resmî makamlara iletilmediyse, ödemenizin tamamı 5 iş günü içinde iade edilir.",
                 "İptal talebinizi e-posta veya WhatsApp üzerinden referans kodunuzla iletmeniz yeterlidir.",
+            ],
+        },
+        {
+            "title": "36 saat garantisi",
+            "items": [
+                "Belgeleri eksiksiz olan standart başvurular 36 saat içinde sonuçlanır; süre, belgeler onaylanıp başvuru resmî mercilere iletildiği anda başlar.",
+                "Süre aşılırsa ödediğiniz ekspres hizmet bedeli iade edilir; ekspres hizmet almadıysanız başvurunuz ücretsiz olarak ekspres sıraya alınır.",
+                "Resmî tatiller ile mercilerin ek belge veya inceleme talepleri süreye dahil değildir; iade, talebe gerek olmadan 5 iş günü içinde ödeme yönteminize yapılır.",
             ],
         },
         {

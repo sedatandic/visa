@@ -21,6 +21,7 @@ import { VisaComparison } from "../components/VisaComparison";
 import { BankAccounts } from "../components/BankAccounts";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { FxNote } from "../components/FxNote";
+import { GuaranteeBadge } from "../components/GuaranteeBadge";
 import { PaymentTrustStrip } from "../components/PaymentTrustStrip";
 import { ContentByline } from "../components/ContentByline";
 import { Button } from "../components/ui/button";
@@ -208,6 +209,8 @@ export default function VisaTypes() {
                         </span>
                     </div>
                     <PricingTabs />
+
+                    <GuaranteeBadge className="mt-8" />
 
                     {visaTypes.length > 1 && (
                         <div className="mt-14" data-testid="visa-comparison-section">

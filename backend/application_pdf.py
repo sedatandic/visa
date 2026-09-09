@@ -108,6 +108,9 @@ def _styles() -> dict:
     reg, bold = _fonts()
     return {
         "title": ParagraphStyle("t", fontName=bold, fontSize=15, leading=19, textColor=INK),
+        "title_head": ParagraphStyle(
+            "th", fontName=bold, fontSize=15, leading=19, textColor=INK, alignment=TA_CENTER
+        ),
         "sub": ParagraphStyle("s", fontName=reg, fontSize=8, leading=11, textColor=MUTED),
         "section": ParagraphStyle(
             "sec", fontName=bold, fontSize=8, leading=11, textColor=GOLD, spaceAfter=3
@@ -123,7 +126,7 @@ def _styles() -> dict:
 
 
 def _header(app_doc: dict, st: dict) -> Table:
-    right = [Paragraph("Dubai Vizesi Başvuru Detayları", st["title"])]
+    right = [Paragraph("Dubai Vizesi<br/>Başvuru Detayları", st["title_head"])]
     cells = []
     if os.path.exists(LOGO_FILE):
         cells.append(Image(LOGO_FILE, width=52 * mm, height=52 * mm * 0.23, kind="proportional"))
@@ -250,7 +253,7 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
         "Adı Soyadı",
         "Doğum Tarihi",
         "Pasaport No",
-        "Son Geçerlilik Tarihi",
+        "Geçerlilik Tarihi",
         "Vize Türü",
         "Tutar",
     ]
@@ -272,7 +275,7 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
         )
     table = Table(
         rows,
-        colWidths=_cols(6, 40, 22, 24, 26, 36, 26),
+        colWidths=_cols(6, 40, 22, 26, 24, 36, 26),
         repeatRows=1,
     )
     table.setStyle(

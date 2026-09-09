@@ -28,7 +28,7 @@ const SCENES = [
         subtitle: "Dubai vizesi almak artık çok kolay. Başvurunuzu yapmak için yalnızca iki belgeye ihtiyacınız var.",
         alt: "Bavuluyla gülümseyen gezgin çizimi",
         silentMs: 6000,
-        voiceMs: 8185,
+        voiceMs: 7340,
     },
     {
         key: "passport",
@@ -39,7 +39,7 @@ const SCENES = [
         subtitle: "İlk olarak, pasaportunuzun kimlik bilgilerinin yer aldığı sayfanın fotoğrafını yükleyin.",
         alt: "Türk pasaportu, kimlik sayfası ve telefonla fotoğraflama çizimi",
         silentMs: 5000,
-        voiceMs: 5596,
+        voiceMs: 5070,
     },
     {
         key: "photo",
@@ -51,7 +51,7 @@ const SCENES = [
             "Ardından beyaz fonda çekilmiş güncel bir vesikalık fotoğraf ekleyin. Fotoğrafınızın gözlüksüz ve şapkasız olması gerekmektedir.",
         alt: "Yan yana iki vesikalık fotoğraf ve üstü çizili gözlük şapka çizimi",
         silentMs: 8500,
-        voiceMs: 9682,
+        voiceMs: 8300,
     },
     {
         key: "upload",
@@ -63,19 +63,19 @@ const SCENES = [
             "Belgelerinizi yükleyip ödemenizi yapmanız yeterlidir. Üstelik Dubai vizeniz onaylanmadan önce uçak bileti ya da otel rezervasyonu yaptırmanıza da gerek yoktur.",
         alt: "Belgelerin bulut simgesine yüklendiği çizim",
         silentMs: 10000,
-        voiceMs: 11250,
+        voiceMs: 9880,
     },
     {
         key: "track",
         step: "Adım 3",
         icon: Headphones,
         title: "Süreci sizin adınıza biz takip ediyoruz",
-        note: "Onaylanan vizeniz ortalama 2 iş gününde e-mail ve WhatsApp'ınızda",
+        note: "Onaylanan vizeniz 36 saatte e-mail ve WhatsApp'ınızda",
         subtitle:
-            "Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyor ve onaylanan Dubai vizenizi ortalama iki iş günü içinde e-mail adresinize ve WhatsApp ile gönderiyoruz.",
+            "Başvurunuzun tüm aşamalarını sizin adınıza biz takip ediyor ve onaylanan Dubai vizenizi 36 saat içinde e-mail adresinize ve WhatsApp ile gönderiyoruz.",
         alt: "Kulaklıklı danışman ve onay listesi çizimi",
         silentMs: 9000,
-        voiceMs: 11262,
+        voiceMs: 9610,
     },
     {
         key: "extras",
@@ -87,7 +87,7 @@ const SCENES = [
             "Dilerseniz seyahat sigortanızı ve Dubai eSIM'inizi de başvurunuza ekleyebilirsiniz. Böylece Dubai'ye vardığınız anda internet bağlantınız hazır olur ve seyahat sigortanız anında devreye girer.",
         alt: "eSIM ve seyahat sigortası simgeleri çizimi",
         silentMs: 11000,
-        voiceMs: 13084,
+        voiceMs: 12160,
     },
     {
         key: "cta",
@@ -99,7 +99,7 @@ const SCENES = [
             "Vizenizi Dubai Vize Hattı ile kolayca alın. TÜRSAB üyesi A grubu seyahat acentesi iş birliğiyle başvurunuzu baştan sona biz yürütüyoruz. Formu doldurun, gerisini bize bırakın. Dubai sizi bekliyor!",
         alt: "Dubai silüetine doğru havalanan uçak ve BAE bayrağı çizimi",
         silentMs: 12000,
-        voiceMs: 14243,
+        voiceMs: 13340,
         cta: true,
     },
 ];
@@ -240,7 +240,7 @@ export const VisaExplainer = () => {
                             <Play className="ml-0.5 h-6 w-6 fill-current" aria-hidden="true" />
                         </button>
                         <span className="rounded-full bg-white/90 px-3.5 py-1.5 text-[11px] font-bold text-foreground shadow-sm">
-                            Anlatımı başlat · 1,5 dakika
+                            Anlatımı başlat · 1 dakika
                         </span>
                     </motion.div>
                 )}
@@ -256,7 +256,7 @@ export const VisaExplainer = () => {
                         data-testid="explainer-listen-button"
                     >
                         <Headphones className="h-4.5 w-4.5" aria-hidden="true" />
-                        Anlatımı dinle · 1,5 dakika
+                        Anlatımı dinle · 1 dakika
                     </button>
                 )}
                 <div className="max-w-md">

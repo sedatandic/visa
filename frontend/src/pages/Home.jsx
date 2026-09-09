@@ -26,6 +26,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { ReviewSpotlight } from "../components/ReviewSpotlight";
 import { AuthorityStrip } from "../components/AuthorityStrip";
+import { GuaranteeBadge } from "../components/GuaranteeBadge";
 import { SecurityBadges } from "../components/SecurityBadges";
 import { VisaShowcase } from "../components/VisaShowcase";
 import { VisaExplainer } from "../components/VisaExplainer";
@@ -188,6 +189,10 @@ export default function Home() {
                             >
                                 Siz sadece belgelerinizi yükleyin, vize sürecinizi biz halledelim.
                             </p>
+
+                            <div className="mt-3 flex justify-center">
+                                <GuaranteeBadge compact />
+                            </div>
 
                             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
                                 <Button asChild size="lg" className="w-full sm:w-auto" data-testid="hero-apply-now-button">
