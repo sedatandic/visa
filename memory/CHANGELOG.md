@@ -2348,3 +2348,36 @@ Kullanicinin paylastigi rapor madde madde **olculdu**; yalniz gercek olanlar duz
 - Uctan uca: teklif olustur -> `/teklif/<token>` -> `/basvuru?teklif=` akisi cocuk vizeli
   ornekle yeniden dogrulandi (13.312 ₺ teklif = banner = sihirbaz toplami).
 - Test verileri temizlendi (25 teklif kaydi silindi).
+
+## 2026-06-16 · Ilk acilista cıplak SEO metni gorunmesi duzeltildi (FOUC)
+**Sikayet**: "sayfa acilirken bu cikiyor ilk" — ekran goruntusunde stilsiz, upuzun bir metin
+sayfasi (vize fiyatlari + SSS) goruluyordu.
+
+**Kok neden**: `frontend/scripts/prerender.js` (build sonrasi 31 sayfa icin statik SEO HTML
+uretir) SEO icerigini `<div id="seo-prerender">` olarak dogrudan `#root` icine yaziyordu.
+React paketi (main.*.js, ~1 MB) yuklenip `#root`'u devralana kadar tarayici bu blogu **stilsiz
+metin** olarak gosteriyordu; yavas baglantida 1-3 saniye suruyor.
+
+**Cozum** (`scripts/prerender.js`):
+- `#seo-prerender` artik ekrandan kaldirilmis (`position:absolute;left:-10000px;1x1`) — metin
+  DOM'da kaldigi icin JS calistirmayan bot'lar icerigi okumaya devam eder (SEO kaybi yok).
+- Yerine marka acilis ekrani: logo (preload'lu, `fetchpriority=high`), altin renkli ilerleme
+  cubugu animasyonu ve "DUBAİ VİZE HATTI YÜKLENİYOR…" satiri. React ilk render'da `#root`
+  cocuklarini sildigi icin kendiliginden kayboluyor.
+- **JS kapali** ziyaretciler icin `<noscript><style>` ile SEO blogu tekrar okunabilir hale
+  gelir (spinner'da kalmaz).
+- **Paket hic yuklenemezse** 8 saniye sonra devreye giren inline yedek: splash gizlenir,
+  `#boot-style` kaldirilir ve metin 52rem'lik okunur bir kolona acilir. (Ilk denemede
+  `!important` kurali inline stili ezdigi icin yedek calismiyordu; `boot-style` elementi
+  kaldirilarak duzeltildi.)
+- `cleanTemplate()` yeni `<style>`/`<link rel=preload>`/`<noscript>` bloklarini da temizliyor
+  (script tekrar kosuldugunda cift enjeksiyon olmasin).
+
+**Dogrulama**: `yarn build` (31 sayfa) + yerel statik sunucuda Playwright ile 3 senaryo:
+(1) paket engelli 0.4 sn -> marka ekrani gorunuyor, cıplak metin YOK;
+(2) 8 sn sonra -> metin okunabilir kolona aciliyor (832 px);
+(3) normal yukleme -> splash ve SEO blogu kalkiyor, site normal render oluyor.
+Ayrica yeni build'in JSON-LD telefonu **+90 538 483 82 24** (canlidaki eski build'de
++90 532 588 26 30 kalmisti) -> **bir sonraki deploy structured data telefonunu da duzeltir.**
+
+**NOT**: Duzeltme build zamaninda uretildigi icin canliya ancak **yeni bir deploy** ile iner.

@@ -169,6 +169,9 @@ function cleanTemplate(raw) {
         .replace(/<meta[^>]*name="robots"[^>]*>/gi, "")
         .replace(/<meta[^>]*(?:property="og:|name="twitter:)[^>]*>/gi, "")
         .replace(/<link[^>]*rel="canonical"[^>]*>/gi, "")
+        .replace(/<link[^>]*rel="preload"[^>]*as="image"[^>]*>/gi, "")
+        .replace(/<style id="boot-style">[\s\S]*?<\/style>/gi, "")
+        .replace(/<noscript><style>[\s\S]*?<\/style><\/noscript>/gi, "")
         .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/gi, "");
     const start = html.indexOf('<div id="root">');
     const end = html.lastIndexOf("</div>");
@@ -177,6 +180,38 @@ function cleanTemplate(raw) {
     }
     return html;
 }
+
+/** Ilk boyamada gorunen marka ekrani: React yuklenene kadar cıplak SEO metni gorunmesin.
+ *  SEO blogu DOM'da kalir (bot'lar okur), yalniz ekrandan kaldirilir. JS kapaliysa
+ *  <noscript> ile metin geri gorunur hale gelir. */
+const BOOT_STYLE =
+    `<link rel="preload" as="image" href="/brand/logo-horizontal-gold-palm.png"/>` +
+    `<style id="boot-style">` +
+    `#seo-prerender{position:absolute!important;left:-10000px;top:0;width:1px;height:1px;overflow:hidden}` +
+    `#boot-splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;` +
+    `justify-content:center;gap:20px;background:#fff;z-index:1}` +
+    `@keyframes dvhBoot{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}` +
+    `</style>` +
+    `<noscript><style>#boot-splash{display:none!important}` +
+    `#seo-prerender{position:static!important;left:auto!important;width:auto!important;height:auto!important;` +
+    `overflow:visible!important;max-width:52rem;margin:0 auto;padding:32px 20px;` +
+    `font-family:Figtree,system-ui,sans-serif;line-height:1.7;color:#1f1f1f}</style></noscript>`;
+
+const BOOT_SPLASH =
+    `<div id="boot-splash" role="status" aria-label="Sayfa yükleniyor">` +
+    `<img src="/brand/logo-horizontal-gold-palm.png" alt="${esc(BRAND)}" width="240" height="64"` +
+    ` fetchpriority="high" style="width:240px;max-width:62vw;height:auto"/>` +
+    `<div style="width:184px;height:4px;border-radius:99px;background:#f0eae2;overflow:hidden">` +
+    `<div style="width:38%;height:100%;border-radius:99px;background:#ae7229;` +
+    `animation:dvhBoot 1.05s ease-in-out infinite"></div></div>` +
+    `<p style="margin:0;font:600 13px/1.4 Figtree,system-ui,sans-serif;letter-spacing:.08em;` +
+    `text-transform:uppercase;color:#a08a72">Dubai Vize Hattı yükleniyor…</p>` +
+    `</div>` +
+    // Paket hic yuklenemezse kullanici spinner'da kalmasin: 8 sn sonra metin acilir
+    `<script>setTimeout(function(){var s=document.getElementById("boot-splash"),` +
+    `p=document.getElementById("seo-prerender"),b=document.getElementById("boot-style");` +
+    `if(s&&p){if(b)b.remove();s.style.display="none";` +
+    `p.style.cssText="max-width:52rem;margin:0 auto;padding:32px 20px;line-height:1.7"}},8000)</script>`;
 
 function renderPage(template, page, ctx) {
     const url = `${SITE_URL}${page.path === "/" ? "/" : page.path}`;
@@ -203,6 +238,7 @@ function renderPage(template, page, ctx) {
     ].join("");
 
     const body =
+        BOOT_SPLASH +
         `<div id="seo-prerender">` +
         `<h1>${esc(page.h1)}</h1>` +
         (page.intro || []).map(P).join("") +
@@ -213,7 +249,7 @@ function renderPage(template, page, ctx) {
             .join("")}</ul></nav>` +
         `</div>`;
 
-    let html = template.replace("</head>", `${head}</head>`);
+    let html = template.replace("</head>", `${head}${BOOT_STYLE}</head>`);
     html = html.replace('<div id="root"></div>', `<div id="root">${body}</div>`);
     return html;
 }
