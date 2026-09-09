@@ -4,16 +4,17 @@ import io
 import logging
 import os
 from datetime import datetime
-from xml.sax.saxutils import escape as xml_escape
 from urllib.parse import quote
+from xml.sax.saxutils import escape as xml_escape
 
+from reportlab.graphics.barcode.qr import QrCodeWidget
+from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.graphics.barcode.qr import QrCodeWidget
-from reportlab.graphics.shapes import Drawing
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
@@ -42,6 +43,7 @@ GOLD = colors.HexColor("#B06A29")
 MUTED = colors.HexColor("#8A7355")
 LINE = colors.HexColor("#EADFCB")
 PANEL = colors.HexColor("#FBF6EC")
+TITLE_LEADING = 19  # baslik satir yuksekligi (logo bu bloga gore olceklenir)
 
 ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 # Saydam zeminli logo (email-logo.png krem zemine gomulu oldugu icin formda kullanilmaz)
@@ -121,9 +123,14 @@ def _date(value) -> str:
 def _styles() -> dict:
     reg, bold = _fonts()
     return {
-        "title": ParagraphStyle("t", fontName=bold, fontSize=15, leading=19, textColor=INK),
+        "title": ParagraphStyle("t", fontName=bold, fontSize=15, leading=TITLE_LEADING, textColor=INK),
         "title_head": ParagraphStyle(
-            "th", fontName=bold, fontSize=15, leading=19, textColor=INK, alignment=TA_CENTER
+            "th",
+            fontName=bold,
+            fontSize=15,
+            leading=TITLE_LEADING,
+            textColor=INK,
+            alignment=TA_CENTER,
         ),
         "sub": ParagraphStyle("s", fontName=reg, fontSize=8, leading=11, textColor=MUTED),
         "section": ParagraphStyle(
@@ -140,12 +147,15 @@ def _styles() -> dict:
 
 
 def _header(app_doc: dict, st: dict) -> Table:
-    """Solda logo, ortada (sayfa merkezinde) iki satirlik baslik."""
+    """Solda logo (baslik blogu kadar yuksek), ortada iki satirlik baslik."""
+    title = Paragraph("Dubai Vizesi<br/>Başvuru Detayları", st["title_head"])
     if os.path.exists(LOGO_FILE):
-        logo = Image(LOGO_FILE, width=52 * mm, height=52 * mm * 0.23, kind="proportional")
+        # Logo, sagdaki iki satirlik basligin ust-alt hizasini tam kaplasin
+        height = 2 * TITLE_LEADING
+        img_w, img_h = ImageReader(LOGO_FILE).getSize()
+        logo = Image(LOGO_FILE, width=height * img_w / img_h, height=height)
     else:
         logo = Paragraph(BRAND, st["title"])
-    title = Paragraph("Dubai Vizesi<br/>Başvuru Detayları", st["title_head"])
     table = Table([[logo, title, ""]], colWidths=_cols(56, 68, 56))
     table.setStyle(
         TableStyle(
@@ -155,9 +165,6 @@ def _header(app_doc: dict, st: dict) -> Table:
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                 ("LINEBELOW", (0, 0), (-1, -1), 1.4, GOLD),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-                # Logo, baslik metniyle ayni hizada dursun diye biraz yukari kaydirildi
-                ("TOPPADDING", (0, 0), (0, 0), 0),
-                ("BOTTOMPADDING", (0, 0), (0, 0), 12),
             ]
         )
     )

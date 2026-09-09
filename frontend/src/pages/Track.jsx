@@ -11,6 +11,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { AccountLoginCard } from "../components/AccountLoginCard";
+import { GuaranteeCountdown } from "../components/GuaranteeCountdown";
 
 const StepIcon = ({ state, isResult, resultStatus }) => {
     if (isResult && state === "done") {
@@ -473,8 +474,8 @@ export default function Track() {    const [searchParams] = useSearchParams();
                                 )}
                             </div>
 
+                            <GuaranteeCountdown guarantee={result.guarantee} />
                             <CustomerTimeline timeline={result.timeline} />
-
                             <div className="card-surface p-6" data-testid="tracking-status-timeline">
                                 <h2 className="font-heading text-lg font-bold">Başvuru geçmişi</h2>
                                 <ol className="mt-5 space-y-5">

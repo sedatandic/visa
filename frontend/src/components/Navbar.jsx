@@ -241,11 +241,11 @@ export const Navbar = () => {
                             Site menüsü: vize bilgileri, rehberler ve iletişim bağlantıları
                         </SheetDescription>
                         <div className="flex h-full flex-col" data-testid="mobile-menu">
-                            <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+                            <div className="flex items-center gap-2.5 border-b border-border py-4 pl-5 pr-12">
                                 <BrandMark />
-                                <span className="ml-auto flex shrink-0 items-center gap-1">
-                                    <TrFlag className="h-5 w-10" />
-                                    <UaeFlag className="h-5 w-10" />
+                                <span className="flex shrink-0 items-center gap-1">
+                                    <TrFlag className="h-4 w-8" />
+                                    <UaeFlag className="h-4 w-8" />
                                 </span>
                             </div>
 

@@ -1183,6 +1183,59 @@ def _tracking_last_names(doc: dict) -> set[str]:
     return {name for name in names if name}
 
 
+GUARANTEE_HOURS = 36
+
+
+def _as_datetime(value) -> datetime | None:
+    """Datetime ya da ISO string degerini UTC datetime'a cevirir."""
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, str) and value.strip():
+        try:
+            parsed = datetime.fromisoformat(value.strip())
+        except ValueError:
+            return None
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    return None
+
+
+def build_guarantee_status(doc: dict) -> dict:
+    """36 saat garantisinin durumu: sure ne zaman basladi, ne kadar kaldi.
+
+    Sure, belgeler onaylanip basvuru resmi mercilere iletildiginde baslar
+    (portala aktarim ya da "inceleniyor" durumu).
+    """
+    history = _first_status_dates(doc)
+    start = _as_datetime(doc.get("zami_transferred_at")) or _as_datetime(history.get("reviewing"))
+    finished = _as_datetime(history.get("approved")) or _as_datetime(history.get("rejected"))
+    status = doc.get("status") or "submitted"
+
+    info = {
+        "hours": GUARANTEE_HOURS,
+        "start_at": _iso_or_none(start),
+        "deadline_at": None,
+        "finished_at": _iso_or_none(finished),
+        "remaining_seconds": None,
+        "state": "pending",
+    }
+    if status == "cancelled":
+        info["state"] = "closed"
+        return info
+    if not start:
+        return info
+
+    deadline = start + timedelta(hours=GUARANTEE_HOURS)
+    info["deadline_at"] = _iso_or_none(deadline)
+    if finished:
+        info["state"] = "met" if finished <= deadline else "missed"
+        return info
+
+    remaining = (deadline - datetime.now(timezone.utc)).total_seconds()
+    info["remaining_seconds"] = int(remaining)
+    info["state"] = "running" if remaining > 0 else "overdue"
+    return info
+
+
 async def _find_application_for_tracking(code: str, last_name: str) -> dict:
     """Takip kodu + soyad dogrulamasi yapar; basarisizsa 400/404 firlatir."""
     code = (code or "").strip().upper()
@@ -1209,6 +1262,7 @@ async def track_application(code: str, last_name: str, request: Request):
     view = public_application_view(doc)
     view["missing_documents"] = missing_documents(doc)
     view["timeline"] = build_customer_timeline(doc, view["missing_documents"])
+    view["guarantee"] = build_guarantee_status(doc)
     return view
 
 

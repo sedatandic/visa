@@ -1470,3 +1470,27 @@ Detay: `memory/security_audit_2026-06-15.md`. Ozet:
   cari bakiye moduna (odemeTipi=3) gecmek / CVV'yi kaldirmak / anahtar rotasyonu.
 - P3 kabul: CORS platform alt alanlarina acik (Bearer token kullanildigi icin etkisi dusuk),
   hiz sinirlari surec ici (cok replikada Redis gerekir).
+
+## 2026-06-15 (7) · PDF logo, 36 saat geri sayimi, iletisim sayfasi, drawer bayraklari
+1. **PDF logo buyutuldu**: `application_pdf._header` logo yuksekligi artik `2 * TITLE_LEADING`
+   (38pt) ve genislik `ImageReader` ile oranli hesaplaniyor (~48mm). Olculdu: logo 51.5-89.5,
+   baslik metni 54.9-88.9 → ust/alt hiza tam. Ozel padding hilesi kaldirildi (iki hucre de
+   VALIGN MIDDLE). `TITLE_LEADING = 19` sabiti eklendi.
+2. **36 saat geri sayimi (takip sayfasi)**:
+   - Backend: `routes_public.build_guarantee_status(doc)` + `GUARANTEE_HOURS = 36`.
+     Sure `zami_transferred_at` ya da `reviewing` durumunda baslar; bitis `approved`/`rejected`.
+     Durumlar: pending / running / overdue / met / missed / closed (iptal).
+     `GET /api/applications/track` yanitina `guarantee` blogu eklendi
+     (start_at, deadline_at, finished_at, remaining_seconds, state, hours).
+   - Frontend: yeni `components/GuaranteeCountdown.jsx` — saniye saniye isleyen sayac
+     (saat:dakika:saniye), ilerleme cubugu, durum metinleri; Track.jsx`te zaman cizelgesinin
+     ustunde. Canli dogrulandi (DV-PD753614: 30:44:24 -> saniye ilerliyor).
+3. **Iletisim sayfasi yeniden duzenlendi** (kullanicinin gonderdigi referans duzen):
+   ust kisimda buyuk **WhatsApp karti** (yesil zemin + yesil pill buton, telefon numarasi),
+   altinda "Telefonla arayin / E-posta gonderin / Calisma saatleri" satirlari, sonra form
+   (mobilde kanallar once: order-1/order-2; masaustunde form solda). Ofis kartlarina konum
+   pini eklendi. Eski `ChannelCard` kaldirildi.
+   NOT: grid ogelerine `min-w-0` verilmeden `truncate` yatay tasma yapiyordu — duzeltildi
+   (scrollWidth 471 -> 390).
+4. **Mobil menu bayraklari**: drawer basliginda `ml-auto` kaldirildi, bayraklar logonun
+   yanina alindi ve `pr-12` ile kapatma (X) butonunun altinda kalmasi engellendi.

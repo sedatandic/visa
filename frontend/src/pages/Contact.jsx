@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Clock, Loader2, Mail, MapPin, MessageCircle, Navigation, Phone, Send } from "lucide-react";
+import { Clock, Loader2, Mail, MapPin, Navigation, Phone, Send } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
 import { setMeta } from "../lib/site";
@@ -16,6 +16,7 @@ import {
     SelectValue,
 } from "../components/ui/select";
 import { useContact } from "../lib/contact";
+import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { formatPhone } from "../lib/phone";
 
 const EMPTY = { name: "", email: "", phone: "", subject: "", message: "" };
@@ -29,34 +30,69 @@ const TOPICS = [
     "Diğer",
 ];
 
-const ChannelCard = ({ icon: Icon, title, detail, value, href, testId, external }) => (
-    <div className="card-surface p-5" data-testid={testId}>
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-            <Icon className="h-5 w-5 text-primary" />
+const WhatsAppHero = ({ href, phone }) => (
+    <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="group block rounded-2xl border border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.08)] p-6 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-[hsl(var(--brand-green)/0.55)] hover:shadow-[var(--shadow-soft)] sm:p-8"
+        data-testid="contact-whatsapp-hero"
+    >
+        <h2 className="font-heading text-xl font-bold sm:text-2xl">WhatsApp'tan yazın</h2>
+        <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+            En hızlı yol. Mesajınız doğrudan operasyon ekibimize düşer, ortalama 5 dakikada
+            dönüş yapıyoruz.
+        </p>
+        <span
+            className="mt-5 inline-flex items-center gap-2.5 rounded-full px-6 py-3.5 text-base font-bold text-white shadow-[var(--shadow-soft)] transition-transform duration-200 group-hover:scale-[1.02]"
+            style={{ backgroundColor: "#25D366" }}
+            data-testid="contact-whatsapp-hero-button"
+        >
+            <WhatsAppIcon className="h-5 w-5" /> {phone}
         </span>
-        <h3 className="mt-3.5 font-heading text-base font-bold">{title}</h3>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">{detail}</p>
-        {href ? (
-            <a
-                href={href}
-                target={external ? "_blank" : undefined}
-                rel={external ? "noreferrer" : undefined}
-                className="mt-3 inline-block text-sm font-bold text-primary transition-colors duration-150 hover:text-[hsl(var(--brand-copper))]"
-            >
-                {value}
-            </a>
-        ) : (
-            <p className="mt-3 text-sm font-semibold">{value}</p>
-        )}
-    </div>
+    </a>
 );
+
+const ContactRow = ({ icon: Icon, label, value, href, testId, external }) => {
+    const body = (
+        <>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Icon className="h-5 w-5 text-primary" />
+            </span>
+            <span className="block min-w-0">
+                <span className="block text-xs text-muted-foreground">{label}</span>
+                <span className="mt-0.5 block break-words text-base font-bold">{value}</span>
+            </span>
+        </>
+    );
+    const cls =
+        "flex items-center gap-4 rounded-xl border border-border bg-card px-5 py-4 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-[var(--shadow-card)]";
+    return href ? (
+        <a
+            href={href}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noreferrer" : undefined}
+            className={cls}
+            data-testid={testId}
+        >
+            {body}
+        </a>
+    ) : (
+        <div className={`${cls} hover:translate-y-0`} data-testid={testId}>
+            {body}
+        </div>
+    );
+};
 
 const OfficeCard = ({ city, address, phone, phoneHref, testId }) => {
     const query = encodeURIComponent(address);
     return (
         <div className="card-surface overflow-hidden" data-testid={testId}>
             <div className="p-6">
-                <span className="eyebrow">{city}</span>
+                <span className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span className="eyebrow">{city}</span>
+                </span>
                 <p className="mt-2.5 text-sm leading-7 text-muted-foreground" data-testid={`${testId}-address`}>
                     {address}
                 </p>
@@ -137,7 +173,7 @@ export default function Contact() {
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-                    <form onSubmit={submit} className="card-surface p-6 sm:p-8" data-testid="contact-form">
+                    <form onSubmit={submit} className="card-surface order-2 min-w-0 p-6 sm:p-8 lg:order-1" data-testid="contact-form">
                         <h2 className="font-heading text-xl font-bold">Bize ulaşın</h2>
                         <p className="mt-1.5 text-sm text-muted-foreground">
                             Vize başvurunuz veya ek hizmetleriniz için formu doldurun.
@@ -203,44 +239,36 @@ export default function Contact() {
                         )}
                     </form>
 
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="order-1 min-w-0 space-y-4 lg:order-2" data-testid="contact-channels">
+                        {contact.whatsappHref && (
+                            <WhatsAppHero
+                                href={contact.whatsappHref}
+                                phone={formatPhone(contact.whatsapp) || contact.phone}
+                            />
+                        )}
                         {contact.phone && (
-                            <ChannelCard
+                            <ContactRow
                                 icon={Phone}
-                                title="Hemen arayın"
-                                detail="Danışmanlarımız ofis saatlerinde telefonda."
+                                label="Telefonla arayın"
                                 value={contact.phone}
                                 href={contact.phoneHref}
                                 testId="contact-channel-phone"
                             />
                         )}
-                        {contact.whatsappHref && (
-                            <ChannelCard
-                                icon={MessageCircle}
-                                title="WhatsApp"
-                                detail="Belge ve fiyat sorularınız için en hızlı kanal."
-                                value={formatPhone(contact.whatsapp) || contact.phone}
-                                href={contact.whatsappHref}
-                                testId="contact-channel-whatsapp"
-                                external
-                            />
-                        )}
-                        <ChannelCard
+                        <ContactRow
                             icon={Mail}
-                            title="E-posta gönderin"
-                            detail="Sorularınızı yazın, en kısa sürede yanıtlayalım."
+                            label="E-posta gönderin"
                             value={contact.email}
                             href={`mailto:${contact.email}`}
                             testId="contact-channel-email"
                         />
-                        <ChannelCard
+                        <ContactRow
                             icon={Clock}
-                            title="Çalışma saatleri"
-                            detail="Ofis saatleri dışında WhatsApp'tan yazabilirsiniz."
+                            label="Çalışma saatleri"
                             value={contact.workingHours}
                             testId="contact-channel-hours"
                         />
-                        <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5 sm:col-span-2">
+                        <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-5">
                             <h3 className="font-heading text-base font-bold">Başvurunuz zaten var mı?</h3>
                             <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
                                 Takip kodunuzla başvurunuzun durumunu anında görüntüleyebilirsiniz;
