@@ -2077,7 +2077,7 @@ export default function Apply() {
 
                                     <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
                                         <DialogContent
-                                            className="max-h-[88vh] max-w-4xl overflow-y-auto"
+                                            className="max-h-[88vh] max-w-[min(96vw,1360px)] overflow-y-auto"
                                             data-testid="visa-comparison-dialog"
                                         >
                                             <DialogHeader>

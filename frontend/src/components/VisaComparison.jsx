@@ -41,6 +41,7 @@ const ROWS = [
             const child = ctx.childFor(v);
             return child ? formatMoney(child.price, child.currency) : "Çocuk vizesi tek girişlidir";
         },
+        subNoWrap: true,
         sub: (v, ctx) => {
             const child = ctx.childFor(v);
             if (!child) return `${v.duration_days} günlük tek girişli çocuk vizesi ile başvurulur`;
@@ -96,12 +97,12 @@ export const VisaComparison = ({ visas = [], onSelect, selectedId = "" }) => {
                         {list.map((v) => (
                             <th
                                 key={v.id}
-                                className={`px-4 py-4 text-left align-bottom ${cellTone(v)} ${
+                                className={`px-4 py-4 text-center align-bottom ${cellTone(v)} ${
                                     selectedId === v.id ? "bg-primary/[0.08]" : ""
                                 }`}
                                 data-testid={`visa-comparison-col-${v.id}`}
                             >
-                                <span className="flex h-5 items-center">
+                                <span className="flex h-5 items-center justify-center">
                                     {v.popular && (
                                         <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[hsl(var(--cream-tag)/0.35)] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-foreground">
                                             <Star className="h-2.5 w-2.5 fill-current" aria-hidden="true" /> En çok
@@ -131,7 +132,7 @@ export const VisaComparison = ({ visas = [], onSelect, selectedId = "" }) => {
                             {list.map((v) => (
                                 <td
                                     key={v.id}
-                                    className={`px-4 py-3.5 align-top leading-6 ${cellTone(v)} ${
+                                    className={`px-4 py-3.5 text-center align-top leading-6 ${cellTone(v)} ${
                                         selectedId === v.id ? "bg-primary/[0.08]" : ""
                                     }`}
                                     data-testid={`visa-comparison-${r.key}-${v.id}`}
@@ -146,7 +147,11 @@ export const VisaComparison = ({ visas = [], onSelect, selectedId = "" }) => {
                                         {r.value(v, { childFor })}
                                     </span>
                                     {r.sub && r.sub(v, { childFor }) ? (
-                                        <span className="mt-1 block font-mono-code text-[11px] text-muted-foreground">
+                                        <span
+                                            className={`mt-1 block text-[11px] text-muted-foreground ${
+                                                r.subNoWrap ? "whitespace-nowrap" : "font-mono-code"
+                                            }`}
+                                        >
                                             {r.sub(v, { childFor })}
                                         </span>
                                     ) : null}
@@ -164,7 +169,7 @@ export const VisaComparison = ({ visas = [], onSelect, selectedId = "" }) => {
                         {list.map((v) => (
                             <td
                                 key={v.id}
-                                className={`px-4 py-4 align-top ${cellTone(v)} ${
+                                className={`px-4 py-4 text-center align-top ${cellTone(v)} ${
                                     selectedId === v.id ? "bg-primary/[0.08]" : ""
                                 }`}
                             >

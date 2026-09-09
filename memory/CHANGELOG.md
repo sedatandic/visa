@@ -2454,3 +2454,15 @@ kullanicinin yazdigi gercek bir karakter gibi koyu gorunuyordu. Baslangic degeri
 (onFocus) davranisi `"+90 "` olarak degistirildi; "5XX XXX XX XX" tamami silik maske
 katmaninda (`phone-mask-hint`) gosteriliyor. Yazma akisi degismedi: 5384838224 ->
 "+90 538 483 82 24". Playwright ile dogrulandi.
+
+## 2026-06-16 · Vize karsilastirma tablosu: genis modal + ortalanmis kolonlar
+- `Apply.jsx` karsilastirma modali `max-w-4xl` (896px) -> `max-w-[min(96vw,1360px)]`.
+  Artik tablo dikey kaydirma gerektirmiyor ve satirlar sikismiyor.
+- `VisaComparison.jsx`: vize kolonlarinin basligi, govde hucreleri ve secim butonlari
+  `text-center` ile ortalandi ("Karsilastirma" etiket kolonu solda kaldi); "en cok tercih
+  edilen" rozeti de kolonda ortalandi.
+- "30/60 günlük tek girişli çocuk vizesi ile başvurulur" alt notu tek satirda: bu satir icin
+  `subNoWrap` bayragi eklendi (mono font yerine normal font + `whitespace-nowrap`); diger alt
+  notlar (kur bilgisi) mono kaldi.
+- Playwright: `/vize-tipleri` tablo 1102px, modal 1360px; her iki cocuk notu **1 satir**;
+  hucre hizalamasi `center`.
