@@ -209,8 +209,15 @@ async def seed_content_collections() -> None:
 
 
 PLACEHOLDER_CONTACT = {
-    "phone": {"+90 533 123 45 67", "+90 533 743 82 24", "+90 850 000 00 00"},
-    "whatsapp": {"905331234567", "905337438224", "908500000000"},
+    # eski demo/test numaralari: her acilista guncel numarayla degistirilir
+    "phone": {
+        "+90 533 123 45 67",
+        "+90 533 743 82 24",
+        "+90 850 000 00 00",
+        "+90 532 588 26 30",
+        "+905325882630",
+    },
+    "whatsapp": {"905331234567", "905337438224", "908500000000", "905325882630"},
 }
 
 

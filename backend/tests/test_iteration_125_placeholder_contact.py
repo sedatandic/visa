@@ -51,7 +51,7 @@ def settings(monkeypatch):
 class TestFixPlaceholderContact:
     @pytest.mark.parametrize(
         "placeholder",
-        ["905331234567", "905337438224", "908500000000"],
+        ["905331234567", "905337438224", "908500000000", "905325882630"],
     )
     def test_placeholder_whatsapp_is_replaced(self, settings, placeholder):
         col = settings({"whatsapp": placeholder, "legal_name": "Test A.Ş."})
@@ -61,7 +61,13 @@ class TestFixPlaceholderContact:
 
     @pytest.mark.parametrize(
         "placeholder",
-        ["+90 533 123 45 67", "+90 533 743 82 24", "+90 850 000 00 00"],
+        [
+            "+90 533 123 45 67",
+            "+90 533 743 82 24",
+            "+90 850 000 00 00",
+            "+90 532 588 26 30",
+            "+905325882630",
+        ],
     )
     def test_placeholder_phone_is_replaced(self, settings, placeholder):
         col = settings({"phone": placeholder})

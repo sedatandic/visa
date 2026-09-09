@@ -2229,3 +2229,20 @@ Masaüstü görünüm hiçbir bölümde değişmedi (tüm değişiklikler `sm:`/
   (yıldız işaretleri temizlenip cümleler ayrı satırlara bölünüyor) — PDF ve site birebir aynı.
 - Not: tekrarlanan tam suite koşularında `/api/contact` 429 (saatlik IP limiti) verip
   contact testlerini düşürebiliyor; backend restart sayaçları sıfırlıyor (ortam artefaktı).
+
+### Yanlış cep telefonu (canlı site) · 2026-06-15
+- Kök neden: **canlı (production) veritabanında** `company_info.phone = "+90 532 588 26 30"`
+  kalmış. Doğrulama: `curl https://dubaivizehatti.com/api/content/site` → phone 532...,
+  whatsapp doğru (905384838224). Önizleme veritabanı doğruydu (+90 538 483 82 24) —
+  iki ortamın DB'si ayrı. Frontend'de hardcode numara YOK (`lib/contact.js` fallback boş).
+- Düzeltme 1: `server.PLACEHOLDER_CONTACT` listesine eski/test numaraları eklendi
+  (`+90 532 588 26 30`, `+905325882630`, `905325882630`) → `fix_placeholder_contact()`
+  her açılışta (her ortamda) bu değerleri gerçek numarayla değiştiriyor. Önizlemede
+  canlı denendi: numara elle bozuldu → backend restart → otomatik düzeldi.
+- Düzeltme 2: `PUT /api/admin/company` artık tüm `value` nesnesini değiştirmiyor;
+  alan bazında (`$set: value.<alan>`) birleştiriyor → kısmi kayıt diğer iletişim
+  alanlarını silmiyor. (Model `legal_name` zorunlu olduğu için kısmi PUT zaten 422.)
+- Testler: `tests/test_iteration_131_company_contact_guard.py` (3) + 125 parametreleri
+  genişletildi. Tüm suite: **555 passed / 5 skipped**.
+- Kullanıcı aksiyonu: canlıda numara ya bir sonraki deploy'da kendiliğinden düzelir ya da
+  hemen Admin → Acente Bilgileri ekranından güncellenebilir.

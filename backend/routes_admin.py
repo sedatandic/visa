@@ -711,14 +711,21 @@ async def admin_get_company(admin: dict = Depends(require_admin)) -> dict:
 
 @router.put("/admin/company")
 async def admin_update_company(payload: CompanyInfoIn, admin: dict = Depends(require_admin)) -> dict:
-    # Store all values including empty strings to allow overriding COMPANY placeholders
+    # Bos string'ler de yazilir (COMPANY varsayilanini ezebilmek icin); gonderilmeyen
+    # alanlar korunur — kismi kayit diger iletisim bilgilerini silmesin.
     value = {k: v for k, v in payload.model_dump().items() if v is not None}
     await settings_col.update_one(
         {"key": "company_info"},
-        {"$set": {"value": value, "updated_at": datetime.now(timezone.utc)}},
+        {
+            "$set": {
+                **{f"value.{key}": val for key, val in value.items()},
+                "updated_at": datetime.now(timezone.utc),
+            }
+        },
         upsert=True,
     )
-    return {**COMPANY, **value}
+    doc = await settings_col.find_one({"key": "company_info"})
+    return {**COMPANY, **((doc or {}).get("value") or {})}
 
 
 # ------------------------------------------------------- Sosyal medya hesaplari
