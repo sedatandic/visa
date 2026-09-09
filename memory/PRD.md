@@ -1553,3 +1553,38 @@ instagram hesaplari ac". Instagram kullanici adi: **dubaivizehatti**.
 - NOT: `test_iteration_116_refactor` backend hata logunda "NameError" arar; gelistirme
   sirasindaki gecici hot-reload hatasi logda kalirsa log truncate + `supervisorctl restart
   backend` gerekir (schedulers satirlari yeniden yazilsin).
+
+## 2026-06-15 (10) · Google Yorumlari kapatildi + Admin → Instagram Takvimi (12 gonderi)
+### Google Yorumlari
+- Kullanici istegi ile `google_review` **kapatildi** (`enabled=false`): sitede dock/altbilgi/
+  iletisim sayfasinda gorunmuyor, baglanti panelde saklaniyor (tek anahtarla geri acilir).
+- `company_info.google_review` legacy alani bu yuzden bos donuyor — `test_iteration_48`
+  bu davraniса gore guncellendi (bos = panelden kapatilmis).
+
+### Instagram
+- **Hesabi ben acamam / sifre uretemem** (Instagram kaydi kullanicinin telefonu + SMS
+  dogrulamasiyla yapilir). Bunun yerine panelde kurulum rehberi + hazir icerik verildi.
+- Yeni `backend/instagram_posts.py`: 12 gonderi plani (id, baslik, gorsel, Turkce aciklama,
+  hashtag seti, gun/saat kaydirmasi) + `PROFILE` (kullanici adi `dubaivizehatti`, biyografi,
+  kategori, 5 adimlik isletme hesabi kurulum rehberi) + `default_schedule(start)`.
+  Tarihler 22 gune yayildi (her gonderi farkli gun, 12:00/13:00/18:00/19:00/20:00 saatleri).
+- `routes_admin.py`: `GET /api/admin/instagram` (ilk cagirmada site_settings.instagram_calendar
+  olarak seed eder), `PUT /api/admin/instagram` (tarih/metin/durum kaydeder; gorsel-baslik-
+  hashtag plandan gelir, bilinmeyen id yoksayilir). `models.py`: InstagramPostIn/InstagramPlanIn.
+- Yeni `pages/AdminInstagram.jsx` (route `/admin/instagram`, sidebar: Ayarlar → Instagram
+  Takvimi): kurulum karti (biyografi kopyala), 12 gonderi karti — gorsel onizleme,
+  `datetime-local` tarih, duzenlenebilir metin, hashtagler, "Metni kopyala",
+  "Gorseli indir", "Paylasildi" anahtari, "Takvimi kaydet" ve bekleyen sayaci.
+- **Gorseller**: 12 kare illustrasyon uretildi (Gemini 3.1 flash image), 4 tanesi yazi hatasi
+  /ic cerceve nedeniyle yenilendi. Hamlar `frontend/public/instagram/raw/`.
+  `scripts/brand_instagram_posts.py` PIL ile marka cercevesi ekliyor (1080x1350, 4:5):
+  lacivert zemin, ust bantta `brand/logo-horizontal-gold.png` + BAE bayragi + "DUBAI",
+  alt bantta `dubaivizehatti.com` + yesil WhatsApp pill `+90 538 483 82 24`.
+  Cikti: `frontend/public/instagram/post-01..12.jpg`. Yazilar PIL ile basildigi icin
+  Turkce karakter hatasi yok (Figtree.ttf).
+- Testler: `test_iteration_129_instagram_calendar.py` (9 test: 12 gonderi, gorsellerin
+  diskte olmasi, farkli/artan tarihler, metin+hashtag dolulugu, profil, GET/PUT, jetonsuz
+  erisim, bilinmeyen id) + `test_iteration_128_social_links.py` merge testi guncellendi.
+- pytest: **540 passed / 3 skipped**. Panelde canli dogrulandi (12 kart, kaydet -> bekleyen 12→11).
+- Otomatik paylasim (Instagram Graph API) henuz YOK: hesap Isletme hesabina cevrilip bir
+  Facebook Sayfasi'na baglandiktan sonra Meta erisim jetonu gelirse eklenecek.

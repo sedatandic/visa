@@ -109,6 +109,10 @@ def test_admin_social_jetonsuz_erisim_engellenir():
 
 def test_admin_social_kaydeder_ve_sitede_gorunur(headers):
     """Gonderilmeyen platformlar korunur, adres girilmeyen platform yayina alinmaz."""
+    before = {
+        i["platform"]: i
+        for i in requests.get(f"{API}/admin/social", headers=headers, timeout=30).json()["items"]
+    }
     payload = {
         "items": [
             {
@@ -136,13 +140,14 @@ def test_admin_social_kaydeder_ve_sitede_gorunur(headers):
     saved = {i["platform"]: i for i in r.json()["items"]}
     assert saved["instagram"]["url"] == "https://www.instagram.com/dubaivizehatti"
     assert saved["tiktok"]["enabled"] is False  # adres yok -> yayinda olamaz
-    assert saved["google_review"]["enabled"] is True  # gonderilmedi ama korunur
+    # Gonderilmeyen platform (google_review) oldugu gibi korunur
+    assert saved["google_review"]["url"] == before["google_review"]["url"]
+    assert saved["google_review"]["enabled"] == before["google_review"]["enabled"]
 
     site = requests.get(f"{API}/content/site", timeout=30).json()
     links = {l["platform"]: l for l in site["social_links"]}
     assert links["instagram"]["url"] == "https://www.instagram.com/dubaivizehatti"
     assert "tiktok" not in links
-    assert "google_review" in links
     # Eski alanlarla uyum korunur
     assert site["company"]["instagram"] == "https://www.instagram.com/dubaivizehatti"
 

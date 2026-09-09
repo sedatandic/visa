@@ -6,6 +6,7 @@ import {
     FileText,
     Landmark,
     Globe2,
+    Instagram,
     LayoutDashboard,
     LogOut,
     Mail,
@@ -58,6 +59,7 @@ const NAV_GROUPS = [
             { to: "/admin/banka", label: "Banka Bilgileri", icon: Landmark },
             { to: "/admin/acente", label: "Acente Bilgileri", icon: Building2 },
             { to: "/admin/sosyal-medya", label: "Sosyal Medya", icon: Share2 },
+            { to: "/admin/instagram", label: "Instagram Takvimi", icon: Instagram },
         ],
     },
 ];

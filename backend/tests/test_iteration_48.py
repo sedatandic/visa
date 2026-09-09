@@ -91,13 +91,19 @@ class TestContent:
         )
 
     def test_company_has_social_links(self, api):
+        """Eski alanlar korunur; bos deger = hesap Sosyal Medya panelinden kapatilmis."""
         r = api.get(f"{BASE_URL}/api/content/site", timeout=15)
         assert r.status_code == 200
-        company = r.json().get("company", {})
+        body = r.json()
+        company = body.get("company", {})
         assert "instagram" in company
         assert "google_review" in company
-        assert company.get("instagram", "").startswith("http")
-        assert company.get("google_review", "").startswith("http")
+        for key in ("instagram", "google_review"):
+            value = company.get(key, "")
+            assert value == "" or value.startswith("http"), key
+        # Sitede gosterilen liste yalnizca yayinda olan hesaplari icerir
+        for link in body.get("social_links", []):
+            assert link["url"].startswith("http")
 
 
 # --------------- Pricing quote ---------------

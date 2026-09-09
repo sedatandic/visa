@@ -21,6 +21,7 @@ from fastapi import (
 from pydantic import BaseModel, Field
 
 import file_access
+import instagram_posts
 import social_links
 import visa_file_number
 from admin_auth import SESSION_DAYS, create_token, hash_code, require_admin
@@ -67,6 +68,7 @@ from models import (
     ArticleIn,
     BankTransferIn,
     CompanyInfoIn,
+    InstagramPlanIn,
     ReviewSummaryIn,
     SendVisaRequest,
     SocialLinksIn,
@@ -764,6 +766,66 @@ async def admin_update_social(
         upsert=True,
     )
     return {"platforms": social_links.PLATFORMS, "items": items}
+
+
+# --------------------------------------------------------- Instagram gonderi takvimi
+def _merge_instagram(stored) -> list:
+    """Plan (gorsel/baslik/hashtag) + DB (tarih/metin/durum) birlestirilir."""
+    saved = {row.get("id"): row for row in (stored or []) if isinstance(row, dict)}
+    rows = []
+    for post in instagram_posts.default_schedule(datetime.now(timezone.utc)):
+        row = saved.get(post["id"]) or {}
+        rows.append(
+            {
+                **post,
+                "scheduled_at": row.get("scheduled_at") or post["scheduled_at"],
+                "caption": row.get("caption") or post["caption"],
+                "status": row.get("status") if row.get("status") in ("planned", "posted") else "planned",
+            }
+        )
+    return sorted(rows, key=lambda item: item["scheduled_at"])
+
+
+@router.get("/admin/instagram")
+async def admin_get_instagram(admin: dict = Depends(require_admin)) -> dict:
+    doc = await settings_col.find_one({"key": "instagram_calendar"})
+    if not doc:
+        rows = instagram_posts.default_schedule(datetime.now(timezone.utc))
+        await settings_col.update_one(
+            {"key": "instagram_calendar"},
+            {"$set": {"value": rows, "updated_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+        return {"profile": instagram_posts.PROFILE, "posts": rows}
+    return {
+        "profile": instagram_posts.PROFILE,
+        "posts": _merge_instagram((doc or {}).get("value")),
+    }
+
+
+@router.put("/admin/instagram")
+async def admin_update_instagram(
+    payload: InstagramPlanIn, admin: dict = Depends(require_admin)
+) -> dict:
+    doc = await settings_col.find_one({"key": "instagram_calendar"})
+    current = {row["id"]: row for row in _merge_instagram((doc or {}).get("value"))}
+    for item in payload.items:
+        row = current.get(item.id)
+        if not row:
+            continue
+        if item.scheduled_at:
+            row["scheduled_at"] = item.scheduled_at
+        if item.caption is not None:
+            row["caption"] = item.caption.strip()
+        if item.status in ("planned", "posted"):
+            row["status"] = item.status
+    rows = sorted(current.values(), key=lambda row: row["scheduled_at"])
+    await settings_col.update_one(
+        {"key": "instagram_calendar"},
+        {"$set": {"value": rows, "updated_at": datetime.now(timezone.utc)}},
+        upsert=True,
+    )
+    return {"profile": instagram_posts.PROFILE, "posts": rows}
 
 
 # ------------------------------------------------------- Ziyaretci istatistikleri

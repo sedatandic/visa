@@ -306,6 +306,17 @@ class SocialLinksIn(BaseModel):
     items: List[SocialLinkIn] = Field(default_factory=list)
 
 
+class InstagramPostIn(BaseModel):
+    id: str = Field(..., max_length=20)
+    scheduled_at: Optional[str] = Field(default=None, max_length=40)
+    caption: Optional[str] = Field(default=None, max_length=2500)
+    status: str = Field(default="planned", max_length=12)
+
+
+class InstagramPlanIn(BaseModel):
+    items: List[InstagramPostIn] = Field(default_factory=list)
+
+
 class WhatsAppRequest(BaseModel):
     template: str = Field(default="visa_ready", max_length=40)
     message: Optional[str] = Field(default="", max_length=1000)
