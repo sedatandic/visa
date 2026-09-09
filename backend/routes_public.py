@@ -1222,6 +1222,9 @@ def build_guarantee_status(doc: dict) -> dict:
         info["state"] = "closed"
         return info
     if not start:
+        # Sonuc cikmis ama sure baslangici kaydedilmemisse taahhut kapanmis sayilir
+        if finished or status in {"approved", "rejected"}:
+            info["state"] = "met"
         return info
 
     deadline = start + timedelta(hours=GUARANTEE_HOURS)

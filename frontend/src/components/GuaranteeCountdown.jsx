@@ -68,7 +68,9 @@ export const GuaranteeCountdown = ({ guarantee }) => {
                             {late && state !== "missed" &&
                                 "Süre aşıldı. Ekspres hizmet bedeliniz iade edilir; ekspres almadıysanız başvurunuz ücretsiz ekspres sıraya alınır."}
                             {state === "met" &&
-                                `Sonucunuz ${formatDateTime(guarantee.finished_at)} tarihinde, ${hours} saat içinde çıktı.`}
+                                (guarantee.finished_at
+                                    ? `Sonucunuz ${formatDateTime(guarantee.finished_at)} tarihinde, ${hours} saat içinde çıktı.`
+                                    : `Başvurunuz sonuçlandı; ${hours} saat garantisi kapsamındaydı.`)}
                             {state === "missed" &&
                                 "Sonuç taahhüt edilen süreden sonra çıktı. Ekspres hizmet bedeli iadesi için sizinle iletişime geçiyoruz."}
                         </p>

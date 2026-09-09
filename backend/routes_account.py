@@ -323,8 +323,6 @@ async def _policy_documents(email_pattern: dict) -> list:
 @router.get("/account/documents")
 async def account_documents(email: str = Depends(require_customer)) -> dict:
     """Musteriye ait belgeler: onaylanan vize PDF'leri + kesilen sigorta policeleri."""
-    import re
-
     pattern = {"$regex": f"^{re.escape(email)}$", "$options": "i"}
     return {"items": await _visa_documents(pattern) + await _policy_documents(pattern)}
 
@@ -334,8 +332,6 @@ async def account_document_resend(
     document_id: str, request: Request, email: str = Depends(require_customer)
 ) -> dict:
     """Vize belgesini veya police PDF'ini musterinin kendi e-postasina tekrar gonderir."""
-    import re
-
     import file_access
     import visa_file_number
     from application_docs import visa_pdf_attachment

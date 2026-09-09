@@ -1494,3 +1494,19 @@ Detay: `memory/security_audit_2026-06-15.md`. Ozet:
    (scrollWidth 471 -> 390).
 4. **Mobil menu bayraklari**: drawer basliginda `ml-auto` kaldirildi, bayraklar logonun
    yanina alindi ve `pr-12` ile kapatma (X) butonunun altinda kalmasi engellendi.
+
+## 2026-06-15 (8) · Kod incelemesi (code_review_agent) — READY WITH FIXES
+Bulgular ve yapilanlar:
+- **MEDIUM (duzeltildi)**: `build_guarantee_status`, `reviewing` kaydi ve `zami_transferred_at`
+  olmadan panelden dogrudan onaylanan basvurularda `state="pending"` donuyordu; musteri vizesi
+  onaylanmisken "geri sayim baslamadi" mesajini goruyordu. Artik sonuc cikmissa (finished ya da
+  status approved/rejected) `state="met"` donuyor. `GuaranteeCountdown` de `finished_at` bos
+  gelirse alternatif metin gosteriyor.
+- **LOW (duzeltildi)**: `routes_account.py` icindeki iki gereksiz fonksiyon-ici `import re`
+  kaldirildi (modul seviyesinde zaten var).
+- **LOW (kabul)**: hiz sinirlari surec ici; tek replikada gecerli (rate_limit.py docstring'inde
+  belirtilmis).
+- **Test bosluğu kapatildi**: `tests/test_iteration_127_guarantee_countdown.py` (11 test) —
+  pending/running/overdue/met/missed/closed gecisleri, portal aktarimiyla baslama, ret'in de
+  sonuc sayilmasi, baslangic kaydi olmayan onay, datetime/ISO girdi.
+- pytest: 518 passed / 3 skipped. ESLint ve ruff (yeni kod) temiz.
