@@ -1,7 +1,7 @@
 """Terk edilmis sepet hatirlatmasi.
 
 Musteri /sepet sayfasinda e-postasini girdiginde sepet sunucuya kaydedilir
-(`cart_snapshots`). Siparis vermezse 2 saat ve 24 saat sonra birer hatirlatma
+(`cart_snapshots`). Siparis vermezse 3 saat ve 24 saat sonra birer hatirlatma
 e-postasi gonderilir; siparis olusursa kayit pasife alinir.
 """
 
@@ -15,7 +15,7 @@ from emailer import cart_reminder_html, send_email
 
 logger = logging.getLogger(__name__)
 
-REMINDER_STAGES_HOURS = [2, 24]  # 1. hatirlatma 2 saat, 2. hatirlatma 24 saat sonra
+REMINDER_STAGES_HOURS = [3, 24]  # 1. hatirlatma 3 saat, 2. hatirlatma 24 saat sonra
 SWEEP_INTERVAL_SECONDS = 15 * 60
 
 
@@ -60,7 +60,7 @@ async def _ordered_since(snapshot: dict) -> bool:
 
 async def send_cart_reminder(snapshot: dict, origin: str, stage: int) -> dict:
     subject = (
-        "Sepetinizdeki Dubai hizmetleri sizi bekliyor"
+        "Sepetinizi tamamlamak ister misiniz?"
         if stage == 1
         else "Sepetiniz hâlâ hazır · Dubai eSIM, sigorta ve turlar"
     )

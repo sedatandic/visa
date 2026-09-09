@@ -155,31 +155,41 @@ class TestAdminCompany:
         r = admin_session.get(f"{BASE_URL}/api/admin/company", timeout=15)
         assert r.status_code == 200
         current = r.json()
-        payload = {
-            **{k: current.get(k, "") for k in [
-                "brand", "legal_name", "phone", "whatsapp", "email",
-                "instagram", "google_review", "address", "working_hours",
-                "tursab_no", "tursab_type", "tax_office", "tax_no",
-                "mersis_no", "trade_registry_no", "founded_year",
-            ]}
-        }
+        fields = [
+            "brand", "legal_name", "phone", "whatsapp", "email",
+            "instagram", "google_review", "address", "working_hours",
+            "tursab_no", "tursab_type", "tax_office", "tax_no",
+            "mersis_no", "trade_registry_no", "founded_year",
+        ]
+        original = {k: current.get(k, "") for k in fields}
+        payload = dict(original)
         if not payload.get("legal_name"):
             payload["legal_name"] = "Dubai Vize Hattı Ltd."
         payload["instagram"] = "https://www.instagram.com/dubaivizeonline/"
         payload["google_review"] = "https://www.google.com/search?q=Dubai+Vize+Online+yorumlar"
         payload["whatsapp"] = "905331234567"
 
-        rp = admin_session.put(f"{BASE_URL}/api/admin/company", json=payload, timeout=15)
-        assert rp.status_code == 200, rp.text
+        try:
+            rp = admin_session.put(f"{BASE_URL}/api/admin/company", json=payload, timeout=15)
+            assert rp.status_code == 200, rp.text
 
-        # verify via admin GET
-        r2 = admin_session.get(f"{BASE_URL}/api/admin/company", timeout=15)
-        d2 = r2.json()
-        assert d2["instagram"] == payload["instagram"]
-        assert d2["google_review"] == payload["google_review"]
-        assert d2["whatsapp"] == "905331234567"
+            # verify via admin GET
+            r2 = admin_session.get(f"{BASE_URL}/api/admin/company", timeout=15)
+            d2 = r2.json()
+            assert d2["instagram"] == payload["instagram"]
+            assert d2["google_review"] == payload["google_review"]
+            assert d2["whatsapp"] == "905331234567"
 
-        # verify via public content
-        pub = requests.get(f"{BASE_URL}/api/content/site", timeout=15).json()
-        assert pub["company"]["whatsapp"] == "905331234567"
-        assert pub["company"]["instagram"] == payload["instagram"]
+            # verify via public content
+            pub = requests.get(f"{BASE_URL}/api/content/site", timeout=15).json()
+            assert pub["company"]["whatsapp"] == "905331234567"
+            assert pub["company"]["instagram"] == payload["instagram"]
+        finally:
+            # Test verisi sitede kalmasin: gercek iletisim bilgileri geri yazilir.
+            # (Aksi halde her pytest kosusu WhatsApp dugmesini yanlis numaraya cevirir.)
+            restore = admin_session.put(
+                f"{BASE_URL}/api/admin/company", json=original, timeout=15
+            )
+            assert restore.status_code == 200, restore.text
+            back = requests.get(f"{BASE_URL}/api/content/site", timeout=15).json()
+            assert back["company"]["whatsapp"] == original["whatsapp"]

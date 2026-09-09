@@ -45,20 +45,20 @@ export const HomeInsuranceStrip = () => {
                     className="grid overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card lg:grid-cols-[1.1fr_0.8fr]"
                     style={{ boxShadow: "var(--shadow-card)" }}
                 >
-                    <div className="flex flex-col justify-center p-7 sm:p-10">
+                    <div className="flex flex-col justify-center p-5 sm:p-10">
                         <span className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
                             Sadece sigorta
                         </span>
                         <h2 className="mt-3 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
                             Seyahat sağlık sigortasını vizeden bağımsız, tek başına alın
                         </h2>
-                        <p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground md:text-lg">
+                        <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:leading-7 md:text-lg">
                             Vizesi hazır olan ya da başka bir ülkeye gidenler de poliçe alabilir. Süreyi seçin,
                             sigortalı bilgilerini girin; poliçeniz ödeme sonrası PDF olarak e-postanıza düşer.
                         </p>
 
                         <div
-                            className="mt-6 grid grid-cols-2 gap-2.5 lg:grid-cols-4"
+                            className="mt-5 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-2.5 lg:grid-cols-4"
                             data-testid="home-insurance-plans"
                         >
                             {sorted.map((plan) => (
@@ -66,7 +66,7 @@ export const HomeInsuranceStrip = () => {
                                     key={plan.id}
                                     type="button"
                                     onClick={() => addPlan(plan)}
-                                    className="group rounded-xl border border-border bg-[hsl(var(--cloud))] p-3.5 text-left transition-[border-color,transform,background-color] duration-200 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-card"
+                                    className="group rounded-xl border border-border bg-[hsl(var(--cloud))] p-3 text-left transition-[border-color,transform,background-color] duration-200 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-card sm:p-3.5"
                                     data-testid={`home-insurance-add-${plan.id}`}
                                 >
                                     <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -76,24 +76,28 @@ export const HomeInsuranceStrip = () => {
                                         {formatMoney(plan.price, plan.currency)}
                                     </span>
                                     <span className="mt-1 block text-[11px] text-muted-foreground">kişi başı</span>
-                                    <span className="mt-2.5 inline-flex items-center gap-1 text-xs font-bold text-primary">
+                                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary">
                                         <Plus className="h-3.5 w-3.5" aria-hidden="true" /> Sepete ekle
                                     </span>
                                 </button>
                             ))}
                         </div>
 
-                        <ul className="mt-6 space-y-2.5">
+                        <ul className="mt-5 space-y-1.5 sm:mt-6 sm:space-y-2.5">
                             {HIGHLIGHTS.map(({ icon: Icon, text }) => (
-                                <li key={text} className="flex items-start gap-2.5 text-sm">
+                                <li key={text} className="flex items-start gap-2.5 text-xs sm:text-sm">
                                     <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                                     {text}
                                 </li>
                             ))}
                         </ul>
 
-                        <div className="mt-7 flex flex-wrap items-center gap-3">
-                            <Button asChild className="h-12 px-7 text-base" data-testid="home-insurance-cta">
+                        <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-7">
+                            <Button
+                                asChild
+                                className="h-12 w-full px-7 text-base sm:w-auto"
+                                data-testid="home-insurance-cta"
+                            >
                                 <Link to="/seyahat-sigortasi">
                                     Teminatları gör & poliçe seç <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
@@ -101,7 +105,7 @@ export const HomeInsuranceStrip = () => {
                             <Button
                                 asChild
                                 variant="secondary"
-                                className="h-12 border border-border px-6 text-base"
+                                className="hidden h-12 border border-border px-6 text-base sm:inline-flex"
                                 data-testid="home-insurance-cart-link"
                             >
                                 <Link to="/sepet">
@@ -112,7 +116,7 @@ export const HomeInsuranceStrip = () => {
                         </div>
                     </div>
 
-                    <div className="relative min-h-[240px]">
+                    <div className="relative min-h-[150px] sm:min-h-[240px]">
                         <img
                             src={IMAGES.travelInsurance}
                             alt="Pasaport ve uçuş belgeleriyle seyahat hazırlığı"

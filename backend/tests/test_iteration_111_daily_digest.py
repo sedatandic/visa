@@ -117,6 +117,10 @@ def test_send_daily_digest_is_once_per_day() -> None:
 
         real_send = daily_digest.send_email
         daily_digest.send_email = fake_send
+        # Gercek gonderim kaydiyla cakismasin (gun secimi rastgele tutuyor): isaretci sifirlanir.
+        await db.site_settings.update_one(
+            {"key": daily_digest.SETTINGS_KEY}, {"$set": {"value": {}}}, upsert=True
+        )
         try:
             first = await daily_digest.send_daily_digest(day)
             second = await daily_digest.send_daily_digest(day)

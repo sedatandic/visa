@@ -34,29 +34,29 @@ export const HomeTourStrip = () => {
                     className="grid overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card lg:grid-cols-[1.05fr_1fr]"
                     style={{ boxShadow: "var(--shadow-card)" }}
                 >
-                    <div className="flex flex-col justify-center p-7 sm:p-10">
+                    <div className="flex flex-col justify-center p-5 sm:p-10">
                         <span className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
                             Dubai turları
                         </span>
                         <h2 className="mt-3 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
                             Çöl safarisi: kumul turu, deve gezisi ve Arap kampında akşam yemeği
                         </h2>
-                        <p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground md:text-lg">
+                        <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:leading-7 md:text-lg">
                             Vizeniz hazır olsun ya da olmasın turu ayrı satın alabilirsiniz. Tarih ve otelden
                             alınış saatini seçin, sepete ekleyin; rezervasyonu biz yapar, kupon ve buluşma
                             bilgilerini e-postanıza göndeririz.
                         </p>
 
-                        <ul className="mt-5 space-y-2.5">
+                        <ul className="mt-4 space-y-1.5 sm:mt-5 sm:space-y-2.5">
                             {HIGHLIGHTS.map(({ icon: Icon, text }) => (
-                                <li key={text} className="flex items-center gap-2.5 text-sm">
+                                <li key={text} className="flex items-center gap-2.5 text-xs sm:text-sm">
                                     <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                                     {text}
                                 </li>
                             ))}
                         </ul>
 
-                        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+                        <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 sm:mt-6">
                             <div>
                                 <p className="text-xs text-muted-foreground">Kişi başı</p>
                                 <p className="font-heading text-2xl font-extrabold" data-testid="home-tour-price">
@@ -66,8 +66,12 @@ export const HomeTourStrip = () => {
                                     </span>
                                 </p>
                             </div>
-                            <div className="flex flex-wrap gap-3">
-                                <Button asChild className="h-12 px-7 text-base" data-testid="home-tour-cta">
+                            <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+                                <Button
+                                    asChild
+                                    className="h-12 w-full px-7 text-base sm:w-auto"
+                                    data-testid="home-tour-cta"
+                                >
                                     <Link to="/dubai-turlari">
                                         Tarih seç & sepete ekle <ArrowRight className="ml-2 h-4 w-4" />
                                     </Link>
@@ -75,7 +79,7 @@ export const HomeTourStrip = () => {
                                 <Button
                                     asChild
                                     variant="secondary"
-                                    className="h-12 border border-border px-6 text-base"
+                                    className="hidden h-12 border border-border px-6 text-base sm:inline-flex"
                                     data-testid="home-tour-cart-link"
                                 >
                                     <Link to="/sepet">
@@ -87,12 +91,12 @@ export const HomeTourStrip = () => {
                         </div>
                     </div>
 
-                    <div className="grid gap-1.5 bg-muted/40 p-1.5 lg:gap-2 lg:p-2">
+                    <div className="grid grid-cols-2 gap-1.5 bg-muted/40 p-1.5 lg:grid-cols-1 lg:gap-2 lg:p-2">
                         {tours.map((t) => (
                             <Link
                                 key={t.id}
                                 to="/dubai-turlari"
-                                className="group relative min-h-[180px] overflow-hidden rounded-xl"
+                                className="group relative min-h-[110px] overflow-hidden rounded-xl sm:min-h-[180px]"
                                 data-testid={`home-tour-photo-${t.id}`}
                             >
                                 <img

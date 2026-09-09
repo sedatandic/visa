@@ -4,18 +4,18 @@ import { AnimatePresence, motion } from "framer-motion";
 const SLOGANS = [
     {
         top: "Dubai vizeniz",
-        bottom: "2 iş gününde hazır",
+        bottom: "36 saatte hazır",
         sub: "Dubai seyahatiniz için vize başvurunuzu tamamen online tamamlayın. Evraklarınızı yükleyin, başvurunuzu gönderin ve sonucunuzu e-posta ile alın.",
     },
     {
-        top: "Sadece 2 belgeyle",
+        top: "Sadece pasaport ve resminizle",
         bottom: "Dubai vizeniz hazır",
         sub: "Pasaportunuzun kimlik sayfası ve bir vesikalık fotoğraf yeterli. Belgelerinizi yükleyin, sürecin tamamını uzman ekibimiz sizin adınıza yönetsin.",
     },
     {
-        top: "Bilet ve otel şartı yok",
-        bottom: "sadece pasaport ve fotoğraf",
-        sub: "Vizeniz çıkmadan uçak bileti ve otel rezervasyonu yapmanıza gerek yok. Pasaportunuzun kimlik sayfası ve bir vesikalık fotoğrafla başvurunuzu tamamlıyoruz.",
+        top: "Üstelik uçak bileti ve",
+        bottom: "otel rezervasyonu da gerekmiyor",
+        sub: "Vizeniz çıkmadan uçak bileti veya otel rezervasyonu yapmanıza gerek yok. Planınızı vize onaylandıktan sonra rahatça yapın.",
     },
     {
         top: "Tüm aileniz",

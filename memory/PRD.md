@@ -1366,3 +1366,13 @@ Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
   /admin/insurance/margin[/check]`. Panel: Sigorta Poliçeleri → "Kâr koruması" kartı.
 - `GET /admin/insurance/product-check?urun_id=220`: Tamamliyo ürün kodunun satışa açık olup
   olmadığını sorgular (panelde buton). 220 hâlâ kapalı ("Fiyat bulunamadı … 758").
+
+## 2026-06-15 · Basvuru PDF basligi: logo hizalamasi
+- Kullanici istegi: "logoyu biraz yukari al, Dubai Vizesi Basvuru Detaylari ile ayni hizada olsun".
+- `application_pdf.py _header()`: logo hucresine ayri padding verildi
+  (TOPPADDING 0 / BOTTOMPADDING 12) — VALIGN MIDDLE korunurken logo ~3.5pt yukari kaydi,
+  "DUBAI" kelime markasi baslik metniyle ayni hizada. Baslik hucresi degismedi.
+- Dogrulama: ornek PDF uretildi (`/tmp/test_form.pdf`) ve 200 dpi baslik kirpmasi gorsel
+  olarak kontrol edildi; pytest PDF testleri 19/19 PASS.
+- Bekleyen: canliya alma (kullanici "Save to Github" / deploy akisini kullanmali),
+  gercek IBAN bilgileri, WhatsApp Meta canli anahtarlari, Tamamliyo cari bakiye + urun 220.

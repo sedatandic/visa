@@ -1107,13 +1107,13 @@ def _snapshot_items_rows(snapshot: dict) -> str:
 
 
 def cart_reminder_html(snapshot: dict, cart_url: str, stage: int = 1) -> str:
-    """Terk edilmis sepet hatirlatmasi (2. ve 24. saat)."""
+    """Terk edilmis sepet hatirlatmasi (3. ve 24. saat)."""
     currency = snapshot.get("currency", "TRY")
     name = (snapshot.get("full_name") or "").strip()
     greeting = f"Sayın {esc(name)}," if name else "Merhaba,"
     intro = (
-        "Sepetinizdeki Dubai hizmetleri hâlâ sizi bekliyor. Ödemenizi tamamladığınızda eSIM QR kodunuz, "
-        "poliçeniz ve tur kuponunuz e-postanıza gelir."
+        "Sepetinizi sizin için sakladık; acele etmeniz gerekmiyor. Hazır olduğunuzda ödemenizi "
+        "tamamlayın, eSIM QR kodunuz, poliçeniz ve tur kuponunuz e-postanıza gelsin."
         if stage == 1
         else "Sepetinizi kaydettik ve hâlâ hazır. Fiyatlar güncel kurla hesaplanır; kur değişmeden "
         "tamamlamak isterseniz aşağıdan devam edebilirsiniz."

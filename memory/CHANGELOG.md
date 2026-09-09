@@ -2142,3 +2142,40 @@ Masaüstü görünüm hiçbir bölümde değişmedi (tüm değişiklikler `sm:`/
 - **Gerekli belgeler** (`landing-documents`): mobilde ilk 2 kart görünüyor, "Tüm belgeleri gör (4)"
   düğmesi (`documents-show-all`) kalanları açıyor; `sm:` üstünde hepsi açık. **1216px → 884px**.
 - Ana sayfa mobil toplam yükseklik: **19.863px → 17.208px** (ilk ölçüme göre %22 kısaldı).
+
+## 2026-09-09 · Mobil kısaltma 3. tur + sepet hatırlatması 3 saat + hero sloganı
+### Mobil kısaltma (masaüstü değişmedi)
+- `HomeInsuranceStrip`: mobilde padding 28→20px, plan kartları p-3, avantaj listesi 12px,
+  "Sepetim" butonu mobilde gizli (navbar'da sepet var), ana CTA tam genişlik, görsel paneli
+  min-h 240→150px. **1199 → 927px**
+- `HomeTourStrip`: aynı kompaktlama + tur fotoğrafları mobilde **2 kolon** (min-h 110px).
+  **1034 → 658px**
+- `CommitmentsStrip`: satır dolguları ve yazı boyları mobilde küçültüldü, taahhüt kartları
+  p-4 + 14px başlık. **1090 → 848px**
+- Ana sayfa mobil toplam: **17.208 → 16.318px** (bugünün başlangıcı 21.987px, toplam %26 kısaldı).
+
+### Sepet hatırlatması 3 saat
+- `cart_reminders.REMINDER_STAGES_HOURS`: `[2, 24]` → **`[3, 24]`**; 1. hatırlatma konusu
+  "Sepetinizi tamamlamak ister misiniz?" ve metni daha nazik ("acele etmeniz gerekmiyor").
+- Canlı e2e: 4 saat öncesine alınmış test sepeti için süpürme çalıştı → e-posta
+  `status=sent`, `stage=1`, `reminders_sent=1` (log: "cart reminder sweep: 1 gonderildi").
+  Test kaydı sonrasında silindi. `tests/test_iteration_126_cart_reminder_3h.py` (13 test).
+- Not: akış zaten vardı (sepette e-posta girildiğinde `cart_snapshots`'a kayıt); yalnızca
+  ilk hatırlatma süresi ve dili değişti.
+
+### Hero sloganı
+- `HeroHeadline`: "Dubai vizeniz **2 iş gününde hazır**" → "Dubai vizeniz **36 saatte hazır**".
+  Diğer metinlerde ("ortalama 2 iş gününde") değişiklik YAPILMADI — kullanıcı onayı bekliyor:
+  VisaTypes SSS, VisaExplainer notu, seo-pages/prerender açıklamaları, visa_guides SEO metni.
+
+### Test hijyeni
+- `test_iteration_111_daily_digest`: gün seçimi gerçek "son gönderim" kaydıyla çakışabiliyordu
+  (bugün-2 = 07.09 kaydı) → test artık işaretçiyi kendisi sıfırlıyor; kalıcı flaky giderildi.
+- Hero slogan güncellemeleri (`HeroHeadline`, 5 slogan döngüsü):
+  1. "Dubai vizeniz / **36 saatte hazır**" (eski: 2 iş gününde hazır)
+  2. "**Sadece pasaport ve resminizle** / Dubai vizeniz hazır" (eski: Sadece 2 belgeyle)
+  3. "**Üstelik uçak bileti ve / otel rezervasyonu da gerekmiyor**" (eski: Bilet ve otel
+     şartı yok / sadece pasaport ve fotoğraf — pasaport-fotoğraf ifadesi bu slogandan
+     kaldırıldı, alt metin de sadeleştirildi)
+  4-5. Aile ve "pasaportunuzu yükleyin" slogancıkları aynı kaldı.
+  Beşi de canlı önizlemede tek tek doğrulandı.

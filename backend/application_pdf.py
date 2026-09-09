@@ -137,6 +137,9 @@ def _header(app_doc: dict, st: dict) -> Table:
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                 ("LINEBELOW", (0, 0), (-1, -1), 1.4, GOLD),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                # Logo, baslik metniyle ayni hizada dursun diye biraz yukari kaydirildi
+                ("TOPPADDING", (0, 0), (0, 0), 0),
+                ("BOTTOMPADDING", (0, 0), (0, 0), 12),
             ]
         )
     )

@@ -539,7 +539,7 @@ class CartSnapshotIn(BaseModel):
 
 @router.post("/cart/snapshot")
 async def save_cart_snapshot(payload: CartSnapshotIn) -> dict:
-    """Sepeti kaydeder; siparis verilmezse 2 ve 24 saat sonra hatirlatma gonderilir."""
+    """Sepeti kaydeder; siparis verilmezse 3 ve 24 saat sonra hatirlatma gonderilir."""
     email = payload.email.lower()
     now = datetime.now(timezone.utc)
     if not payload.items:
