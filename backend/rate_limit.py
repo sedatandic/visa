@@ -4,6 +4,7 @@ Amaci: e-posta/kod bombardimani ve pahali AI cagrilarinin kotuye kullanimini
 onlemek. Sayaclar uvicorn surecinde tutulur (birden fazla replikada Redis gerekir).
 """
 
+import os
 from collections import deque
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,11 +16,17 @@ from fastapi import HTTPException, Request
 _MAX_KEYS = 5000
 _hits: dict[str, deque] = {}
 
+# Uygulamanin onunde duran guvenilir proxy sayisi (Cloudflare + platform ingress ...).
+# X-Forwarded-For zincirinde SAGDAN bu kadar hop atlanarak gercek istemci bulunur;
+# istemcinin basa ekledigi uydurma degerler boylece dikkate alinmaz.
+TRUSTED_PROXY_HOPS = max(1, int(os.environ.get("TRUSTED_PROXY_HOPS") or 3))
+
 
 def client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for") or ""
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """Sahtelenemez istemci kimligi: XFF zincirinin sagindan guvenilir hop'lar atlanir."""
+    chain = [p.strip() for p in (request.headers.get("x-forwarded-for") or "").split(",") if p.strip()]
+    if chain:
+        return chain[max(0, len(chain) - TRUSTED_PROXY_HOPS)]
     return request.client.host if request.client else "unknown"
 
 

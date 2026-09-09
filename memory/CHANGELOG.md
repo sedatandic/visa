@@ -2663,3 +2663,36 @@ Dogrulama: `pytest` 602 passed / 5 skipped; `order_delivered_html` link render k
   eSIM [10GB/30, Sinirsiz/30]; 30 gun vize + 35 gun -> sigorta [ins_60d] (eskiden
   7/15/30 cikiyordu); 30 gun vize + 11 gun -> sigorta [15, 30], eSIM 3 paket (regresyon
   temiz). Konsol hatasi yok.
+
+### 2026-06-17 (devam) · Guvenlik denetimi (security audit) ve duzeltmeler
+Denetim sonucu: **CONDITIONAL PASS** - kritik/yuksek bulgu yok. Dogrulananlar: admin
+API'leri tek tip auth korumali, OTP kodlari hash'li + deneme limitli, basvuru/siparis/
+teklif/taslak/dosya eriimleri sahiplik bazli, pasaport taramalari nesne depolamada
+public DEGIL, Stripe ve Meta webhook imzalari dogrulanıyor, frontend bundle'da sizmis
+anahtar yok, dangerouslySetInnerHTML kullanimi yok, prerender cikisi HTML-escape'li.
+
+Duzeltilen bulgular:
+- **SEC-001 (MEDIUM)** `rate_limit.py:client_ip` X-Forwarded-For zincirinin EN SOLUNU
+  aliyordu; istemci basa uydurma IP ekleyerek her istekte yeni kimlik uretip ucretli
+  AI uclarindaki (passport OCR, photo check) ve upload'daki limitleri asabiliyordu.
+  -> Artik zincirin SAGINDAN `TRUSTED_PROXY_HOPS` (varsayilan 3: istemci, Cloudflare,
+  platform ingress) kadar hop atlanarak gercek istemci bulunuyor. Ortam olcumu:
+  normalde `client, 104.23.x, 136.110.x`; sahte deger eklenince `fake, client, ...`.
+  Canli dogrulama: 45 istek + her birinde farkli sahte XFF -> ilk 40 gecti, 5 istek 429.
+- **SEC-001 ek katman**: `usage_quota.py` eklendi - `usage_counters` koleksiyonunda
+  atomik gunluk sayac (replikalardan bagimsiz). `passport_ocr` 400/gun, `photo_check`
+  800/gun (env: PASSPORT_OCR_DAILY_LIMIT / PHOTO_CHECK_DAILY_LIMIT). Sayac yalnizca
+  gercek AI cagrisindan hemen once artiyor; 404/gecersiz istekler kotayi yemiyor.
+- **SEC-002 (LOW)** CORS regex'i `*.emergentagent.com` / `*.emergent.host` gibi platform
+  genelindeki tum kardes subdomainlere credentialed erisim veriyordu -> regex yalnizca
+  kendi alan adlarimiz (dubaivizehatti.com, dubaivizeonline.com) + localhost:3000 olacak
+  sekilde daraltildi; preview adresi PUBLIC_SITE_URL uzerinden acikca izinli.
+  Dogrulama: www.dubaivizehatti.com -> ACAO donuyor, evil-app.preview.emergentagent.com
+  -> ACAO yok.
+- Yeni test dosyasi: `tests/test_security_audit_20260617.py` (9 test: XFF sahtecilik
+  senaryolari, gunluk kota, CORS wildcard regresyonu). pytest: 611 passed / 5 skipped.
+
+Uygulanmayan (bilincli) oneriler: siparis/makbuz URL'lerindeki e-posta parametresinin
+imzali token'a cevrilmesi, e-postadaki imzali dosya linklerinin 180 gunden kisaltilmasi
+(musteri deneyimini etkiler), Redis tabanli dagitik limiter, TAMAMLIYO kart bilgilerinin
+harici secret manager'a tasinmasi (platformda .env tek secret store).

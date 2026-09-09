@@ -89,6 +89,7 @@ import offer_links
 import social_links
 from passport_ai import apply_background_report, background_report, check_photo, read_passport
 from rate_limit import allow as rate_allow, check as rate_check, client_ip
+from usage_quota import consume_daily
 import file_access
 from storage import APP_NAME, MIME_TYPES, get_object, put_object
 from tckn import clean_tckn, valid_tckn
@@ -612,6 +613,10 @@ async def check_photo_document(request: Request, file_id: str = Form(...)) -> di
         raise HTTPException(502, "Dosya okunamadi.") from exc
 
     background = background_report(data)
+    await consume_daily(
+        "photo_check",
+        "Fotograf kontrolu gunluk siniri doldu. Lutfen yarin tekrar deneyin.",
+    )
     try:
         result = await check_photo(data, content_type or ct)
     except Exception as exc:
@@ -700,6 +705,10 @@ async def read_passport_document(request: Request, file_id: str = Form(...)) -> 
 
     data, ct = _read_upload_bytes(record)
 
+    await consume_daily(
+        "passport_ocr",
+        "Pasaport okuma gunluk siniri doldu. Bilgileri elle girebilir ya da yarin tekrar deneyebilirsiniz.",
+    )
     try:
         result = await read_passport(data, content_type or ct)
     except Exception as exc:

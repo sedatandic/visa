@@ -416,7 +416,7 @@ for extra in (os.environ.get("PUBLIC_SITE_URL"), os.environ.get("PUBLIC_BASE_URL
     if extra and extra.strip().rstrip("/") not in CORS_ORIGINS:
         CORS_ORIGINS.append(extra.strip().rstrip("/"))
 CORS_ORIGIN_REGEX = os.environ.get("CORS_ORIGIN_REGEX") or (
-    r"^(https://([a-z0-9-]+\.)*(dubaivizehatti\.com|dubaivizeonline\.com|emergentagent\.com|emergent\.host)"
+    r"^(https://([a-z0-9-]+\.)*(dubaivizehatti\.com|dubaivizeonline\.com)"
     r"|http://localhost:3000)$"
 )
 
