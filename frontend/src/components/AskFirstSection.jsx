@@ -23,7 +23,7 @@ const STEPS = [
         icon: ShieldCheck,
         title: "Vizenizi alın",
         text: "Onaylanan vize PDF olarak e-postanıza gelir. Yazdırmanıza gerek yok, telefonda göstermeniz yeterli.",
-        badge: "Ortalama 2 iş günü",
+        badge: "36 saatte sonuç",
     },
 ];
 

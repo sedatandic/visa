@@ -1,4 +1,4 @@
-"""content.py icindeki vize aciklama/ozellik metinlerini DB'ye senkronlar."""
+"""content.py icindeki vize aciklama/ozellik/sure metinlerini DB'ye senkronlar."""
 import asyncio
 import os
 import sys
@@ -17,7 +17,11 @@ async def main():
     for visa in content.VISA_TYPES:
         res = await db.visa_types.update_one(
             {"id": visa["id"]},
-            {"$set": {"description": visa["description"], "features": visa["features"]}},
+            {"$set": {
+                "description": visa["description"],
+                "features": visa["features"],
+                "processing_days": visa["processing_days"],
+            }},
         )
         print(visa["id"], "matched", res.matched_count, "modified", res.modified_count)
 

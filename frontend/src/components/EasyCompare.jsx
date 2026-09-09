@@ -27,7 +27,7 @@ const ROWS = [
     {
         key: "speed",
         label: "Sonuç süresi",
-        us: "Ortalama 2 iş günü · ekspreste 12 saat içinde",
+        us: "36 saat · ekspreste 12 saat içinde",
         them: "Belirsiz, evrak eksikliğinde uzuyor",
     },
     {

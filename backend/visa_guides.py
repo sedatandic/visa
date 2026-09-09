@@ -13,7 +13,7 @@ GUIDES = {
     "30-gun-tek-giris": {
         "h1": "30 Günlük Tek Girişli Dubai Vizesi",
         "seo_title": "30 Günlük Dubai Vizesi 2026 | Fiyat ve Başvuru",
-        "seo_description": "30 günlük tek girişli Dubai vizesi nasıl alınır? 2026 fiyatı, gerekli belgeler, başvuru süresi ve onay şartları. Tek formda aile başvurusu, ortalama 2 iş gününde sonuç.",
+        "seo_description": "30 günlük tek girişli Dubai vizesi nasıl alınır? 2026 fiyatı, gerekli belgeler, başvuru süresi ve onay şartları. Tek formda aile başvurusu, 36 saatte sonuç.",
         "keywords": ["30 günlük dubai vizesi", "dubai vizesi fiyat", "dubai turistik vize", "dubai vize başvurusu"],
         "intro": [
             "30 günlük tek girişli Dubai vizesi, Birleşik Arap Emirlikleri'ne turistik ya da kısa iş amaçlı seyahat edenlerin en çok tercih ettiği vize tipidir. Vize, ülkeye ilk giriş yaptığınız günden itibaren 30 gün kalış hakkı verir ve tek giriş için geçerlidir; ülkeden çıktığınızda vizeniz kullanılmış sayılır.",
@@ -44,7 +44,7 @@ GUIDES = {
             },
             {
                 "q": "30 günlük Dubai vizesi kaç günde çıkar?",
-                "a": "Standart başvurularda sonuç ortalama 2 iş günü içinde çıkar. Yoğun dönemlerde bu süre 5 iş gününe kadar uzayabilir; acil seyahatlerde ekspres hizmetle 12 saat içinde sonuç alınır.",
+                "a": "Standart başvurularda sonuç 36 saat içinde çıkar. Yoğun dönemlerde bu süre 5 iş gününe kadar uzayabilir; acil seyahatlerde ekspres hizmetle 12 saat içinde sonuç alınır.",
             },
             {
                 "q": "Vize süresini Dubai'de uzatabilir miyim?",

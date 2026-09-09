@@ -5,7 +5,7 @@ const SLIDES = [
     {
         src: "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=2000&q=80",
         alt: "Burj Khalifa ve Downtown Dubai silüeti",
-        title: "Dubai vizeniz 2 iş gününde",
+        title: "Dubai vizeniz 36 saatte",
         text: "Başvurudan sonuca kadar süreci biz yürütüyoruz",
     },
     {

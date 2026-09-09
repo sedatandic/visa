@@ -72,7 +72,7 @@ const FACTORS = [
     {
         icon: Zap,
         title: "Sıra önceliği",
-        text: "Standart sırada ortalama 2 iş günü. Uçuşu yakın olanlar için ekspres kademesi vardır; sonuç 12 saat içinde çıkar.",
+        text: "Standart sırada 36 saat. Uçuşu yakın olanlar için ekspres kademesi vardır; sonuç 12 saat içinde çıkar.",
     },
     {
         icon: Receipt,
@@ -96,7 +96,7 @@ const FEE_FAQ = [
     },
     {
         q: "Ekspres vize hizmetini seçmek zorunda mıyım?",
-        a: "Hayır. Standart sıra ücretsizdir ve ortalama 2 iş gününde sonuçlanır. Ekspres vize hizmeti yalnız uçuşu yakın olanlar için vardır, kişi başı ücretlendirilir ve işaretlemediğiniz sürece sepete girmez.",
+        a: "Hayır. Standart sıra ücretsizdir ve 36 saat içinde sonuçlanır. Ekspres vize hizmeti yalnız uçuşu yakın olanlar için vardır, kişi başı ücretlendirilir ve işaretlemediğiniz sürece sepete girmez.",
     },
     {
         q: "Havale ile ödeyeceğim, arada kur değişirse ne olur?",

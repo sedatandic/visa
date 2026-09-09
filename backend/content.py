@@ -17,7 +17,7 @@ VISA_TYPES = [
         "price": 5190.0,
         "price_usd": 105.0,
         "currency": "TRY",
-        "processing_days": "ortalama 2 iş günü",
+        "processing_days": "36 saatte",
         "popular": True,
         "order": 1,
         "description": "Dubai seyahatiniz 1-30 gün arasıysa ve tek seferlik gidiş-dönüş yapacaksanız bu vize uygundur.",
@@ -42,7 +42,7 @@ VISA_TYPES = [
         "price": 9880.0,
         "price_usd": 200.0,
         "currency": "TRY",
-        "processing_days": "ortalama 2 iş günü",
+        "processing_days": "36 saatte",
         "popular": False,
         "order": 2,
         "description": "Dubai seyahatiniz 1-60 gün arasıysa ve tek seferlik gidiş-dönüş yapacaksanız bu vize uygundur.",
@@ -117,7 +117,7 @@ VISA_TYPES = [
         "price": 2470.0,
         "price_usd": 50.0,
         "currency": "TRY",
-        "processing_days": "ortalama 2 iş günü",
+        "processing_days": "36 saatte",
         "popular": True,
         "order": 5,
         "description": "Çocuğunuzun seyahati 1-30 gün arasıysa ve ailesiyle tek seferlik gidiş-dönüş yapacaksa bu indirimli vize uygundur.",
@@ -292,7 +292,7 @@ PROCESS_STEPS = [
 WHY_US = [
     {"title": "Şeffaf fiyat", "detail": "Gizli masraf yok. Dosya açma veya danışmanlık adı altında ek kalem çıkarmayız."},
     {"title": "Evrak kontrolü bizde", "detail": "Yüklediğiniz her belgeyi başvuru öncesi kontrol ediyoruz. Eksik varsa sizi arıyoruz."},
-    {"title": "Hızlı sonuç", "detail": "Standart başvurular ortalama 2 iş günü, ekspres başvurular 12 saat içinde sonuçlanır."},
+    {"title": "Hızlı sonuç", "detail": "Standart başvurular 36 saat, ekspres başvurular 12 saat içinde sonuçlanır."},
     {"title": "Gerçek insan desteği", "detail": "WhatsApp ve telefonla ulaşabileceğiniz Türkçe danışman ekibi."},
 ]
 
@@ -410,7 +410,7 @@ FAQ = [
     },
     {
         "q": "Vize işlemi ne kadar sürüyor?",
-        "a": "Belgeleriniz eksiksiz olduğunda standart başvurular ortalama 2 iş günü içinde sonuçlanır. Ekspres vize hizmetiyle sonuç 12 saat içinde çıkar.",
+        "a": "Belgeleriniz eksiksiz olduğunda standart başvurular 36 saat içinde sonuçlanır. Ekspres vize hizmetiyle sonuç 12 saat içinde çıkar.",
     },
     {
         "q": "Pasaportumu göndermem gerekiyor mu?",

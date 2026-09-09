@@ -1392,3 +1392,17 @@ Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
   Pasaport no -> Pasaport No, Gecerlilik -> Son Gecerlilik Tarihi, Vize -> Vize Turu.
   Yolcu tablosu kolon genislikleri yeniden dengelendi (6/40/22/24/26/36/26 mm = 180mm).
 - pytest: 505 passed, 5 skipped.
+
+## 2026-06-15 (3) · Standart sonuclanma suresi: "36 saatte"
+- Kullanici istegi: vize kartlarindaki "ortalama 2 is gunu" ifadesi "36 saatte" olacak.
+- `content.py` VISA_TYPES: visa_30_single / visa_60_single / visa_30_child `processing_days`
+  -> "36 saatte" (cok girisli 3-5 is gunu, uzatma 2-4 is gunu degismedi). DB `visa_types`
+  koleksiyonu `scripts/sync_visa_copy.py` ile senkronlandi (script artik processing_days de yaziyor).
+- Ayni ifade tum musteri metinlerinde guncellendi: content.py ADVANTAGES + SSS,
+  visa_guides.py (seo_description + SSS), VisaTypes.jsx (2 yer), EasyCompare.jsx,
+  AskFirstSection.jsx, HeroBannerSlider.jsx, frontend/scripts/seo-pages.js + prerender.js.
+- KALAN CELISKI: `VisaExplainer` takip sahnesi hem ekran metninde hem SESLENDIRMEDE
+  "ortalama iki is gunu" diyor. Ses degisirse `scripts/generate_narration_eleven.py`
+  yeniden calistirilmali (ElevenLabs kredisi harcar) — kullaniciya soruldu.
+- Dogrulama: /api/visa-types 36 saatte donuyor, /vize-tipleri ekran goruntusu,
+  pytest 507 passed / 3 skipped.

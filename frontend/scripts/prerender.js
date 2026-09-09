@@ -311,7 +311,7 @@ function articlePage(article) {
                 h2: "Dubai vize başvurunuzu bizimle yapın",
                 paras: [
                     "Dubai vizesi için yalnızca pasaportunuzun kimlik sayfası ve vesikalık fotoğrafınız yeterlidir; uçak bileti ve otel rezervasyonu zorunlu değildir. Başvurunuzu online tamamlayın, belgelerinizi biz kontrol edip yetkili mercilere iletelim.",
-                    "Standart başvurularda sonuç ortalama 2 iş gününde çıkar; acil durumlarda ekspres hizmetle yaklaşık 8 mesai saatinde sonuç alınır. Onaylı vizeniz e-posta ve WhatsApp ile teslim edilir.",
+                    "Standart başvurularda sonuç 36 saat içinde çıkar; acil durumlarda ekspres hizmetle yaklaşık 8 mesai saatinde sonuç alınır. Onaylı vizeniz e-posta ve WhatsApp ile teslim edilir.",
                 ],
             },
         ].filter(Boolean),

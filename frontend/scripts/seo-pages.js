@@ -47,7 +47,7 @@ function buildStaticPages(ctx) {
             intro: [
                 "Dubai Vize Hattı, Birleşik Arap Emirlikleri vize başvurularınızı sizin adınıza hazırlayıp yetkili mercilere ileten TÜRSAB üyesi A Grubu seyahat acentesi güvencesiyle çalışan bir hizmettir. Başvurunuzun tamamı online yürütülür; konsolosluğa gitmeniz, randevu almanız veya pasaportunuzu kargoya vermeniz gerekmez.",
                 "Başvuru için yalnızca iki belge yeterlidir: pasaportunuzun kimlik sayfası ve vesikalık fotoğrafınız. Vizeniz onaylanmadan uçak bileti almanız ya da otel rezervasyonu yapmanız gerekmez; bu belgeler zorunlu değildir.",
-                "Standart başvurularda sonuç ortalama 2 iş gününde çıkar. Acil seyahatlerde ekspres hizmetle yaklaşık 8 mesai saatinde, anında ekspres seçeneğiyle aynı gün içinde sonuç alınır. Onaylanan vizeniz PDF olarak e-postanıza ve başvuru takip sayfanıza yüklenir.",
+                "Standart başvurularda sonuç 36 saat içinde çıkar. Acil seyahatlerde ekspres hizmetle yaklaşık 8 mesai saatinde, anında ekspres seçeneğiyle aynı gün içinde sonuç alınır. Onaylanan vizeniz PDF olarak e-postanıza ve başvuru takip sayfanıza yüklenir.",
             ],
             sections: [
                 steps.length && {
