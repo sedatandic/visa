@@ -2550,3 +2550,12 @@ Gercek olan ve duzeltilen bulgular:
 - `routes_store.py` "kullanilmayan import" bulgusu yanlis: `# noqa: F401` ile bilincli
   re-export (testler bu modulden import ediyor).
 Dogrulama: `pytest` 602 passed / 5 skipped; `order_delivered_html` link render kontrolu ok.
+
+### 2026-06-17 (devam) · Anlatim videosunda duraklat ikonu
+- `VisaExplainer.jsx`: anlatim basladiktan sonra cizim alaninin tamami tiklanabilir bir
+  oynat/duraklat katmani (`explainer-video-toggle-button`). Oynarken ortada %50 opaklikta
+  duraklat ikonu (hover/focus'ta tam gorunur), duraklatildiginda tam opak oynat ikonu +
+  hafif scrim + "Devam etmek icin dokunun" etiketi. Alttaki kucuk kontrol ile ayni
+  `paused` state'i kullanildigi icin ikisi senkron.
+- Dogrulama (Playwright): oynat -> katman var, aria-label "Anlatimi duraklat"; tik ->
+  `audio.paused === true`, aria-label "Anlatimi devam ettir"; tekrar tik -> ses devam.

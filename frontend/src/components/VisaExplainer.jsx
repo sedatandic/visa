@@ -244,6 +244,36 @@ export const VisaExplainer = () => {
                         </span>
                     </motion.div>
                 )}
+
+                {/* OYNAT / DURAKLAT: anlatim baslayinca cizimin uzerinde kalir */}
+                {started && (
+                    <button
+                        type="button"
+                        onClick={() => setPaused((p) => !p)}
+                        aria-label={paused ? "Anlatımı devam ettir" : "Anlatımı duraklat"}
+                        className={`group absolute inset-0 z-10 flex flex-col items-center justify-center gap-2.5 transition-colors duration-300 focus-visible:outline-none ${
+                            paused ? "bg-[hsl(var(--panel-2))]/30 backdrop-blur-[1px]" : "bg-transparent"
+                        }`}
+                        data-testid="explainer-video-toggle-button"
+                    >
+                        <span
+                            className={`flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl transition-[opacity,transform] duration-300 group-hover:scale-105 group-hover:opacity-100 group-focus-visible:opacity-100 ${
+                                paused ? "opacity-100" : "opacity-50"
+                            }`}
+                        >
+                            {paused ? (
+                                <Play className="ml-0.5 h-5 w-5 fill-current" aria-hidden="true" />
+                            ) : (
+                                <Pause className="h-5 w-5 fill-current" aria-hidden="true" />
+                            )}
+                        </span>
+                        {paused && (
+                            <span className="rounded-full bg-white/90 px-3.5 py-1.5 text-[11px] font-bold text-foreground shadow-sm">
+                                Devam etmek için dokunun
+                            </span>
+                        )}
+                    </button>
+                )}
             </div>
 
             {/* METIN KATMANI */}
