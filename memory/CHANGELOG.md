@@ -2447,3 +2447,10 @@ yesil cerceveyle isaretlenmeye devam ediyor (oncelik: sepet > secim > notr).
 Kart uzerine gelince hafif primary kenarlik ipucu ve `cursor-pointer`, testler icin
 `data-selected="true|false"`. Playwright ile dogrulandi: baslangic 3GB secili -> 10GB'a
 tiklaninca secim 10GB'a gecti.
+
+## 2026-06-16 · Cep telefonu alani: "5" artik yazili degil, silik maskede
+`Apply.jsx`: iletisim adiminda telefon alani `"+90 5"` degeriyle basliyordu, yani "5"
+kullanicinin yazdigi gercek bir karakter gibi koyu gorunuyordu. Baslangic degeri ve odak
+(onFocus) davranisi `"+90 "` olarak degistirildi; "5XX XXX XX XX" tamami silik maske
+katmaninda (`phone-mask-hint`) gosteriliyor. Yazma akisi degismedi: 5384838224 ->
+"+90 538 483 82 24". Playwright ile dogrulandi.

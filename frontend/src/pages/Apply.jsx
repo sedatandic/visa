@@ -224,7 +224,7 @@ export default function Apply() {
     const [compareOpen, setCompareOpen] = useState(false);
     const cart = useCart();
 
-    const [contact, setContact] = useState({ full_name: "", email: "", phone: "+90 5", address_city: "", whatsapp_optin: false });
+    const [contact, setContact] = useState({ full_name: "", email: "", phone: "+90 ", address_city: "", whatsapp_optin: false });
     const [travelers, setTravelers] = useState([newTraveler()]);
     const [openNationalId, setOpenNationalId] = useState({});
     const [fieldsOpen, setFieldsOpen] = useState({});
@@ -1940,7 +1940,7 @@ export default function Apply() {
                                                         }
                                                         onFocus={() =>
                                                             setContact((s) =>
-                                                                s.phone.replace(/\D/g, "").length > 2 ? s : { ...s, phone: "+90 5" }
+                                                                s.phone.replace(/\D/g, "").length > 2 ? s : { ...s, phone: "+90 " }
                                                             )
                                                         }
                                                         maxLength={17}
