@@ -196,7 +196,15 @@ export const Footer = () => {
         {affiliation && (
             <div className="border-t border-white/10" data-testid="footer-affiliation">
                 <div className="container-page py-5 text-xs leading-6 text-white/60">
-                    <BoldText text={affiliation} strongClassName="font-bold text-white" />
+                    {affiliation
+                        .split(/(?=Birleşik Arap)/)
+                        .map((line) => line.trim())
+                        .filter(Boolean)
+                        .map((line, i) => (
+                            <p key={i} className={i ? "mt-1" : ""}>
+                                <BoldText text={line} strongClassName="font-bold text-white" />
+                            </p>
+                        ))}
                 </div>
             </div>
         )}

@@ -2428,3 +2428,12 @@ Zeytinburnu / İstanbul". Yeni: **"Büyükdere Caddesi Nurol Plaza No:255/B02, 3
   API'nin donen birim fiyatlarindan hesaplaniyor (indirim orani ve vize tutarlari sabit kaldi).
 - Suite: **591 passed / 3 skipped** (tek kalan hata, ust uste calistirmada tetiklenen
   60 sn hesap kodu bekleme siniri; tek basina PASS).
+
+## 2026-06-16 · Footer kunyesi iki satira ayrildi
+`Footer.jsx`: marka/isletici notu tek paragraf halinde akiyordu. Metin "Birleşik Arap"
+oncesinden bolunup iki ayri `<p>` olarak yaziliyor:
+1) "Dubai Vize Hattı, **Moruya Travel Solutions Turizm Ltd. Şti.**'nin tescilli markası olup..."
+2) "Birleşik Arap Emirlikleri'ndeki grup şirketimiz **Moruya Travel Solutions FZE**'dir."
+Kaynak metin backend'den (content.affiliation_note) tek string geldigi icin bolme goruntuleme
+katmaninda yapildi; About sayfasi ve PDF/e-posta kunyesi degistirilmedi (PDF'te zaten
+alt alta). Ekran goruntusuyle dogrulandi (2 satir, kalin sirket adlari korunuyor).
