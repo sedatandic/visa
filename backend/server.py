@@ -354,6 +354,12 @@ async def security_headers(request, call_next):
     )
     return response
 
+@app.get("/health")
+async def platform_health() -> dict:
+    """Kubernetes liveness/readiness probu koksuz /health adresini cagiriyor."""
+    return {"status": "ok"}
+
+
 api_router = APIRouter(prefix="/api")
 
 

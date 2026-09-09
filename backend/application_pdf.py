@@ -5,12 +5,15 @@ import logging
 import os
 from datetime import datetime
 from xml.sax.saxutils import escape as xml_escape
+from urllib.parse import quote
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
+from reportlab.graphics.barcode.qr import QrCodeWidget
+from reportlab.graphics.shapes import Drawing
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
@@ -211,7 +214,7 @@ def _pairs_table(pairs: list, st: dict) -> Table:
 def _contact_pairs(app_doc: dict) -> list:
     contact = app_doc.get("contact") or {}
     return [
-        ("Ad Soyad", contact.get("full_name")),
+        ("Adı Soyadı", contact.get("full_name")),
         ("E-posta", contact.get("email")),
         ("Telefon (WhatsApp)", format_phone(contact.get("phone"))),
         ("Şehir", contact.get("address_city")),
@@ -242,7 +245,15 @@ def _travel_pairs(app_doc: dict) -> list:
 
 
 def _travelers_table(app_doc: dict, st: dict) -> Table:
-    head = ["#", "Ad Soyad", "Doğum t.", "Pasaport no", "Geçerlilik", "Vize", "Tutar"]
+    head = [
+        "#",
+        "Adı Soyadı",
+        "Doğum Tarihi",
+        "Pasaport No",
+        "Son Geçerlilik Tarihi",
+        "Vize Türü",
+        "Tutar",
+    ]
     rows = [[Paragraph(f"<b>{h}</b>", st["label"]) for h in head]]
     for i, t in enumerate(app_doc.get("travelers") or [], start=1):
         name = f"{t.get('first_name', '')} {t.get('last_name', '')}".strip()
@@ -261,7 +272,7 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
         )
     table = Table(
         rows,
-        colWidths=_cols(6, 44, 20, 26, 20, 38, 26),
+        colWidths=_cols(6, 40, 22, 24, 26, 36, 26),
         repeatRows=1,
     )
     table.setStyle(
@@ -414,6 +425,57 @@ def _draw_frame(canvas, doc) -> None:
     canvas.restoreState()
 
 
+TRACK_BASE = (
+    os.environ.get("PUBLIC_SITE_URL") or "https://www.dubaivizehatti.com"
+).strip().strip('"').rstrip("/")
+
+
+def _track_url(app_doc: dict) -> str:
+    ref = str(app_doc.get("reference_code") or "").strip()
+    return f"{TRACK_BASE}/takip?kod={quote(ref)}" if ref else f"{TRACK_BASE}/takip"
+
+
+def _qr_drawing(url: str, side: float) -> Drawing:
+    """Takip sayfasina goturen kare QR (reportlab dahili, ek bagimlilik yok)."""
+    widget = QrCodeWidget(url, barLevel="M", barBorder=0)
+    x1, y1, x2, y2 = widget.getBounds()
+    drawing = Drawing(
+        side, side, transform=[side / (x2 - x1), 0, 0, side / (y2 - y1), 0, 0]
+    )
+    drawing.add(widget)
+    return drawing
+
+
+def _track_band(app_doc: dict, st: dict) -> Table:
+    """Musteri telefonuyla okutup basvuru durumunu goreceklerini anlatan QR bandi."""
+    url = _track_url(app_doc)
+    info = [
+        Paragraph("TELEFONUNUZDAN BAŞVURU TAKİBİ", st["section"]),
+        Paragraph(
+            "Kodu kamerayla okutun; başvurunuzun güncel durumu anında açılır. "
+            "Dilerseniz takip kodunuzla www.dubaivizehatti.com/takip adresinden de "
+            "sorgulayabilirsiniz.",
+            st["body"],
+        ),
+        Paragraph(f"Takip kodu: {_safe(app_doc.get('reference_code'))}", st["value"]),
+    ]
+    table = Table([[_qr_drawing(url, 19 * mm), info]], colWidths=_cols(26, 154))
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), PANEL),
+                ("BOX", (0, 0), (-1, -1), 0.6, LINE),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
+    return table
+
+
 def _footer_paragraph(st: dict) -> Paragraph:
     text = (
         f"{COMPANY['legal_name']} · TÜRSAB Üyesi {COMPANY['tursab_type']} · "
@@ -466,6 +528,8 @@ def build_application_pdf(app_doc: dict, documents: list | None = None) -> bytes
         Spacer(1, 8),
         Paragraph("YÜKLENEN BELGELER", st["section"]),
         _documents_paragraph(documents or [], st),
+        Spacer(1, 9),
+        _track_band(app_doc, st),
     ]
     pdf.build(story, onFirstPage=_draw_frame, onLaterPages=_draw_frame)
     return buffer.getvalue()

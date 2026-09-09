@@ -1376,3 +1376,19 @@ Ayrıntı: CHANGELOG.md "2026-09-08 (3)" ve "(4)". Özet:
   olarak kontrol edildi; pytest PDF testleri 19/19 PASS.
 - Bekleyen: canliya alma (kullanici "Save to Github" / deploy akisini kullanmali),
   gercek IBAN bilgileri, WhatsApp Meta canli anahtarlari, Tamamliyo cari bakiye + urun 220.
+
+## 2026-06-15 (2) · Deployment probe + PDF QR kodu + etiket duzeltmeleri
+- **Deployment blocker 1 (/health 404)**: Kubernetes liveness/readiness probu koksuz `GET /health`
+  cagiriyor, yalnizca `/api/health` vardi. `server.py` icine `@app.get("/health")`
+  (`platform_health`) eklendi. Dogrulama: `curl localhost:8001/health` -> {"status":"ok"}.
+- **Deployment blocker 2 (.gitignore)**: `.env`, `.env.*`, `*.env` satirlari .gitignore icinden
+  kaldirildi; deploy sirasinda backend/.env ve frontend/.env repoda bulunmali.
+- **PDF QR kodu (yeni)**: `application_pdf.py` `_track_band()` — belgenin altinda krem bantta
+  19mm QR + "Telefonunuzdan basvuru takibi" metni + takip kodu. QR adresi
+  `{PUBLIC_SITE_URL}/takip?kod={reference_code}` (Track.jsx `kod` parametresini okuyor).
+  ReportLab dahili `QrCodeWidget` kullanildi (ek bagimlilik yok). QR pyzbar ile okutularak
+  dogrulandi; PDF hala tek sayfa.
+- **Etiketler (kullanici istegi)**: Ad Soyad -> Adi Soyadi, Dogum t. -> Dogum Tarihi,
+  Pasaport no -> Pasaport No, Gecerlilik -> Son Gecerlilik Tarihi, Vize -> Vize Turu.
+  Yolcu tablosu kolon genislikleri yeniden dengelendi (6/40/22/24/26/36/26 mm = 180mm).
+- pytest: 505 passed, 5 skipped.
