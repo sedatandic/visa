@@ -44,15 +44,26 @@ export const AskFirstSection = () => {
                         WhatsApp'tan yazın. Sıra numarası ve otomatik yanıt yok; cevabı veren kişi işi yapan kişi.
                     </p>
 
-                    <div className="mt-6 flex flex-wrap gap-3">
+                    <div className="mt-6 flex items-stretch gap-3">
                         {href && (
-                            <Button asChild size="lg" data-testid="ask-first-whatsapp-button">
+                            <Button
+                                asChild
+                                size="lg"
+                                className="flex-1 px-3 text-sm text-white hover:brightness-95 sm:flex-none sm:px-6 sm:text-base"
+                                style={{ backgroundColor: "#25D366" }}
+                                data-testid="ask-first-whatsapp-button"
+                            >
                                 <a href={href} target="_blank" rel="noreferrer">
                                     <WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp'tan sor
                                 </a>
                             </Button>
                         )}
-                        <Button asChild size="lg" variant="outline" data-testid="ask-first-apply-button">
+                        <Button
+                            asChild
+                            size="lg"
+                            className="flex-1 px-3 text-sm sm:flex-none sm:px-6 sm:text-base"
+                            data-testid="ask-first-apply-button"
+                        >
                             <Link to="/basvuru">
                                 Başvuruya başla <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
