@@ -2437,3 +2437,13 @@ oncesinden bolunup iki ayri `<p>` olarak yaziliyor:
 Kaynak metin backend'den (content.affiliation_note) tek string geldigi icin bolme goruntuleme
 katmaninda yapildi; About sayfasi ve PDF/e-posta kunyesi degistirilmedi (PDF'te zaten
 alt alta). Ekran goruntusuyle dogrulandi (2 satir, kalin sirket adlari korunuyor).
+
+## 2026-06-16 · Paket kartlarinda secim cercevesi tiklamayla tasiniyor
+`components/PlanShowcase.jsx` (eSIM + seyahat sigortasi sayfalari): altin cerceve artik
+"en cok tercih edilen" karta sabit degil. `selectedId` state'i eklendi; baslangicta populer
+karta (yoksa ilkine) atanir, kullanici baska bir karta tiklayinca cerceve + yumusak golge o
+karta gecer. Populer kart yalnizca "EN ÇOK TERCİH EDİLEN" etiketini korur. Sepette olan urun
+yesil cerceveyle isaretlenmeye devam ediyor (oncelik: sepet > secim > notr).
+Kart uzerine gelince hafif primary kenarlik ipucu ve `cursor-pointer`, testler icin
+`data-selected="true|false"`. Playwright ile dogrulandi: baslangic 3GB secili -> 10GB'a
+tiklaninca secim 10GB'a gecti.

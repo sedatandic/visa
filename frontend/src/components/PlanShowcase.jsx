@@ -68,6 +68,13 @@ export const PlanShowcase = ({ kind }) => {
     const crossLink = kind === "esim" ? "/seyahat-sigortasi" : "/esim";
     const crossLabel = kind === "esim" ? "seyahat sağlık sigortası" : "Dubai eSIM";
 
+    // Secili kart cercevesi: baslangicta en cok tercih edilen, tiklanan karta tasinir
+    const [selectedId, setSelectedId] = useState("");
+    useEffect(() => {
+        if (selectedId || !products.length) return;
+        setSelectedId((products.find((p) => p.popular) || products[0]).id);
+    }, [products, selectedId]);
+
     const addToCart = (product) => {
         const quantity = qty[product.id] || 1;
         const res = cart.add(product.id, quantity);
@@ -111,14 +118,21 @@ export const PlanShowcase = ({ kind }) => {
                 <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                     {products.map((p) => {
                         const inCart = cart.items.find((i) => i.product_id === p.id);
+                        const selected = selectedId === p.id;
                         return (
                             <div
                                 key={p.id}
-                                className={`flex h-full flex-col rounded-2xl border-2 bg-card p-5 transition-transform duration-200 hover:-translate-y-1 ${
-                                    inCart ? "border-[hsl(var(--brand-green))]" : p.popular ? "border-primary" : "border-border"
+                                onClick={() => setSelectedId(p.id)}
+                                className={`flex h-full cursor-pointer flex-col rounded-2xl border-2 bg-card p-5 transition-transform duration-200 hover:-translate-y-1 ${
+                                    inCart
+                                        ? "border-[hsl(var(--brand-green))]"
+                                        : selected
+                                          ? "border-primary"
+                                          : "border-border hover:border-primary/40"
                                 }`}
-                                style={{ boxShadow: p.popular ? "var(--shadow-soft)" : "var(--shadow-card)" }}
+                                style={{ boxShadow: selected || inCart ? "var(--shadow-soft)" : "var(--shadow-card)" }}
                                 data-testid={`plan-card-${p.id}`}
+                                data-selected={selected ? "true" : "false"}
                             >
                                 {(p.popular || inCart) && (
                                     <span
