@@ -2634,3 +2634,20 @@ Dogrulama: `pytest` 602 passed / 5 skipped; `order_delivered_html` link render k
   Gorseller image_selector_tool ile Unsplash'ten secildi, hepsi HTTP 200.
 - Dogrulama: pytest 25 tur testi gecti; /dubai-turlari 1440px ekran goruntusu (galeri
   gecisi, tek 15:00 slotu, guncel sure metni), kirik gorsel yok.
+
+### 2026-06-17 (devam) · Seyahatten kisa sigorta/eSIM paketleri artik teklif edilmiyor
+- Kullanici bildirimi: 11 gunluk seyahatte 7 gunluk police/eSIM gosteriliyordu.
+- Kok neden: `insuranceProducts` vize suresine gore UST sinir uyguluyordu (30 gunluk
+  vizede 7/15/30) ve liste 3 elemana dustugu icin `shortlistFor` erken donup
+  seyahat suresini kapsamayan paketi de listeliyordu.
+- Cozum (`Apply.jsx`): `coveringOnly()` yardimcisi eklendi -> `validity_days >= coverDays`
+  (coverDays = seyahat suresi, yoksa vize suresi). `eligibleInsurance` / `eligibleEsim`
+  hem kisa listede hem "Tumunu gor" listesinde kullaniliyor; kapsayan paket yoksa
+  guvenlik icin tum liste gosterilir.
+- Metinler dinamik: "iki police / uc internet paketi sectik; seyahatinizden kisa sureli
+  paketleri listelemiyoruz" (`countWord` yardimcisi).
+- `ExtraOptions` grid'i secenek sayisina gore 1/2/3 kolon oluyor (2 seceneginde bosluk
+  kalmiyor).
+- Dogrulama: 11 gunluk seyahat + 30 gunluk vize -> sigorta 15/30 gun (7 gun yok),
+  eSIM 15 gun / 10 GB-30 gun / Sinirsiz-30 gun; hepsinde "11 gunluk seyahatinizin
+  tamamini kapsar" notu. Konsol hatasi yok.

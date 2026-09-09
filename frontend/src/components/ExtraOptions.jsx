@@ -193,7 +193,11 @@ export const ExtraOptions = ({
         </div>
         {subtitle && <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{subtitle}</p>}
         {note}
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <div
+            className={`mt-4 grid gap-4 ${
+                options.length === 1 ? "md:grid-cols-1" : options.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"
+            }`}
+        >
             {options.map((o) => (
                 <OptionCard
                     key={o.id}

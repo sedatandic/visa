@@ -143,6 +143,9 @@ const formatPhoneTR = (value) => {
 
 const PHONE_MASK = "+90 5XX XXX XX XX";
 
+const NUMBER_WORDS = ["", "bir", "iki", "üç", "dört", "beş", "altı"];
+const countWord = (n) => NUMBER_WORDS[n] || String(n);
+
 const Field = ({ label, children, error, required, htmlFor }) => (    <div className="space-y-2" data-invalid={error ? "true" : undefined}>
         <Label htmlFor={htmlFor}>
             {label} {required && <span className="text-destructive">*</span>}
@@ -619,18 +622,36 @@ export default function Apply() {
         return [...tight, ...rest].slice(0, 3);
     };
 
-    const insuranceShortlist = useMemo(
-        () => shortlistFor(insuranceProducts),
+    // Seyahat suresinden (yoksa vize suresinden) KISA paketler hic teklif edilmez
+    const coveringOnly = (list) => {
+        if (!coverDays) return list;
+        const covering = list.filter((p) => Number(p.validity_days) >= coverDays);
+        return covering.length ? covering : list;
+    };
+
+    const eligibleInsurance = useMemo(
+        () => coveringOnly(insuranceProducts),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [insuranceProducts, coverDays]
     );
-    const esimShortlist = useMemo(
-        () => shortlistFor(esimProducts),
+    const eligibleEsim = useMemo(
+        () => coveringOnly(esimProducts),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [esimProducts, coverDays]
     );
-    const visibleInsurance = showAllInsurance ? insuranceProducts : insuranceShortlist;
-    const visibleEsim = showAllEsim ? esimProducts : esimShortlist;
+
+    const insuranceShortlist = useMemo(
+        () => shortlistFor(eligibleInsurance),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [eligibleInsurance, coverDays]
+    );
+    const esimShortlist = useMemo(
+        () => shortlistFor(eligibleEsim),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [eligibleEsim, coverDays]
+    );
+    const visibleInsurance = showAllInsurance ? eligibleInsurance : insuranceShortlist;
+    const visibleEsim = showAllEsim ? eligibleEsim : esimShortlist;
 
     const recommendedInsuranceId = useMemo(
         () => bestFit(insuranceProducts),
@@ -1026,24 +1047,24 @@ export default function Apply() {
             title="Size uygun seyahat sağlık sigortası önerilerimiz"
             subtitle={`${
                 tripDays ? `${tripDays} günlük seyahatiniz` : "Vize süreniz"
-            } için üç poliçe seçtik. Poliçe yolcu başına hesaplanır, gidiş tarihinizde başlar ve PDF olarak e-postanıza gelir.`}
+            } için ${countWord(insuranceOptions.length)} poliçe seçtik; seyahatinizden kısa süreli paketleri listelemiyoruz. Poliçe yolcu başına hesaplanır, gidiş tarihinizde başlar ve PDF olarak e-postanıza gelir.`}
             note={extrasDatesNote("insurance")}
             options={insuranceOptions}
             disabled={!extrasSelectable}
             unitLabel="kişi"
             footer={
                 <>
-                    {insuranceProducts.length > visibleInsurance.length && (
+                    {eligibleInsurance.length > visibleInsurance.length && (
                         <button
                             type="button"
                             onClick={() => setShowAllInsurance(true)}
                             className="mt-4 text-sm font-semibold text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-200 hover:decoration-primary"
                             data-testid="show-all-insurance-button"
                         >
-                            Tüm sigorta paketlerini gör ({insuranceProducts.length})
+                            Tüm sigorta paketlerini gör ({eligibleInsurance.length})
                         </button>
                     )}
-                    {showAllInsurance && insuranceProducts.length > insuranceShortlist.length && (
+                    {showAllInsurance && eligibleInsurance.length > insuranceShortlist.length && (
                         <button
                             type="button"
                             onClick={() => setShowAllInsurance(false)}
@@ -1081,24 +1102,24 @@ export default function Apply() {
             title="Seyahatinize en uygun eSIM önerilerimiz"
             subtitle={`${
                 tripDays ? `${tripDays} günlük seyahatiniz` : "Seyahat planınız"
-            } için üç internet paketi seçtik. QR kodunuz e-postanıza gelir, Türkiye numaranız açık kalır.`}
+            } için ${countWord(esimOptions.length)} internet paketi seçtik; seyahatinizden kısa süreli paketleri listelemiyoruz. QR kodunuz e-postanıza gelir, Türkiye numaranız açık kalır.`}
             note={extrasDatesNote("esim")}
             options={esimOptions}
             disabled={!extrasSelectable}
             unitLabel="adet"
             footer={
                 <>
-                    {esimProducts.length > visibleEsim.length && (
+                    {eligibleEsim.length > visibleEsim.length && (
                         <button
                             type="button"
                             onClick={() => setShowAllEsim(true)}
                             className="mt-4 text-sm font-semibold text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-200 hover:decoration-primary"
                             data-testid="show-all-esim-button"
                         >
-                            Tüm eSIM paketlerini gör ({esimProducts.length})
+                            Tüm eSIM paketlerini gör ({eligibleEsim.length})
                         </button>
                     )}
-                    {showAllEsim && esimProducts.length > esimShortlist.length && (
+                    {showAllEsim && eligibleEsim.length > esimShortlist.length && (
                         <button
                             type="button"
                             onClick={() => setShowAllEsim(false)}
