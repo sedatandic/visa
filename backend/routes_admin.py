@@ -255,7 +255,7 @@ async def admin_applications(
     if payment_status and payment_status != "all":
         query["payment.status"] = payment_status
     if q:
-        term = q.strip()
+        term = re.escape(q.strip())[:80]
         query["$or"] = [
             {"reference_code": {"$regex": term, "$options": "i"}},
             {"contact.full_name": {"$regex": term, "$options": "i"}},
