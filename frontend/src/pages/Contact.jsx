@@ -66,7 +66,7 @@ const ContactRow = ({ icon: Icon, label, value, href, testId, external }) => {
         </>
     );
     const cls =
-        "flex items-center gap-4 rounded-xl border border-border bg-card px-5 py-4 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-[var(--shadow-card)]";
+        "flex flex-1 items-center gap-4 rounded-xl border border-border bg-card px-5 py-4 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-[var(--shadow-card)]";
     return href ? (
         <a
             href={href}
@@ -214,7 +214,7 @@ export default function Contact() {
                             <Label htmlFor="c-message">Mesajınız *</Label>
                             <Textarea
                                 id="c-message"
-                                rows={6}
+                                rows={5}
                                 value={form.message}
                                 onChange={set("message")}
                                 placeholder="Sorunuzu veya talebinizi yazın…"
@@ -239,7 +239,7 @@ export default function Contact() {
                         )}
                     </form>
 
-                    <div className="order-1 min-w-0 space-y-4 lg:order-2" data-testid="contact-channels">
+                    <div className="order-1 flex min-w-0 flex-col gap-4 lg:order-2" data-testid="contact-channels">
                         {contact.whatsappHref && (
                             <WhatsAppHero
                                 href={contact.whatsappHref}

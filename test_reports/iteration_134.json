@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend Playwright validation of iteration 134 (PDF OCR + isim ezme + kutulu OCR başarı kartı) on /basvuru. 3 kritik senaryodan 3'ü PASSED. Backend zaten pytest ile onaylanmıştı (test_iteration_134_pdf_passport_ocr.py 5/5, test_iteration_106_refactor_regression.py 23/23). Bu turda gerçek LLM'in her IP'ye saatte 40 çağrı limiti gözetilerek sadece kritik iki yükleme yapıldı (passport_b.png ve passport_a.pdf).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_134_pdf_passport_ocr.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx artık 3849 satır — 700 satır limitini çok aşıyor; readPassportWithAI, wizard adımları ve traveler kartı ayrı bileşenlere/modüllere bölünürse hem yeniden kullanılabilir hem test edilebilir olur.",
+    "readPassportWithAI (Apply.jsx ~1355) OCR başarısız olduğunda mevcut alanları asla temizlemiyor; kullanıcı yanlış pasaport yüklerse toast göstermiyor. Zararsız ancak UX kaybı.",
+    "OCR sonuç kutusundaki metin 'Pasaport okundu' başlık uppercase CSS ile 'PASAPORT OKUNDU' olarak render ediliyor; testler her ikisini kabul edecek şekilde yazıldı, ancak DOM'daki gerçek metin küçük harflerle kalıyor. Erişilebilirlik/screen reader'lar için kabul edilebilir, sadece not."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "N/A - login gerektirmiyor",
+  "seed_data_creation": "None (test_assets önceden hazırdı)",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "OCR gerçek EMERGENT_LLM_KEY ile çağrılıyor; IP başına saatte 40 limit var. HATA 2b (aynı yolcuda önce passport_a sonra passport_b yükleyip eski national_id'nin temizlenmesi) ve pasaport olmayan görsel regresyonu quota nedeniyle bu turda test edilmedi; kodu (identityChanged temizleme bloğu satır 1387-1400) inceledim, mantık doğru görünüyor.",
+  "rca of the issue": "Verified fixes: (1) /app/backend/routes_public.py'daki eski PDF erken-fail bloğunun kaldırılması + passport_ai.py'nin pymupdf ile PDF -> PNG'ye çevirmesi PDF akışını tamir etti. (2) Apply.jsx satır 1249'daki iletişim adı -> yolcu adı kopyalama effect'inin OCR yapılmışsa devreye girmemesi ve readPassportWithAI'nin patch mantığının artık dolu alanları da eziyor olması (satır 1401-1406) HATA 2'yi çözdü. (3) Yeni kutulu yeşil OCR başarı kartı Apply.jsx satır 2400-2420'de doğru render ediliyor.",
+  "test_results": {
+    "HATA_1_PDF_OCR": "PASSED - passport_a.pdf yüklendiğinde AYSE / YILMAZ / U12345678 / 01.01.1990 / 15.03.2030 alanları doldu",
+    "HATA_2_KRITIK_isim_ezme": "PASSED - iletişim adı 'MUSTAFA SELMAN BAKKAL' korundu; passport_b OCR sonrası yolcu Ad=EKREM, Soyad=SAYANER, PasaportNo=U22581619",
+    "HATA_3_gorsel_format": "PASSED - traveler-0-ocr-success kutusu yeşil kenarlı/açık yeşil zeminli; 'PASAPORT OKUNDU' başlığı (uppercase), koyu Ad Soyad, mono pasaport no, açıklayıcı alt metin bulundu"
+  }
+}

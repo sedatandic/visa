@@ -1632,3 +1632,26 @@ Detay ve test sonuclari: CHANGELOG.md 2026-06-16.
 - P1 **Production deploy**: "Save to Github" + deploy kullanici tarafinda.
 - P2 Police/vize yenileme hatirlatmasi, global Ingilizce surum.
 - P2 Teknik borc: `AdminOffers.jsx` (535 satir) ve `Apply.jsx` bilesenlere bolunebilir.
+
+## 2026-06-17 durum notu (fork)
+### Bu turda tamamlananlar
+1. **Sigorta + eSIM icin detayli aciklamali 3 secenek karti** (basvuru sihirbazi 2. adim ve
+   Odeme adimi) — yeni `ExtraOptions` bileseni, seyahat suresine gore rozet ve uygunluk
+   cumlesi, eSIM adet secimi. Testing agent ile dogrulandi (iteration_135).
+2. **"Degistir" / "Tarihleri duzenle" artik ayni sayfada** aciliyor (vize dropdown +
+   tarih alanlari); 1. adima geri donus yok.
+3. **Sadelestirme**: "Basvurmadan once okumaniz gerekenler" notu 2x2 kisa metin;
+   sigorta/eSIM kartlarindan ozet paragraf kaldirildi.
+4. **Iletisim sayfasi**: sol form karti sag kolonla alt hizada; Ofislerimiz'e Dubai karti
+   eklendi (`company_info.dubai_address/dubai_phone` varsayilanlarla dolduruldu).
+5. **SEO on-render parlamasi**: kod tarafi zaten duzeltilmis; canlidaki build eski oldugu
+   icin sorun goruluyor. Inline stil ile ekstra saglamlastirma yapildi.
+
+### Bekleyen isler (oncelik sirasi)
+- P0 **Yeniden deploy**: on-render duzeltmesi ve bu turdaki tum degisiklikler icin
+  "Save to Github" + deploy kullanici tarafinda.
+- P0 **WhatsApp botu canli mod**: Meta Developer App kimlikleri Admin -> WhatsApp'tan.
+- P1 **Gercek IBAN'lar**: hala `TR00 0000 ...` yer tutucu.
+- P1 **Dubai ofis adresi dogrulama**: varsayilan adres kullanildi; gercek adres farkliysa
+  Admin -> Sirket ekranindan guncellenmeli.
+- P1 Teklif linkleri donusum raporu; P2 police yenileme, global Ingilizce surum.

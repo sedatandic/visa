@@ -37,7 +37,7 @@ export const Footer = () => {
     return (
     <footer className="mt-auto bg-[hsl(33_52%_34%)] text-white" data-testid="site-footer">
         <div className="flag-strip" aria-hidden="true" />
-        <div className="container-page grid gap-10 py-14 md:grid-cols-4">
+        <div className="container-page grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-5">
             <div className="md:col-span-2">
                 <div className="flex items-center gap-2.5">
                     <BrandMark light />
@@ -72,6 +72,14 @@ export const Footer = () => {
                     <li><Link to="/gelismeler" className="transition-colors hover:text-primary">Dubai'den Haberler</Link></li>
                     <li><Link to="/sss" className="transition-colors hover:text-primary">Sıkça Sorulan Sorular</Link></li>
                     <li><Link to="/takip" className="transition-colors hover:text-primary">Başvuru Takip</Link></li>
+                </ul>
+            </div>
+
+            <div>
+                <h3 className="font-heading text-sm font-semibold uppercase tracking-wider text-white/50">
+                    Kurumsal ve Yasal
+                </h3>
+                <ul className="mt-4 space-y-2.5 text-sm text-white/80">
                     <li><Link to="/hakkimizda" className="transition-colors hover:text-primary">Hakkımızda</Link></li>
                     <li><Link to="/guvenlik" className="transition-colors hover:text-primary" data-testid="footer-security-link">Güvenlik ve Veri Koruma</Link></li>
                     <li><Link to="/kvkk" className="transition-colors hover:text-primary">KVKK Aydınlatma Metni</Link></li>

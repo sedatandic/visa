@@ -2466,3 +2466,62 @@ katmaninda (`phone-mask-hint`) gosteriliyor. Yazma akisi degismedi: 5384838224 -
   notlar (kur bilgisi) mono kaldi.
 - Playwright: `/vize-tipleri` tablo 1102px, modal 1360px; her iki cocuk notu **1 satir**;
   hucre hizalamasi `center`.
+
+## 2026-06-17 · Sigorta/eSIM 3 secenek karti, satir ici vize+tarih duzenleme, iletisim sayfasi
+### Sigorta ve eSIM icin detayli 3 secenek (kullanici istegi)
+- Yeni bilesen `frontend/src/components/ExtraOptions.jsx` (ExtraOptions + OptionCard):
+  rozet satiri (min-h ile hizali), urun adi, buyuk vurgu satiri (sigorta: teminat + gun,
+  eSIM: veri + gun), "neden bu paket" cumlesi, en fazla 2 fayda maddesi, tarih penceresi,
+  kisi/adet basi fiyat, "Bu paketi sec / Secildi - Kaldir" butonu, eSIM'de kart ici adet
+  arttir/azalt (stopPropagation ile karti kapatmaz).
+- `Apply.jsx`: eski aç/kapa anahtarlari (`extra-toggle-insurance`, `extra-toggle-esim`)
+  kaldirildi; yerine 2. adimda (kod: step===1) ve Odeme adiminda (step===3) ayni
+  `insuranceBlock` / `esimBlock` render ediliyor.
+  Basliklar: "Size uygun seyahat saglik sigortasi onerilerimiz",
+  "Seyahatinize en uygun eSIM onerilerimiz". Rozetler: Size en uygun / En cok tercih
+  edilen / En ekonomik. Kartlar seyahat suresine gore kisa listeden (3 adet) geliyor.
+- Test: `test_reports/iteration_135.json` — tum akislar dogrulandi (tek secim, kaldirma,
+  adet, tumunu gor/kapat, %10 paket indirimi, 4 adim regresyon, konsol hatasi yok).
+
+### "Degistir" ve "Tarihleri duzenle" artik satir ici (kullanici istegi)
+- 2. adimdaki iki baglanti `setStep(0)` yapmiyor; ayni sayfada acilip kapaniyor
+  (`visa-step-visa-editor` = vize turu dropdown + "Vizeleri karsilastir",
+  `visa-step-dates-editor` = gidis/donus tarih alanlari + "tarihim belli degil").
+- Bunun icin `visaPickerFields` ve `travelDatesEditor` JSX degiskenlerine cikarildi;
+  karsilastirma diyalogu artik picker ile birlikte tasiniyor (her iki adimda calisir).
+
+### Onemli bilgi notu sadelestirildi (kullanici istegi)
+- `ImportantNotice` compact surumu 2 satir x 2 kolon oldu, her madde icin kisa `brief`
+  metni yazildi; uzun `detail` metinleri yalnizca tam surumde (Belgeler sayfasi) kaldi.
+- Sigorta/eSIM kartlari da sadelestirildi: ozet paragraf kaldirildi (maddeler yeterli),
+  padding ve satir araliklari kisildi; sigorta bolumu ~530px'e indi.
+
+### Iletisim sayfasi
+- Sol form karti ile sag kolon (WhatsApp + telefon + e-posta + calisma saatleri) alt
+  hizada bitiyor (sag kolon flex-col, satirlar flex-1; textarea 6 -> 5 satir).
+- "Ofislerimiz" bolumunde Istanbul'un sagina **Dubai (BAE)** karti geldi: DB'deki
+  `company_info.dubai_address` / `dubai_phone` bos oldugu icin gorunmuyordu; content.py
+  varsayilanlari ile dolduruldu (Level 27, Unit 2705, Marina Plaza, Dubai Marina /
+  +971 50 867 26 30). Farkliysa Admin -> Sirket ekranindan degistirilebilir.
+
+### SEO on-render "ciplak metin" parlamasi (kullanici raporu)
+- Kok neden: kod duzeltmesi (09ebf86) canliya alinmadigi icin **yayindaki build eski**.
+  `curl https://dubaivizehatti.com/basvuru` -> `boot-splash` / `boot-style` YOK.
+- Guncel kod ile alinan build'de dogrulandi: JS paketi bloklanip ilk boyama alindiginda
+  ciplak metin degil marka yuklenme ekrani gorunuyor. Ek saglamlastirma: `#seo-prerender`
+  div'ine inline `position:absolute;left:-10000px` stili eklendi (style etiketi kaybolsa
+  bile metin ekranda gorunmez). **Yapilmasi gereken: yeniden deploy.**
+- pytest: 601 passed / 5 skipped; 1 flaky (`test_iteration_82` OTP e2e yarisi) tek
+  basina calistirildiginda geciyor.
+
+### 2026-06-17 (devam) · Ana sayfa sigorta gorseli + footer duzeni
+- **Turk pasaportu + Dubai binis karti gorseli** (kullanici istegi): "SADECE SIGORTA"
+  seridindeki ABD pasaportlu Unsplash fotografi kaldirildi. Gemini 3.1 flash image ile
+  uretilip yazi hatalari duzeltilen (TURKIYE CUMHURIYETI / REPUBLIC OF TURKIYE, binis
+  karti: ISTANBUL (IST) -> DUBAI (DXB), TK762, GATE A12, SEAT 14C) foto
+  `frontend/public/images/turk-pasaport-dubai-binis-karti.jpg` olarak eklendi
+  (900x900, 84 KB). `lib/site.js -> IMAGES.travelInsurance` yerel dosyayi gosteriyor.
+- **Footer 4. kolon**: yasal/kurumsal baglantilar (Hakkimizda, Guvenlik ve Veri Koruma,
+  KVKK, Gizlilik Politikasi, Iade ve Iptal, Sartlar ve Hizmet Sozlesmesi, Ticari
+  Elektronik Ileti Onami) "Hizli Baglantilar" listesinden cikarilip **"Kurumsal ve Yasal"**
+  basligi altinda Iletisim kolonunun soluna alindi. Grid `md:grid-cols-2 lg:grid-cols-5`.

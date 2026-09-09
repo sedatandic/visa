@@ -119,8 +119,8 @@ export const HomeInsuranceStrip = () => {
                     <div className="relative min-h-[150px] sm:min-h-[240px]">
                         <img
                             src={IMAGES.travelInsurance}
-                            alt="Pasaport ve uçuş belgeleriyle seyahat hazırlığı"
-                            className="absolute inset-0 h-full w-full object-cover"
+                            alt="Türk pasaportu ve İstanbul - Dubai biniş kartı"
+                            className="absolute inset-0 h-full w-full object-cover object-center"
                             loading="lazy"
                             decoding="async"
                         />

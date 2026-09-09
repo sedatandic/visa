@@ -28,10 +28,8 @@ import {
     Save,
     Scale,
     ShieldCheck,
-    Signal,
     Sparkles,
     ScanLine,
-    Star,
     Tag,
     Trash2,
     User,
@@ -50,6 +48,7 @@ import { FxNote } from "../components/FxNote";
 import { BundlePicker } from "../components/BundlePicker";
 import { ComboSelector } from "../components/ComboSelector";
 import { TripSuggestions } from "../components/TripSuggestions";
+import { ExtraOptions } from "../components/ExtraOptions";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { FamilyDiscountMeter } from "../components/FamilyDiscountMeter";
 import { PhotoRetryHelper } from "../components/PhotoRetryHelper";
@@ -222,6 +221,8 @@ export default function Apply() {
     const [maxTravelers, setMaxTravelers] = useState(10);
     const [step, setStep] = useState(0);
     const [compareOpen, setCompareOpen] = useState(false);
+    const [visaEditOpen, setVisaEditOpen] = useState(false);
+    const [datesEditOpen, setDatesEditOpen] = useState(false);
     const cart = useCart();
 
     const [contact, setContact] = useState({ full_name: "", email: "", phone: "+90 ", address_city: "", whatsapp_optin: false });
@@ -823,49 +824,8 @@ export default function Apply() {
         toast.success(`${option.label} seçildi.`);
     };
 
-    // Ek hizmet onay kutulari (vize adimi): sigorta ve eSIM icin en uygun paketi otomatik secer.
-    const insuranceWanted = Boolean(insurancePick);
-    const esimWanted = Object.values(esimQty).some((q) => q > 0);
-
-    const toggleInsuranceWanted = (on) => {
-        if (!on) {
-            setInsurancePick(null);
-            return;
-        }
-        if (!extrasSelectable) {
-            toast.error('Önce gidiş tarihinizi seçin veya "tarihim henüz belli değil" seçeneğini işaretleyin.');
-            return;
-        }
-        const pick = recommendedInsuranceId || insuranceProducts[0]?.id;
-        if (!pick) {
-            toast.error("Seyahat sürenize uygun poliçe bulunamadı.");
-            return;
-        }
-        setInsurancePick(pick);
-        toast.success("Seyahat sağlık sigortası eklendi. Paketi Özet adımında değiştirebilirsiniz.");
-    };
-
-    const toggleEsimWanted = (on) => {
-        if (!on) {
-            setEsimQty({});
-            return;
-        }
-        const pick = recommendedEsimId || esimProducts[0]?.id;
-        if (!pick) {
-            toast.error("Uygun eSIM paketi bulunamadı.");
-            return;
-        }
-        setEsimQty({ [pick]: Math.min(Math.max(travelerCount, 1), 10) });
-        toast.success("Dubai eSIM eklendi. Paketi Özet adımında değiştirebilirsiniz.");
-    };
-
     // Basvuru tipi: tek yolcu = bireysel, birden fazla yolcu = grup/aile
     const applicationType = travelers.length > 1 ? "group" : "individual";
-
-    const recommendedInsuranceProduct =
-        insuranceProducts.find((p) => p.id === (insurancePick || recommendedInsuranceId)) || null;
-    const recommendedEsimProduct =
-        esimProducts.find((p) => p.id === (Object.keys(esimQty)[0] || recommendedEsimId)) || null;
 
     const setApplicationType = (type) => {
         if (type === applicationType) return;
@@ -877,15 +837,6 @@ export default function Apply() {
         setErrors({});
         toast.success("Bireysel başvuruya geçildi; yalnızca ilk yolcu kaldı.");
     };
-
-    const RecommendedBadge = ({ testId }) => (
-        <span
-            className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--brand-green)/0.12)] px-2 py-0.5 text-[11px] font-semibold text-[hsl(var(--brand-green))]"
-            data-testid={testId}
-        >
-            <Star className="h-3 w-3 fill-current" aria-hidden="true" /> Sizin için önerilen
-        </span>
-    );
 
     const TravelDatesRequiredNote = ({ testId }) => (
         <div
@@ -987,6 +938,193 @@ export default function Apply() {
             return { ...prev, [productId]: value };
         });
     };
+
+    // --- Sigorta / eSIM: seyahat tarihine gore detayli aciklamali 3 secenek ---
+    const esimSelected = Object.values(esimQty).some((q) => q > 0);
+    const pickInsurance = (product) => {
+        if (!extrasSelectable) {
+            toast.error('Önce gidiş tarihinizi seçin veya "tarihim henüz belli değil" seçeneğini işaretleyin.');
+            return;
+        }
+        if (insurancePick === product.id) {
+            setInsurancePick(null);
+            return;
+        }
+        setInsurancePick(product.id);
+        toast.success(`${product.name} eklendi.`);
+    };
+
+    // Kartta "neden bu paket" cumlesi: seyahat suresi yoksa vize suresine bakar
+    const fitNoteFor = (product) => {
+        const days = Number(product.validity_days) || 0;
+        if (tripDays) {
+            return days >= tripDays
+                ? { tone: "ok", text: `${tripDays} günlük seyahatinizin tamamını kapsar` }
+                : { tone: "warn", text: `Seyahatiniz ${tripDays} gün · bu paket ${days} günü kapsar` };
+        }
+        if (visaCoverDays) {
+            return { tone: "neutral", text: `${visaCoverDays} günlük vize sürenize uygun` };
+        }
+        return null;
+    };
+
+    const badgesFor = (product, list, recommendedId, recommendedTestId) => {
+        const badges = [];
+        if (product.id === recommendedId) {
+            badges.push({ label: "Size en uygun", tone: "primary", testId: recommendedTestId });
+        }
+        if (product.popular) {
+            badges.push({ label: "En çok tercih edilen", tone: "accent" });
+        }
+        const cheapest = Math.min(...list.map((p) => Number(p.price) || 0));
+        if (badges.length < 2 && Number(product.price) === cheapest) {
+            badges.push({ label: "En ekonomik", tone: "neutral" });
+        }
+        return badges.slice(0, 2);
+    };
+
+    const extrasDatesNote = (kind) => {
+        if (travelDatesReady) return null;
+        return datesFlexible ? (
+            <FlexibleDatesNote testId={`${kind}-dates-flexible`} />
+        ) : (
+            <TravelDatesRequiredNote testId={`${kind}-dates-required`} />
+        );
+    };
+
+    const insuranceOptions = visibleInsurance.map((p) => ({
+        id: p.id,
+        product: p,
+        badges: badgesFor(p, visibleInsurance, recommendedInsuranceId, `insurance-recommended-${p.id}`),
+        fit: fitNoteFor(p),
+        highlight: [p.coverage, `${p.validity_days} gün geçerli`].filter(Boolean).join(" · "),
+        features: (p.features || []).slice(0, 2),
+        dateNote: <DateWindowNote product={p} testId={`insurance-dates-${p.id}`} />,
+        selected: insurancePick === p.id,
+        onSelect: () => pickInsurance(p),
+    }));
+
+    const esimOptions = visibleEsim.map((p) => ({
+        id: p.id,
+        product: p,
+        badges: badgesFor(p, visibleEsim, recommendedEsimId, `esim-recommended-${p.id}`),
+        fit: fitNoteFor(p),
+        highlight: [p.data_amount, `${p.validity_days} gün`].filter(Boolean).join(" · "),
+        features: (p.features || []).slice(0, 2),
+        dateNote: <DateWindowNote product={p} testId={`esim-dates-${p.id}`} />,
+        selected: Number(esimQty[p.id] || 0) > 0,
+        qty: Number(esimQty[p.id] || 0),
+        onSelect: () => toggleEsim(p),
+        onQtyChange: (delta) => changeEsimQty(p.id, delta),
+    }));
+
+    const insuranceBlock = insuranceProducts.length > 0 && (
+        <ExtraOptions
+            testId="apply-insurance-section"
+            optionTestIdPrefix="insurance-option"
+            icon={ShieldCheck}
+            title="Size uygun seyahat sağlık sigortası önerilerimiz"
+            subtitle={`${
+                tripDays ? `${tripDays} günlük seyahatiniz` : "Vize süreniz"
+            } için üç poliçe seçtik. Poliçe yolcu başına hesaplanır, gidiş tarihinizde başlar ve PDF olarak e-postanıza gelir.`}
+            note={extrasDatesNote("insurance")}
+            options={insuranceOptions}
+            disabled={!extrasSelectable}
+            unitLabel="kişi"
+            footer={
+                <>
+                    {insuranceProducts.length > visibleInsurance.length && (
+                        <button
+                            type="button"
+                            onClick={() => setShowAllInsurance(true)}
+                            className="mt-4 text-sm font-semibold text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-200 hover:decoration-primary"
+                            data-testid="show-all-insurance-button"
+                        >
+                            Tüm sigorta paketlerini gör ({insuranceProducts.length})
+                        </button>
+                    )}
+                    {showAllInsurance && insuranceProducts.length > insuranceShortlist.length && (
+                        <button
+                            type="button"
+                            onClick={() => setShowAllInsurance(false)}
+                            className="mt-4 text-sm font-semibold text-muted-foreground underline underline-offset-4 transition-colors duration-200 hover:text-primary"
+                            data-testid="hide-all-insurance-button"
+                        >
+                            Sadece önerilenleri göster
+                        </button>
+                    )}
+                    {insurancePick ? (
+                        <p className="mt-3 text-sm text-muted-foreground" data-testid="insurance-selected-note">
+                            {travelerCount} yolcu için poliçe eklendi
+                            {travel.arrival_date
+                                ? ` · ${formatDate(travel.arrival_date)} tarihinde başlar`
+                                : datesFlexible
+                                  ? " · başlangıç tarihi siz bildirince ayarlanır"
+                                  : ""}
+                            . Toplam sepetinizde otomatik hesaplanır.
+                        </p>
+                    ) : (
+                        <p className="mt-3 text-xs text-muted-foreground" data-testid="insurance-optional-note">
+                            Sigorta zorunlu değildir. Seçtiğiniz paketi tekrar tıklayarak kaldırabilirsiniz.
+                        </p>
+                    )}
+                </>
+            }
+        />
+    );
+
+    const esimBlock = esimProducts.length > 0 && (
+        <ExtraOptions
+            testId="apply-esim-section"
+            optionTestIdPrefix="esim-option"
+            icon={Wifi}
+            title="Seyahatinize en uygun eSIM önerilerimiz"
+            subtitle={`${
+                tripDays ? `${tripDays} günlük seyahatiniz` : "Seyahat planınız"
+            } için üç internet paketi seçtik. QR kodunuz e-postanıza gelir, Türkiye numaranız açık kalır.`}
+            note={extrasDatesNote("esim")}
+            options={esimOptions}
+            disabled={!extrasSelectable}
+            unitLabel="adet"
+            footer={
+                <>
+                    {esimProducts.length > visibleEsim.length && (
+                        <button
+                            type="button"
+                            onClick={() => setShowAllEsim(true)}
+                            className="mt-4 text-sm font-semibold text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-200 hover:decoration-primary"
+                            data-testid="show-all-esim-button"
+                        >
+                            Tüm eSIM paketlerini gör ({esimProducts.length})
+                        </button>
+                    )}
+                    {showAllEsim && esimProducts.length > esimShortlist.length && (
+                        <button
+                            type="button"
+                            onClick={() => setShowAllEsim(false)}
+                            className="mt-4 text-sm font-semibold text-muted-foreground underline underline-offset-4 transition-colors duration-200 hover:text-primary"
+                            data-testid="hide-all-esim-button"
+                        >
+                            Sadece önerilenleri göster
+                        </button>
+                    )}
+                    {esimSelected ? (
+                        <p className="mt-3 text-sm text-muted-foreground" data-testid="esim-selected-note">
+                            eSIM paketiniz{" "}
+                            {travel.arrival_date
+                                ? `${formatDate(travel.arrival_date)} tarihinde başlar`
+                                : "gidiş tarihinizde başlar"}
+                            . Adeti yolcu sayınıza göre ayarlayabilirsiniz.
+                        </p>
+                    ) : (
+                        <p className="mt-3 text-xs text-muted-foreground" data-testid="esim-optional-note">
+                            eSIM zorunlu değildir. Seçtiğiniz paketi tekrar tıklayarak kaldırabilirsiniz.
+                        </p>
+                    )}
+                </>
+            }
+        />
+    );
 
     const changeTourQty = (productId, delta) => {
         setTourQty((prev) => {
@@ -1246,7 +1384,8 @@ export default function Apply() {
         setErrors((p) => ({ ...p, stay_length: undefined }));
     };
 
-    // Bireysel basvuruda yolcunun adi iletisim adiyla ayni olur; iki kez yazdirmayiz.
+    // Bireysel basvuruda yolcunun adi iletisim adiyla ayni olabilir; iki kez yazdirmayiz.
+    // Ama pasaporttan okunan ad her zaman esastir (iletisim kisisi baskasi olabilir).
     useEffect(() => {
         const name = contact.full_name.trim();
         if (travelers.length !== 1 || name.split(/\s+/).length < 2) return;
@@ -1256,6 +1395,7 @@ export default function Apply() {
         setTravelers((list) => {
             const t = list[0];
             if (!t || t.first_name || t.last_name) return list;
+            if (ocr[t.key]?.status === "done") return list;
             return [{ ...t, first_name: first, last_name: last }];
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1352,7 +1492,6 @@ export default function Apply() {
     // --- Yapay zeka ile pasaport okuma -------------------------------------
     const readPassportWithAI = async (key, fileInfo) => {
         if (!fileInfo?.file_id) return;
-        if ((fileInfo.content_type || "").includes("pdf")) return;
         setOcr((s) => ({ ...s, [key]: { status: "loading" } }));
         try {
             const form = new FormData();
@@ -1383,13 +1522,28 @@ export default function Apply() {
             setTravelers((list) =>
                 list.map((t) => {
                     if (t.key !== key) return t;
+                    const identityChanged =
+                        !!d.passport_no &&
+                        !!t.passport_no &&
+                        String(d.passport_no).trim() !== String(t.passport_no).trim();
+                    // Baska bir pasaport yuklendiyse eski kisiden kalan, bu okumada
+                    // gelmeyen alanlar temizlenir (iki kisinin bilgisi karismasin)
+                    const base = { ...t };
+                    if (identityChanged) {
+                        ["national_id", "birth_place", "passport_issue_date", "passport_issue_place"].forEach(
+                            (f) => {
+                                base[f] = "";
+                            }
+                        );
+                    }
                     fields.forEach((f) => {
                         const value = d[f];
                         if (!value) return;
-                        if (f === "nationality" && t.nationality && t.nationality !== "TR") return;
-                        if (!t[f] || t[f] === "TR") patch[f] = value;
+                        // Pasaport belgesi esas kaynaktir: dolu alanlar da guncellenir,
+                        // aksi halde eski yolcunun adi yeni pasaportla karisiyor
+                        if (String(base[f] || "").trim() !== String(value).trim()) patch[f] = value;
                     });
-                    return { ...t, ...patch };
+                    return { ...base, ...patch };
                 })
             );
             setOcr((s) => ({
@@ -1402,7 +1556,7 @@ export default function Apply() {
                 },
             }));
             if (Object.keys(patch).length) {
-                toast.success("Pasaport okundu, bilgiler dolduruldu. Lütfen kontrol edin.");
+                toast.success("Pasaport okundu, bilgiler pasaporttaki haliyle güncellendi. Lütfen kontrol edin.");
             }
         } catch (err) {
             setOcr((s) => ({ ...s, [key]: { status: "failed", message: apiError(err, "") } }));
@@ -1731,6 +1885,193 @@ export default function Apply() {
         return diff > 0 && diff < 1000 * 60 * 60 * 72;
     }, [travel.arrival_date]);
 
+
+    // Vize secimi ve tarih duzenleme alanlari: 1. adimda ve 2. adimda satir ici kullanilir
+    const visaPickerFields = (
+        <>
+        <div className="mt-4 flex flex-wrap items-end gap-3 sm:max-w-xl">
+            <div className="min-w-[240px] flex-1">
+                <Field label="Vize Türü" required>
+                    <Select value={primaryVisaId} onValueChange={setPrimaryVisa}>
+                        <SelectTrigger data-testid="primary-visa-select">
+                            <SelectValue placeholder="Vize türü seçin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {primaryVisaOptions.map((v) => (
+                                <SelectItem
+                                    key={v.id}
+                                    value={v.id}
+                                    data-testid={`primary-visa-option-${v.id}`}
+                                >
+                                    {v.name} · {formatMoney(v.price, v.currency)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </Field>
+            </div>
+            <Button
+                type="button"
+                variant="secondary"
+                className="h-11 border border-border"
+                onClick={() => setCompareOpen(true)}
+                data-testid="open-visa-comparison-button"
+            >
+                <Scale className="mr-2 h-4 w-4" /> Vizeleri karşılaştır
+            </Button>
+        </div>
+        <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+            <DialogContent
+                className="max-h-[88vh] max-w-[min(96vw,1360px)] overflow-y-auto"
+                data-testid="visa-comparison-dialog"
+            >
+                <DialogHeader>
+                    <DialogTitle>Vize türlerini karşılaştırın</DialogTitle>
+                    <DialogDescription>
+                        Süre, giriş hakkı, ücret ve kimlere uygun olduğunu görün; uygun
+                        olanı seçtiğinizde form otomatik güncellenir.
+                    </DialogDescription>
+                </DialogHeader>
+                <VisaComparison
+                    visas={visaTypes}
+                    selectedId={primaryVisaId}
+                    onSelect={(v) => {
+                        setPrimaryVisa(v.id);
+                        setCompareOpen(false);
+                        toast.success(`${v.name} seçildi.`);
+                    }}
+                />
+            </DialogContent>
+        </Dialog>
+        </>
+    );
+
+    const travelDatesEditor = (
+        <div
+            className="mt-6 rounded-xl border border-border bg-[hsl(var(--cloud))] p-5"
+            data-testid="travel-dates-block"
+        >
+            <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                Seyahat tarihleriniz
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Gidiş ve dönüş tarihinizi girin; vize süresi ve fiyat bu tarihlere göre
+                hesaplanır.
+            </p>
+            {!datesFlexible && (
+                <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                    <Field label="Gidiş Tarihi" required error={errors.arrival_date}>
+                        <DateField
+                            value={travel.arrival_date}
+                            onChange={(iso) => {
+                                setTravel((t) => ({ ...t, arrival_date: iso }));
+                                setErrors((p) => ({ ...p, arrival_date: undefined }));
+                            }}
+                            minDate={new Date()}
+                            fromYear={new Date().getFullYear()}
+                            toYear={new Date().getFullYear() + 3}
+                            invalid={!!errors.arrival_date}
+                            data-testid="input-arrival-date"
+                        />
+                    </Field>
+                    <Field label="Dönüş Tarihi" required error={errors.departure_date}>
+                        <DateField
+                            value={travel.departure_date}
+                            onChange={(iso) => {
+                                setTravel((t) => ({ ...t, departure_date: iso }));
+                                setErrors((p) => ({ ...p, departure_date: undefined }));
+                            }}
+                            minDate={fromISODate(travel.arrival_date) || new Date()}
+                            fromYear={new Date().getFullYear()}
+                            toYear={new Date().getFullYear() + 3}
+                            invalid={!!errors.departure_date}
+                            data-testid="input-departure-date"
+                        />
+                    </Field>
+                </div>
+            )}
+
+            <label
+                className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card p-4 text-sm transition-colors duration-200 hover:border-primary/50"
+                data-testid="dates-unknown-row"
+            >
+                <Checkbox
+                    checked={datesFlexible}
+                    onCheckedChange={toggleDatesUnknown}
+                    className="mt-0.5"
+                    data-testid="dates-unknown-checkbox"
+                />
+                <span className="leading-6 text-muted-foreground">
+                    <strong className="text-foreground">
+                        Seyahat tarihim henüz belli değil.
+                    </strong>{" "}
+                    Başvurunuza şimdi başlayın; sigorta ve eSIM'in başlangıç tarihini siz
+                    bildirdiğinizde biz ayarlarız.
+                </span>
+            </label>
+
+            {datesFlexible && (
+                <div
+                    className="mt-4 rounded-xl border border-primary/25 bg-primary/[0.04] p-5"
+                    data-invalid={errors.travel_window ? "true" : undefined}
+                    data-testid="travel-window-options"
+                >
+                    <p className="font-heading text-sm font-bold">
+                        Yaklaşık olarak ne zaman gitmeyi planlıyorsunuz?
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                        Bu bilgi vize başlangıcını ve paket sürelerini planlamamıza yardımcı olur.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {TRAVEL_WINDOWS.map((w) => {
+                            const active = travel.travel_window === w.id;
+                            return (
+                                <button
+                                    key={w.id}
+                                    type="button"
+                                    onClick={() => {
+                                        setTravel((t) => ({ ...t, travel_window: w.id }));
+                                        setErrors((p) => ({ ...p, travel_window: undefined }));
+                                    }}
+                                    className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors duration-200 ${
+                                        active
+                                            ? "border-primary bg-primary text-primary-foreground"
+                                            : "border-border bg-background hover:border-primary/60"
+                                    }`}
+                                    data-testid={`travel-window-${w.id}`}
+                                >
+                                    {w.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {errors.travel_window && (
+                        <p
+                            className="mt-3 flex items-start gap-1.5 text-xs font-medium text-destructive"
+                            role="alert"
+                        >
+                            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            {errors.travel_window}
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {tripDays && (
+                <p
+                    className="mt-4 flex items-start gap-2 text-sm leading-6 text-muted-foreground"
+                    data-testid="trip-days-note"
+                >
+                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span>
+                        Seyahatiniz <strong className="text-foreground">{tripDays} gün</strong>{" "}
+                        sürüyor. Vize süresini bu plana göre öneriyoruz.
+                    </span>
+                </p>
+            )}
+        </div>
+    );
+
     return (
         <div data-testid="application-wizard">
             <PageHeader
@@ -2017,37 +2358,7 @@ export default function Apply() {
                                             Bir vize kartından geldiyseniz otomatik seçilir. Yolcu bazında farklı vize
                                             seçmek isterseniz 2. adımda düzenleyebilirsiniz.
                                         </p>
-                                        <div className="mt-4 flex flex-wrap items-end gap-3 sm:max-w-xl">
-                                            <div className="min-w-[240px] flex-1">
-                                                <Field label="Vize Türü" required>
-                                                    <Select value={primaryVisaId} onValueChange={setPrimaryVisa}>
-                                                        <SelectTrigger data-testid="primary-visa-select">
-                                                            <SelectValue placeholder="Vize türü seçin" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {primaryVisaOptions.map((v) => (
-                                                                <SelectItem
-                                                                    key={v.id}
-                                                                    value={v.id}
-                                                                    data-testid={`primary-visa-option-${v.id}`}
-                                                                >
-                                                                    {v.name} · {formatMoney(v.price, v.currency)}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </Field>
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                variant="secondary"
-                                                className="h-11 border border-border"
-                                                onClick={() => setCompareOpen(true)}
-                                                data-testid="open-visa-comparison-button"
-                                            >
-                                                <Scale className="mr-2 h-4 w-4" /> Vizeleri karşılaştır
-                                            </Button>
-                                        </div>
+                                        {visaPickerFields}
                                         {primaryVisa && (
                                             <p
                                                 className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs leading-5 text-muted-foreground"
@@ -2075,154 +2386,8 @@ export default function Apply() {
                                         )}
                                     </div>
 
-                                    <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
-                                        <DialogContent
-                                            className="max-h-[88vh] max-w-[min(96vw,1360px)] overflow-y-auto"
-                                            data-testid="visa-comparison-dialog"
-                                        >
-                                            <DialogHeader>
-                                                <DialogTitle>Vize türlerini karşılaştırın</DialogTitle>
-                                                <DialogDescription>
-                                                    Süre, giriş hakkı, ücret ve kimlere uygun olduğunu görün; uygun
-                                                    olanı seçtiğinizde form otomatik güncellenir.
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <VisaComparison
-                                                visas={visaTypes}
-                                                selectedId={primaryVisaId}
-                                                onSelect={(v) => {
-                                                    setPrimaryVisa(v.id);
-                                                    setCompareOpen(false);
-                                                    toast.success(`${v.name} seçildi.`);
-                                                }}
-                                            />
-                                        </DialogContent>
-                                    </Dialog>
-
                                     {/* SEYAHAT TARIHLERI: oneriler bu tarihlere gore hesaplanir */}
-                                    <div
-                                        className="mt-6 rounded-xl border border-border bg-[hsl(var(--cloud))] p-5"
-                                        data-testid="travel-dates-block"
-                                    >
-                                        <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                                            Seyahat tarihleriniz
-                                        </h3>
-                                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                            Gidiş ve dönüş tarihinizi girin; vize süresi ve fiyat bu tarihlere göre
-                                            hesaplanır.
-                                        </p>
-                                        {!datesFlexible && (
-                                            <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                                                <Field label="Gidiş Tarihi" required error={errors.arrival_date}>
-                                                    <DateField
-                                                        value={travel.arrival_date}
-                                                        onChange={(iso) => {
-                                                            setTravel((t) => ({ ...t, arrival_date: iso }));
-                                                            setErrors((p) => ({ ...p, arrival_date: undefined }));
-                                                        }}
-                                                        minDate={new Date()}
-                                                        fromYear={new Date().getFullYear()}
-                                                        toYear={new Date().getFullYear() + 3}
-                                                        invalid={!!errors.arrival_date}
-                                                        data-testid="input-arrival-date"
-                                                    />
-                                                </Field>
-                                                <Field label="Dönüş Tarihi" required error={errors.departure_date}>
-                                                    <DateField
-                                                        value={travel.departure_date}
-                                                        onChange={(iso) => {
-                                                            setTravel((t) => ({ ...t, departure_date: iso }));
-                                                            setErrors((p) => ({ ...p, departure_date: undefined }));
-                                                        }}
-                                                        minDate={fromISODate(travel.arrival_date) || new Date()}
-                                                        fromYear={new Date().getFullYear()}
-                                                        toYear={new Date().getFullYear() + 3}
-                                                        invalid={!!errors.departure_date}
-                                                        data-testid="input-departure-date"
-                                                    />
-                                                </Field>
-                                            </div>
-                                        )}
-
-                                        <label
-                                            className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card p-4 text-sm transition-colors duration-200 hover:border-primary/50"
-                                            data-testid="dates-unknown-row"
-                                        >
-                                            <Checkbox
-                                                checked={datesFlexible}
-                                                onCheckedChange={toggleDatesUnknown}
-                                                className="mt-0.5"
-                                                data-testid="dates-unknown-checkbox"
-                                            />
-                                            <span className="leading-6 text-muted-foreground">
-                                                <strong className="text-foreground">
-                                                    Seyahat tarihim henüz belli değil.
-                                                </strong>{" "}
-                                                Başvurunuza şimdi başlayın; sigorta ve eSIM'in başlangıç tarihini siz
-                                                bildirdiğinizde biz ayarlarız.
-                                            </span>
-                                        </label>
-
-                                        {datesFlexible && (
-                                            <div
-                                                className="mt-4 rounded-xl border border-primary/25 bg-primary/[0.04] p-5"
-                                                data-invalid={errors.travel_window ? "true" : undefined}
-                                                data-testid="travel-window-options"
-                                            >
-                                                <p className="font-heading text-sm font-bold">
-                                                    Yaklaşık olarak ne zaman gitmeyi planlıyorsunuz?
-                                                </p>
-                                                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                                    Bu bilgi vize başlangıcını ve paket sürelerini planlamamıza yardımcı olur.
-                                                </p>
-                                                <div className="mt-3 flex flex-wrap gap-2">
-                                                    {TRAVEL_WINDOWS.map((w) => {
-                                                        const active = travel.travel_window === w.id;
-                                                        return (
-                                                            <button
-                                                                key={w.id}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setTravel((t) => ({ ...t, travel_window: w.id }));
-                                                                    setErrors((p) => ({ ...p, travel_window: undefined }));
-                                                                }}
-                                                                className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors duration-200 ${
-                                                                    active
-                                                                        ? "border-primary bg-primary text-primary-foreground"
-                                                                        : "border-border bg-background hover:border-primary/60"
-                                                                }`}
-                                                                data-testid={`travel-window-${w.id}`}
-                                                            >
-                                                                {w.label}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                                {errors.travel_window && (
-                                                    <p
-                                                        className="mt-3 flex items-start gap-1.5 text-xs font-medium text-destructive"
-                                                        role="alert"
-                                                    >
-                                                        <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                                        {errors.travel_window}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {tripDays && (
-                                            <p
-                                                className="mt-4 flex items-start gap-2 text-sm leading-6 text-muted-foreground"
-                                                data-testid="trip-days-note"
-                                            >
-                                                <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                                                <span>
-                                                    Seyahatiniz <strong className="text-foreground">{tripDays} gün</strong>{" "}
-                                                    sürüyor. Vize süresini bu plana göre öneriyoruz.
-                                                </span>
-                                            </p>
-                                        )}
-                                    </div>
+                                    {travelDatesEditor}
 
 
                                     <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
@@ -2381,9 +2546,27 @@ export default function Apply() {
                                                             </p>
                                                         )}
                                                         {ocr[t.key]?.status === "done" && (
-                                                            <p className="mt-2 text-xs font-semibold text-[hsl(var(--brand-green))]" data-testid={`traveler-${idx}-ocr-success`}>
-                                                                Pasaport okundu: {ocr[t.key].name} {ocr[t.key].passport_no ? `· ${ocr[t.key].passport_no}` : ""} — lütfen bilgileri kontrol edin.
-                                                            </p>
+                                                            <div
+                                                                className="mt-3 rounded-xl border border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.07)] p-3.5"
+                                                                data-testid={`traveler-${idx}-ocr-success`}
+                                                            >
+                                                                <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wide text-[hsl(var(--brand-green))]">
+                                                                    <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                                                                    Pasaport okundu
+                                                                </p>
+                                                                <p className="mt-1.5 font-heading text-sm font-bold text-foreground">
+                                                                    {ocr[t.key].name}
+                                                                    {ocr[t.key].passport_no && (
+                                                                        <span className="ml-2 font-mono-code text-xs font-semibold text-muted-foreground">
+                                                                            {ocr[t.key].passport_no}
+                                                                        </span>
+                                                                    )}
+                                                                </p>
+                                                                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                                                    Aşağıdaki alanlar pasaporttaki bilgilerle güncellendi;
+                                                                    lütfen kontrol edip gerekirse düzeltin.
+                                                                </p>
+                                                            </div>
                                                         )}
                                                         {ocr[t.key]?.status === "failed" && (
                                                             <p className="mt-2 text-xs text-muted-foreground" data-testid={`traveler-${idx}-ocr-failed`}>
@@ -2578,15 +2761,26 @@ export default function Apply() {
                                             )}
                                             <button
                                                 type="button"
-                                                onClick={() => {
-                                                    setStep(0);
-                                                    window.scrollTo({ top: 0, behavior: "smooth" });
-                                                }}
+                                                onClick={() => setVisaEditOpen((o) => !o)}
                                                 className="ml-auto text-xs font-semibold text-primary hover:underline"
                                                 data-testid="visa-step-change-visa-button"
                                             >
-                                                Değiştir
+                                                {visaEditOpen ? "Kapat" : "Değiştir"}
                                             </button>
+                                        </div>
+                                    )}
+
+                                    {travelers.length <= 1 && visaEditOpen && (
+                                        <div
+                                            className="mt-3 rounded-xl border border-primary/25 bg-primary/[0.04] p-5"
+                                            data-testid="visa-step-visa-editor"
+                                        >
+                                            <p className="font-heading text-sm font-bold">Vize türünü değiştirin</p>
+                                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                                Listeden seçin ya da vizeleri karşılaştırın; fiyat ve öneriler anında
+                                                güncellenir.
+                                            </p>
+                                            {visaPickerFields}
                                         </div>
                                     )}
 
@@ -2607,16 +2801,19 @@ export default function Apply() {
                                         </strong>
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                setStep(0);
-                                                window.scrollTo({ top: 0, behavior: "smooth" });
-                                            }}
+                                            onClick={() => setDatesEditOpen((o) => !o)}
                                             className="ml-auto text-xs font-semibold text-primary hover:underline"
                                             data-testid="visa-step-edit-dates-button"
                                         >
-                                            Tarihleri düzenle
+                                            {datesEditOpen ? "Kapat" : "Tarihleri düzenle"}
                                         </button>
                                     </div>
+
+                                    {datesEditOpen && (
+                                        <div className="mt-1" data-testid="visa-step-dates-editor">
+                                            {travelDatesEditor}
+                                        </div>
+                                    )}
 
                                     {visaUpgrade && (
                                         <div
@@ -2678,74 +2875,11 @@ export default function Apply() {
                                                     </div>
                                                 </label>
                                             ))}
-                                            <label
-                                                className={`flex cursor-pointer items-start gap-4 rounded-xl border bg-card p-5 ${
-                                                    insuranceWanted ? "border-primary/50" : "border-border"
-                                                }`}
-                                                data-testid="extra-toggle-insurance"
-                                            >
-                                                <Switch
-                                                    checked={insuranceWanted}
-                                                    onCheckedChange={toggleInsuranceWanted}
-                                                    className="mt-1"
-                                                    data-testid="extra-switch-insurance"
-                                                />
-                                                <div className="flex-1">
-                                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                                        <p className="flex items-center gap-2 font-heading text-sm font-bold">
-                                                            <ShieldCheck className="h-4 w-4 text-primary" />
-                                                            Seyahat Sağlık Sigortası
-                                                        </p>
-                                                        {recommendedInsuranceProduct && (
-                                                            <span className="font-heading text-sm font-bold text-primary">
-                                                                + {formatMoney(recommendedInsuranceProduct.price, recommendedInsuranceProduct.currency)} / kişi
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                                                        Seyahat sürenize uygun poliçeyi ekleriz; paketi Özet adımında
-                                                        değiştirebilirsiniz.
-                                                    </p>
-                                                    {!extrasSelectable && (
-                                                        <p className="mt-2 text-xs font-medium text-primary" data-testid="extra-insurance-dates-hint">
-                                                            Poliçe süresi tarihinize göre hesaplanır: önce gidiş tarihini seçin
-                                                            veya "tarihim henüz belli değil" seçeneğini işaretleyin.
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </label>
-                                            <label
-                                                className={`flex cursor-pointer items-start gap-4 rounded-xl border bg-card p-5 ${
-                                                    esimWanted ? "border-primary/50" : "border-border"
-                                                }`}
-                                                data-testid="extra-toggle-esim"
-                                            >
-                                                <Switch
-                                                    checked={esimWanted}
-                                                    onCheckedChange={toggleEsimWanted}
-                                                    className="mt-1"
-                                                    data-testid="extra-switch-esim"
-                                                />
-                                                <div className="flex-1">
-                                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                                        <p className="flex items-center gap-2 font-heading text-sm font-bold">
-                                                            <Wifi className="h-4 w-4 text-primary" />
-                                                            Dubai eSIM
-                                                        </p>
-                                                        {recommendedEsimProduct && (
-                                                            <span className="font-heading text-sm font-bold text-primary">
-                                                                + {formatMoney(recommendedEsimProduct.price, recommendedEsimProduct.currency)} / kişi
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                                                        Uçaktan iner inmez internet: QR kod ile kurulur, Türkiye
-                                                        numaranız açık kalır.
-                                                    </p>
-                                                </div>
-                                            </label>
                                         </div>
                                     </div>
+
+                                    {insuranceBlock}
+                                    {esimBlock}
 
                                 </div>
                             )}
@@ -2809,7 +2943,7 @@ export default function Apply() {
                                                                         Pasaport okundu: {ocr[t.key].name} {ocr[t.key].passport_no ? `· ${ocr[t.key].passport_no}` : ""}
                                                                     </p>
                                                                     <p className="mt-1 text-xs text-muted-foreground">
-                                                                        Boş alanlar dolduruldu, kontrol edin.
+                                                                        Alanlar pasaporttaki bilgilerle güncellendi, kontrol edin.
                                                                     </p>
                                                                 </div>
                                                             )}
@@ -3003,225 +3137,29 @@ export default function Apply() {
                                     />
 
                                     {/* SEYAHAT SIGORTASI (magaza katalogu) */}
-                                    {insuranceProducts.length > 0 && (
-                                        <div className="mt-10" data-testid="apply-insurance-section">
-                                            <div className="flex items-center gap-2">
-                                                <ShieldCheck className="h-5 w-5 text-primary" />
-                                                <h3 className="font-heading text-base font-bold">Seyahat sağlık sigortası</h3>
-                                            </div>
-                                            <p className="mt-1.5 text-sm text-muted-foreground">
-                                                Poliçe yolcu başına hesaplanır ve <strong className="text-foreground">gidiş tarihinizde</strong> başlar; PDF olarak e-postanıza gelir.</p>
-                                            {!travelDatesReady &&
-                                                (datesFlexible ? (
-                                                    <FlexibleDatesNote testId="insurance-dates-flexible" />
-                                                ) : (
-                                                    <TravelDatesRequiredNote testId="insurance-dates-required" />
-                                                ))}
-                                            <div className="mt-4 grid gap-4 md:grid-cols-2">
-                                                {visibleInsurance.map((p) => {
-                                                    const selected = insurancePick === p.id;
-                                                    return (
-                                                        <button
-                                                            type="button"
-                                                            key={p.id}
-                                                            aria-pressed={selected}
-                                                            disabled={!extrasSelectable}
-                                                            onClick={() => setInsurancePick(selected ? null : p.id)}
-                                                            className={`rounded-xl border p-5 text-left transition-colors duration-200 hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${
-                                                                selected ? "border-primary bg-primary/5" : "border-border bg-card"
-                                                            }`}
-                                                            data-testid={`insurance-option-${p.id}`}
-                                                        >
-                                                            <div className="flex items-start justify-between gap-3">
-                                                                <div>
-                                                                    <p className="font-heading text-sm font-bold">{p.name}</p>
-                                                                    {p.coverage && (
-                                                                        <p className="mt-1 text-xs font-semibold text-muted-foreground">{p.coverage}</p>
-                                                                    )}
-                                                                    {recommendedInsuranceId === p.id && (
-                                                                        <div className="mt-2">
-                                                                            <RecommendedBadge testId={`insurance-recommended-${p.id}`} />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                {selected ? (
-                                                                    <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
-                                                                ) : (
-                                                                    <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full border border-border" aria-hidden="true" />
-                                                                )}
-                                                            </div>
-                                                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{p.summary}</p>
-                                                            <DateWindowNote product={p} testId={`insurance-dates-${p.id}`} />
-                                                            <p className="mt-3 font-heading text-sm font-bold text-primary">
-                                                                + {formatMoney(p.price, p.currency)} / kişi
-                                                            </p>
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            {insuranceProducts.length > visibleInsurance.length && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowAllInsurance(true)}
-                                                    className="mt-4 text-sm font-semibold text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-200 hover:decoration-primary"
-                                                    data-testid="show-all-insurance-button"
-                                                >
-                                                    Tüm sigorta paketlerini gör ({insuranceProducts.length})
-                                                </button>
-                                            )}
-                                            {showAllInsurance && insuranceProducts.length > insuranceShortlist.length && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowAllInsurance(false)}
-                                                    className="mt-4 text-sm font-semibold text-muted-foreground underline underline-offset-4 transition-colors duration-200 hover:text-primary"
-                                                    data-testid="hide-all-insurance-button"
-                                                >
-                                                    Sadece önerilenleri göster
-                                                </button>
-                                            )}
-                                            {insurancePick && (
-                                                <p className="mt-3 text-sm text-muted-foreground" data-testid="insurance-selected-note">
-                                                    {travelerCount} yolcu için poliçe eklendi
-                                                    {travel.arrival_date
-                                                        ? ` · ${formatDate(travel.arrival_date)} tarihinde başlar`
-                                                        : datesFlexible
-                                                          ? " · başlangıç tarihi siz bildirince ayarlanır"
-                                                          : ""}
-                                                    . Toplam sepetinizde otomatik hesaplanır.
-                                                </p>
-                                            )}
-                                            {insurancePick && (
-                                                <div className="mt-5" data-testid="insurance-identity-block">
-                                                    <p className="font-heading text-sm font-bold">
-                                                        Poliçe için kimlik bilgileri
-                                                    </p>
-                                                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                        Sigorta şirketi poliçeyi TC kimlik numarasıyla düzenler.
-                                                        Pasaportunuzda yazıyorsa alan otomatik doldurulur; boşsa
-                                                        lütfen yazın.
-                                                    </p>
-                                                    <InsuredIdentityFields
-                                                        rows={insuredRows}
-                                                        onChange={(key, patch) =>
-                                                            updateTraveler(key, { national_id: patch.tc_kimlik_no })
-                                                        }
-                                                        testIdPrefix="insured"
-                                                    />
-                                                </div>
-                                            )}
+                                    {insuranceBlock}
+                                    {insurancePick && (
+                                        <div className="mt-5" data-testid="insurance-identity-block">
+                                            <p className="font-heading text-sm font-bold">
+                                                Poliçe için kimlik bilgileri
+                                            </p>
+                                            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                Sigorta şirketi poliçeyi TC kimlik numarasıyla düzenler.
+                                                Pasaportunuzda yazıyorsa alan otomatik doldurulur; boşsa
+                                                lütfen yazın.
+                                            </p>
+                                            <InsuredIdentityFields
+                                                rows={insuredRows}
+                                                onChange={(key, patch) =>
+                                                    updateTraveler(key, { national_id: patch.tc_kimlik_no })
+                                                }
+                                                testIdPrefix="insured"
+                                            />
                                         </div>
                                     )}
 
                                     {/* DUBAI eSIM (magaza katalogu) */}
-                                    {esimProducts.length > 0 && (
-                                        <div className="mt-10" data-testid="apply-esim-section">
-                                            <div className="flex items-center gap-2">
-                                                <Wifi className="h-5 w-5 text-primary" />
-                                                <h3 className="font-heading text-base font-bold">Dubai eSIM (internet paketi)</h3>
-                                            </div>
-                                            <p className="mt-1.5 text-sm text-muted-foreground">
-                                                Paketiniz <strong className="text-foreground">gidiş tarihinizde</strong> başlar; QR kodunuz e-postanıza gelir.</p>
-                                            {!travelDatesReady &&
-                                                (datesFlexible ? (
-                                                    <FlexibleDatesNote testId="esim-dates-flexible" />
-                                                ) : (
-                                                    <TravelDatesRequiredNote testId="esim-dates-required" />
-                                                ))}
-                                            <div className="mt-4 space-y-4">
-                                                {visibleEsim.map((p) => {
-                                                    const qty = esimQty[p.id] || 0;
-                                                    const selected = qty > 0;
-                                                    return (
-                                                        <div
-                                                            key={p.id}
-                                                            className={`rounded-xl border p-5 transition-colors duration-200 ${
-                                                                selected ? "border-primary bg-primary/5" : "border-border bg-card"
-                                                            }`}
-                                                            data-testid={`esim-option-${p.id}`}
-                                                        >
-                                                            <div className="flex flex-wrap items-start gap-4">
-                                                                <Switch
-                                                                    checked={selected}
-                                                                    disabled={!extrasSelectable}
-                                                                    onCheckedChange={() => toggleEsim(p)}
-                                                                    className="mt-1"
-                                                                    data-testid={`esim-switch-${p.id}`}
-                                                                />
-                                                                <div className="min-w-[200px] flex-1">
-                                                                    <div className="flex flex-wrap items-center gap-2">
-                                                                        <p className="font-heading text-sm font-bold">{p.name}</p>
-                                                                        {p.popular && (
-                                                                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                                                                                En çok tercih edilen
-                                                                            </span>
-                                                                        )}
-                                                                        {recommendedEsimId === p.id && (
-                                                                            <RecommendedBadge testId={`esim-recommended-${p.id}`} />
-                                                                        )}
-                                                                    </div>
-                                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{p.summary}</p>
-                                                                    <DateWindowNote product={p} testId={`esim-dates-${p.id}`} />
-                                                                    <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-primary">
-                                                                        <Signal className="h-4 w-4" aria-hidden="true" />
-                                                                        + {formatMoney(p.price, p.currency)} / adet
-                                                                    </p>
-                                                                </div>
-                                                                {selected && (
-                                                                    <div className="flex items-center gap-2" data-testid={`esim-qty-${p.id}`}>
-                                                                        <Button
-                                                                            type="button"
-                                                                            variant="outline"
-                                                                            size="icon"
-                                                                            onClick={() => changeEsimQty(p.id, -1)}
-                                                                            disabled={qty <= 1}
-                                                                            aria-label="Adet azalt"
-                                                                            data-testid={`esim-qty-minus-${p.id}`}
-                                                                        >
-                                                                            <Minus className="h-4 w-4" />
-                                                                        </Button>
-                                                                        <span className="w-9 text-center font-heading text-sm font-bold" data-testid={`esim-qty-value-${p.id}`}>
-                                                                            {qty}
-                                                                        </span>
-                                                                        <Button
-                                                                            type="button"
-                                                                            variant="outline"
-                                                                            size="icon"
-                                                                            onClick={() => changeEsimQty(p.id, 1)}
-                                                                            disabled={qty >= 10}
-                                                                            aria-label="Adet arttır"
-                                                                            data-testid={`esim-qty-plus-${p.id}`}
-                                                                        >
-                                                                            <Plus className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                            {esimProducts.length > visibleEsim.length && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowAllEsim(true)}
-                                                    className="mt-4 text-sm font-semibold text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-200 hover:decoration-primary"
-                                                    data-testid="show-all-esim-button"
-                                                >
-                                                    Tüm eSIM paketlerini gör ({esimProducts.length})
-                                                </button>
-                                            )}
-                                            {showAllEsim && esimProducts.length > esimShortlist.length && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowAllEsim(false)}
-                                                    className="mt-4 text-sm font-semibold text-muted-foreground underline underline-offset-4 transition-colors duration-200 hover:text-primary"
-                                                    data-testid="hide-all-esim-button"
-                                                >
-                                                    Sadece önerilenleri göster
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
+                                    {esimBlock}
 
                                     {/* DUBAI AKTIVITELERI (col safarisi) */}
                                     {tourProducts.length > 0 && (

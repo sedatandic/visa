@@ -81,6 +81,33 @@ def _prepare_image(data: bytes, content_type: str) -> tuple[str, str]:
         return _b64(data), content_type or "image/jpeg"
 
 
+def _is_pdf(data: bytes, content_type: str) -> bool:
+    return (content_type or "").lower() == "application/pdf" or data[:4] == b"%PDF"
+
+
+def _pdf_page_images(data: bytes, max_pages: int = 2) -> list:
+    """PDF sayfalarini goruntuye cevirir (pasaport taramalari sik sik PDF gelir)."""
+    import pymupdf
+
+    images = []
+    with pymupdf.open(stream=data, filetype="pdf") as doc:
+        for index, page in enumerate(doc):
+            if index >= max_pages:
+                break
+            images.append(page.get_pixmap(dpi=170).tobytes("png"))
+    return images
+
+
+def _prepare_images(data: bytes, content_type: str) -> list:
+    """LLM'e gonderilecek base64 goruntuler. PDF ise ilk sayfalar goruntuye cevrilir."""
+    if _is_pdf(data, content_type):
+        pages = _pdf_page_images(data)
+        if not pages:
+            raise ValueError("PDF sayfasi goruntuye cevrilemedi.")
+        return [_prepare_image(page, "image/png")[0] for page in pages]
+    return [_prepare_image(data, content_type)[0]]
+
+
 def _extract_json(text: str) -> dict:
     if not text:
         return {}
@@ -400,7 +427,7 @@ async def read_passport(data: bytes, content_type: str) -> dict:
 
     from emergentintegrations.llm.chat import ImageContent, LlmChat, UserMessage
 
-    image_b64, _mime = _prepare_image(data, content_type)
+    image_b64s = _prepare_images(data, content_type)
 
     chat = LlmChat(
         api_key=api_key,
@@ -409,7 +436,10 @@ async def read_passport(data: bytes, content_type: str) -> dict:
     ).with_model(MODEL_PROVIDER, MODEL_NAME)
 
     response = await chat.send_message(
-        UserMessage(text=USER_PROMPT, file_contents=[ImageContent(image_base64=image_b64)])
+        UserMessage(
+            text=USER_PROMPT,
+            file_contents=[ImageContent(image_base64=b64) for b64 in image_b64s],
+        )
     )
     text = response if isinstance(response, str) else str(response)
     parsed = _extract_json(text)

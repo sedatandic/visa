@@ -1,0 +1,43 @@
+{
+  "summary": "Frontend-only verification of the new detailed 3-card option sections for travel insurance and eSIM on the /basvuru wizard (Dubai Vize Hattı). Wizard step 0 (Bilgiler) → step 1 (Vize) was completed end-to-end with realistic Turkish data (AHMET YILMAZ, arrival ~14 days ahead, 5-day trip = 6 days incl.). The two new sections apply-insurance-section and apply-esim-section render with exactly 3 cards each, each card containing the required product name, uppercase highlight (coverage + gün / data + gün), fit sentence, summary paragraph, up to 3 benefit bullets, price with unit, and select button. Recommended, single-selection, deselect, eSIM qty stepper with click-propagation-stop, show-all/hide-all, selected/optional notes, and the %10 bundle discount (visible in sidebar as 'Paket indirimi (%10) -139 ₺') all work as specified. Regression steps 0-2 pass without console errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_features": [
+    "apply-insurance-section and apply-esim-section render on step 1 (Vize) with 3 cards each (ids: ins_7d/ins_15d/ins_30d, esim_1gb_7d/esim_3gb_15d/esim_10gb).",
+    "Each card exposes -fit, -features, -button (and -qty, -qty-minus, -qty-plus, -qty-value for eSIM once selected) testids.",
+    "Recommended badge appears on the shortest-covering package: insurance-recommended-ins_7d and esim-recommended-esim_1gb for a 6-day trip.",
+    "Fit sentence for ins_7d = '6 günlük seyahatinizin tamamını kapsar' (tone ok).",
+    "Single-selection behaviour: selecting a second insurance card unselects the first (button text on old card becomes 'Bu paketi seç', new becomes 'Seçildi · Kaldır').",
+    "Clicking a selected card again removes it; insurance-selected-note ↔ insurance-optional-note switch correctly.",
+    "eSIM qty +/- updates the value and the order-summary total; stepper clicks do NOT deselect the card (stopPropagation works).",
+    "esim-selected-note / esim-optional-note toggle correctly.",
+    "show-all-insurance-button expands to 4 packages; hide-all-insurance-button collapses back; same behaviour for eSIM.",
+    "Bundle %10 discount is applied in the order sidebar the moment both an insurance and an eSIM are selected (Paket indirimi (%10) shown with negative amount).",
+    "Regression: all 4 steps in wizard-stepper render, wizard-next-step-button / wizard-prev-step-button work, no JS/console errors, no blank screen.",
+    "addon-switch-* (express addon) is still present on the Vize step next to the new sections."
+  ],
+  "partially_verified": [
+    "Persistence of selection to step 3 (Ödeme) and the specific data-testids insurance-identity-block, bundle-discount-applied, apply-recommended-bundle-button on the Ödeme step could NOT be reached end-to-end in this run because the AI photo-quality check on step 2 (Evraklar) rejected the mock image (/tmp/mock_passport.png) with 'Bu görüntüyle başvuruya devam edilemez'. This is expected pre-existing behaviour unrelated to the current change. However the underlying discount + selection logic is verified via the always-visible order sidebar which showed 'Seyahat Sağlık Sigortası · 7 Gün x1 490 ₺', 'Dubai eSIM · 1 GB / 7 gün x2 900 ₺', 'Paket indirimi (%10) -139 ₺', 'Toplam 6.343 ₺' while still on step 2, confirming both selections persisted across the step change and the %10 bundle discount fires."
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "(Optional / not blocking) In a follow-up manual run, upload a real-looking biometric photo to reach step 4 (Ödeme) and confirm the insurance-identity-block, bundle-discount-applied and apply-recommended-bundle-button testids render there. All code paths already verified indirectly."
+  ],
+  "critical_code_review_comments": [
+    "ExtraOptions/OptionCard implementation is clean; card is role=button with keyboard support; stopPropagation on qty stepper and select button prevents accidental toggling — correct.",
+    "Apply.jsx is now ~3726 lines — well past the 700-line guideline. Consider splitting the wizard into per-step subcomponents (Step0PersonalInfo, Step1Visa, Step2Documents, Step3Payment) and moving option-building helpers (pickInsurance, fitNoteFor, badgesFor, insuranceOptions/esimOptions memos) into hooks. Not blocking this feature.",
+    "fitNoteFor returns the same 'X günlük seyahatinizin tamamını kapsar' text for every package whose validity_days >= tripDays. Correct per spec but consider adding a subtler nuance (e.g. '15 güne kadar BAE seyahatlerinde…') for longer packages to differentiate cards.",
+    "badgesFor caps at 2 badges and pushes 'En ekonomik' only if <2 badges — works but 'Size en uygun' + 'En çok tercih edilen' can hide 'En ekonomik' on the cheapest card; acceptable."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "~95% (all step-1 behaviour verified; step-4 testids reachable only after AI photo check passes)"},
+  "test_credentials": "n/a - public /basvuru wizard, no login required",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Wizard step indices in Apply.jsx are 0-based; step 1 in code is the 'ADIM 2 · Vize' page where the new cards live. Real product ids are: insurance ins_7d/ins_15d/ins_30d/ins_60d, eSIM esim_1gb_7d/esim_3gb_15d/esim_10gb/esim_unlimited. Old testids extra-toggle-insurance / extra-switch-insurance / extra-toggle-esim / extra-switch-esim have been intentionally removed. To reach step 4 (Ödeme) programmatically you must satisfy the biometric photo AI check on step 2; the mock file at /tmp/mock_passport.png is rejected. Consider using a photo that passes the check or mocking /api/photo/check for e2e."
+}

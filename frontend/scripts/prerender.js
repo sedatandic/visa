@@ -239,7 +239,8 @@ function renderPage(template, page, ctx) {
 
     const body =
         BOOT_SPLASH +
-        `<div id="seo-prerender">` +
+        // Inline stil, boot-style etiketi herhangi bir nedenle kaybolsa da metni ekrandan uzak tutar
+        `<div id="seo-prerender" style="position:absolute;left:-10000px;top:0;width:1px;height:1px;overflow:hidden">` +
         `<h1>${esc(page.h1)}</h1>` +
         (page.intro || []).map(P).join("") +
         (page.sections || []).map(SECTION).join("") +

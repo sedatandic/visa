@@ -288,16 +288,21 @@ def _count_metrics_sync() -> int:
 
 
 class TestPassportOCR:
-    def test_pdf_returns_reason_pdf_no_data_key(self):
+    def test_pdf_is_processed_not_rejected(self):
+        """PDF artik reddedilmiyor: sayfalar goruntuye cevrilip AI'ya gonderiliyor.
+
+        Bos/anlamsiz bir PDF pasaport olmadigi icin `not_readable` / `ai_error` doner;
+        onemli olan eski "reason=pdf" reddinin kalkmis olmasi.
+        """
         before = _count_metrics_sync()
         fid = _upload_pdf()
-        r = requests.post(f"{API}/passport/read", data={"file_id": fid}, timeout=30)
+        r = requests.post(f"{API}/passport/read", data={"file_id": fid}, timeout=90)
+        if r.status_code == 429:
+            pytest.skip("hit AI rate limit for /api/passport/read")
         assert r.status_code == 200, r.text
         body = r.json()
-        assert body.get("ok") is False
-        assert body.get("reason") == "pdf"
-        assert "PDF dosyalari otomatik okunamiyor" in (body.get("message") or "")
-        assert "data" not in body, f"PDF failure must NOT include 'data': {body}"
+        assert body.get("reason") != "pdf"
+        assert "PDF dosyalari otomatik okunamiyor" not in (body.get("message") or "")
         after = _count_metrics_sync()
         assert after == before + 1, f"metrics not written (before={before} after={after})"
 

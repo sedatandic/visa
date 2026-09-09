@@ -17,8 +17,7 @@ export const IMAGES = {
         "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1000&q=75",
     plane:
         "https://images.unsplash.com/photo-1540339832862-474599807836?auto=format&fit=crop&w=900&q=75",
-    travelInsurance:
-        "https://images.unsplash.com/photo-1655722724447-2d2a3071e7f8?auto=format&fit=crop&w=1000&q=75",
+    travelInsurance: "/images/turk-pasaport-dubai-binis-karti.jpg",
 };
 
 export const STATUS_META = {

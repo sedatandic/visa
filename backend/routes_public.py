@@ -698,13 +698,6 @@ async def read_passport_document(request: Request, file_id: str = Form(...)) -> 
     def elapsed_ms() -> int:
         return int((time.perf_counter() - started) * 1000)
 
-    if content_type == "application/pdf":
-        return await _ocr_failure(
-            file_id,
-            elapsed_ms(),
-            "pdf",
-            "PDF dosyalari otomatik okunamiyor. Lutfen bilgileri elle girin.",
-        )
     data, ct = _read_upload_bytes(record)
 
     try:
