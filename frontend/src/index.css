@@ -269,7 +269,7 @@
 
 @layer components {
     .container-page {
-        @apply mx-auto w-full max-w-[1560px] px-4 sm:px-6;
+        @apply mx-auto w-full max-w-[1344px] px-4 sm:px-6;
     }
     .section {
         @apply py-8 sm:py-12;
