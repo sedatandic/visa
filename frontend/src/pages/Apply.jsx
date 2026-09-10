@@ -2276,7 +2276,21 @@ export default function Apply() {
                         style={{ boxShadow: "var(--shadow-card)" }}
                         data-testid="wizard-stepper"
                     >
-                        <div className="grid grid-cols-2 items-stretch gap-x-2 gap-y-2.5 px-3 py-3 sm:flex sm:gap-2 sm:px-5 sm:py-3.5">
+                        <div className="flex items-center justify-between px-3 pt-3 sm:hidden">
+                            <span
+                                className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+                                data-testid="wizard-progress-label"
+                            >
+                                Adım {step + 1} / {STEPS.length}
+                            </span>
+                            <span
+                                className="text-[11px] font-bold text-primary"
+                                data-testid="wizard-progress-text"
+                            >
+                                %{Math.round(((step + 1) / STEPS.length) * 100)} tamamlandı
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-2 items-stretch gap-x-2 gap-y-2.5 px-3 pb-3 pt-2 sm:flex sm:gap-2 sm:px-5 sm:py-3.5">
                             {STEPS.map((s, i) => {
                                 const Icon = s.icon;
                                 const done = i < step;

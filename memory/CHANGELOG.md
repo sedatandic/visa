@@ -3139,3 +3139,6 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
   etiketler 11px ve tek satırda sığıyor - dört adım da ADIM 1 ile aynı görünümde.
 - Doğrulama (Playwright): 390px'te `scrollWidth == clientWidth` (kayma yok), dört adım da
   ekranda; 768px ve 1920px'te tek satır düzeni bozulmadı.
+- Şeridin üstünde mobilde ilerleme metni: "ADIM 1 / 4" + "%25 tamamlandı"
+  (`wizard-progress-label` / `wizard-progress-text`, yüzde = (adım+1)/4, sm ve üzerinde gizli).
+  360px'te taşma yok (sağda 13px boşluk).
