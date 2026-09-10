@@ -1712,3 +1712,13 @@ Durum: DONE - testing agent regresyon taramasi %100 (iteration_136.json).
 Bekleyen isler (degismedi): gercek IBAN'lar, WhatsApp canli mod (Meta kimlik bilgileri),
 teklif linki donusum raporu, teklif geri sayimi, makbuz linki imzali kod, gercek tur
 fotograflari, ATV +40 USD ek secenek.
+
+## 2026-06-18 (fork, 4) · Sihirbaz 4 adim yapisina gecti
+- Adimlar: 1) Kisisel Bilgiler (pasaport + vesikalik yan yana) 2) Vize Turu + Gerekli
+  Evraklar 3) Ek Hizmetler (sigorta, eSIM, turlar, Ekspres Vize) 4) Odeme (ozet + onay).
+- Yeni paylasilan bilesen: `components/TravelerPhotoField.jsx`.
+- Footer kunyesi tek satir; "Yuklendi" kartinda Kaldir butonu tasmasi giderildi.
+- Test: iteration_137 (1 HIGH sizma bulundu, duzeltildi) + iteration_138 (%100).
+- ACIK SORU (kullanici yanitlamadi): /gerekli-belgeler sag kolonundan ne kaldirilacak?
+  (a) sadece tekrar eden "Pasaport taramasi nasil olmali?" kurallar karti, (b) sag kolonun
+  tamami, (c) fotograf + kurallar karti.

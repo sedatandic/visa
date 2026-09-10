@@ -139,20 +139,20 @@ export const FileDropzone = ({
                             {Math.max(1, Math.round((value.size || 0) / 1024))} KB
                         </p>
                     </div>
-                    <div className="ml-auto flex shrink-0 items-center gap-1.5">
+                    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                         <Button
                             type="button"
                             variant="secondary"
-                            className="h-10 shrink-0 px-3"
+                            className="h-9 shrink-0 px-2.5 text-xs"
                             onClick={() => setViewOpen(true)}
                             data-testid={`${testId}-view`}
                         >
-                            <Eye className="mr-1.5 h-4 w-4" /> Görüntüle
+                            <Eye className="mr-1.5 h-3.5 w-3.5" /> Görüntüle
                         </Button>
                         <Button
                             type="button"
                             variant="secondary"
-                            className="h-10 shrink-0"
+                            className="h-9 shrink-0 px-2.5 text-xs"
                             onClick={() => inputRef.current?.click()}
                             data-testid={`${testId}-change`}
                         >
@@ -161,11 +161,11 @@ export const FileDropzone = ({
                         <Button
                             type="button"
                             variant="ghost"
-                            className="h-10 shrink-0 px-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            className="h-9 shrink-0 px-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={removeFile}
                             data-testid={`${testId}-remove`}
                         >
-                            <Trash2 className="mr-1.5 h-4 w-4" /> Kaldır
+                            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Kaldır
                         </Button>
                     </div>
                 </div>

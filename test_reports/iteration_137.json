@@ -1,0 +1,27 @@
+{
+  "summary": "Verified the /basvuru wizard restructure (4 steps: Kişisel Bilgiler / Vize Türü / Ek Hizmetler / Ödeme). Stepper labels and step 1 side-by-side passport+vesikalık layout are correct. Validation moved to step 2 works and blocks correctly with 'Pasaport fotoğrafı' / 'Vesikalık fotoğraf' errors. After uploading the supplied ok.jpg passport & photo, AI OCR + photo-check both PASS and user can advance. Step 3 correctly renders wizard-extras-section (Ek hizmetler) with ComboSelector, bundle-promo-box, insurance, eSIM and apply-tour-section is NOT shown (no tour products configured for this quote). Step 4 correctly renders wizard-summary-section with summary-price-breakdown and consent-block and does NOT leak the insurance/eSIM catalogue. Regression back-navigation preserves contact/traveler/visa/dates/uploaded files (photo shows 'Yüklendi' state on step 2). CRITICAL BUG FOUND: on step 2 (Vize Türü) the OLD 'Ek hizmetler' block (addons + full insurance catalogue + eSIM catalogue) still renders under the visa/date editors and above the documents section, because Apply.jsx lines 3022-3049 (inside the {step === 1 && ...} JSX) were not removed when the extras section was moved to step 3. This duplicates insuranceBlock/esimBlock in step 2 and step 3.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Apply.jsx step 2 (Vize Türü)", "issue": "Insurance catalogue + eSIM catalogue + 'Ek hizmetler' add-on switches (Ekspres Vize etc.) are still rendered inside the {step === 1 && ...} block (Apply.jsx lines 3022-3049). They should live ONLY inside {step === 2 && ...} (wizard-extras-section). Result: both step 2 and step 3 currently show the same insurance/eSIM catalogue.", "selector": "[data-testid='show-all-insurance-button'] visible on step 2; addon-toggle-row-* visible on step 2", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Delete Apply.jsx lines ~3022-3049 (the 'mt-8 Ek hizmetler' <div> block containing addonMeta.map + {insuranceBlock} + {esimBlock}) that still lives inside the step === 1 render tree. The same content is already rendered inside the new {step === 2 && <div data-testid='wizard-extras-section'>} at lines 3184-3300, so removing it from step 1 keeps functionality on step 3 (Ek Hizmetler) only.",
+    "After removal, re-verify step 2 shows only: ImportantNotice, visa-step-visa-editor, visa-step-dates-editor and wizard-document-upload-dropzone (no insurance/eSIM/addons)."
+  ],
+  "critical_code_review_comments": [
+    "Apply.jsx is 3956 lines; the step-scoped JSX blocks are hard to keep in sync when restructuring. Split each step into its own component (Step1People / Step2Visa / Step3Extras / Step4Summary) to prevent this duplication regression class.",
+    "The addonMeta section (Ekspres Vize etc.) that leaked into step 2 has no clear owner — after removal it disappears entirely, which may be intentional but confirm with product that Ekspres Vize add-on is now covered by ComboSelector / BundlePicker in step 3."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "85% (6/7 checks pass; step-2 leak is the failing check)"},
+  "seed_data_creation": "Downloaded /tmp/testimg/ok_photo.jpg and /tmp/testimg/ok_passport.jpg from the supplied /photo-guide/ok.jpg and /passport-guide/ok.jpg – both pass AI photo check and OCR.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The only failing item is the insurance/eSIM/addons leak on step 2. Fix location is Apply.jsx lines ~3022-3049 (see action_items). After fix, quickly re-check step 2 has no [data-testid='show-all-insurance-button'] / [data-testid='show-all-esim-button'] / [data-testid^='addon-toggle-row-'], and that step 3 still has them (already verified working in this run).",
+  "rca of the issue": "During the restructuring, the new step-3 wizard-extras-section was added (lines 3184-3300) but the ORIGINAL 'Ek hizmetler' mini-section inside step 1 (visa) at lines 3022-3049 was not deleted. Because {insuranceBlock} and {esimBlock} are JSX expressions referencing the same in-scope variables, they render fully in BOTH locations. Repro: /basvuru → fill step 1 → click Devam Et → on step 2 scroll below travel dates → you see 'Ek hizmetler' + 'Size uygun seyahat sağlık sigortası önerilerimiz' + eSIM catalogue right above the 'Gerekli evraklar' documents section. Mitigation: remove the leftover block (see action_items)."
+}

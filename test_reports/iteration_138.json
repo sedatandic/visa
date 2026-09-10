@@ -1,0 +1,21 @@
+{
+  "summary": "RETEST of the HIGH priority step-2 leak reported in iteration_137. Fix verified: the insurance catalogue, eSIM catalogue and add-on switches have been removed from step 2 (Vize Türü) and now live only in step 3 (Ek Hizmetler). All requested checks pass: (1) On step 2 no [data-testid='show-all-insurance-button'], no [data-testid='show-all-esim-button'] and no [data-testid^='addon-toggle-row-'] are rendered — only visa editor, dates editor, urgent-trip warning (when applicable) and wizard-document-upload-dropzone. (2) Step 3 wizard-extras-section contains 'Hizmet yükseltmeleri' with addon-toggle-row-express (Ekspres Vize) plus bundle-promo-box and the eSIM catalogue (show-all-esim-button visible); the insurance catalogue renders via the ComboSelector 'Vize + sigorta' option (rendered inside insurance-identity-block when insurance combo is selected). (3) Toggling Ekspres Vize on step 3 increased the Başvuru özeti total from 5.190 ₺ to 7.660 ₺ (+2.470 ₺ = one passenger x Ekspres fee). (4) Step 4 (Ödeme) renders wizard-summary-section, summary-price-breakdown and consent-block; the insurance/eSIM catalogue and addon switches are NOT leaked into step 4. (5) Step 2 correctly BLOCKS advancement when a passenger has no passport/photo uploaded — toast 'Eksik veya hatalı alanlar: 1. yolcu: Pasaport fotoğrafı, 1. yolcu: Vesikalık fotoğraf' + inline errors 'Pasaport fotoğrafı zorunlu.' / 'Vesikalık fotoğraf zorunlu.' shown, and step does not advance. Full happy path (contact + traveler + passport + photo → step 2 visa + dates → step 3 extras → step 4 summary) completed cleanly; payment was NOT executed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx is still ~3956 lines with step-scoped JSX. Recommend splitting each step into its own component (Step1People / Step2Visa / Step3Extras / Step4Summary) to prevent duplication-regression class of bugs like the one just fixed."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100% (all 4 requested checks pass)"},
+  "seed_data_creation": "Reused /tmp/testimg/ok_passport.jpg and /tmp/testimg/ok_photo.jpg from previous iteration.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Wizard restructure is now fully compliant with the spec. Step 1 = personal info + passport & vesikalık; Step 2 = visa + dates + docs only (no addons/insurance/eSIM); Step 3 = wizard-extras-section (Hizmet yükseltmeleri addon switches + bundle-promo-box + insurance-identity-block via ComboSelector + eSIM catalogue); Step 4 = summary + consent + payment, no catalogue leak. Ekspres Vize toggle correctly updates the price side panel.",
+  "rca of the issue": "n/a — leak fixed in this iteration."
+}

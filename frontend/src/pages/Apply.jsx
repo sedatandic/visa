@@ -51,6 +51,7 @@ import { TripSuggestions } from "../components/TripSuggestions";
 import { ExtraOptions } from "../components/ExtraOptions";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { FamilyDiscountMeter } from "../components/FamilyDiscountMeter";
+import { TravelerPhotoField } from "../components/TravelerPhotoField";
 import { PhotoRetryHelper } from "../components/PhotoRetryHelper";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { useCart } from "../lib/cart";
@@ -101,7 +102,7 @@ const IDLE_PROMPT_MS = 120000;
 const STEPS = [
     { key: "people", label: "Kişisel Bilgiler", icon: Users },
     { key: "visa", label: "Vize Türü", icon: CalendarDays },
-    { key: "docs", label: "Gerekli Evraklar", icon: FileText },
+    { key: "extras", label: "Ek Hizmetler", icon: Sparkles },
     { key: "summary", label: "Ödeme", icon: CreditCard },
 ];
 
@@ -1852,7 +1853,7 @@ export default function Apply() {
                     e.stay_length = `Planlanan kalış ${stayDays} gün; seçilen vize bu süreyi kapsamıyor. Daha uzun süreli bir vize seçin veya tarihleri güncelleyin.`;
             }
         }
-        if (step === 2) {
+        if (step === 1) {
             const photoPending = [];
             const photoRejected = [];
             travelers.forEach((t) => {
@@ -2668,11 +2669,14 @@ export default function Apply() {
                                                             Pasaportu yükleyin, gerisini biz dolduralım
                                                         </p>
                                                         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                                            Tek fotoğraf yeter; ad, soyad, tarih ve pasaport no otomatik dolar.</p>
-                                                        <div className="mt-3">
+                                                            Tek fotoğraf yeter; ad, soyad, tarih ve pasaport no otomatik dolar. Vesikalığı da hemen yanına ekleyebilirsiniz.</p>
+                                                        <div className="mt-3 grid gap-4 md:grid-cols-2">
                                                             <FileDropzone
                                                                 label="Pasaport kimlik sayfası"
-                                                                hint=""
+                                                                hint="Bilgiler otomatik dolar"
+                                                                badge="required"
+                                                                icon={BookUser}
+                                                                description="Fotoğrafın bulunduğu kimlik sayfasını, dört köşesi çerçevede kalacak şekilde net çekin."
                                                                 docType="passport"
                                                                 value={t.passportFile}
                                                                 onChange={(f) => {
@@ -2681,6 +2685,23 @@ export default function Apply() {
                                                                     matchFaces(t.key, f, t.photoFile);
                                                                 }}
                                                                 testId={`traveler-${idx}-passport-ai-input`}
+                                                            />
+                                                            <TravelerPhotoField
+                                                                idx={idx}
+                                                                value={t.photoFile}
+                                                                check={photoCheck[t.key]}
+                                                                match={faceMatch[t.key]}
+                                                                error={te.photo}
+                                                                description="Beyaz zeminde, son 6 ay içinde çekilmiş biyometrik fotoğraf; gözlüksüz ve şapkasız olmalıdır."
+                                                                onInputRef={(el) => {
+                                                                    photoInputs.current[t.key] = el;
+                                                                }}
+                                                                onChange={(f) => {
+                                                                    updateTraveler(t.key, { photoFile: f });
+                                                                    checkPhotoWithAI(t.key, f);
+                                                                    matchFaces(t.key, t.passportFile, f);
+                                                                }}
+                                                                onRetry={() => photoInputs.current[t.key]?.click()}
                                                             />
                                                         </div>
                                                         {ocr[t.key]?.status === "loading" && (
@@ -2993,47 +3014,19 @@ export default function Apply() {
                                             <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[hsl(var(--status-warning))]" />
                                             <p className="text-sm leading-6 text-[hsl(var(--status-warning))]">
                                                 <strong>Seyahat tarihinize 72 saatten az kaldı!</strong> Başvurunuzun
-                                                zamanında sonuçlanması için ekspres vize hizmetini seçmenizi öneririz.
+                                                zamanında sonuçlanması için Ek Hizmetler adımında ekspres vize
+                                                hizmetini seçmenizi öneririz.
                                             </p>
                                         </div>
                                     )}
-
-                                    <div className="mt-8">
-                                        <h3 className="font-heading text-base font-bold">Ek hizmetler</h3>
-                                        <p className="mt-1.5 text-sm text-muted-foreground">Yolcu başına eklenir.</p>
-                                        <div className="mt-4 space-y-4">
-                                            {addonMeta.map((a) => (
-                                                <label key={a.id} className="flex cursor-pointer items-start gap-4 rounded-xl border border-border bg-card p-5" data-testid={`addon-toggle-row-${a.id}`}>
-                                                    <Switch
-                                                        checked={!!addons[a.id]}
-                                                        onCheckedChange={(c) => setAddons((s) => ({ ...s, [a.id]: !!c }))}
-                                                        className="mt-1"
-                                                        data-testid={`addon-switch-${a.id}`}
-                                                    />
-                                                    <div className="flex-1">
-                                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                                            <p className="font-heading text-sm font-bold">{a.name}</p>
-                                                            <span className="font-heading text-sm font-bold text-primary">
-                                                                + {formatMoney(a.price, a.currency)} / kişi
-                                                            </span>
-                                                        </div>
-                                                        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{a.description}</p>
-                                                    </div>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {insuranceBlock}
-                                    {esimBlock}
 
                                 </div>
                             )}
 
                             {/* STEP 2 */}
-                            {step === 2 && (
-                                <div data-testid="wizard-document-upload-dropzone">
-                                    <h2 className="font-heading text-xl font-bold">Evraklar</h2>
+                            {step === 1 && (
+                                <div className="mt-10 border-t border-border pt-8" data-testid="wizard-document-upload-dropzone">
+                                    <h2 className="font-heading text-xl font-bold">Gerekli evraklar</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Pasaport ve vesikalık zorunlu. Belgeleriniz şifreli saklanır.</p>
 
@@ -3105,92 +3098,22 @@ export default function Apply() {
                                                                 </p>
                                                             )}
                                                         </div>
-                                                        <div>
-                                                            <FileDropzone
-                                                                label="Vesikalık Fotoğraf"
-                                                                hint="Otomatik kontrol edilir"
-                                                                badge="required"
-                                                                icon={Camera}
-                                                                description="Beyaz veya beyaza yakın düz zeminde, son 6 ay içinde çekilmiş biyometrik fotoğraf. Gözlüksüz ve şapkasız olmalıdır."
-                                                                docType="photo"
-                                                                value={t.photoFile}
-                                                                onInputRef={(el) => {
-                                                                    photoInputs.current[t.key] = el;
-                                                                }}
-                                                                onChange={(f) => {
-                                                                    updateTraveler(t.key, { photoFile: f });
-                                                                    checkPhotoWithAI(t.key, f);
-                                                                    matchFaces(t.key, t.passportFile, f);
-                                                                }}
-                                                                testId={`traveler-${idx}-photo-upload-input`}
-                                                            />
-                                                            {photoCheck[t.key]?.status === "loading" && (
-                                                                <p
-                                                                    className="mt-2 flex items-center gap-2 text-xs font-medium text-primary"
-                                                                    data-testid={`traveler-${idx}-photo-check-loading`}
-                                                                >
-                                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                                    Fotoğraf kontrol ediliyor...
-                                                                </p>
-                                                            )}
-                                                            {photoCheck[t.key]?.status === "ok" && (
-                                                                <p
-                                                                    className="mt-2 flex items-center gap-2 text-xs font-semibold text-[hsl(var(--brand-green))]"
-                                                                    data-testid={`traveler-${idx}-photo-check-ok`}
-                                                                >
-                                                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                                                    Fotoğraf vize standartlarına uygun görünüyor.
-                                                                </p>
-                                                            )}
-                                                            {photoCheck[t.key]?.status === "warn" && (
-                                                                <PhotoRetryHelper
-                                                                    testId={`traveler-${idx}-photo-check-warning`}
-                                                                    result={photoCheck[t.key]}
-                                                                    photoUrl={t.photoFile?.url}
-                                                                    onRetry={() => photoInputs.current[t.key]?.click()}
-                                                                />
-                                                            )}
-                                                            {faceMatch[t.key]?.status === "loading" && (
-                                                                <p
-                                                                    className="mt-2 flex items-center gap-2 text-xs font-medium text-primary"
-                                                                    data-testid={`traveler-${idx}-face-match-loading`}
-                                                                >
-                                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                                    Pasaporttaki fotoğrafla karşılaştırılıyor...
-                                                                </p>
-                                                            )}
-                                                            {faceMatch[t.key]?.status === "ok" && (
-                                                                <p
-                                                                    className="mt-2 flex items-center gap-2 text-xs font-semibold text-[hsl(var(--brand-green))]"
-                                                                    data-testid={`traveler-${idx}-face-match-ok`}
-                                                                >
-                                                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                                                    Vesikalık, pasaporttaki kişiyle uyumlu görünüyor.
-                                                                </p>
-                                                            )}
-                                                            {faceMatch[t.key]?.status === "mismatch" && (
-                                                                <div
-                                                                    className="mt-2 flex items-start gap-2 rounded-lg border border-[hsl(var(--status-warning)/0.4)] bg-[hsl(var(--status-warning)/0.1)] p-3"
-                                                                    data-testid={`traveler-${idx}-face-match-warning`}
-                                                                >
-                                                                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--status-warning))]" />
-                                                                    <div className="text-xs leading-5">
-                                                                        <p className="font-semibold text-[hsl(var(--status-warning))]">
-                                                                            Pasaporttaki fotoğraf ile vesikalık eşleşmiyor gibi görünüyor.
-                                                                        </p>
-                                                                        <p className="mt-0.5 text-muted-foreground">
-                                                                            {faceMatch[t.key].note ||
-                                                                                "Doğru kişinin vesikalık fotoğrafını yüklediğinizden emin olun."}
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                            {te.photo && (
-                                                                <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive">
-                                                                    <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {te.photo}
-                                                                </p>
-                                                            )}
-                                                        </div>
+                                                        <TravelerPhotoField
+                                                            idx={idx}
+                                                            value={t.photoFile}
+                                                            check={photoCheck[t.key]}
+                                                            match={faceMatch[t.key]}
+                                                            error={te.photo}
+                                                            onInputRef={(el) => {
+                                                                photoInputs.current[t.key] = el;
+                                                            }}
+                                                            onChange={(f) => {
+                                                                updateTraveler(t.key, { photoFile: f });
+                                                                checkPhotoWithAI(t.key, f);
+                                                                matchFaces(t.key, t.passportFile, f);
+                                                            }}
+                                                            onRetry={() => photoInputs.current[t.key]?.click()}
+                                                        />
                                                     </div>
                                                 </div>
                                             );
@@ -3229,12 +3152,38 @@ export default function Apply() {
                                 </div>
                             )}
 
-                            {/* STEP 3 */}
-                            {step === 3 && (
-                                <div data-testid="wizard-summary-section">
-                                    <h2 className="font-heading text-xl font-bold">Özet ve ödeme</h2>
+                            {/* STEP 3: EK HIZMETLER */}
+                            {step === 2 && (
+                                <div data-testid="wizard-extras-section">
+                                    <h2 className="font-heading text-xl font-bold">Ek hizmetler</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        Bilgilerinizi kontrol edip ödemeye geçin.</p>
+                                        Sigorta, eSIM ve Dubai turları opsiyoneldir; birlikte alırsanız paket indirimi otomatik uygulanır.</p>
+
+                                    <div className="mt-8">
+                                        <h3 className="font-heading text-base font-bold">Hizmet yükseltmeleri</h3>
+                                        <p className="mt-1.5 text-sm text-muted-foreground">Yolcu başına eklenir.</p>
+                                        <div className="mt-4 space-y-4">
+                                            {addonMeta.map((a) => (
+                                                <label key={a.id} className="flex cursor-pointer items-start gap-4 rounded-xl border border-border bg-card p-5" data-testid={`addon-toggle-row-${a.id}`}>
+                                                    <Switch
+                                                        checked={!!addons[a.id]}
+                                                        onCheckedChange={(c) => setAddons((s) => ({ ...s, [a.id]: !!c }))}
+                                                        className="mt-1"
+                                                        data-testid={`addon-switch-${a.id}`}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                                            <p className="font-heading text-sm font-bold">{a.name}</p>
+                                                            <span className="font-heading text-sm font-bold text-primary">
+                                                                + {formatMoney(a.price, a.currency)} / kişi
+                                                            </span>
+                                                        </div>
+                                                        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{a.description}</p>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
 
                                     {/* NE ALMAK ISTIYORSUNUZ (kombinasyonlar) */}
                                     <ComboSelector
@@ -3488,6 +3437,15 @@ export default function Apply() {
                                             </div>
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {/* STEP 4: OZET VE ODEME */}
+                            {step === 3 && (
+                                <div data-testid="wizard-summary-section">
+                                    <h2 className="font-heading text-xl font-bold">Özet ve ödeme</h2>
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                        Bilgilerinizi kontrol edip ödemeye geçin.</p>
 
                                     {created && (
                                         <div className="mt-5 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.08)] p-4" data-testid="application-created-banner">

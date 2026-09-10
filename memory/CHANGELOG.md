@@ -2916,3 +2916,34 @@ iki dosya yuklendikten sonra "Yuklendi" kartlari da ayni y ve ayni yukseklikte (
   Pasaporttaki portre, vesikalik "DOGRU" ornegindeki kisiyle ayni yuz (kullanici istegi).
 - Regresyon: testing agent iteration_136.json -> frontend %100, 8 sayfada yatay tasma yok,
   mobilde (390x844) kartlar alt alta diziliyor.
+
+### 2026-06-18 (22) · Footer kunye tek satir
+- `Footer.jsx` kunye metnini "Birleşik Arap" kelimesinden ikiye boluyordu; bolme kaldirildi,
+  iki cumle tek paragrafta (dogrulama: `footer-affiliation` icinde 1 adet <p>).
+
+### 2026-06-18 (23) · Sihirbaz yeniden duzenlendi (4 adim)
+Kullanici istegi: "resimde pasaport yaninda iste", "bu kisim adim 3'de olsun", "adim 3'teki
+kisim adim 2'de olsun", "adim 3 basligini degistirelim".
+- STEPS: 1) Kisisel Bilgiler 2) Vize Turu 3) **Ek Hizmetler** (eski "Gerekli Evraklar")
+  4) Odeme. Ikon: FileText -> Sparkles.
+- Adim 1: yolcu kartindaki AI kutusu 2 kolon oldu -> solda "Pasaport kimlik sayfasi",
+  saginda **Vesikalik Fotograf**. Iki kart ayni yukseklikte (ikisine de badge/hint/aciklama
+  verildi).
+- Adim 2: vize turu + tarihler + **evrak yukleme bolumu** (eski adim 3) `mt-10 border-t`
+  ayraciyla altina tasindi. Evrak zorunluluk dogrulamasi da `step === 2` -> `step === 1`.
+- Adim 3: yeni `wizard-extras-section` -> ComboSelector, TripSuggestions, paket promosu,
+  BundlePicker, sigorta katalogu, eSIM katalogu, turlar + "Hizmet yukseltmeleri"
+  (Ekspres Vize anahtarlari).
+- Adim 4: yalnizca ozet + fiyat dokumu + onaylar + odeme.
+- Yeni bilesen `TravelerPhotoField.jsx`: vesikalik dropzone + AI kalite ve yuz eslesme
+  durumlari; adim 1 ve adim 2'de ayni bilesen (testid'ler korundu).
+- **Regresyon (iteration_137)**: sigorta/eSIM/ek hizmet anahtarlari adim 2'de de
+  goruntuleniyordu (eski blok silinmemisti) -> blok adim 3'e tasindi, `insuranceBlock` /
+  `esimBlock` vize adimindan cikarildi. Retest iteration_138: %100 gecti (adim 2'de sizma
+  yok, Ekspres Vize adim 3'te toplami 5.190 -> 7.660 TL guncelliyor, adim 2 evrak eksikse
+  ilerlemeyi bloke ediyor).
+
+### 2026-06-18 (24) · Yuklendi kartinda "Kaldir" tasmasi
+- Buton satiri `ml-auto ... shrink-0` oldugu icin dar kolonda karti tasiyor, "Kaldir" yazisi
+  kesiliyordu. Satir sola alindi (`flex min-w-0 flex-wrap`), butonlar kompakt (h-9, px-2.5,
+  text-xs, 3.5 ikon). Olcum: kart sag kenari 699px, "Kaldir" sag kenari 662px (37px pay).
