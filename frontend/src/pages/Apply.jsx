@@ -46,7 +46,7 @@ import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { DateField, fromISODate } from "../components/DateField";
 import { FxNote } from "../components/FxNote";
-import { TripSuggestions } from "../components/TripSuggestions";
+import { TripSuggestions, SUGGESTION_COVERS } from "../components/TripSuggestions";
 import { ExtraOptions } from "../components/ExtraOptions";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { FamilyDiscountMeter } from "../components/FamilyDiscountMeter";
@@ -90,12 +90,6 @@ const TRAVEL_WINDOWS = [
 ];
 
 // Oneri kartlari icin kapak gorselleri (urunde image_url yoksa kullanilir)
-const SUGGESTION_COVERS = {
-    insurance:
-        "https://images.unsplash.com/photo-1581553673739-c4906b5d0de8?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
-    esim: "https://images.unsplash.com/photo-1651467606797-e1c660cf3fda?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
-};
-
 // Formda 2 dakika islem yapilmazsa "daha sonra devam" teklifi gosterilir
 const IDLE_PROMPT_MS = 120000;
 
@@ -971,14 +965,16 @@ export default function Apply() {
         [tourQty, tourSchedule]
     );
 
-    // Sigorta secildiginde police kesimi icin her yolcunun TC kimlik numarasi gerekir.
+    // Sigorta secildiginde police icin TC kimlik gerekir; pasaporttan okunduysa tekrar sorulmaz.
     const insuredRows = useMemo(
         () =>
-            travelers.map((t, idx) => ({
-                key: t.key,
-                label: `${t.first_name} ${t.last_name}`.trim() || `${idx + 1}. Yolcu`,
-                tc_kimlik_no: t.national_id,
-            })),
+            travelers
+                .map((t, idx) => ({
+                    key: t.key,
+                    label: `${t.first_name} ${t.last_name}`.trim() || `${idx + 1}. Yolcu`,
+                    tc_kimlik_no: t.national_id,
+                }))
+                .filter((row) => !validTckn(row.tc_kimlik_no)),
         [travelers]
     );
 
@@ -3178,15 +3174,14 @@ export default function Apply() {
                                         </p>
                                     )}
 
-                                    {insurancePick && (
+                                    {insurancePick && insuredRows.length > 0 && (
                                         <div className="mt-5" data-testid="insurance-identity-block">
                                             <p className="font-heading text-sm font-bold">
-                                                Poliçe için kimlik bilgileri
+                                                Poliçe için T.C. kimlik numarası
                                             </p>
                                             <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Sigorta şirketi poliçeyi TC kimlik numarasıyla düzenler.
-                                                Pasaportunuzda yazıyorsa alan otomatik doldurulur; boşsa
-                                                lütfen yazın.
+                                                Pasaportunuzdan okunamadı; sigorta şirketi poliçeyi T.C. kimlik
+                                                numarasıyla düzenlediği için bu alanı doldurmanız gerekiyor.
                                             </p>
                                             <InsuredIdentityFields
                                                 rows={insuredRows}

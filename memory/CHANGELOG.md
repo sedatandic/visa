@@ -3011,3 +3011,28 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
   tasarruf 409 TL. Tur secilince katalog+tur bolumu acildi. Adim 4'te iki hatirlatma:
   sigorta "Sadece 504 TL", eSIM "Sadece 740 TL"; eSIM eklenince toplam 5.190 -> 5.930 TL
   ve hatirlatma kayboldu.
+
+### 2026-06-18 (28) · Police TC alani sadece pasaportta okunamazsa soruluyor
+- Kullanici: "police kimlik alanlarina gerek yok, pasaportun icinde T.C. kimlik numarasi var".
+- `insuredRows` artik yalnizca `validTckn(national_id) === false` olan yolcularla
+  doldurulyor; blok `insurancePick && insuredRows.length > 0` iken cikiyor ve metin
+  "Pasaportunuzdan okunamadi; police icin gerekiyor" olarak degisti.
+  Boylece pasaport OCR'i TC'yi okuduysa hicbir sey sorulmuyor, okuyamadiysa tek alan cikiyor
+  (police kesimi bozulmuyor).
+- Dogrulama: ornek pasaport (00000000000 -> gecersiz) ile blok goruldu; gecerli TC girilince
+  blok tamamen kayboldu.
+- Not: /sepet akisinda pasaport yuklenmedigi icin `cart-insured-block` oldugu gibi kaldi.
+
+### 2026-06-18 (29) · /sepet sadelestirildi (tek oneri + acilir katalog)
+- **KALDIRILDI**: ust taraftaki `cart-bundle-strip` (ozet panelindeki ile ayni mesaj + ayni
+  "Vize basvurusunu tamamla" butonu -> CTA artik tek), ozetteki `cart-savings-offer` kutusu
+  ve `savingsOffer` memosu, tekrar eden "Ipucu: sigorta ve eSIM..." satiri, kalemlerin
+  altindaki 3 ayri "eSIM ekle / Sigorta ekle / Tur ekle" butonu.
+- **YENI**: `cart-suggestions` — "Sepetinizi tamamlayin": sepette olmayan her kategori icin
+  tek kart (sigorta / eSIM / col safarisi; gorsel + fiyat + "Ekle"), basliginda paket
+  indirimi mesaji. Altinda `cart-toggle-catalog-button` -> acilir `cart-catalog-links`
+  (tum sigorta policeleri, tum eSIM paketleri, Dubai turlari sayfalarina baglanti).
+  `SUGGESTION_COVERS` artik `TripSuggestions.jsx`'ten export ediliyor (Apply + Cart ortak).
+- Dogrulama: eSIM'li sepette 2 oneri karti (sigorta + tur); sigorta eklenince paket indirimi
+  satiri + "Tebrikler ... kazandiniz" cikti, toplam 1.040 -> 936 TL (%10). Vizeli sepette
+  "Vize basvurusunu tamamla" CTA'si tek, strip yok, oneri blogu calisiyor.

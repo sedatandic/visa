@@ -4,6 +4,12 @@ import { Button } from "./ui/button";
 import { formatMoney } from "../lib/site";
 
 // Odeme adiminda sunulan ekstra hizmet onerileri (sigorta + eSIM + col safarisi).
+export const SUGGESTION_COVERS = {
+    insurance:
+        "https://images.unsplash.com/photo-1581553673739-c4906b5d0de8?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+    esim: "https://images.unsplash.com/photo-1651467606797-e1c660cf3fda?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
+};
+
 export const TripSuggestions = ({
     suggestions,
     tripDays,

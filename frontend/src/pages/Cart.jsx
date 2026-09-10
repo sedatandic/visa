@@ -2,16 +2,15 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useNavigate } from "react-router-dom";
 import {
     Baby,
+    ChevronDown,
     Clock,
     CreditCard,
     Landmark,
     Loader2,
     Minus,
     PackageSearch,
-    PiggyBank,
     Plane,
     Plus,
-    PlusCircle,
     ShieldCheck,
     ShoppingBag,
     Smartphone,
@@ -23,6 +22,7 @@ import { applyPath, formatMoney, setMeta } from "../lib/site";
 import { CART_MAX_QTY, useCart } from "../lib/cart";
 import { PageHeader } from "../components/SiteLayout";
 import { FxNote } from "../components/FxNote";
+import { SUGGESTION_COVERS } from "../components/TripSuggestions";
 import { DateField } from "../components/DateField";
 import { InsuredIdentityFields } from "../components/InsuredIdentityFields";
 import { SecurityMiniStrip } from "../components/SecurityBadges";
@@ -125,6 +125,7 @@ export default function Cart() {    const navigate = useNavigate();
     const [submitting, setSubmitting] = useState(false);
     const [method, setMethod] = useState("card");
     const [insured, setInsured] = useState([]);
+    const [showCatalog, setShowCatalog] = useState(false);
     const snapshotSig = useRef("");
     const [form, setForm] = useState({
         full_name: "",
@@ -241,24 +242,26 @@ export default function Cart() {    const navigate = useNavigate();
         ...person,
     }));
 
-    // Tasarruf sayaci: eksik olan urun eklenirse kazanilacak %10 indirimi canli gosterir.
-    const savingsOffer = useMemo(() => {
-        if (!lines.length || bundleDiscount > 0) return null;
-        const missingKind = !kinds.has("insurance") ? "insurance" : !kinds.has("esim") ? "esim" : null;
-        if (!missingKind) return null;
-        const candidates = products.filter((p) => p.kind === missingKind);
-        if (!candidates.length) return null;
-        const product =
-            candidates.find((p) => p.popular) ||
-            candidates.reduce((min, p) => (p.price < min.price ? p : min), candidates[0]);
-        const amount = Math.round((itemsTotal + Number(product.price)) * BUNDLE_RATE);
-        return {
-            product,
-            amount,
-            label: missingKind === "insurance" ? "Seyahat sigortası" : "Dubai eSIM",
+    // Sepette eksik olan kategoriler icin tek oneri blogu (sigorta / eSIM / col safarisi)
+    const cartSuggestions = useMemo(() => {
+        const best = (kind) => {
+            const candidates = products.filter((p) => p.kind === kind);
+            if (!candidates.length) return null;
+            return (
+                candidates.find((p) => p.popular) ||
+                candidates.reduce((min, p) => (Number(p.price) < Number(min.price) ? p : min), candidates[0])
+            );
         };
+        return [
+            { kind: "insurance", label: "Seyahat sağlık sigortası", cover: SUGGESTION_COVERS.insurance },
+            { kind: "esim", label: "Dubai eSIM", cover: SUGGESTION_COVERS.esim },
+            { kind: "tour", label: "Çöl safarisi", cover: "" },
+        ]
+            .filter((s) => !kinds.has(s.kind))
+            .map((s) => ({ ...s, product: best(s.kind) }))
+            .filter((s) => s.product);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lines, products, itemsTotal, bundleDiscount]);
+    }, [products, cart.items]);
 
     // Sepeti sunucuya kaydet: e-posta bilindiginde 2 ve 24 saat sonra hatirlatma gonderilir.
     useEffect(() => {
@@ -410,27 +413,6 @@ export default function Cart() {    const navigate = useNavigate();
                                     </h2>
                                     <FxNote />
                                 </div>
-
-                                {visaLines.length > 0 && (
-                                    <div
-                                        className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/[0.06] p-4"
-                                        data-testid="cart-bundle-strip"
-                                    >
-                                        <p className="text-sm leading-6">
-                                            <span className="font-heading font-bold">
-                                                Sepetinizde {visaPassengers > 1 ? `${visaPassengers} kişilik ` : ""}
-                                                vize var.
-                                            </span>{" "}
-                                            Vize için pasaport ve fotoğraf bilgileriniz gerekiyor; başvuru formunda
-                                            vize, sigorta ve eSIM'i tek seferde ödeyeceksiniz.
-                                        </p>
-                                        <Button asChild className="h-10" data-testid="cart-bundle-apply-button">
-                                            <Link to={applyHref}>
-                                                <Plane className="mr-2 h-4 w-4" /> Vize başvurusunu tamamla
-                                            </Link>
-                                        </Button>
-                                    </div>
-                                )}
 
                                 {visaLines.length > 0 && (
                                     <div className="mt-5 divide-y divide-border border-b border-border" data-testid="cart-visa-lines">
@@ -588,19 +570,93 @@ export default function Cart() {    const navigate = useNavigate();
                                     ))}
                                 </div>
 
-                                <div className="mt-4 flex flex-wrap gap-3 border-t border-border pt-5">
-                                    <Button asChild variant="secondary" className="h-10 border border-border">
-                                        <Link to="/esim">eSIM ekle</Link>
-                                    </Button>
-                                    <Button asChild variant="secondary" className="h-10 border border-border">
-                                        <Link to="/seyahat-sigortasi">Sigorta ekle</Link>
-                                    </Button>
-                                    <Button asChild variant="secondary" className="h-10 border border-border">
-                                        <Link to="/dubai-turlari">Tur ekle</Link>
-                                    </Button>
+                                {cartSuggestions.length > 0 && (
+                                    <div className="mt-6 border-t border-border pt-5" data-testid="cart-suggestions">
+                                        <h3 className="font-heading text-base font-bold">Sepetinizi tamamlayın</h3>
+                                        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                                            {bundleDiscount > 0
+                                                ? "Paket indiriminiz uygulandı; dilerseniz aşağıdakileri de ekleyebilirsiniz."
+                                                : "Sigorta ve eSIM'i birlikte alırsanız sepetin tamamına %10 paket indirimi otomatik uygulanır."}
+                                        </p>
+                                        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                                            {cartSuggestions.map((s) => (
+                                                <div
+                                                    key={s.kind}
+                                                    className="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors duration-200 hover:border-primary/50"
+                                                    data-testid={`cart-suggestion-${s.kind}`}
+                                                >
+                                                    {(s.product.image_url || s.cover) && (
+                                                        <img
+                                                            src={s.product.image_url || s.cover}
+                                                            alt={s.product.name}
+                                                            loading="lazy"
+                                                            className="h-28 w-full object-cover"
+                                                        />
+                                                    )}
+                                                    <div className="flex flex-1 flex-col p-4">
+                                                        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                            {s.label}
+                                                        </span>
+                                                        <p className="mt-1.5 flex-1 font-heading text-sm font-bold">
+                                                            {s.product.name}
+                                                        </p>
+                                                        <p className="mt-2 font-heading text-base font-extrabold text-primary">
+                                                            {formatMoney(s.product.price, s.product.currency)}
+                                                        </p>
+                                                        <Button
+                                                            className="mt-3 h-10 w-full"
+                                                            onClick={() => {
+                                                                cart.add(s.product.id, 1);
+                                                                toast.success(`${s.product.name} sepete eklendi.`);
+                                                            }}
+                                                            data-testid={`cart-suggestion-add-${s.kind}`}
+                                                        >
+                                                            <Plus className="mr-1.5 h-4 w-4" /> Ekle
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="mt-5 border-t border-border pt-5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCatalog((v) => !v)}
+                                        className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left transition-colors duration-200 hover:border-primary/60"
+                                        data-testid="cart-toggle-catalog-button"
+                                    >
+                                        <span>
+                                            <span className="block font-heading text-sm font-bold">
+                                                {showCatalog ? "Diğer paketleri gizle" : "Diğer paketleri gör"}
+                                            </span>
+                                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                                                Tüm sigorta poliçeleri, eSIM paketleri ve Dubai turları
+                                            </span>
+                                        </span>
+                                        <ChevronDown
+                                            className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 ${
+                                                showCatalog ? "rotate-180" : ""
+                                            }`}
+                                        />
+                                    </button>
+                                    {showCatalog && (
+                                        <div className="mt-3 flex flex-wrap gap-3" data-testid="cart-catalog-links">
+                                            <Button asChild variant="secondary" className="h-10 border border-border">
+                                                <Link to="/seyahat-sigortasi">Tüm sigorta poliçeleri</Link>
+                                            </Button>
+                                            <Button asChild variant="secondary" className="h-10 border border-border">
+                                                <Link to="/esim">Tüm eSIM paketleri</Link>
+                                            </Button>
+                                            <Button asChild variant="secondary" className="h-10 border border-border">
+                                                <Link to="/dubai-turlari">Dubai turları</Link>
+                                            </Button>
+                                        </div>
+                                    )}
                                     <Button
                                         variant="secondary"
-                                        className="ml-auto h-10 border border-border text-destructive"
+                                        className="mt-3 h-10 border border-border text-destructive"
                                         onClick={() => cart.clear()}
                                         data-testid="cart-clear-button"
                                     >
@@ -660,45 +716,6 @@ export default function Cart() {    const navigate = useNavigate();
                                             data-testid="cart-savings-earned"
                                         >
                                             Tebrikler! Paket indirimiyle {formatMoney(bundleDiscount)} kazandınız.
-                                        </p>
-                                    )}
-                                    {bundleDiscount === 0 && savingsOffer && (
-                                        <div
-                                            className="rounded-xl border border-[hsl(var(--brand-green))]/35 bg-[hsl(var(--brand-green))]/[0.07] p-3.5"
-                                            data-testid="cart-savings-offer"
-                                        >
-                                            <p className="flex items-start gap-2 text-xs font-bold leading-5 text-[hsl(var(--brand-green))]">
-                                                <PiggyBank className="mt-0.5 h-4 w-4 shrink-0" />
-                                                <span data-testid="cart-savings-amount">
-                                                    {savingsOffer.label} ekleyin, {formatMoney(savingsOffer.amount)}{" "}
-                                                    kazanın
-                                                </span>
-                                            </p>
-                                            <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
-                                                {savingsOffer.product.name} ·{" "}
-                                                {formatMoney(savingsOffer.product.price, savingsOffer.product.currency)}{" "}
-                                                — sigorta ve eSIM birlikte alındığında sepetin tamamına %10 indirim
-                                                uygulanır.
-                                            </p>
-                                            <Button
-                                                className="mt-3 h-10 w-full"
-                                                onClick={() => {
-                                                    cart.add(savingsOffer.product.id, 1);
-                                                    toast.success(
-                                                        `${savingsOffer.product.name} sepete eklendi · %10 paket indirimi uygulandı.`
-                                                    );
-                                                }}
-                                                data-testid="cart-savings-add-button"
-                                            >
-                                                <PlusCircle className="mr-2 h-4 w-4" /> {savingsOffer.label} ekle ve
-                                                kazan
-                                            </Button>
-                                        </div>
-                                    )}
-                                    {bundleDiscount === 0 && !savingsOffer && (
-                                        <p className="text-xs leading-5 text-muted-foreground">
-                                            İpucu: sigorta ve eSIM'i birlikte alırsanız %10 paket indirimi
-                                            otomatik uygulanır.
                                         </p>
                                     )}
                                 </div>

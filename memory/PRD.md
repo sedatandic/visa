@@ -1741,3 +1741,8 @@ fotograflari, ATV +40 USD ek secenek.
 - Odeme adiminda hem sigorta hem eSIM icin tek satirlik "+X TL ekle" hatirlatmasi var.
 - Not: `BundlePicker.jsx` ve `ComboSelector.jsx` dosyalari duruyor ama artik kullanilmiyor
   (Cart/diger sayfalarda kullanim varsa korunmali).
+
+## 2026-06-18 (fork, 8) · Sepet sadelestirme + police TC alani
+- /sepet: tekrar eden strip/tasarruf kutusu/kategori butonlari kaldirildi; "Sepetinizi
+  tamamlayin" oneri kartlari + "Diger paketleri gor" acilir baglanti listesi geldi.
+- Police TC alani yalnizca pasaporttan okunamadiginda soruluyor.
