@@ -2838,3 +2838,17 @@ NOT: 72 saat sonra gonderilen "basvurunuz yarim kaldi" hatirlatma e-postalari (m
 Dogrulama: Playwright - Kaldir butonu dosyayi kaldirip dropzone'a donuyor; takvimden gun
 secimi inputu guncelliyor; secili gun rengi beyaz/bakir (computed style) ve kirpilmis
 ekran goruntusu ile gorsel teyit; explainer sahnesi ana sayfada tam palmiyelerle render.
+
+## 2026-06-18 (13) · Hizmet bedelleri: 4 kart tek satir
+Kullanici istegi: vize kartlari + ek hizmetler ayni satirda, ekran daralinca alt alta.
+- `visa_extension_30` (30 Gunluk Vize Uzatma) kategori sekmesi listesinden cikarildi ve
+  ek hizmet karti olarak render ediliyor (AddonCard, "UZATMA" rozeti + CalendarPlus,
+  not: "Dubai'deyken, ulkeden cikmadan talep edilir", CTA: "Uzatma basvurusu yap").
+- Ayri "Ek hizmetler" bolumu kaldirildi; kartlar `pricing-grid` icinde vize kartlarinin
+  saginda: [30 gun] [60 gun] [Vize Uzatma] [Ekspres]. Grid `md:grid-cols-2 xl:grid-cols-4`,
+  kart sayisina gore kolon secimi `cardCount` ile. Danisman CTA bandi korundu.
+- `AddonCard` parametrik hale getirildi: `badge`, `badgeIcon`, `note`, `cta`, `to`
+  (varsayilanlar eski Ekspres davranisiyla ayni). Fiyat yazisi 32px -> 26/28px ve
+  `whitespace-nowrap`: dar kolonda "14.830 TL" satir ortasindan bolunmuyor.
+Dogrulama: Playwright - 4 kartin y degeri ayni (tek satir), tab degisiminde de tek satir;
+430px viewport'ta hepsi ayni x (alt alta); ana sayfa etkilenmedi.

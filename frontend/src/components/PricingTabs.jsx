@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Star, Users } from "lucide-react";
+import { CalendarPlus, Star, Users } from "lucide-react";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/site";
 import { Button } from "./ui/button";
 import { VisaTypeCard } from "./VisaTypeCard";
 import { AddonCard } from "./AddonCard";
 import { Skeleton } from "./ui/skeleton";
+
+const EXTENSION_ID = "visa_extension_30";
 
 /**
  * Category-tabbed pricing block (Tek Girisli / Cok Girisli / Cocuk / Diger)
@@ -35,7 +37,14 @@ export const PricingTabs = ({ compactHeading = false }) => {
             .finally(() => setLoading(false));
     }, []);
 
-    const visible = visaTypes.filter((v) => (v.category || "single") === active);
+    // Vize uzatma yeni basvuru degil; kategori sekmeleri yerine "Ek hizmetler" bolumunde
+    const visible = visaTypes.filter(
+        (v) => (v.category || "single") === active && v.id !== EXTENSION_ID
+    );
+    const extension = visaTypes.find((v) => v.id === EXTENSION_ID);
+    // Ek hizmet kartlari yalnizca tam fiyat sayfasinda (ana sayfada compact gorunum)
+    const showExtras = !compactHeading;
+    const cardCount = visible.length + (showExtras ? addons.length + (extension ? 1 : 0) : 0);
     // Baslangicta "en cok tercih edilen" kart vurgulu gelir; kullanici baska bir karta
     // tiklarsa vurgu o karta gecer.
     const highlightedId = visible.some((v) => v.id === pickedId)
@@ -85,13 +94,15 @@ export const PricingTabs = ({ compactHeading = false }) => {
 
             <div
                 className={`mt-7 grid gap-6 ${
-                    loading || visible.length === 3
+                    loading
                         ? "md:grid-cols-2 lg:grid-cols-3"
-                        : visible.length >= 4
+                        : cardCount >= 4
                           ? "md:grid-cols-2 xl:grid-cols-4"
-                          : visible.length === 2
-                            ? "md:grid-cols-2"
-                            : "md:grid-cols-1"
+                          : cardCount === 3
+                            ? "md:grid-cols-2 lg:grid-cols-3"
+                            : cardCount === 2
+                              ? "md:grid-cols-2"
+                              : "md:grid-cols-1"
                 }`}
                 data-testid="pricing-grid"
             >
@@ -116,32 +127,33 @@ export const PricingTabs = ({ compactHeading = false }) => {
                               onHighlight={(v) => setPickedId(v.id)}
                           />
                       ))}
+
+                {/* Ek hizmetler vize kartlarinin saginda, ayni satirda */}
+                {showExtras && extension && (
+                    <AddonCard
+                        addon={extension}
+                        badge={extension.entry_label || "Uzatma"}
+                        badgeIcon={CalendarPlus}
+                        note="Dubai'deyken, ülkeden çıkmadan talep edilir"
+                        cta="Uzatma başvurusu yap"
+                    />
+                )}
+                {showExtras && addons.map((a) => <AddonCard key={a.id} addon={a} />)}
             </div>
 
-            {!compactHeading && addons.length > 0 && (
-                <div className="mt-12">
-                    <h3 className="font-heading text-xl font-bold">Ek hizmetler</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        Başvuru sırasında dilediğiniz ek hizmeti seçebilirsiniz. Ücretler yolcu başınadır.
+            {!compactHeading && (
+                <div className="mt-8 flex flex-col items-start gap-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-6 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="flex items-center gap-2 text-sm font-semibold">
+                        <Star className="h-4 w-4 text-[hsl(var(--gold))]" />
+                        Hangi vizeyi seçeceğinizden emin değil misiniz? Danışmanımız ücretsiz yönlendirsin.
                     </p>
-                    <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {addons.map((a) => (
-                            <AddonCard key={a.id} addon={a} />
-                        ))}
-                    </div>
-                    <div className="mt-8 flex flex-col items-start gap-4 rounded-xl border border-border bg-[hsl(var(--cloud))] p-6 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="flex items-center gap-2 text-sm font-semibold">
-                            <Star className="h-4 w-4 text-[hsl(var(--gold))]" />
-                            Hangi vizeyi seçeceğinizden emin değil misiniz? Danışmanımız ücretsiz yönlendirsin.
-                        </p>
-                        <div className="flex gap-3">
-                            <Button asChild variant="secondary" className="h-11 border border-border">
-                                <Link to="/iletisim">Bize sorun</Link>
-                            </Button>
-                            <Button asChild className="h-11">
-                                <Link to="/basvuru">Başvuruya başla</Link>
-                            </Button>
-                        </div>
+                    <div className="flex gap-3">
+                        <Button asChild variant="secondary" className="h-11 border border-border">
+                            <Link to="/iletisim">Bize sorun</Link>
+                        </Button>
+                        <Button asChild className="h-11">
+                            <Link to="/basvuru">Başvuruya başla</Link>
+                        </Button>
                     </div>
                 </div>
             )}
