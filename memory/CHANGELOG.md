@@ -3108,3 +3108,26 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
 - Eski test tazelendi: `test_iteration_125_placeholder_contact.py` artik Dubai ofis
   alanlarinin acilista otomatik doldurulmasini hesaba katiyor (4 kirmizi test yesillendi).
 - pytest: **631 passed, 3 skipped**.
+
+### 2026-06-18 (33) · Dubai ofis bilgileri sitede kalici + gercekci TR pasaport ornegi
+- **Kok neden bulundu (3. kez tekrar eden kayip)**: `CompanyInfoIn` alanlarinin varsayilani
+  `""` oldugu icin KISMI bir `PUT /admin/company` cagrisi gonderilmeyen tum alanlari bos
+  string olarak yaziyordu → `dubai_address` / `dubai_phone` siliniyor, footer ve iletisim
+  sayfasindaki Dubai ofis karti (harita dahil) gizleniyordu. Acilistaki otomatik doldurma
+  (`fix_placeholder_contact`) her restart'ta yeniden dolduruyor, sonraki kismi kayit tekrar
+  siliyordu (log: her acilista "placeholder contact fixed").
+- Duzeltme: (1) `models.CompanyInfoIn` opsiyonel alanlarin varsayilani `None` — gonderilmeyen
+  alan artik korunuyor, bos string bilincli silme sayiliyor; (2) yeni `content.company_with_defaults()`
+  okuma yolunda bos kalan Dubai ofis alanlarini statik varsayilanla dolduruyor
+  (`/content/site`, `GET/PUT /admin/company` ayni yardimciyi kullaniyor).
+- Dogrulama: `PUT /api/admin/company {"legal_name": "..."}` (kismi) sonrasi dubai_address ve
+  dubai_phone duruyor; `/iletisim` iki ofis kartini + iki haritayi, footer Dubai satirini
+  gosteriyor (Playwright ile teyit). Test: `tests/test_iteration_141_dubai_office.py` (6).
+- Pasaport gorselleri (kullanici istegi: "gercek turk pasaportu olsun", "REPUBLIC OF TURKEY
+  degil TURKIYE"): WhatsApp mockup'taki eski bej/genel gorsel yerine gercek TR e-pasaport
+  kimlik sayfasi duzeninde (pembe-mint guilloche, arma, MRZ) **ornek** belge kondu
+  (`public/chat/passport-bio.jpg`, kurgusal veri: ÖRNEK / AYŞE, U00000000). Rehber
+  ornekleri de yenilendi: `passport-guide/ok.jpg` ve `bad-crop.jpg` artik
+  "TÜRKİYE CUMHURİYETİ / REPUBLIC OF TÜRKİYE" yaziyor ve alan etiketleri duzgun.
+  Mockup alt yazisi: "isim ve numaralar gizlendi, pasaport gorseli ornek belgedir".
+- pytest: **636 passed, 3 skipped**.

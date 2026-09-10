@@ -8,7 +8,15 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from content import ARTICLES, COMPANY, REVIEW_SUMMARY, TESTIMONIALS, VISA_TYPES, compute_pricing
+from content import (
+    ALWAYS_FILLED,
+    ARTICLES,
+    COMPANY,
+    REVIEW_SUMMARY,
+    TESTIMONIALS,
+    VISA_TYPES,
+    compute_pricing,
+)
 from db import (
     applications_col,
     articles_col,
@@ -222,7 +230,7 @@ PLACEHOLDER_CONTACT = {
 
 
 # DB'de bos kalirsa statik varsayilandan doldurulur (Dubai ofis karti/haritasi kaybolmasin)
-FILL_IF_EMPTY = ("dubai_address", "dubai_phone")
+FILL_IF_EMPTY = ALWAYS_FILLED
 
 
 async def fix_placeholder_contact() -> None:

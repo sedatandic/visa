@@ -295,24 +295,26 @@ class BankTransferIn(BaseModel):
 
 
 class CompanyInfoIn(BaseModel):
-    brand: Optional[str] = Field(default="", max_length=80)
+    # Gonderilmeyen alanlar None kalir ve kayitta korunur (kismi kayit alan silmesin);
+    # bos string bilincli silme sayilir.
+    brand: Optional[str] = Field(default=None, max_length=80)
     legal_name: str = Field(..., min_length=2, max_length=160)
-    phone: Optional[str] = Field(default="", max_length=40)
-    whatsapp: Optional[str] = Field(default="", max_length=30)
-    email: Optional[str] = Field(default="", max_length=120)
-    instagram: Optional[str] = Field(default="", max_length=200)
-    google_review: Optional[str] = Field(default="", max_length=300)
-    address: Optional[str] = Field(default="", max_length=240)
-    dubai_address: Optional[str] = Field(default="", max_length=240)
-    dubai_phone: Optional[str] = Field(default="", max_length=40)
-    working_hours: Optional[str] = Field(default="", max_length=160)
-    tursab_no: Optional[str] = Field(default="", max_length=30)
-    tursab_type: Optional[str] = Field(default="", max_length=80)
-    tax_office: Optional[str] = Field(default="", max_length=80)
-    tax_no: Optional[str] = Field(default="", max_length=30)
-    mersis_no: Optional[str] = Field(default="", max_length=30)
-    trade_registry_no: Optional[str] = Field(default="", max_length=30)
-    founded_year: Optional[str] = Field(default="", max_length=10)
+    phone: Optional[str] = Field(default=None, max_length=40)
+    whatsapp: Optional[str] = Field(default=None, max_length=30)
+    email: Optional[str] = Field(default=None, max_length=120)
+    instagram: Optional[str] = Field(default=None, max_length=200)
+    google_review: Optional[str] = Field(default=None, max_length=300)
+    address: Optional[str] = Field(default=None, max_length=240)
+    dubai_address: Optional[str] = Field(default=None, max_length=240)
+    dubai_phone: Optional[str] = Field(default=None, max_length=40)
+    working_hours: Optional[str] = Field(default=None, max_length=160)
+    tursab_no: Optional[str] = Field(default=None, max_length=30)
+    tursab_type: Optional[str] = Field(default=None, max_length=80)
+    tax_office: Optional[str] = Field(default=None, max_length=80)
+    tax_no: Optional[str] = Field(default=None, max_length=30)
+    mersis_no: Optional[str] = Field(default=None, max_length=30)
+    trade_registry_no: Optional[str] = Field(default=None, max_length=30)
+    founded_year: Optional[str] = Field(default=None, max_length=10)
 
 
 class SocialLinkIn(BaseModel):

@@ -27,7 +27,7 @@ import visa_file_number
 from admin_auth import SESSION_DAYS, create_token, hash_code, require_admin
 from application_docs import application_form_bytes, form_filename, visa_pdf_attachment
 from payment_receipt_pdf import build_receipt_pdf, receipt_attachment, receipt_filename
-from content import BANK_TRANSFER, COMPANY, STATUS_LABELS
+from content import BANK_TRANSFER, COMPANY, STATUS_LABELS, company_with_defaults
 from db import (
     admin_login_codes_col,
     applications_col,
@@ -708,13 +708,12 @@ async def admin_mark_paid(application_id: str, admin: dict = Depends(require_adm
 @router.get("/admin/company")
 async def admin_get_company(admin: dict = Depends(require_admin)) -> dict:
     doc = await settings_col.find_one({"key": "company_info"})
-    return {**COMPANY, **((doc or {}).get("value") or {})}
+    return company_with_defaults((doc or {}).get("value"))
 
 
 @router.put("/admin/company")
 async def admin_update_company(payload: CompanyInfoIn, admin: dict = Depends(require_admin)) -> dict:
-    # Bos string'ler de yazilir (COMPANY varsayilanini ezebilmek icin); gonderilmeyen
-    # alanlar korunur — kismi kayit diger iletisim bilgilerini silmesin.
+    # Gonderilmeyen alanlar (None) korunur; bos string bilincli silme sayilir.
     value = {k: v for k, v in payload.model_dump().items() if v is not None}
     await settings_col.update_one(
         {"key": "company_info"},
@@ -727,7 +726,7 @@ async def admin_update_company(payload: CompanyInfoIn, admin: dict = Depends(req
         upsert=True,
     )
     doc = await settings_col.find_one({"key": "company_info"})
-    return {**COMPANY, **((doc or {}).get("value") or {})}
+    return company_with_defaults((doc or {}).get("value"))
 
 
 # ------------------------------------------------------- Sosyal medya hesaplari

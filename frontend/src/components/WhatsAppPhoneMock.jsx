@@ -150,7 +150,7 @@ const Bubble = ({ m, i }) => {
                 {m.image && (
                     <img
                         src={m.image}
-                        alt="Sohbette paylaşılan pasaport kimlik sayfası (bilgiler bulanıklaştırıldı)"
+                        alt="Sohbette paylaşılan pasaport kimlik sayfası (örnek belge)"
                         className="mb-1.5 block w-full rounded-md border border-black/5 bg-white object-contain"
                         loading="lazy"
                         data-testid="wa-bubble-passport-image"
@@ -332,7 +332,7 @@ export const WhatsAppPhoneMock = ({ href }) => {
                 <strong className="font-semibold text-foreground/80" data-testid="wa-chat-label">
                     {scenario.label}
                 </strong>{" "}
-                · Gerçek görüşmelerden uyarlandı; isim, numara ve pasaport bilgileri gizlendi.
+                · Gerçek görüşmelerden uyarlandı; isim ve numaralar gizlendi, pasaport görseli örnek belgedir.
             </p>
         </div>
     );

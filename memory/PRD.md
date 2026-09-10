@@ -1760,3 +1760,10 @@ fotograflari, ATV +40 USD ek secenek.
   (fatura ozeti C15, form fiyat dokumu C11, tamamliyo._request C16) A/B seviyesine indi.
 - Tutar kolonundaki "TL"ler tum tablolarda ayni hizada; dogum yeri pasaport okumasindan
   tamamlanip "Istanbul" yazimiyla basiliyor. Detay: CHANGELOG 2026-06-18 (32).
+
+## 2026-06-18 (fork, 11) · Dubai ofis bilgileri + gercekci pasaport ornegi
+- Dubai ofis adresi/telefonu artik sitede kalici: kismi sirket kaydi alanlari silmiyor
+  (`CompanyInfoIn` varsayilani `None`), okuma yolunda bos kalirsa varsayilanla doluyor
+  (`content.company_with_defaults`). Footer + `/iletisim` iki ofis karti ve haritayi gosteriyor.
+- WhatsApp mockup ve pasaport rehberi gorselleri gercek TR e-pasaport kimlik sayfasi
+  duzeninde ornek belgelerle yenilendi ("TÜRKİYE CUMHURİYETİ / REPUBLIC OF TÜRKİYE").

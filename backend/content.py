@@ -560,8 +560,7 @@ COMPANY = {
     "google_review": "https://www.google.com/search?q=Dubai+Vize+Hatt%C4%B1+yorumlar",
     "address": "Büyükdere Caddesi Nurol Plaza No:255/B02, 34450 Sarıyer / İstanbul - Türkiye",
     "dubai_address": "Level 27, Unit 2705, Marina Plaza, Dubai Marina, Dubai - United Arab Emirates",
-    "dubai_phone": "+971 50 867 26 30",
-    "working_hours": "Hafta içi 09:00 - 19:00, Cumartesi 10:00 - 16:00",
+    "dubai_phone": "+971 50 867 26 30",    "working_hours": "Hafta içi 09:00 - 19:00, Cumartesi 10:00 - 16:00",
     # Yasal kunye alanlari: gercek degerler admin -> Acente ekranindan girilir.
     # Bos birakilan satirlar sitede hic gosterilmez; ornek/sifir deger yaziLMAZ.
     "tursab_no": "",
@@ -572,6 +571,19 @@ COMPANY = {
     "trade_registry_no": "",
     "founded_year": "2019",
 }
+
+# Musteriye gosterilen Dubai ofis bilgileri: DB'de bos kalsa da varsayilanla doldurulur
+# (panelden kismi kayit veya test verisi bu alanlari silmis olabilir).
+ALWAYS_FILLED = ("dubai_address", "dubai_phone")
+
+
+def company_with_defaults(value: dict | None) -> dict:
+    """Panelden girilen degerleri sabitlerin uzerine yazar; ofis alanlari bos kalmaz."""
+    company = {**COMPANY, **(value or {})}
+    for field in ALWAYS_FILLED:
+        if not str(company.get(field) or "").strip():
+            company[field] = COMPANY[field]
+    return company
 
 AGENCY_INFO = {
     "title": "Acente Bilgilerimiz",

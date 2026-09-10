@@ -29,6 +29,7 @@ from content import (
     ARTICLES,
     BANK_TRANSFER,
     COMPANY,
+    company_with_defaults,
     FAMILY_DISCOUNT_TEXT,
     FAMILY_DISCOUNT_TIERS,
     FAQ,
@@ -294,7 +295,7 @@ async def public_fx() -> dict:
 async def _company_info() -> dict:
     """Sabit sirket bilgileri uzerine admin panelinden girilen alanlar yazilir."""
     company_doc = await settings_col.find_one({"key": "company_info"})
-    return {**COMPANY, **((company_doc or {}).get("value") or {})}
+    return company_with_defaults((company_doc or {}).get("value"))
 
 
 def _agency_info(company: dict) -> dict:
