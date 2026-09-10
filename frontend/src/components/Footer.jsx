@@ -16,13 +16,6 @@ export const Footer = () => {
     const [agency, setAgency] = useState(null);
     const [agencyItems, setAgencyItems] = useState([]);
     const [affiliation, setAffiliation] = useState("");
-    const [guides, setGuides] = useState([]);
-
-    useEffect(() => {
-        api.get("/visa-guides")
-            .then(({ data }) => setGuides(data.items || []))
-            .catch(() => {});
-    }, []);
 
     useEffect(() => {
         api.get("/content/site")
@@ -160,29 +153,6 @@ export const Footer = () => {
                 </div>
             </div>
         </div>
-
-        {guides.length > 0 && (
-            <div className="border-t border-white/10" data-testid="footer-visa-guides">
-                <div className="container-page py-7">
-                    <h3 className="font-heading text-sm font-semibold uppercase tracking-wider text-white/50">
-                        Vize Rehberi
-                    </h3>
-                    <ul className="mt-4 grid gap-x-8 gap-y-2.5 text-sm text-white/80 sm:grid-cols-2 lg:grid-cols-3">
-                        {guides.map((g) => (
-                            <li key={g.slug}>
-                                <Link
-                                    to={g.path}
-                                    className="transition-colors hover:text-primary"
-                                    data-testid={`footer-guide-link-${g.slug}`}
-                                >
-                                    {g.title}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-        )}
 
         {agencyItems.length > 0 && (            <div className="border-t border-white/10" data-testid="footer-agency-info">
                 <div className="container-page py-7">
