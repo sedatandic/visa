@@ -3160,3 +3160,20 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
   **hiçbir adımda yatay kaydırma yok** (`scrollWidth == 390`), sabit çubuk ve ilerleme metni
   çalışıyor, masaüstü 1920 regresyonu temiz. Raporun iki bulgusu (takvim düğmesi 36px,
   yolcu tipi 40px) düzeltildi ve 44px olarak yeniden ölçüldü.
+
+### 2026-06-18 (36) · Tek dokunuş pasaport çekimi (kamera ekranı)
+- Yeni bileşen `frontend/src/components/CameraCapture.jsx`: tam ekran çekim ekranı.
+  `getUserMedia` ile arka kamera (pasaport) / ön kamera (vesikalık) açılır, ekranda
+  ID-3 oranında (125x88) beyaz çerçeve + MRZ ipucu şeridi ve "Pasaportu yatay tutun,
+  dört köşesi de çerçeveye girsin" yönlendirmesi görünür. Çekimde kare, çerçeve alanına
+  göre kırpılıp (object-cover eşlemesi hesaplanarak) en fazla 2000px genişlikte JPEG'e
+  çevrilir; ön kamerada ayna düzeltmesi yapılır. Önizleme + "Tekrar çek" / "Kullan",
+  izin reddinde açıklama ve "Galeriden seç" alternatifi var.
+- `FileDropzone` yeni `capture` prop'u: kamera destekliyse boş durumda mobilde en üstte
+  "Kamerayla çek" (masaüstünde dropzone'un altında), yüklendikten sonra "Tekrar çek"
+  düğmesi. Pasaport (`capture="passport"`) ve vesikalık (`capture="photo"`) alanlarına bağlandı;
+  çekilen dosya mevcut yükleme + AI OCR/foto kontrol akışına aynen giriyor.
+- Doğrulama: sahte kamera (`--use-fake-device-for-media-stream`) ile 390x844'te uçtan uca —
+  buton (48px) → çekim ekranı → shutter → önizleme → tekrar çek → kullan → `pasaport.jpg`
+  yüklendi; vesikalık modu da aynı akışta çalıştı. Masaüstünde kamera düğmesi dropzone'un
+  altında, mobil çubuk gizli, yatay kaydırma yok.

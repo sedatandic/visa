@@ -23,6 +23,7 @@ export const TravelerPhotoField = ({
             icon={Camera}
             description={description}
             docType="photo"
+            capture="photo"
             value={value}
             onInputRef={onInputRef}
             onChange={onChange}

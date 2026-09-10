@@ -1773,3 +1773,9 @@ fotograflari, ATV +40 USD ek secenek.
   yatay kaydirma yok, tum dokunma hedefleri >=44px, dogru mobil klavyeler, eksik alana otomatik
   gitme, altta sabit "Toplam + Devam Et" cubugu, ornek gorseller 2x2.
 - Test: testing agent iteration_142 (390x844 uctan uca + 1920 regresyon).
+
+## 2026-06-18 (fork, 13) · Tek dokunus pasaport cekimi
+- `/basvuru` pasaport ve vesikalik alanlarinda "Kamerayla cek": tam ekran cekim ekrani,
+  pasaport oranli cerceve, cerceveye gore otomatik kirpma, onizleme/tekrar cek,
+  izin yoksa galeriden secme. Yeni bilesen: `components/CameraCapture.jsx`,
+  `FileDropzone`'a `capture` prop'u eklendi.

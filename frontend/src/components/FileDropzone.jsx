@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Eye, FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
+import { AlertCircle, Camera, CheckCircle2, Eye, FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
 import { api, apiError, fileUrl } from "../lib/api";
 import { Button } from "./ui/button";
+import { CameraCapture } from "./CameraCapture";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 export const FileDropzone = ({
@@ -15,6 +16,7 @@ export const FileDropzone = ({
     badge,
     description,
     onInputRef,
+    capture,
     accept = "image/jpeg,image/png,image/webp,application/pdf",
 }) => {
     const inputRef = useRef(null);
@@ -23,6 +25,8 @@ export const FileDropzone = ({
     const [dragOver, setDragOver] = useState(false);
     const [preview, setPreview] = useState(null);
     const [viewOpen, setViewOpen] = useState(false);
+    const [cameraOpen, setCameraOpen] = useState(false);
+    const cameraSupported = Boolean(capture && navigator.mediaDevices?.getUserMedia);
 
     const handleFiles = async (files) => {
         const file = files?.[0];
@@ -158,6 +162,17 @@ export const FileDropzone = ({
                         >
                             Değiştir
                         </Button>
+                        {cameraSupported && (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                className="h-9 shrink-0 px-2.5 text-xs"
+                                onClick={() => setCameraOpen(true)}
+                                data-testid={`${testId}-recapture`}
+                            >
+                                <Camera className="mr-1.5 h-3.5 w-3.5" /> Tekrar çek
+                            </Button>
+                        )}
                         <Button
                             type="button"
                             variant="ghost"
@@ -170,47 +185,59 @@ export const FileDropzone = ({
                     </div>
                 </div>
             ) : (
-                <button
-                    type="button"
-                    onClick={() => inputRef.current?.click()}
-                    onDragOver={(e) => {
-                        e.preventDefault();
-                        setDragOver(true);
-                    }}
-                    onDragLeave={() => setDragOver(false)}
-                    onDrop={(e) => {
-                        e.preventDefault();
-                        setDragOver(false);
-                        handleFiles(e.dataTransfer.files);
-                    }}
-                    className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-9 text-center transition-colors duration-150 ${
-                        dragOver ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/50"
-                    }`}
-                    data-testid={`${testId}-dropzone`}
-                >
-                    {uploading ? (
-                        <>
-                            <Loader2 className="h-7 w-7 animate-spin text-primary" />
-                            <span className="text-sm font-semibold">Yükleniyor…</span>
-                        </>
-                    ) : (
-                        <>
-                            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
-                                {Icon ? (
-                                    <Icon className="h-5 w-5 text-primary" />
-                                ) : (
-                                    <UploadCloud className="h-5 w-5 text-primary" />
-                                )}
-                            </span>
-                            <span className="rounded-full bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary">
-                                Dosya Seç
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                                Sürükleyip bırakabilirsiniz · JPG / PNG / PDF · Maks. 10 MB
-                            </span>
-                        </>
+                <div className="flex flex-col gap-2">
+                    {cameraSupported && (
+                        <Button
+                            type="button"
+                            className="order-first h-12 w-full text-base sm:order-last sm:h-11 sm:text-sm"
+                            onClick={() => setCameraOpen(true)}
+                            data-testid={`${testId}-camera-button`}
+                        >
+                            <Camera className="mr-2 h-5 w-5" /> Kamerayla çek
+                        </Button>
                     )}
-                </button>
+                    <button
+                        type="button"
+                        onClick={() => inputRef.current?.click()}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            setDragOver(true);
+                        }}
+                        onDragLeave={() => setDragOver(false)}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            setDragOver(false);
+                            handleFiles(e.dataTransfer.files);
+                        }}
+                        className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-9 text-center transition-colors duration-150 ${
+                            dragOver ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/50"
+                        }`}
+                        data-testid={`${testId}-dropzone`}
+                    >
+                        {uploading ? (
+                            <>
+                                <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                                <span className="text-sm font-semibold">Yükleniyor…</span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
+                                    {Icon ? (
+                                        <Icon className="h-5 w-5 text-primary" />
+                                    ) : (
+                                        <UploadCloud className="h-5 w-5 text-primary" />
+                                    )}
+                                </span>
+                                <span className="rounded-full bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary">
+                                    Dosya Seç
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                    Sürükleyip bırakabilirsiniz · JPG / PNG / PDF · Maks. 10 MB
+                                </span>
+                            </>
+                        )}
+                    </button>
+                </div>
             )}
 
             <input
@@ -230,6 +257,16 @@ export const FileDropzone = ({
                     <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     {error}
                 </p>
+            )}
+
+            {cameraSupported && (
+                <CameraCapture
+                    mode={capture}
+                    open={cameraOpen}
+                    onClose={() => setCameraOpen(false)}
+                    onCapture={(file) => handleFiles([file])}
+                    onPickFile={() => inputRef.current?.click()}
+                />
             )}
 
             {/* Yuklenen belgeyi buyuk onizleme */}

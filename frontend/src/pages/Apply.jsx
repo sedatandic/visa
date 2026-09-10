@@ -2728,6 +2728,7 @@ export default function Apply() {
                                                                 icon={BookUser}
                                                                 description="Fotoğrafın bulunduğu kimlik sayfasını, dört köşesi çerçevede kalacak şekilde net çekin."
                                                                 docType="passport"
+                                                                capture="passport"
                                                                 value={t.passportFile}
                                                                 onChange={(f) => {
                                                                     updateTraveler(t.key, { passportFile: f });
