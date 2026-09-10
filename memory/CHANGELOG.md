@@ -2784,3 +2784,11 @@ Dogrulama: Playwright ile anahtar unchecked -> checked, ekran goruntusu ile konu
   oturuyor.
 Dogrulama: bounding box karsilastirmasi - optin.x (753) > telefon.x+width (733), dikey
 fark 4px; anahtar checked oldu; uyari metni DOM'da yok.
+
+## 2026-06-18 (9) · PDF tutar kolonlari saga hizalandi
+`application_pdf._styles()` icine `value_right` (TA_RIGHT) ve `label_right` stilleri
+eklendi. Kullanildigi yerler: form PDF fiyat dokumu (`_amount_table`), yolcular
+tablosundaki "Tutar" kolonu ve basligi, odeme makbuzu kalem tablosu (`_items_table`)
++ makbuz ozeti (ayni `_amount_table`). Artik tum "TL" sonlari ayni dikey hizada.
+Dogrulama: PNG render (pdftoppm) ile gorsel teyit + PDF metin akisinda kisa tutarlarin
+daha saga baslamasi (right-align imzasi).

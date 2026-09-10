@@ -10,7 +10,7 @@ from xml.sax.saxutils import escape as xml_escape
 from reportlab.graphics.barcode.qr import QrCodeWidget
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
@@ -138,6 +138,12 @@ def _styles() -> dict:
         ),
         "label": ParagraphStyle("l", fontName=reg, fontSize=7, leading=9, textColor=MUTED),
         "value": ParagraphStyle("v", fontName=bold, fontSize=8.5, leading=11, textColor=INK),
+        "value_right": ParagraphStyle(
+            "vr", fontName=bold, fontSize=8.5, leading=11, textColor=INK, alignment=TA_RIGHT
+        ),
+        "label_right": ParagraphStyle(
+            "lr", fontName=reg, fontSize=7, leading=9, textColor=MUTED, alignment=TA_RIGHT
+        ),
         "value_center": ParagraphStyle(
             "vc", fontName=bold, fontSize=8.5, leading=11, textColor=INK, alignment=TA_CENTER
         ),
@@ -290,7 +296,12 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
         "Vize Türü",
         "Tutar",
     ]
-    rows = [[Paragraph(f"<b>{h}</b>", st["label"]) for h in head]]
+    rows = [
+        [
+            Paragraph(f"<b>{h}</b>", st["label_right"] if h == "Tutar" else st["label"])
+            for h in head
+        ]
+    ]
     for i, t in enumerate(app_doc.get("travelers") or [], start=1):
         name = f"{t.get('first_name', '')} {t.get('last_name', '')}".strip()
         if t.get("applicant_type") == "child":
@@ -303,7 +314,7 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
                 Paragraph(_safe(t.get("passport_no")), st["body"]),
                 Paragraph(_date(t.get("passport_expiry")), st["body"]),
                 Paragraph(_safe(t.get("visa_short_name") or t.get("visa_type_name")), st["body"]),
-                Paragraph(money(t.get("price", 0), t.get("currency", "TRY")), st["value"]),
+                Paragraph(money(t.get("price", 0), t.get("currency", "TRY")), st["value_right"]),
             ]
         )
     table = Table(
@@ -400,7 +411,7 @@ def _pricing_rows(app_doc: dict) -> list:
 def _amount_table(rows: list, st: dict) -> Table:
     """Etiket + tutar satirlari; tutar kolonu yolcu tablosundaki "Tutar" ile ayni yerde."""
     body = [
-        [Paragraph(_safe(label), st["body"]), Paragraph(value, st["value"])]
+        [Paragraph(_safe(label), st["body"]), Paragraph(value, st["value_right"])]
         for label, value in rows
     ]
     table = Table(body, colWidths=_cols(154, 26))

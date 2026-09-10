@@ -207,14 +207,19 @@ def _order_summary_rows(doc: dict) -> list:
 
 def _items_table(rows: list, st: dict) -> Table:
     head = ["#", "Açıklama", "Adet", "Tutar"]
-    body = [[Paragraph(f"<b>{h}</b>", st["label"]) for h in head]]
+    body = [
+        [
+            Paragraph(f"<b>{h}</b>", st["label_right"] if h == "Tutar" else st["label"])
+            for h in head
+        ]
+    ]
     for index, (label, qty, amount) in enumerate(rows, start=1):
         body.append(
             [
                 Paragraph(str(index), st["body"]),
                 Paragraph(_safe(label), st["value"]),
                 Paragraph(_safe(qty), st["body"]),
-                Paragraph(amount, st["value"]),
+                Paragraph(amount, st["value_right"]),
             ]
         )
     table = Table(body, colWidths=_cols(6, 128, 20, 26), repeatRows=1)
