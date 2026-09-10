@@ -2969,3 +2969,22 @@ kisim adim 2'de olsun", "adim 3 basligini degistirelim".
 - Dogrulama: Playwright ile tam sihirbaz akisi (yukleme -> adim 2 ozeti -> adim 3 ek
   hizmetler -> adim 4) + eksik evrakla bloklama senaryosu kosuldu; sag panel odeme
   adiminda "Toplam 6.304 TL" tek satir.
+
+### 2026-06-18 (26) · Yukleme ipucu onizlemeleri + odeme adiminda sigorta hatirlatmasi
+- Yeni `UploadExamplesHint.jsx`: yukleme kutusunun altinda 4 kucuk onizleme (1 dogru +
+  3 yanlis, yesil/kirmizi cerceve ve tik/carpi rozeti) + "Dogru / yanlis ornekler ·
+  Buyutmek icin tiklayin". Tiklaninca Dialog icinde tam rehber (PassportGuide /
+  PhotoGuide) aciliyor. Ornek listeleri tek kaynaktan: `PASSPORT_EXAMPLES` ve
+  `PHOTO_EXAMPLES` artik export ediliyor.
+  Yerlesim: Adim 1 yolcu kartinda pasaport kutusunun ve vesikalik kutusunun altina birer
+  tane (`traveler-{idx}-passport-examples`, `traveler-{idx}-photo-examples`).
+- Odeme adimi (Adim 4) sigorta hatirlatmasi (`insurance-last-call`): sigorta secilmemisse
+  tek satir teklif -> "Sadece {tutar} daha ekleyin; {gun} gunluk seyahat saglik sigortaniz
+  da policeyle birlikte gelsin." + "Sigortayi ekle" butonu (`pickInsurance(onerilen)`).
+  Tutar = onerilen policenin **vize ile birlikte indirimli** fiyati x yolcu sayisi
+  (`insuranceDiscountFor(...).finalPrice`). Sadece `!created && !insurancePick &&
+  extrasSelectable` iken gorunur.
+- Dogrulama (Playwright, tam akis): hatirlatma "Sadece 504 TL daha..." cikti, butona
+  basildiginda toplam 5.190 -> 5.694 TL (tam +504) oldu, hatirlatma kayboldu ve
+  "56 TL tasarruf ettiniz" notu belirdi. Ipucu onizlemeleri ve dialog acilisi da
+  dogrulandi, kirik gorsel yok.

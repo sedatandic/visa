@@ -1,7 +1,7 @@
 import React from "react";
 import { Check, X } from "lucide-react";
 
-const EXAMPLES = [
+export const PHOTO_EXAMPLES = [
     {
         src: "/photo-guide/ok.jpg",
         good: true,
@@ -37,7 +37,7 @@ export const PhotoGuide = ({ testId = "photo-guide", compact = false }) => (
             gündüz ışığında, omuz hizasından.
         </p>
         <div className={`mt-3 grid gap-3 ${compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4"}`}>
-            {EXAMPLES.map((ex) => (
+            {PHOTO_EXAMPLES.map((ex) => (
                 <figure key={ex.src} className="space-y-1.5" data-testid={`${testId}-${ex.good ? "good" : "bad"}`}>
                     <div
                         className={`relative overflow-hidden rounded-lg border-2 ${

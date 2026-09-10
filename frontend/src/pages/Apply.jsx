@@ -52,6 +52,7 @@ import { ExtraOptions } from "../components/ExtraOptions";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { FamilyDiscountMeter } from "../components/FamilyDiscountMeter";
 import { TravelerPhotoField } from "../components/TravelerPhotoField";
+import { UploadExamplesHint } from "../components/UploadExamplesHint";
 import { PhotoRetryHelper } from "../components/PhotoRetryHelper";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { useCart } from "../lib/cart";
@@ -1119,6 +1120,13 @@ export default function Apply() {
         selected: insurancePick === p.id,
         onSelect: () => pickInsurance(p),
     }));
+
+    const recommendedInsurance =
+        allInsuranceProducts.find((p) => p.id === recommendedInsuranceId) || null;
+    const insuranceNudgeTotal = recommendedInsurance
+        ? (insuranceDiscountFor(recommendedInsurance)?.finalPrice || Number(recommendedInsurance.price) || 0) *
+          Math.max(travelerCount, 1)
+        : 0;
 
     const esimOptions = visibleEsim.map((p) => ({
         id: p.id,
@@ -2671,6 +2679,7 @@ export default function Apply() {
                                                         <p className="mt-1 text-xs leading-5 text-muted-foreground">
                                                             Tek fotoğraf yeter; ad, soyad, tarih ve pasaport no otomatik dolar. Vesikalığı da hemen yanına ekleyebilirsiniz.</p>
                                                         <div className="mt-3 grid gap-4 md:grid-cols-2">
+                                                            <div>
                                                             <FileDropzone
                                                                 label="Pasaport kimlik sayfası"
                                                                 hint="Bilgiler otomatik dolar"
@@ -2686,6 +2695,12 @@ export default function Apply() {
                                                                 }}
                                                                 testId={`traveler-${idx}-passport-ai-input`}
                                                             />
+                                                            <UploadExamplesHint
+                                                                type="passport"
+                                                                testId={`traveler-${idx}-passport-examples`}
+                                                            />
+                                                            </div>
+                                                            <div>
                                                             <TravelerPhotoField
                                                                 idx={idx}
                                                                 value={t.photoFile}
@@ -2703,6 +2718,11 @@ export default function Apply() {
                                                                 }}
                                                                 onRetry={() => photoInputs.current[t.key]?.click()}
                                                             />
+                                                            <UploadExamplesHint
+                                                                type="photo"
+                                                                testId={`traveler-${idx}-photo-examples`}
+                                                            />
+                                                            </div>
                                                         </div>
                                                         {ocr[t.key]?.status === "loading" && (
                                                             <p className="mt-2 flex items-center gap-2 text-xs font-medium text-primary" data-testid={`traveler-${idx}-ocr-loading`}>
@@ -3430,6 +3450,33 @@ export default function Apply() {
                                     <h2 className="font-heading text-xl font-bold">Özet ve ödeme</h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Bilgilerinizi kontrol edip ödemeye geçin.</p>
+
+                                    {!created && !insurancePick && recommendedInsurance && extrasSelectable && (
+                                        <div
+                                            className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[hsl(var(--brand-green)/0.4)] bg-[hsl(var(--brand-green)/0.07)] p-4"
+                                            data-testid="insurance-last-call"
+                                        >
+                                            <p className="flex items-start gap-2 text-sm leading-6">
+                                                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--brand-green))]" aria-hidden="true" />
+                                                <span>
+                                                    Sadece{" "}
+                                                    <strong data-testid="insurance-last-call-amount">
+                                                        {formatMoney(insuranceNudgeTotal, recommendedInsurance.currency)}
+                                                    </strong>{" "}
+                                                    daha ekleyin; {recommendedInsurance.validity_days} günlük seyahat
+                                                    sağlık sigortanız da poliçeyle birlikte gelsin.
+                                                </span>
+                                            </p>
+                                            <Button
+                                                type="button"
+                                                className="h-10"
+                                                onClick={() => pickInsurance(recommendedInsurance)}
+                                                data-testid="insurance-last-call-add-button"
+                                            >
+                                                <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" /> Sigortayı ekle
+                                            </Button>
+                                        </div>
+                                    )}
 
                                     {created && (
                                         <div className="mt-5 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.08)] p-4" data-testid="application-created-banner">

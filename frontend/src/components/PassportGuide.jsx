@@ -1,7 +1,7 @@
 import React from "react";
 import { Check, X } from "lucide-react";
 
-const EXAMPLES = [
+export const PASSPORT_EXAMPLES = [
     {
         src: "/passport-guide/ok.jpg",
         good: true,
@@ -37,7 +37,7 @@ export const PassportGuide = ({ testId = "passport-guide" }) => (
             çerçevede olsun, flaş kullanmayın.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-3">
-            {EXAMPLES.map((ex) => (
+            {PASSPORT_EXAMPLES.map((ex) => (
                 <figure
                     key={ex.src}
                     className="space-y-1.5"

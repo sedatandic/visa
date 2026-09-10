@@ -1728,3 +1728,9 @@ fotograflari, ATV +40 USD ek secenek.
 - Adim 2'de evraklar artik "Yuklendi/Eksik" ozeti (yukleme Adim 1'de).
 - Odeme adiminda fiyat dokumu tek yerde (sag panel sadece toplam).
 - WhatsApp demo sohbetindeki yesil/bordo pasaport mantik hatasi duzeltildi.
+
+## 2026-06-18 (fork, 6) · Yukleme ipuclari + son adim sigorta teklifi
+- Adim 1'de pasaport/vesikalik kutularinin altinda kucuk dogru-yanlis onizlemeler
+  (tiklayinca buyuk rehber). Yeni bilesen: `components/UploadExamplesHint.jsx`.
+- Adim 4'te sigortasiz devam eden kullaniciya tek satirlik "+{tutar} ekle" teklifi
+  (`insurance-last-call`), tek tikla ekleniyor.
