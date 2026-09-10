@@ -1672,3 +1672,24 @@ Durum: DONE · pytest 611 passed / 5 skipped · UI 3 yuzeyde ekran goruntusu ile
 Siradaki bekleyenler (degismedi): gercek IBAN'lar, WhatsApp canli mod (Meta kimlik
 bilgileri), teklif linki donusum raporu, teklif geri sayimi, makbuz linki imzali kod,
 gercek tur fotograflari, ATV +40 USD ek secenek.
+
+## 2026-06-18 (fork, 2) · Basvuru sihirbazi UX turu
+Bu oturumda kullanici geri bildirimleriyle yapilanlar (detay: CHANGELOG.md 2026-06-18 1-12):
+- Fiyat seffafligi: gizli sigorta indirimi (%20 -> %10) tum dokumlerde satir olarak
+  gorunur; ozet altinda "toplam X TL tasarruf ettiniz" vurgusu.
+- Sihirbaz akisi: Adim 1 sadece iletisim + yolcu/pasaport; vize turu ve seyahat tarihleri
+  Adim 2'ye tasindi. Stepper tam genislikte ve tiklanabilir (geri serbest, ileri tek adim).
+- Form temizligi: "Diger Evraklar" alani, cocuk uyari kutusu ve fotograf uyari kutusu
+  kaldirildi; vesikalik aciklamasina "gozluksuz ve sapkasiz" eklendi; WhatsApp bilgilendirme
+  anahtari telefon alaninin sagina alindi.
+- PDF: sorulmayan alanlar (Sehir/Medeni hal/Meslek) cikarildi, tutar kolonlari saga hizali.
+- E-posta disiplini: taslak postasi yalnizca "Kaydet, sonra devam et" ile gider; 2 dakika
+  hareketsizlikte "daha sonra devam eder misiniz?" dialogu.
+- Gorsel: yuklenen dosyaya "Kaldir", yeni intro illustrasyonu (tam palmiye, saydam zemin),
+  yeniden tasarlanan sik tarih secici.
+Durum: DONE (her madde Playwright/curl/PDF render ile dogrulandi).
+
+Bekleyen isler: gercek IBAN'lar, WhatsApp canli mod (Meta kimlik bilgileri), teklif linki
+donusum raporu, teklif geri sayimi, makbuz linki imzali kod, gercek tur fotograflari,
+ATV +40 USD ek secenek. Kullaniciya sorulan acik soru: 72 saatlik "yarim kalan basvuru"
+hatirlatma e-postalari kalsin mi?

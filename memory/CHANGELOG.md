@@ -2819,3 +2819,22 @@ Dogrulama: curl - sessiz kayit `skipped`, notify=true gonderim denedi; Playwrigh
 kaydetti (toast: devam kodu) ve bir daha sormadi; esik 120000'e geri alindi.
 NOT: 72 saat sonra gonderilen "basvurunuz yarim kaldi" hatirlatma e-postalari (max 2,
 `doc_reminders.py`) hala aktif - kullaniciya soruldu.
+
+## 2026-06-18 (12) · Yuklenen dosya icin "Kaldir" + intro sahnesi + sik tarih secici
+1) FileDropzone (`components/FileDropzone.jsx`): yuklenmis dosya kartina "Degistir"in
+   yanina **Kaldir** butonu eklendi (`${testId}-remove`, Trash2 ikonu, destructive renk).
+   `removeFile` preview/hata/inputu temizler ve `onChange(null)` gonderir. Kart
+   `flex-wrap` yapildi, dar kolonlarda butonlar alt satira duzgun akiyor.
+   `readPassportWithAI` artik dosya kaldirilinca OCR panelini de temizliyor.
+2) Explainer intro sahnesi (`public/explainer/intro.png`) yeniden uretildi (Gemini image):
+   palmiye taclari tam gorunur, kenarlardan kesilmiyor, %12 bos pay var. Uretilen JPEG
+   kenardan flood-fill ile saydamlastirildi (RGBA) - panel zemininde cerceve gorunmuyor.
+   Eski dosya `intro.cutpalms.png` olarak saklandi.
+3) Tarih secici (`components/DateField.jsx`) sikligi artirildi: 2xl kose + yumusak golge
+   popover, ay/yil pill select'leri, daire nav butonlari, buyuk harf gun basliklari,
+   tam yuvarlak gun hucreleri (36px), bakir dolgulu secili gun (beyaz yazi + golge),
+   bugun icin ring, soluk pasif gunler ve alt bar: uzun Turkce tarih + "Bugun"/"Temizle"
+   hizli aksiyonlari (`-calendar-today`, `-calendar-clear`, `-calendar-label`).
+Dogrulama: Playwright - Kaldir butonu dosyayi kaldirip dropzone'a donuyor; takvimden gun
+secimi inputu guncelliyor; secili gun rengi beyaz/bakir (computed style) ve kirpilmis
+ekran goruntusu ile gorsel teyit; explainer sahnesi ana sayfada tam palmiyelerle render.

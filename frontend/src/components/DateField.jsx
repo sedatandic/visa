@@ -30,6 +30,9 @@ const isoToDisplay = (iso) => {
     return d ? `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}` : "";
 };
 
+const trLong = new Intl.DateTimeFormat("tr-TR", { day: "2-digit", month: "long", year: "numeric", weekday: "long" });
+const longLabel = (date) => trLong.format(date);
+
 /**
  * Kullanici girdisini normalize eder.
  * Kabul edilenler: "31.12.2026", "31/12/2026", "31122026", "2026-12-31" (ISO yapistirma
@@ -126,6 +129,18 @@ export const DateField = ({
     if (minDate) disabledMatchers.push({ before: minDate });
     if (maxDate) disabledMatchers.push({ after: maxDate });
 
+    const pick = (iso) => {
+        setText(isoToDisplay(iso));
+        setTouched(true);
+        emit(iso);
+        setOpen(false);
+    };
+
+    const today = new Date();
+    const todayBlocked =
+        (minDate && today < new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate())) ||
+        (maxDate && today > new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate()));
+
     return (
         <div className={`relative ${className}`}>
             <Input
@@ -156,7 +171,12 @@ export const DateField = ({
                         <CalendarDays className="h-4 w-4" />
                     </button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-auto p-0" data-testid={dataTestId ? `${dataTestId}-calendar` : undefined}>
+                <PopoverContent
+                    align="end"
+                    sideOffset={8}
+                    className="w-auto overflow-hidden rounded-2xl border-border/70 p-0 shadow-[0_28px_60px_-28px_hsl(var(--brand-black)/0.35)]"
+                    data-testid={dataTestId ? `${dataTestId}-calendar` : undefined}
+                >
                     <Calendar
                         mode="single"
                         locale={tr}
@@ -165,28 +185,68 @@ export const DateField = ({
                         defaultMonth={selected || minDate || undefined}
                         disabled={disabledMatchers.length ? disabledMatchers : undefined}
                         captionLayout="dropdown-buttons"
+                        className="p-3.5"
                         classNames={{
                             // react-day-picker'in gorsel-gizli etiketleri: CSS import edilmedigi
                             // icin ekranda gorunuyordu, sr-only ile gizliyoruz.
                             vhidden: "sr-only",
                             caption_label: "hidden",
-                            caption: "relative flex items-center justify-center gap-2 pt-1",
+                            caption: "relative mb-3 flex items-center justify-center gap-2",
                             caption_dropdowns: "flex items-center gap-2",
                             dropdown:
-                                "h-9 cursor-pointer rounded-lg border border-border bg-card px-2 text-sm font-semibold text-foreground transition-colors duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                            day_today: "bg-muted font-bold text-foreground",
+                                "h-9 cursor-pointer appearance-none rounded-full border border-border/80 bg-[hsl(var(--cloud))] px-3 pr-7 text-sm font-semibold text-foreground outline-none transition-colors duration-200 hover:border-primary/50 hover:text-primary focus-visible:border-primary focus-visible:ring-0",
+                            nav: "flex items-center",
+                            nav_button:
+                                "flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-card text-muted-foreground transition-colors duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-primary disabled:opacity-30",
+                            nav_button_previous: "absolute left-0",
+                            nav_button_next: "absolute right-0",
+                            head_cell:
+                                "w-9 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground",
+                            row: "mt-1 flex w-full",
+                            cell: "relative p-0 text-center",
+                            day: "flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium text-foreground transition-colors duration-200 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                            day_selected:
+                                "bg-primary font-bold text-primary-foreground shadow-[0_6px_16px_-6px_hsl(var(--brand-black)/0.45)] hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                            day_today: "font-bold text-primary ring-1 ring-inset ring-primary/45",
+                            day_outside: "text-muted-foreground/40",
+                            day_disabled: "text-muted-foreground/30 hover:bg-transparent hover:text-muted-foreground/30",
                         }}
                         fromYear={fromYear ?? (minDate ? minDate.getFullYear() : currentYear - 90)}
                         toYear={toYear ?? (maxDate ? maxDate.getFullYear() : currentYear + 5)}
                         onSelect={(date) => {
                             if (!date) return;
-                            const iso = toISODate(date);
-                            setText(isoToDisplay(iso));
-                            setTouched(true);
-                            emit(iso);
-                            setOpen(false);
+                            pick(toISODate(date));
                         }}
                     />
+                    <div className="flex items-center justify-between gap-3 border-t border-border/70 bg-[hsl(var(--cloud))] px-3.5 py-2.5">
+                        <span className="text-xs font-semibold text-muted-foreground" data-testid={dataTestId ? `${dataTestId}-calendar-label` : undefined}>
+                            {selected ? longLabel(selected) : "Tarih seçilmedi"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => pick(toISODate(new Date()))}
+                                disabled={todayBlocked}
+                                className="rounded-full px-2.5 py-1 text-xs font-bold text-primary transition-colors duration-200 hover:bg-primary/10 disabled:pointer-events-none disabled:opacity-40"
+                                data-testid={dataTestId ? `${dataTestId}-calendar-today` : undefined}
+                            >
+                                Bugün
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setText("");
+                                    setTouched(false);
+                                    emit("");
+                                    setOpen(false);
+                                }}
+                                className="rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
+                                data-testid={dataTestId ? `${dataTestId}-calendar-clear` : undefined}
+                            >
+                                Temizle
+                            </button>
+                        </span>
+                    </div>
                 </PopoverContent>
             </Popover>
 

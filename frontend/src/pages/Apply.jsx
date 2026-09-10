@@ -1604,7 +1604,14 @@ export default function Apply() {
 
     // --- Yapay zeka ile pasaport okuma -------------------------------------
     const readPassportWithAI = async (key, fileInfo) => {
-        if (!fileInfo?.file_id) return;
+        if (!fileInfo?.file_id) {
+            setOcr((s) => {
+                const next = { ...s };
+                delete next[key];
+                return next;
+            });
+            return;
+        }
         setOcr((s) => ({ ...s, [key]: { status: "loading" } }));
         try {
             const form = new FormData();

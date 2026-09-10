@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, FileText, Loader2, UploadCloud } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
 import { api, apiError, fileUrl } from "../lib/api";
 import { Button } from "./ui/button";
 
@@ -51,6 +51,13 @@ export const FileDropzone = ({
         }
     };
 
+    const removeFile = () => {
+        setPreview(null);
+        setError("");
+        if (inputRef.current) inputRef.current.value = "";
+        onChange(null);
+    };
+
     const isImage = value && (value.content_type || "").startsWith("image/");
 
     return (
@@ -77,7 +84,7 @@ export const FileDropzone = ({
 
             {value ? (
                 <div
-                    className="flex items-center gap-4 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.06)] p-4"
+                    className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.06)] p-4"
                     data-testid={`${testId}-uploaded`}
                 >
                     {isImage && preview ? (
@@ -97,7 +104,7 @@ export const FileDropzone = ({
                             <FileText className="h-6 w-6 text-muted-foreground" />
                         </span>
                     )}
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-[110px] flex-1">
                         <div className="flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--brand-green))]">
                             <CheckCircle2 className="h-4 w-4" /> Yüklendi
                         </div>
@@ -106,15 +113,26 @@ export const FileDropzone = ({
                             {Math.max(1, Math.round((value.size || 0) / 1024))} KB
                         </p>
                     </div>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        className="h-10 shrink-0"
-                        onClick={() => inputRef.current?.click()}
-                        data-testid={`${testId}-change`}
-                    >
-                        Değiştir
-                    </Button>
+                    <div className="ml-auto flex shrink-0 items-center gap-1.5">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="h-10 shrink-0"
+                            onClick={() => inputRef.current?.click()}
+                            data-testid={`${testId}-change`}
+                        >
+                            Değiştir
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="h-10 shrink-0 px-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={removeFile}
+                            data-testid={`${testId}-remove`}
+                        >
+                            <Trash2 className="mr-1.5 h-4 w-4" /> Kaldır
+                        </Button>
+                    </div>
                 </div>
             ) : (
                 <button
