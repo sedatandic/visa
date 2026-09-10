@@ -155,7 +155,7 @@ export const DateField = ({
                 disabled={disabled}
                 placeholder="gg.aa.yyyy"
                 aria-invalid={showError ? true : undefined}
-                className={`pr-11 ${showError ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
+                className={`pr-12 sm:pr-11 ${showError ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
                 data-testid={dataTestId}
                 {...rest}
             />
@@ -167,7 +167,7 @@ export const DateField = ({
                         disabled={disabled}
                         aria-label="Takvimden tarih seç"
                         data-testid={dataTestId ? `${dataTestId}-calendar-button` : undefined}
-                        className="absolute right-1 top-1 flex h-[calc(100%-0.5rem)] w-9 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                        className="absolute right-0 top-0 flex h-full w-12 items-center justify-center rounded-r-[var(--radius)] text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 sm:right-1 sm:top-1 sm:h-[calc(100%-0.5rem)] sm:w-9 sm:rounded-md"
                     >
                         <CalendarDays className="h-4 w-4" />
                     </button>

@@ -101,7 +101,7 @@ export const FamilyDiscountMeter = ({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="mt-3 w-full"
+                    className="mt-3 h-11 w-full sm:h-9"
                     onClick={onAddTraveler}
                     data-testid="family-discount-add-traveler"
                 >

@@ -19,14 +19,14 @@ export const UploadExamplesHint = ({ type, testId }) => {
             <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="mt-2 flex w-full items-center gap-2.5 rounded-lg border border-border bg-card px-2.5 py-2 text-left transition-colors hover:border-primary/60"
+                className="mt-2 flex w-full items-center gap-3 rounded-lg border border-border bg-card px-2.5 py-2.5 text-left transition-colors hover:border-primary/60 sm:gap-2.5 sm:py-2"
                 data-testid={testId}
             >
-                <span className="flex gap-1.5">
+                <span className="grid grid-cols-2 gap-1.5 sm:flex">
                     {examples.map((ex) => (
                         <span
                             key={ex.src}
-                            className={`relative block h-12 w-9 shrink-0 overflow-hidden rounded border-2 ${
+                            className={`relative block h-16 w-12 shrink-0 overflow-hidden rounded border-2 sm:h-12 sm:w-9 ${
                                 ex.good ? "border-[hsl(var(--brand-green))]" : "border-destructive/60"
                             }`}
                         >
@@ -42,9 +42,9 @@ export const UploadExamplesHint = ({ type, testId }) => {
                     ))}
                 </span>
                 <span className="min-w-0 flex-1">
-                    <span className="block text-xs font-bold">Doğru / yanlış örnekler</span>
-                    <span className="block text-[11px] leading-4 text-muted-foreground">
-                        Büyütmek için tıklayın
+                    <span className="block text-sm font-bold sm:text-xs">Doğru / yanlış örnekler</span>
+                    <span className="block text-xs leading-4 text-muted-foreground sm:text-[11px]">
+                        Büyütmek için dokunun
                     </span>
                 </span>
             </button>

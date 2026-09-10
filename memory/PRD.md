@@ -1767,3 +1767,9 @@ fotograflari, ATV +40 USD ek secenek.
   (`content.company_with_defaults`). Footer + `/iletisim` iki ofis karti ve haritayi gosteriyor.
 - WhatsApp mockup ve pasaport rehberi gorselleri gercek TR e-pasaport kimlik sayfasi
   duzeninde ornek belgelerle yenilendi ("TÜRKİYE CUMHURİYETİ / REPUBLIC OF TÜRKİYE").
+
+## 2026-06-18 (fork, 12) · Mobil basvuru deneyimi
+- Basvurularin cogu telefondan geldigi icin `/basvuru` mobilde bastan sona gozden gecirildi:
+  yatay kaydirma yok, tum dokunma hedefleri >=44px, dogru mobil klavyeler, eksik alana otomatik
+  gitme, altta sabit "Toplam + Devam Et" cubugu, ornek gorseller 2x2.
+- Test: testing agent iteration_142 (390x844 uctan uca + 1920 regresyon).

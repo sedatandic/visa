@@ -1880,7 +1880,9 @@ export default function Apply() {
             toast.error(
                 blocking ||
                     (labels.length
-                        ? `Eksik veya hatalı alanlar: ${labels.slice(0, 4).join(", ")}${labels.length > 4 ? "…" : ""}`
+                        ? `Eksik: ${labels[0]}${
+                              labels.length > 1 ? ` ve ${labels.length - 1} alan daha` : ""
+                          } · ilk eksiğe götürdük`
                         : "Lütfen işaretli alanları kontrol edin.")
             );
             // ilk hatali alana kaydir ve odakla
@@ -2249,7 +2251,7 @@ export default function Apply() {
                 description="Tek formda tüm aileniz için başvurun; indirimler otomatik hesaplanır."
             />
 
-            <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
+            <section className="pb-28 pt-6 sm:pb-20 sm:pt-8">
                 <div className="container-page">
                     {offerInfo && (
                         <div
@@ -2482,10 +2484,10 @@ export default function Apply() {
                                         </h3>
                                         <div className="mt-4 grid gap-5 sm:grid-cols-2">
                                             <Field label="Adınız Soyadınız" required htmlFor="c-name" error={errors.full_name}>
-                                                <Input id="c-name" value={contact.full_name} onChange={setC("full_name")} placeholder="AHMET YILMAZ" data-testid="input-contact-name" />
+                                                <Input id="c-name" value={contact.full_name} onChange={setC("full_name")} placeholder="AHMET YILMAZ" autoComplete="name" autoCapitalize="characters" data-testid="input-contact-name" />
                                             </Field>
                                             <Field label="E-mail Adresi" required htmlFor="c-email" error={errors.email}>
-                                                <Input id="c-email" type="email" value={contact.email} onChange={setC("email")} placeholder="ornek@eposta.com" data-testid="input-contact-email" />
+                                                <Input id="c-email" type="email" inputMode="email" autoComplete="email" autoCapitalize="off" spellCheck={false} value={contact.email} onChange={setC("email")} placeholder="ornek@eposta.com" data-testid="input-contact-email" />
                                             </Field>
                                             <Field
                                                 label={
@@ -2694,7 +2696,7 @@ export default function Apply() {
                                                                             })
                                                                         }
                                                                         data-testid={`traveler-${idx}-type-${opt.v}`}
-                                                                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                                                        className={`min-h-11 rounded-md px-4 py-2.5 text-sm font-semibold transition-colors sm:min-h-0 sm:px-3 sm:py-1.5 sm:text-xs ${
                                                                             t.applicant_type === opt.v ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                                                                         }`}
                                                                     >
@@ -2703,14 +2705,14 @@ export default function Apply() {
                                                                 ))}
                                                             </div>
                                                             {travelers.length > 1 && (
-                                                                <Button type="button" variant="secondary" className="h-9 border border-border text-destructive" onClick={() => removeTraveler(t.key)} data-testid={`remove-traveler-${idx}`}>
+                                                                <Button type="button" variant="secondary" className="h-11 w-11 border border-border text-destructive sm:h-9 sm:w-auto" onClick={() => removeTraveler(t.key)} data-testid={`remove-traveler-${idx}`}>
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
                                                             )}
                                                         </div>
                                                     </div>
 
-                                                    <div className="mt-5 rounded-xl border border-primary/35 bg-primary/[0.05] p-4" data-testid={`traveler-${idx}-ai-passport-box`}>
+                                                    <div className="mt-5 rounded-xl border border-primary/35 bg-primary/[0.05] p-4" data-invalid={te.passport || te.photo ? "true" : undefined} data-testid={`traveler-${idx}-ai-passport-box`}>
                                                         <p className="flex items-center gap-2 font-heading text-base font-bold">
                                                             <ScanLine className="h-4.5 w-4.5 text-primary" aria-hidden="true" />
                                                             Pasaportu yükleyin, gerisini biz dolduralım
@@ -2839,10 +2841,10 @@ export default function Apply() {
                                                     ) : manualFieldsVisible ? (
                                                     <div className="mt-5 grid gap-5 sm:grid-cols-2">
                                                         <Field label="Ad" required error={te.first_name}>
-                                                            <Input value={t.first_name} onChange={(e) => updateTraveler(t.key, { first_name: e.target.value })} placeholder="AHMET" data-testid={`traveler-${idx}-first-name`} />
+                                                            <Input value={t.first_name} onChange={(e) => updateTraveler(t.key, { first_name: e.target.value })} placeholder="AHMET" autoCapitalize="characters" autoComplete="off" data-testid={`traveler-${idx}-first-name`} />
                                                         </Field>
                                                         <Field label="Soyad" required error={te.last_name}>
-                                                            <Input value={t.last_name} onChange={(e) => updateTraveler(t.key, { last_name: e.target.value })} placeholder="YILMAZ" data-testid={`traveler-${idx}-last-name`} />
+                                                            <Input value={t.last_name} onChange={(e) => updateTraveler(t.key, { last_name: e.target.value })} placeholder="YILMAZ" autoCapitalize="characters" autoComplete="off" data-testid={`traveler-${idx}-last-name`} />
                                                         </Field>
                                                         <Field label="Doğum Tarihi" required error={te.birth_date}>
                                                             <DateField
@@ -2856,7 +2858,7 @@ export default function Apply() {
                                                             />
                                                         </Field>
                                                         <Field label="Pasaport No" required error={te.passport_no}>
-                                                            <Input value={t.passport_no} onChange={(e) => updateTraveler(t.key, { passport_no: e.target.value })} placeholder="U12345678" data-testid={`traveler-${idx}-passport-no`} />
+                                                            <Input value={t.passport_no} onChange={(e) => updateTraveler(t.key, { passport_no: e.target.value })} placeholder="U12345678" autoCapitalize="characters" autoComplete="off" spellCheck={false} data-testid={`traveler-${idx}-passport-no`} />
                                                         </Field>
                                                         <Field label="Geçerlilik Tarihi" required error={te.passport_expiry}>
                                                             <DateField
@@ -2871,7 +2873,7 @@ export default function Apply() {
                                                         </Field>
                                                         {t.national_id || openNationalId[t.key] ? (
                                                             <Field label="T.C. Kimlik No">
-                                                                <Input value={t.national_id} onChange={(e) => updateTraveler(t.key, { national_id: e.target.value })} placeholder="11 hane" data-testid={`traveler-${idx}-national-id`} />
+                                                                <Input value={t.national_id} onChange={(e) => updateTraveler(t.key, { national_id: e.target.value })} placeholder="11 hane" inputMode="numeric" maxLength={11} autoComplete="off" data-testid={`traveler-${idx}-national-id`} />
                                                             </Field>
                                                         ) : (
                                                             <div className="flex items-end">
@@ -2983,7 +2985,7 @@ export default function Apply() {
                                                 <button
                                                     type="button"
                                                     onClick={() => setVisaEditOpen((o) => !o)}
-                                                    className="ml-auto text-xs font-semibold text-primary hover:underline"
+                                                    className="ml-auto inline-flex min-h-[44px] items-center text-xs font-semibold text-primary hover:underline sm:min-h-0"
                                                     data-testid="visa-step-change-visa-button"
                                                 >
                                                     {visaEditOpen ? "Kapat" : "Değiştir"}
@@ -3027,7 +3029,7 @@ export default function Apply() {
                                             <button
                                                 type="button"
                                                 onClick={() => setDatesEditOpen((o) => !o)}
-                                                className="ml-auto text-xs font-semibold text-primary hover:underline"
+                                                className="ml-auto inline-flex min-h-[44px] items-center text-xs font-semibold text-primary hover:underline sm:min-h-0"
                                                 data-testid="visa-step-edit-dates-button"
                                             >
                                                 {datesEditOpen ? "Kapat" : "Tarihleri düzenle"}
@@ -3120,7 +3122,7 @@ export default function Apply() {
                                                         <Button
                                                             type="button"
                                                             variant="secondary"
-                                                            className="h-9 border border-border text-xs"
+                                                            className="h-11 border border-border text-xs sm:h-9"
                                                             onClick={() => goToStep(0)}
                                                             data-testid={`docs-card-${idx}-edit-button`}
                                                         >
@@ -3834,11 +3836,11 @@ export default function Apply() {
                                     </Button>
 
                                     {step < STEPS.length - 1 ? (
-                                        <Button type="button" className="h-12 w-full text-base sm:h-11 sm:w-auto sm:px-6 sm:text-sm" onClick={next} data-testid="wizard-next-step-button">
+                                        <Button type="button" className="hidden h-12 w-full text-base sm:inline-flex sm:h-11 sm:w-auto sm:px-6 sm:text-sm" onClick={next} data-testid="wizard-next-step-button">
                                             Devam Et <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     ) : (
-                                        <Button type="button" className="h-12 w-full px-7 text-base sm:w-auto" onClick={payMethod === "transfer" ? startBankTransfer : startPayment} disabled={submitting || paying} data-testid="wizard-pay-button">
+                                        <Button type="button" className="hidden h-12 w-full px-7 text-base sm:inline-flex sm:w-auto" onClick={payMethod === "transfer" ? startBankTransfer : startPayment} disabled={submitting || paying} data-testid="wizard-pay-button">
                                             {submitting || paying ? (
                                                 <>
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -3985,6 +3987,53 @@ export default function Apply() {
                     </div>
                 </div>
             </section>
+
+            {/* Mobil: alt sabit cubuk — toplam + ana aksiyon, uzun formda kaydirmaya gerek kalmaz */}
+            <div
+                className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 px-4 py-3 backdrop-blur sm:hidden"
+                style={{ boxShadow: "0 -12px 32px -20px hsl(var(--brand-black) / 0.45)" }}
+                data-testid="mobile-action-bar"
+            >
+                    <div className="flex items-center gap-3">
+                        <div className="min-w-0 shrink-0">
+                            <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                Toplam
+                            </span>
+                            <span
+                                className="block font-heading text-lg font-bold leading-tight"
+                                data-testid="mobile-action-bar-total"
+                            >
+                                {quote ? formatMoney(quote.total, quote.currency) : "Vize seçin"}
+                            </span>
+                        </div>
+                        {step < STEPS.length - 1 ? (
+                            <Button
+                                type="button"
+                                className="h-12 flex-1 text-base"
+                                onClick={next}
+                                data-testid="mobile-next-step-button"
+                            >
+                                Devam Et <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        ) : (
+                            <Button
+                                type="button"
+                                className="h-12 flex-1 text-base"
+                                onClick={payMethod === "transfer" ? startBankTransfer : startPayment}
+                                disabled={submitting || paying}
+                                data-testid="mobile-pay-button"
+                            >
+                                {submitting || paying ? (
+                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Hazırlanıyor…</>
+                                ) : payMethod === "transfer" ? (
+                                    <><Landmark className="mr-2 h-4 w-4" /> Havale bilgileri</>
+                                ) : (
+                                    <><Lock className="mr-2 h-4 w-4" /> Ödemeye geç</>
+                                )}
+                            </Button>
+                        )}
+                    </div>
+            </div>
 
             {/* 2 dakika islem yapilmazsa: kaldigin yerden devam teklifi */}
             <Dialog open={idlePrompt} onOpenChange={(open) => !open && dismissIdlePrompt()}>

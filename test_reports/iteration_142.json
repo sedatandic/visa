@@ -1,0 +1,31 @@
+{
+  "summary": "Mobile-friendly /basvuru wizard verified on 390x844 end-to-end and 1920x800 desktop regression. All 4 steps reached with ZERO horizontal scroll (documentElement.scrollWidth == innerWidth == 390 on every step and no visible overflow-x scrollable element with overflow). Step strip is a proper 2x2 grid on mobile (grid-template-columns '162px 162px') with 4 wizard-step-item-* tiles; wizard-progress-label shows 'ADIM n / 4' and wizard-progress-text updates '%25/%50/%75/%100 tamamlandi' correctly across steps. Sticky mobile-action-bar is fixed at bottom (position:fixed, bottom:0, z-index:40) on every step, shows 'Vize sec' before a visa is picked and mobile-action-bar-total = '5.190 TL' after selecting the first visa option; mobile-next-step-button (h=48) advances through steps 1-3; on step 4 mobile-pay-button ('Odemeye gec') is rendered and mobile-next-step-button is hidden. WhatsApp social-dock sits at y=700-748 while bar top is 771 so no overlap. Empty-form submit shows in-form toast 'Eksik: Adiniz Soyadiniz ve 7 alan daha \u00b7 ilk eksige goturduk', page scrolls to first invalid field and inline red errors ('Adinizi ve soyadinizi yazin.', 'Gecerli bir e-posta adresi girin.', etc.) appear under each missing input. Input keyboard hints all correct: input-contact-email type=email/inputMode=email/autoComplete=email; input-contact-name autoComplete=name + autoCapitalize=characters; traveler-0-first/last-name + passport-no autoCapitalize=characters; traveler-0-birth-date and passport-expiry inputMode=numeric. UploadExamplesHint on traveler-0-passport-examples and traveler-0-photo-examples renders 4 thumbnails in class 'grid grid-cols-2 gap-1.5 sm:flex' (proper 2x2 on mobile). AI passport OCR ran, populated AHMET ORNEK/U000000000 and photo AI accepted the ok.jpg portrait, letting the flow advance to step 2 -> primary-visa-select (5 options, picked 30 Gunluk Tek Girisli 5.190 TL) -> arrival/departure dates typed as gg.aa.yyyy -> step 3 Ek Hizmetler -> step 4 Ozet ve odeme. Desktop regression at 1920x800: step strip is single flex row, mobile-action-bar is NOT visible, wizard-next-step-button is visible/clickable, dock sits at x=1768/y=666 in normal bottom-right position, docSW==1920. Only two touch-target misses found (see below); everything else meets the spec.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "DateField calendar button", "issue": "Calendar-icon buttons are 36px tall on mobile (traveler-0-birth-date-calendar-button, traveler-0-passport-expiry-calendar-button, input-arrival-date-calendar-button, input-departure-date-calendar-button all measured height=36). Spec required ~44px touch targets. Width was bumped to w-11 but height was not. Bump the button to h-11 on mobile (currently likely h-9).", "selector": "[data-testid$='-calendar-button']", "priority": "MEDIUM"},
+      {"component": "Traveler type toggle", "issue": "traveler-0-type-adult and traveler-0-type-child are 40px tall on mobile (spec asks ~44). Consider h-11 on mobile.", "selector": "[data-testid='traveler-0-type-adult']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "In DateField.jsx bump the calendar trigger button to h-11 (44px) on mobile so all 4 date pickers (birth, passport expiry, arrival, departure) meet the 44px touch-target requirement. Currently only width was widened to w-11.",
+    "In the traveler-type toggle (Yetiskin/Cocuk) bump min-height to h-11 on mobile (currently 40px)."
+  ],
+  "critical_code_review_comments": [
+    "UploadExamplesHint tile size and 2x2 grid are correctly gated behind sm: breakpoint - good.",
+    "mobile-action-bar z-index=40 and SocialDock bottom-24 on /basvuru correctly prevents overlap - verified live.",
+    "Empty-submit toast copy is a nice UX touch and the scroll-to-first-invalid works via [data-invalid=true] targeting.",
+    "Apply.jsx is very long (>4000 lines) - consider splitting steps into sub-components for maintainability (non-blocking)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "92%"},
+  "test_credentials": "n/a - /basvuru is public",
+  "seed_data_creation": "None. Uploaded /app/frontend/public/passport-guide/ok.jpg and /app/frontend/public/photo-guide/ok.jpg during E2E as instructed. Draft rows may remain in DB (harmless).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Everything from the review request works EXCEPT touch-target heights on the four date calendar-icon buttons (36px) and the two traveler-type buttons (40px). Main agent should bump those to h-11 (44px) on mobile in /app/frontend/src/components/DateField.jsx and the traveler-type toggle in Apply.jsx, then a quick re-measure on mobile 390x844 is enough. Public preview URL: https://whatsapp-bot-test-2.preview.emergentagent.com/basvuru. E2E works with /app/frontend/public/passport-guide/ok.jpg + /app/frontend/public/photo-guide/ok.jpg for uploads. First visa option = 5.190 TL, use it to verify mobile-action-bar-total.",
+  "rca of the issue": "DateField.jsx and FamilyDiscountMeter.jsx got w-11 / h-11 respectively but the calendar trigger button inside DateField still uses the default (h-9 ~= 36px). Fix: add h-11 sm:h-9 (or similar responsive class) to the button. Traveler-type buttons in Apply.jsx likely use size='sm' or py-2 giving 40px; increase mobile padding to reach 44px."
+}

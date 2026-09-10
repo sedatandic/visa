@@ -3142,3 +3142,21 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
 - Şeridin üstünde mobilde ilerleme metni: "ADIM 1 / 4" + "%25 tamamlandı"
   (`wizard-progress-label` / `wizard-progress-text`, yüzde = (adım+1)/4, sm ve üzerinde gizli).
   360px'te taşma yok (sağda 13px boşluk).
+
+### 2026-06-18 (35) · Mobil form kullanılabilirliği (kullanıcı: "başvurular çoğunlukla telefondan")
+- **Dokunma hedefleri 44px**: yolcu tipi (Yetişkin/Çocuk) 28→44px, tarih takvim düğmeleri 36→44px
+  (`DateField` mobilde tam yükseklik, `sm:` üzerinde eski görünüm), "Yolcu ekle ve indirimi aç",
+  "Belgeleri düzenle", "Tarihleri düzenle" ve yolcu silme düğmesi mobilde h-11.
+- **Mobil klavye/otomatik doldurma**: e-posta `type/inputMode=email + autoComplete`, ad-soyad
+  `autoComplete=name` + `autoCapitalize=characters`, pasaport no büyük harf + `spellCheck=false`,
+  T.C. kimlik `inputMode=numeric maxLength=11`, tarih alanları rakam tuş takımı.
+- **Eksik alan yönlendirmesi**: uzun toast yerine "Eksik: <ilk alan> ve N alan daha ·
+  ilk eksiğe götürdük" + ilk hatalı alana kaydırma (yükleme kutusuna da `data-invalid` eklendi).
+- **Mobil alt sabit çubuk** (`mobile-action-bar`): toplam + "Devam Et" / "Ödemeye geç"
+  her adımda ekranın altında; form içindeki aynı düğmeler mobilde gizlendi (`hidden sm:inline-flex`),
+  WhatsApp rafı `/basvuru`'da `bottom-24`'e alınarak çakışma önlendi.
+- **Örnek görseller**: doğru/yanlış küçük şerit mobilde 2×2 büyük kutucuk (`UploadExamplesHint`).
+- Doğrulama: testing agent (iteration_142) 390x844'te 4 adımı uçtan uca gezdi —
+  **hiçbir adımda yatay kaydırma yok** (`scrollWidth == 390`), sabit çubuk ve ilerleme metni
+  çalışıyor, masaüstü 1920 regresyonu temiz. Raporun iki bulgusu (takvim düğmesi 36px,
+  yolcu tipi 40px) düzeltildi ve 44px olarak yeniden ölçüldü.

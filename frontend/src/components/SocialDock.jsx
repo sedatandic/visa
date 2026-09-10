@@ -1,5 +1,6 @@
 import React from "react";
 import { Star } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { useContact, waLink } from "../lib/contact";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 import { SOCIAL_ACCENT, SocialIcon } from "./SocialIcons";
@@ -11,10 +12,14 @@ const ACTION_CLASS =
 export const SocialDock = () => {
     const contact = useContact();
     const links = (contact.socialLinks || []).filter((l) => l.in_dock);
+    // Basvuru formunda mobilde alt sabit aksiyon cubugu var; rafi onun ustune alalim
+    const overActionBar = useLocation().pathname.startsWith("/basvuru");
 
     return (
         <div
-            className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2.5 sm:bottom-5 sm:right-5"
+            className={`fixed right-4 z-50 flex flex-col items-end gap-2.5 sm:bottom-5 sm:right-5 ${
+                overActionBar ? "bottom-24" : "bottom-4"
+            }`}
             data-testid="social-dock"
         >
             {links.map((link) => (
