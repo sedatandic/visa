@@ -3042,78 +3042,62 @@ export default function Apply() {
                                         </div>
                                     )}
 
-                                    <div className="mt-6 space-y-7">
+                                    <div className="mt-6 space-y-4">
                                         {travelers.map((t, idx) => {
                                             const te = errors[t.key] || {};
+                                            const rows = [
+                                                { key: "passport", label: "Pasaport kimlik sayfası", file: t.passportFile, error: te.passport },
+                                                { key: "photo", label: "Vesikalık fotoğraf", file: t.photoFile, error: te.photo },
+                                            ];
                                             return (
                                                 <div key={t.key} className="rounded-xl border border-border p-5" data-testid={`docs-card-${idx}`}>
-                                                    <p className="font-heading text-sm font-bold">
-                                                        {t.first_name || `${idx + 1}. Yolcu`} {t.last_name}
-                                                        <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                                                            {t.applicant_type === "child" ? "Çocuk" : "Yetişkin"}
-                                                        </span>
-                                                    </p>
-                                                    <div className="mt-5 grid gap-6 md:grid-cols-2">
-                                                        <div>
-                                                            <FileDropzone
-                                                                label="Pasaport Fotoğrafı"
-                                                                hint="Bilgiler otomatik dolar"
-                                                                badge="required"
-                                                                icon={BookUser}
-                                                                description="Pasaportunuzun kimlik bilgilerinin olduğu sayfası net şekilde yükleyin."
-                                                                docType="passport"
-                                                                value={t.passportFile}
-                                                                onChange={(f) => {
-                                                                    updateTraveler(t.key, { passportFile: f });
-                                                                    readPassportWithAI(t.key, f);
-                                                                    matchFaces(t.key, f, t.photoFile);
-                                                                }}
-                                                                testId={`traveler-${idx}-passport-upload-input`}
-                                                            />
-                                                            {ocr[t.key]?.status === "loading" && (
-                                                                <p className="mt-2 flex items-center gap-2 text-xs font-medium text-primary" data-testid={`traveler-${idx}-docs-ocr-loading`}>
-                                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                                    Pasaport bilgileri okunuyor...
-                                                                </p>
-                                                            )}
-                                                            {ocr[t.key]?.status === "done" && (
-                                                                <div className="mt-2 rounded-lg border border-[hsl(var(--brand-green)/0.30)] bg-[hsl(var(--brand-green)/0.07)] p-3" data-testid={`traveler-${idx}-docs-ocr-success`}>
-                                                                    <p className="flex items-center gap-2 text-xs font-semibold text-[hsl(var(--brand-green))]">
-                                                                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                                                                        Pasaport okundu: {ocr[t.key].name} {ocr[t.key].passport_no ? `· ${ocr[t.key].passport_no}` : ""}
-                                                                    </p>
-                                                                    <p className="mt-1 text-xs text-muted-foreground">
-                                                                        Alanlar pasaporttaki bilgilerle güncellendi, kontrol edin.
+                                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                                        <p className="font-heading text-sm font-bold">
+                                                            {t.first_name || `${idx + 1}. Yolcu`} {t.last_name}
+                                                            <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                                {t.applicant_type === "child" ? "Çocuk" : "Yetişkin"}
+                                                            </span>
+                                                        </p>
+                                                        <Button
+                                                            type="button"
+                                                            variant="secondary"
+                                                            className="h-9 border border-border text-xs"
+                                                            onClick={() => goToStep(0)}
+                                                            data-testid={`docs-card-${idx}-edit-button`}
+                                                        >
+                                                            <Pencil className="mr-1.5 h-3.5 w-3.5" /> Belgeleri düzenle
+                                                        </Button>
+                                                    </div>
+                                                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                                        {rows.map((r) => (
+                                                            <div
+                                                                key={r.key}
+                                                                className={`flex items-center gap-3 rounded-lg border p-3 ${
+                                                                    r.file
+                                                                        ? "border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.06)]"
+                                                                        : "border-destructive/40 bg-destructive/[0.06]"
+                                                                }`}
+                                                                data-testid={`docs-card-${idx}-${r.key}-status`}
+                                                            >
+                                                                {r.file ? (
+                                                                    <CheckCircle2 className="h-4 w-4 shrink-0 text-[hsl(var(--brand-green))]" />
+                                                                ) : (
+                                                                    <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+                                                                )}
+                                                                <div className="min-w-0">
+                                                                    <p className="text-xs font-semibold">{r.label}</p>
+                                                                    <p
+                                                                        className={`truncate text-xs ${
+                                                                            r.file ? "text-muted-foreground" : "font-semibold text-destructive"
+                                                                        }`}
+                                                                    >
+                                                                        {r.file
+                                                                            ? `Yüklendi · ${r.file.original_filename}`
+                                                                            : r.error || "Eksik — 1. adımda yükleyin."}
                                                                     </p>
                                                                 </div>
-                                                            )}
-                                                            {ocr[t.key]?.status === "failed" && (
-                                                                <p className="mt-2 text-xs text-muted-foreground" data-testid={`traveler-${idx}-docs-ocr-failed`}>
-                                                                    Pasaport otomatik okunamadı; bilgileri elle girebilirsiniz.
-                                                                </p>
-                                                            )}
-                                                            {te.passport && (
-                                                                <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive">
-                                                                    <AlertCircle className="mt-0.5 h-3.5 w-3.5" /> {te.passport}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                        <TravelerPhotoField
-                                                            idx={idx}
-                                                            value={t.photoFile}
-                                                            check={photoCheck[t.key]}
-                                                            match={faceMatch[t.key]}
-                                                            error={te.photo}
-                                                            onInputRef={(el) => {
-                                                                photoInputs.current[t.key] = el;
-                                                            }}
-                                                            onChange={(f) => {
-                                                                updateTraveler(t.key, { photoFile: f });
-                                                                checkPhotoWithAI(t.key, f);
-                                                                matchFaces(t.key, t.passportFile, f);
-                                                            }}
-                                                            onRetry={() => photoInputs.current[t.key]?.click()}
-                                                        />
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             );
@@ -3791,18 +3775,22 @@ export default function Apply() {
                                         {travelers.length} yolcu
                                     </span>
                                 </div>
-                                <div className="mt-4">
-                                    <FamilyDiscountMeter
-                                        tiers={familyTiers}
-                                        travelerCount={travelers.length}
-                                        discountAmount={quote?.family_discount || 0}
-                                        currency={quote?.currency || "TRY"}
-                                        canAddTraveler={travelers.length < maxTravelers}
-                                        onAddTraveler={() => addTraveler("adult")}
-                                    />
-                                </div>
+                                {step !== 3 && (
+                                    <div className="mt-4">
+                                        <FamilyDiscountMeter
+                                            tiers={familyTiers}
+                                            travelerCount={travelers.length}
+                                            discountAmount={quote?.family_discount || 0}
+                                            currency={quote?.currency || "TRY"}
+                                            canAddTraveler={travelers.length < maxTravelers}
+                                            onAddTraveler={() => addTraveler("adult")}
+                                        />
+                                    </div>
+                                )}
                                 {quote ? (
                                     <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
+                                        {step !== 3 && (
+                                        <>
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">Vize bedelleri</span>
                                             <span className="font-semibold">{formatMoney(quote.subtotal, quote.currency)}</span>
@@ -3859,6 +3847,8 @@ export default function Apply() {
                                                 <span>Paket indirimi (%{Math.round((quote.bundle_discount_rate || 0) * 100)})</span>
                                                 <span className="font-semibold">- {formatMoney(quote.bundle_discount, quote.currency)}</span>
                                             </div>
+                                        )}
+                                        </>
                                         )}
                                         <div className="flex items-end justify-between border-t border-border pt-3">
                                             <span className="text-sm font-semibold">Toplam</span>

@@ -50,8 +50,8 @@ const SCENARIOS = [
         messages: [
             { from: "in", time: "11:03", text: "Yeşil pasaportum var, Dubai için vize almam gerekiyor mu?" },
             { from: "out", time: "11:03", text: "Hususi (yeşil) pasaportla yılda 90 güne kadar vizesiz giriş yapabilirsiniz." },
-            { from: "in", time: "11:04", text: "Eşimin bordo pasaportu var, o ne yapacak?" },
-            { from: "out", time: "11:04", text: "Umuma mahsus bordo pasaportta vize zorunlu; eşiniz için başvuru açalım." },
+            { from: "in", time: "11:04", text: "Annem de bizimle geliyor, onun bordo pasaportu var. O ne yapacak?" },
+            { from: "out", time: "11:04", text: "Umuma mahsus bordo pasaportta vize zorunlu; anneniz için başvuru açalım." },
             { from: "in", time: "11:04", text: "30 gün yeter bize" },
             { from: "out", time: "11:05", text: "30 gün tek girişli vize uygun. Pasaport sayfası ve vesikalık yeterli." },
             { from: "in", time: "11:05", text: "Hemen gönderiyorum" },

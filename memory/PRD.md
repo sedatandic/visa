@@ -1722,3 +1722,9 @@ fotograflari, ATV +40 USD ek secenek.
 - ACIK SORU (kullanici yanitlamadi): /gerekli-belgeler sag kolonundan ne kaldirilacak?
   (a) sadece tekrar eden "Pasaport taramasi nasil olmali?" kurallar karti, (b) sag kolonun
   tamami, (c) fotograf + kurallar karti.
+
+## 2026-06-18 (fork, 5) · Tekrar temizligi
+- /gerekli-belgeler sag kolonundaki tekrar eden pasaport kurallari karti kaldirildi.
+- Adim 2'de evraklar artik "Yuklendi/Eksik" ozeti (yukleme Adim 1'de).
+- Odeme adiminda fiyat dokumu tek yerde (sag panel sadece toplam).
+- WhatsApp demo sohbetindeki yesil/bordo pasaport mantik hatasi duzeltildi.

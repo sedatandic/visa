@@ -2947,3 +2947,25 @@ kisim adim 2'de olsun", "adim 3 basligini degistirelim".
 - Buton satiri `ml-auto ... shrink-0` oldugu icin dar kolonda karti tasiyor, "Kaldir" yazisi
   kesiliyordu. Satir sola alindi (`flex min-w-0 flex-wrap`), butonlar kompakt (h-9, px-2.5,
   text-xs, 3.5 ikon). Olcum: kart sag kenari 699px, "Kaldir" sag kenari 662px (37px pay).
+
+### 2026-06-18 (25) · Tekrarlarin temizligi + WhatsApp demo mantik hatasi
+- **/gerekli-belgeler**: sag kolondaki "Pasaport taramasi nasil olmali?" madde karti
+  kaldirildi (ayni bilgi artik gorselli dogru/yanlis bolumunde). "Aile basvurusu
+  yapiyorsaniz" karti ve seyahat gorseli kaldi.
+- **Adim 2 (Vize Turu) evraklar**: pasaport/vesikalik dropzone tekrari kaldirildi; yerine
+  yolcu basina kompakt durum ozeti geldi (`docs-card-{idx}-passport-status` /
+  `-photo-status`): yuklendiyse yesil "Yuklendi · dosya adi", eksikse kirmizi
+  "Eksik — 1. adimda yukleyin." + "Belgeleri duzenle" butonu (`goToStep(0)`).
+  Dogrulama aynen calisiyor: evrak eksikse ilerlemiyor, toast + kirmizi satirlar.
+  Opsiyonel Ucak Bileti / Otel Rezervasyonu yukleme alanlari bu adimda kaldi.
+- **Adim 4 (Odeme) tekrari**: sag paneldeki "Basvuru ozeti" satir satir dokumu (sigorta,
+  eSIM, indirimler) odeme adiminda gizlendi; sadece **Toplam + tasarruf + kur notu**
+  gorunuyor. Detayli dokum sayfa icindeki "Fiyat dokumu" kartinda tek yerde duruyor.
+  Ayrica aile indirimi upsell metresi de odeme adiminda gizlendi.
+- **WhatsApp demo mantik hatasi (kullanici raporu)**: "yesil pasaportum var" senaryosunda
+  "Esimin bordo pasaportu var" repligi hatali (hususi pasaport es ve 25 yas alti cocuklari
+  kapsar) -> "Annem de bizimle geliyor, onun bordo pasaportu var" olarak degistirildi;
+  cevap da "anneniz icin basvuru acalim" oldu (`WhatsAppPhoneMock.jsx`).
+- Dogrulama: Playwright ile tam sihirbaz akisi (yukleme -> adim 2 ozeti -> adim 3 ek
+  hizmetler -> adim 4) + eksik evrakla bloklama senaryosu kosuldu; sag panel odeme
+  adiminda "Toplam 6.304 TL" tek satir.

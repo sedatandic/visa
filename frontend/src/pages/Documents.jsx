@@ -88,16 +88,6 @@ export default function Documents() {
                         <div className="overflow-hidden rounded-2xl border border-border" style={{ boxShadow: "var(--shadow-card)" }}>
                             <img src={IMAGES.travelFlatlay} alt="Seyahat hazırlığı: harita, defter ve fotoğraf makinesi" className="h-[240px] w-full object-cover" loading="lazy" />
                         </div>
-                        <div className="card-surface p-6">
-                            <h2 className="font-heading text-base font-bold">Pasaport taraması nasıl olmalı?</h2>
-                            <ul className="mt-3 space-y-2.5 text-sm leading-6 text-muted-foreground">
-                                <li>• Fotoğrafın bulunduğu sayfanın tamamı görünmeli.</li>
-                                <li>• Köşeler kesilmemiş, yazılar okunabilir olmalı.</li>
-                                <li>• Parlama ve gölge olmaması için doğal ışıkta çekin.</li>
-                                <li>• Pasaport dönüş tarihinden itibaren en az 6 ay geçerli olmalı.</li>
-                                <li>• Dosya formatı: JPG, PNG veya PDF (maks. 10 MB).</li>
-                            </ul>
-                        </div>
                         <div className="rounded-xl border border-border bg-[hsl(var(--cloud))] p-6">
                             <h2 className="font-heading text-base font-bold">Aile başvurusu yapıyorsanız</h2>
                             <p className="mt-2 text-sm leading-6 text-muted-foreground">
