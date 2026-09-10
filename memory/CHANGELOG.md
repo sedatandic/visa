@@ -2767,3 +2767,10 @@ Formda hic sorulmayan alanlar PDF dokumunden cikarildi (`application_pdf.py`):
   "single"/"Employee" gonderiyor, bu yuzden yanlis bilgi gorunuyordu)
 Uyruk ve dogum yeri korundu. Dogrulama: gercek basvuru dokumu ile PDF uretildi, metin
 taramasinda Medeni/Meslek/Sehir yok; pytest test_iteration_112_application_form 9 passed.
+
+## 2026-06-18 (7) · WhatsApp bilgilendirme anahtari telefon alaninin yanina tasindi
+Iletisim blogunun altindaki genis "WhatsApp ile bilgilendirilmek istiyorum" kutusu
+kaldirildi; anahtar artik "Cep Telefonu (WhatsApp)" alaninin hemen altinda kompakt satir
+olarak duruyor (`whatsapp-optin-row`, switch testid'i `input-whatsapp-optin` korundu).
+Metin kisaltildi: "WhatsApp ile bilgilendir. Sonuc cikinca mesaj gonderelim."
+Dogrulama: Playwright ile anahtar unchecked -> checked, ekran goruntusu ile konum teyidi.
