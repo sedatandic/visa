@@ -2774,3 +2774,13 @@ kaldirildi; anahtar artik "Cep Telefonu (WhatsApp)" alaninin hemen altinda kompa
 olarak duruyor (`whatsapp-optin-row`, switch testid'i `input-whatsapp-optin` korundu).
 Metin kisaltildi: "WhatsApp ile bilgilendir. Sonuc cikinca mesaj gonderelim."
 Dogrulama: Playwright ile anahtar unchecked -> checked, ekran goruntusu ile konum teyidi.
+
+## 2026-06-18 (8) · Cocuk uyari kutusu kaldirildi + WhatsApp anahtari telefonun sagina
+- Adim 1 sonundaki "18 yasindan kucuk cocuklar bireysel basvuru yapamaz" sari uyari
+  kutusu kaldirildi (kullanici istegi). Cocuk secildiginde gosterilen ayrintili
+  `child-application-notice` bloku duruyor.
+- WhatsApp bilgilendirme anahtari telefon alaninin ALTINDAN SAGINA tasindi: iletisim
+  grid'inde telefon hucresinin yanindaki hucreye alindi, `sm:mt-7` ile input hizasina
+  oturuyor.
+Dogrulama: bounding box karsilastirmasi - optin.x (753) > telefon.x+width (733), dikey
+fark 4px; anahtar checked oldu; uyari metni DOM'da yok.

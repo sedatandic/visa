@@ -2396,21 +2396,21 @@ export default function Apply() {
                                                 <p className="mt-1.5 text-xs text-muted-foreground">
                                                     Başvurunuzla ilgili dönüş bu numaraya WhatsApp üzerinden yapılacaktır.
                                                 </p>
-                                                <label
-                                                    className="mt-2 flex cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2 text-xs leading-5 transition-colors duration-200 hover:border-[#25D366]/60"
-                                                    data-testid="whatsapp-optin-row"
-                                                >
-                                                    <Switch
-                                                        checked={!!contact.whatsapp_optin}
-                                                        onCheckedChange={(c) => setContact((s) => ({ ...s, whatsapp_optin: !!c }))}
-                                                        data-testid="input-whatsapp-optin"
-                                                    />
-                                                    <span className="text-muted-foreground">
-                                                        <strong className="text-foreground">WhatsApp ile bilgilendir.</strong>{" "}
-                                                        Sonuç çıkınca mesaj gönderelim.
-                                                    </span>
-                                                </label>
                                             </Field>
+                                            <label
+                                                className="flex min-h-11 cursor-pointer items-center gap-3 self-start rounded-xl border border-border bg-card px-4 text-sm leading-5 transition-colors duration-200 hover:border-[#25D366]/60 sm:mt-7"
+                                                data-testid="whatsapp-optin-row"
+                                            >
+                                                <Switch
+                                                    checked={!!contact.whatsapp_optin}
+                                                    onCheckedChange={(c) => setContact((s) => ({ ...s, whatsapp_optin: !!c }))}
+                                                    data-testid="input-whatsapp-optin"
+                                                />
+                                                <span className="text-muted-foreground">
+                                                    <strong className="text-foreground">WhatsApp ile bilgilendir.</strong>{" "}
+                                                    Sonuç çıkınca mesaj gönderelim.
+                                                </span>
+                                            </label>
                                             {hasChildApplicant && (
                                                 <div
                                                     className="flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/[0.05] px-4 py-3 text-sm font-semibold text-foreground/85 sm:col-span-2"
@@ -2732,14 +2732,6 @@ export default function Apply() {
                                                 </div>
                                             );
                                         })}
-                                    </div>
-
-                                    <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-4">
-                                        <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[hsl(var(--status-warning))]" />
-                                        <p className="text-sm leading-6 text-[hsl(var(--status-warning))]">
-                                            18 yaşından küçük çocuklar bireysel olarak başvuru yapamaz. Çocukları
-                                            mutlaka ebeveyn ile aynı başvuruya ekleyin.
-                                        </p>
                                     </div>
                                 </div>
                             )}
