@@ -2852,3 +2852,13 @@ Kullanici istegi: vize kartlari + ek hizmetler ayni satirda, ekran daralinca alt
   `whitespace-nowrap`: dar kolonda "14.830 TL" satir ortasindan bolunmuyor.
 Dogrulama: Playwright - 4 kartin y degeri ayni (tek satir), tab degisiminde de tek satir;
 430px viewport'ta hepsi ayni x (alt alta); ana sayfa etkilenmedi.
+
+## 2026-06-18 (14) · Kart ic hizalari (fiyat kutusu + buton)
+VisaTypeCard ve AddonCard'da ortak minimum yuksekliklerle 4 kart birebir hizalandi:
+- baslik `min-h-[3.5rem]` (2 satir), aciklama `min-h-[6rem]` (4 satir),
+  fiyat kutusu `min-h-[10.5rem]` (168px, flex-col).
+- Buton hizasi: vize kartlarindaki "Detayli rehberi oku" baglantisi h-9'a sabitlendi ve
+  rehber yoksa ayni yukseklikte bos slot birakiliyor; AddonCard'a da ayni yukseklikte
+  slot eklendi. Boylece butonlar tum kartlarda ayni y'de.
+Dogrulama (Playwright, 1920 ve 1280 px): fiyat kutulari ayni y + ayni yukseklik,
+ozellik listeleri ayni y, butonlar ayni y (hepsi True).

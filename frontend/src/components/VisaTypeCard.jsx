@@ -87,12 +87,12 @@ export const VisaTypeCard = ({
                     )}
                 </div>
 
-                <h3 className="mt-3.5 font-heading text-lg font-extrabold leading-snug text-[hsl(30_62%_38%)]">{visa.name}</h3>
-                <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground sm:min-h-[3rem]">
+                <h3 className="mt-3.5 min-h-[3.5rem] font-heading text-lg font-extrabold leading-snug text-[hsl(30_62%_38%)]">{visa.name}</h3>
+                <p className="mt-2 min-h-[6rem] text-sm leading-6 text-muted-foreground">
                     {compact ? visa.entry_label : visa.description}
                 </p>
 
-                <div className="mt-5 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
+                <div className="mt-5 flex min-h-[10.5rem] flex-col rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
                     <div className="flex items-end gap-2">
                         <span
                             className="tabular font-heading text-[32px] font-extrabold leading-none tracking-tight text-[hsl(30_62%_38%)]"
@@ -146,14 +146,16 @@ export const VisaTypeCard = ({
                                     <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                                 </Link>
                             </Button>
-                            {visa.slug && hasGuide && (
+                            {visa.slug && hasGuide ? (
                                 <Link
                                     to={`/dubai-vizesi/${visa.slug}`}
-                                    className="relative z-[2] mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold text-primary underline-offset-4 transition-colors duration-150 hover:text-foreground hover:underline focus-visible:outline-none"
+                                    className="relative z-[2] mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-primary underline-offset-4 transition-colors duration-150 hover:text-foreground hover:underline focus-visible:outline-none"
                                     data-testid={`guide-link-${visa.id}`}
                                 >
                                     Detaylı rehberi oku <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                                 </Link>
+                            ) : (
+                                <span className="mt-3 block h-9" aria-hidden="true" />
                             )}
                         </>
                     )}

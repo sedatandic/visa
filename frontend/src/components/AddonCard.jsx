@@ -36,14 +36,12 @@ export const AddonCard = ({
                 </span>
             </div>
 
-            <h3 className="mt-3.5 font-heading text-lg font-extrabold leading-snug text-[hsl(30_62%_38%)]">
+            <h3 className="mt-3.5 min-h-[3.5rem] font-heading text-lg font-extrabold leading-snug text-[hsl(30_62%_38%)]">
                 {addon.name}
             </h3>
-            <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground sm:min-h-[3rem]">
-                {addon.description}
-            </p>
+            <p className="mt-2 min-h-[6rem] text-sm leading-6 text-muted-foreground">{addon.description}</p>
 
-            <div className="mt-5 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
+            <div className="mt-5 flex min-h-[10.5rem] flex-col rounded-xl border border-border bg-[hsl(var(--cloud))] p-4">
                 <div className="flex flex-wrap items-end gap-x-2">
                     <span
                         className="tabular whitespace-nowrap font-heading text-[26px] font-extrabold leading-none tracking-tight text-[hsl(30_62%_38%)] xl:text-[28px]"
@@ -82,6 +80,8 @@ export const AddonCard = ({
                         <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                     </Link>
                 </Button>
+                {/* vize kartlarindaki "Detayli rehberi oku" baglantisiyla ayni hizada kalmak icin */}
+                <span className="mt-3 block h-9" aria-hidden="true" />
             </div>
         </div>
     </div>
