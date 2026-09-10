@@ -123,7 +123,7 @@ export const Navbar = () => {
             data-testid="site-navbar"
         >
             <div className="h-px w-full bg-border" aria-hidden="true" />
-            <div className="mx-auto flex h-[84px] w-full max-w-[88rem] items-end justify-between gap-4 px-4 pb-3 sm:h-[96px] sm:px-6 sm:pb-3.5 lg:h-[108px]">
+            <div className="mx-auto flex h-[84px] w-full max-w-[1560px] items-end justify-between gap-4 px-4 pb-3 sm:h-[96px] sm:px-6 sm:pb-3.5 lg:h-[108px]">
                 <Link
                     to="/"
                     onClick={goHomeTop}

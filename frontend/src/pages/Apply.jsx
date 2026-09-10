@@ -2361,7 +2361,7 @@ export default function Apply() {
                 </div>
 
                 {/* Alt bolum (form + ozet) ust bloklardan daha genis */}
-                <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6">
+                <div className="container-page">
                     <div className="mt-8 grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
                         <motion.div
                             key={step}
