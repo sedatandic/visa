@@ -764,6 +764,7 @@ export default function Apply() {
     // Ana sayfadan paket secilerek gelindiyse (/basvuru/pack-x veya ?paket=pack_x) secimleri hazir getir
     const bundleParam = pathIds.paket || searchParams.get("paket");
     const bundleApplied = useRef(false);
+    const [appliedBundle, setAppliedBundle] = useState(null);
     useEffect(() => {
         if (!bundleParam || bundleApplied.current) return;
         const adultsParam = Math.max(1, Number(searchParams.get("yetiskin")) || 1);
@@ -786,7 +787,17 @@ export default function Apply() {
                 if (wantTour && match.tour?.id) {
                     const travelers = adultsParam + Math.max(0, Number(searchParams.get("cocuk")) || 0);
                     setTourQty({ [match.tour.id]: Math.min(Math.max(travelers, 1), 10) });
+                    setShowCatalog(true);
                 }
+                setAppliedBundle({
+                    name: match.name,
+                    items: [
+                        match.visa?.name && `${match.visa.name}${adultsParam > 1 ? ` × ${adultsParam}` : ""}`,
+                        match.insurance.name,
+                        match.esim.name,
+                        wantTour && match.tour?.name,
+                    ].filter(Boolean),
+                });
                 toast.success(
                     wantTour
                         ? `${match.name} seçildi. Vize, sigorta, eSIM ve çöl safarisi hazır geldi.`
@@ -2349,6 +2360,42 @@ export default function Apply() {
                         </div>
                     </div>
                 </div>
+
+                {/* Ana sayfadan paketle gelindiyse secilen teklif formda birebir gorunur */}
+                {appliedBundle && (
+                    <div className="container-page">
+                        <div
+                            className="mt-6 rounded-xl border border-[hsl(var(--brand-green)/0.4)] bg-[hsl(var(--brand-green)/0.07)] p-4"
+                            data-testid="applied-bundle-banner"
+                        >
+                            <p className="flex items-center gap-2 font-heading text-sm font-bold">
+                                <Check className="h-4 w-4 text-[hsl(var(--brand-green))]" aria-hidden="true" />
+                                Seçtiğiniz {appliedBundle.name} hazır
+                            </p>
+                            <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
+                                {appliedBundle.items.map((it) => (
+                                    <li key={it} className="flex items-center gap-1.5">
+                                        <Check className="h-3.5 w-3.5 text-[hsl(var(--brand-green))]" aria-hidden="true" />
+                                        {it}
+                                    </li>
+                                ))}
+                            </ul>
+                            <p className="mt-2 text-xs text-muted-foreground">
+                                Paket indirimi otomatik uygulandı. Dilerseniz Ek Hizmetler adımında değiştirebilir
+                                veya kaldırabilirsiniz.
+                            </p>
+                            {missingTourDate && (
+                                <p
+                                    className="mt-1 text-xs font-semibold text-[hsl(var(--status-warning))]"
+                                    data-testid="applied-bundle-tour-note"
+                                >
+                                    Çöl safarisi seçildi; tarihini Ek Hizmetler adımında belirlediğinizde toplama
+                                    eklenir.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Alt bolum (form + ozet) ust bloklardan daha genis */}
                 <div className="container-page">

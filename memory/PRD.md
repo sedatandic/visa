@@ -1746,3 +1746,8 @@ fotograflari, ATV +40 USD ek secenek.
 - /sepet: tekrar eden strip/tasarruf kutusu/kategori butonlari kaldirildi; "Sepetinizi
   tamamlayin" oneri kartlari + "Diger paketleri gor" acilir baglanti listesi geldi.
 - Police TC alani yalnizca pasaporttan okunamadiginda soruluyor.
+
+## 2026-06-18 (fork, 9) · Ana sayfa paketi <-> form tutarliligi
+- Paket linkiyle gelen kullaniciya formda kalici "Sectiginiz paket hazir" seridi gosteriliyor;
+  icerik, yolcu sayisi ve indirimler ana sayfadaki kartla ayni.
+- Tur secili ama tarihsizse toplama girmedigi banner'da aciklaniyor.

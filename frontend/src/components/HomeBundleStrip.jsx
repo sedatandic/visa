@@ -281,6 +281,10 @@ const BundleCard = ({ bundle, highlighted }) => {
                     >
                         <ShoppingBag className="h-4 w-4" aria-hidden="true" /> Paketi sepete ekle
                     </button>
+                    <p className="text-center text-[11px] leading-4 text-muted-foreground">
+                        Formda {isFamily ? "yolcular, " : ""}sigorta ve eSIM
+                        {qty.tour > 0 ? ", çöl safarisi" : ""} seçili gelir
+                    </p>
                 </div>
             </div>
         </div>
@@ -314,8 +318,8 @@ export const HomeBundleStrip = () => {
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                     Sigorta ve internet paketini vizenizle birlikte alın; paket indirimi otomatik
-                    uygulanır, poliçe ve QR kod e-postanıza gelir. Aile paketinde yolcu sayısını
-                    değiştirin, fiyat anında güncellenir.
+                    uygulanır, poliçe ve QR kod e-postanıza gelir. Seçtiğiniz paket başvuru formunda
+                    aynen seçili gelir — istediğinizi tek tıkla değiştirebilirsiniz.
                 </p>
 
                 <div className="mt-7 -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0 lg:pb-0">

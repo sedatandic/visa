@@ -3036,3 +3036,23 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
 - Dogrulama: eSIM'li sepette 2 oneri karti (sigorta + tur); sigorta eklenince paket indirimi
   satiri + "Tebrikler ... kazandiniz" cikti, toplam 1.040 -> 936 TL (%10). Vizeli sepette
   "Vize basvurusunu tamamla" CTA'si tek, strip yok, oneri blogu calisiyor.
+
+### 2026-06-18 (30) · Ana sayfa paketi ile form birebir ayni teklif
+- Sorun: ana sayfada "Bu paketle basvur" -> formda secimler hazir geliyordu ama kullaniciya
+  sadece kaybolan bir toast gosteriliyordu; musteri gordugu teklifi formda goremiyordu.
+- **Yeni `applied-bundle-banner`** (Apply.jsx): `?paket=` / `/basvuru/pack-x` ile gelindiginde
+  stepper'in altinda kalici yesil serit: "Seciginiz {paket adi} hazir" + icindekiler listesi
+  (vize x adet, sigorta, eSIM, varsa col safarisi) + "Paket indirimi otomatik uygulandi".
+  Tur secili ama tarihi yoksa uyari satiri: "tarihini Ek Hizmetler adiminda belirlediginizde
+  toplama eklenir" (`applied-bundle-tour-note`) - cunku tarih girilmeden tur fiyata girmiyor.
+- Bundle efekti artik tur geldiginde `setShowCatalog(true)` yapiyor (tur tarih/saat secimi
+  gizli katalogda kalmasin) ve `appliedBundle` state'ini dolduruyor.
+- `HomeBundleStrip`: bolum aciklamasi "Sectiginiz paket basvuru formunda aynen secili gelir"
+  olarak guncellendi; her kartin altina "Formda yolcular, sigorta ve eSIM(, col safarisi)
+  secili gelir" notu eklendi.
+- Dogrulama (Playwright, ana sayfadan tikla): Aile Paketi 3 yetiskin + 2 cocuk + tam tatil ->
+  form 5 yolcuyla acildi, banner 4 kalemi listeledi, ozet: vize 20.510 TL, aile indirimi
+  -3.076,50, sigorta x5 2.800, eSIM x3 2.220, sigorta indirimi -280, paket indirimi -502,
+  toplam 21.671,50 TL. (Tur, tarih secilene kadar toplama girmiyor - banner bunu soyluyor.)
+- Not: tekrarlanan hizli testlerde /api/quote rate-limit'e girip ozet bir sure eski kalabiliyor;
+  kod sorunu degil.
