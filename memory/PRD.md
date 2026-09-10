@@ -1751,3 +1751,12 @@ fotograflari, ATV +40 USD ek secenek.
 - Paket linkiyle gelen kullaniciya formda kalici "Sectiginiz paket hazir" seridi gosteriliyor;
   icerik, yolcu sayisi ve indirimler ana sayfadaki kartla ayni.
 - Tur secili ama tarihsizse toplama girmedigi banner'da aciklaniyor.
+
+## 2026-06-18 (fork, 10) · PDF cikti testleri (altin kopya) + fiyat dokumu refactor
+- Fatura (odeme ozeti), basvuru formu ve police boru hatti icin altin kopya testleri:
+  `backend/tests/test_iteration_139_pdf_golden.py` + `backend/tests/golden/*.txt`.
+  Yenileme: `UPDATE_GOLDEN=1 python -m pytest tests/test_iteration_139_pdf_golden.py`.
+- Ortak kalem/indirim mantigi `backend/pdf_pricing.py` modulune alindi; karmasik fonksiyonlar
+  (fatura ozeti C15, form fiyat dokumu C11, tamamliyo._request C16) A/B seviyesine indi.
+- Tutar kolonundaki "TL"ler tum tablolarda ayni hizada; dogum yeri pasaport okumasindan
+  tamamlanip "Istanbul" yazimiyla basiliyor. Detay: CHANGELOG 2026-06-18 (32).

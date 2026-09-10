@@ -12,20 +12,28 @@ from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from application_pdf import (
+    AMOUNT_PAD,
     LINE,
     PANEL,
     _amount_table,
     _cols,
-    _date,
     _draw_frame,
     _header,
     _pairs_table,
     _safe,
     _styles,
-    money,
 )
 from content import COMPANY
 from emailer import BRAND
+from pdf_pricing import (
+    currency_of,
+    discount_rows,
+    fmt_date,
+    gross_subtotal,
+    money,
+    paid_items,
+    store_rows,
+)
 
 RECEIPT_NOTE = (
     "Bu belge bilgilendirme amaçlı ödeme özetidir; resmî e-Arşiv faturanız kayıtlı "
@@ -49,10 +57,6 @@ def _payment(doc: dict) -> dict:
     return doc.get("payment") or {}
 
 
-def _currency(doc: dict) -> str:
-    return (doc.get("pricing") or {}).get("currency") or doc.get("currency") or "TRY"
-
-
 def _contact_name(doc: dict) -> str:
     contact = doc.get("contact") or {}
     full = (contact.get("full_name") or "").strip()
@@ -65,7 +69,7 @@ def _paid_date(doc: dict) -> str:
     raw = _payment(doc).get("paid_at") or doc.get("updated_at") or doc.get("created_at")
     if isinstance(raw, datetime):
         return raw.astimezone(timezone.utc).strftime("%d.%m.%Y")
-    return _date(str(raw or "")[:10])
+    return fmt_date(str(raw or "")[:10])
 
 
 def _info_band(doc: dict, st: dict, code_label: str) -> Table:
@@ -102,7 +106,7 @@ def _customer_pairs(doc: dict, order: bool) -> list:
         ("Adı Soyadı", _contact_name(doc)),
         ("E-posta", contact.get("email")),
         ("Telefon", contact.get("phone")),
-        ("Sipariş tarihi" if order else "Başvuru tarihi", _date(str(doc.get("created_at") or "")[:10])),
+        ("Sipariş tarihi" if order else "Başvuru tarihi", fmt_date(str(doc.get("created_at") or "")[:10])),
     ]
 
 
@@ -120,83 +124,27 @@ def _seller_pairs() -> list:
 
 def _application_items(doc: dict) -> list:
     """(aciklama, adet, tutar) — vize bedelleri + ek hizmetler + magaza kalemleri."""
-    currency = _currency(doc)
-    pricing = doc.get("pricing") or {}
-    rows = []
-    for traveler in doc.get("travelers") or []:
-        name = f"{traveler.get('first_name', '')} {traveler.get('last_name', '')}".strip()
-        visa = traveler.get("visa_short_name") or traveler.get("visa_type_name") or "Vize"
-        rows.append((f"{name} · {visa}", "1", money(traveler.get("price", 0), currency)))
-    for addon in pricing.get("addons") or []:
-        rows.append(
-            (addon.get("name", ""), str(addon.get("quantity", 1)), money(addon.get("total", 0), currency))
-        )
-    for item in pricing.get("store_items") or []:
-        label = item.get("name", "")
-        if item.get("scheduled_date"):
-            label += f" ({_date(item['scheduled_date'])})"
-        rows.append((label, str(item.get("quantity", 1)), money(item.get("total", 0), currency)))
-    return rows
+    return paid_items(doc)
 
 
 def _order_items(doc: dict) -> list:
-    currency = _currency(doc)
-    rows = []
-    for item in doc.get("items") or []:
-        label = item.get("name", "")
-        if item.get("scheduled_date"):
-            label += f" ({_date(item['scheduled_date'])})"
-        rows.append((label, str(item.get("quantity", 1)), money(item.get("total", 0), currency)))
-    return rows
-
-
-def _discount_label(label: str, rate) -> str:
-    pct = int(round(float(rate or 0) * 100))
-    return f"{label} (%{pct})" if pct else label
+    return store_rows(doc.get("items"), currency_of(doc))
 
 
 def _application_summary_rows(doc: dict) -> list:
     """Kalem tablosunu tekrarlamayan sade dokum: ara toplam, indirimler, toplam."""
-    currency = _currency(doc)
+    currency = currency_of(doc)
     pricing = doc.get("pricing") or {}
-    gross = float(pricing.get("subtotal", 0) or 0)
-    gross += sum(float(a.get("total", 0) or 0) for a in pricing.get("addons") or [])
-    gross += sum(float(s.get("total", 0) or 0) for s in pricing.get("store_items") or [])
+    gross = gross_subtotal(pricing)
     rows = [("Ara toplam", money(gross, currency))]
-    if pricing.get("family_discount"):
-        rows.append(
-            (
-                _discount_label("Aile indirimi", pricing.get("family_discount_rate")),
-                "- " + money(pricing["family_discount"], currency),
-            )
-        )
-    if pricing.get("visa_insurance_discount"):
-        rows.append(
-            (
-                _discount_label(
-                    pricing.get("visa_insurance_discount_title") or "Sigorta dahil vize indirimi",
-                    pricing.get("visa_insurance_discount_rate"),
-                ),
-                "- " + money(pricing["visa_insurance_discount"], currency),
-            )
-        )
-    if pricing.get("bundle_discount"):
-        rows.append(
-            (
-                _discount_label(
-                    pricing.get("bundle_discount_title") or "Paket indirimi",
-                    pricing.get("bundle_discount_rate"),
-                ),
-                "- " + money(pricing["bundle_discount"], currency),
-            )
-        )
+    rows += discount_rows(pricing, currency)
     total = pricing.get("total", doc.get("price", gross)) or gross
     rows.append(("TOPLAM", money(total, currency)))
     return rows
 
 
 def _order_summary_rows(doc: dict) -> list:
-    currency = _currency(doc)
+    currency = currency_of(doc)
     subtotal = sum(float(item.get("total", 0) or 0) for item in doc.get("items") or [])
     rows = [("Ara toplam", money(subtotal, currency))]
     if doc.get("bundle_discount"):
@@ -207,12 +155,7 @@ def _order_summary_rows(doc: dict) -> list:
 
 def _items_table(rows: list, st: dict) -> Table:
     head = ["#", "Açıklama", "Adet", "Tutar"]
-    body = [
-        [
-            Paragraph(f"<b>{h}</b>", st["label_right"] if h == "Tutar" else st["label"])
-            for h in head
-        ]
-    ]
+    body = [[Paragraph(f"<b>{h}</b>", st["label"]) for h in head]]
     for index, (label, qty, amount) in enumerate(rows, start=1):
         body.append(
             [
@@ -233,6 +176,7 @@ def _items_table(rows: list, st: dict) -> Table:
                 ("TOPPADDING", (0, 0), (-1, -1), 4),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                 ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (-1, 0), (-1, -1), AMOUNT_PAD),
             ]
         )
     )

@@ -3075,3 +3075,36 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
   _pricing_rows...) karmasiklik refactor'u YAPILMADI - musteriye giden fatura/police
   ciktilarini ureten, calisan ve gorsel regresyon testi olmayan kod; islevsel hata yok,
   refactor net risk. Ayni sekilde route dosyalarinin import sayisi mimari tercih.
+
+### 2026-06-18 (32) · Fatura/police PDF'leri icin altin kopya testleri + guvenli bolme
+- Yeni: `backend/tests/test_iteration_139_pdf_golden.py` (17 test) + `backend/tests/golden/*.txt`
+  (13 altin kopya). Sabit fixture'lardan uretilen PDF'lerin metni ve tablo kolon genislikleri
+  kayitli kopyayla karsilastirilir. Kasitli tasarim degisikliginde yenileme:
+  `UPDATE_GOLDEN=1 python -m pytest tests/test_iteration_139_pdf_golden.py`.
+- Kapsam: basvuru faturasi (aile indirimi + ekspres + tur tarihli kalem + paket indirimleri),
+  havale bekleyen basvuru faturasi, magaza siparis faturasi, basvuru formu (2 varyant),
+  yerlesim kolon genislikleri, fiyat/kalem dokumu, police teslim metinleri (e-posta + WhatsApp),
+  police PDF cozumleme (base64 / indirme linki / ham / bulunamadi), police dosya kaydi,
+  saglayici hata mesajlari ve `tamamliyo._request` retry akislari.
+- Testler yesilken bolunen fonksiyonlar (radon): `_application_summary_rows` C15→A3,
+  `_application_items` C11→A1, `application_pdf._pricing_rows` C11→A4,
+  `tamamliyo._request` C16→B10, `_find_pdf_value` C13→B6, `_error_message` C11→A.
+  Yeni modul **`backend/pdf_pricing.py`** (money, fmt_date, currency_of, discount_rows,
+  extras_rows, store_rows, paid_items, gross_subtotal) form ile faturanin ortak
+  kalem/indirim mantigini tek kaynaga aldi (onceki oturumda "riskli" diye ertelenen is).
+- Davranis duzeltmesi: indirim orani bos gelirse form PDF'i "Aile indirimi (%0)" yaziyordu;
+  artik fatura ile ayni davraniyor (yuzde yazilmiyor).
+- Tutar kolonu (kullanici istegi): tutarlar sayfanin sag kenarina yapisik degil
+  (`application_pdf.AMOUNT_PAD = 12pt`), sagdan hizali olduklari icin "TL"ler yolcu
+  tablosunda ve hizmet bedeli dokumunde ayni hizada. pymupdf ile olculen test:
+  sayfadaki tum "TL" tek x konumunda (534.8).
+- Dogum yeri (kullanici istegi): `/passport/read` artik okunan tum alanlari
+  `uploads.ocr.fields` altina yaziyor; basvuru olusurken bos kalan pasaport alanlari
+  (dogum yeri, verilis yeri/tarihi, uyruk) buradan tamamlaniyor
+  (`routes_public._fill_from_passport_ocr`). PDF'de yer adi "ISTANBUL" degil "Istanbul"
+  yazimiyla gosteriliyor (`application_pdf._place`).
+  Test: `tests/test_iteration_140_birth_place.py` (7) + gercek uctan dogrulama
+  (API'den basvuru olusturuldu, form.pdf'te "Dogum yeri: Istanbul" cikti).
+- Eski test tazelendi: `test_iteration_125_placeholder_contact.py` artik Dubai ofis
+  alanlarinin acilista otomatik doldurulmasini hesaba katiyor (4 kirmizi test yesillendi).
+- pytest: **631 passed, 3 skipped**.

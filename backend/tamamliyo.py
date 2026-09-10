@@ -77,21 +77,72 @@ def auto_issue_enabled() -> bool:
     return (os.environ.get("TAMAMLIYO_AUTO_ISSUE") or "").strip().lower() in {"1", "true", "yes"}
 
 
+DEFAULT_ERROR = "Tamamliyo servisi beklenmeyen yanit dondurdu."
+ERROR_KEYS = (
+    "errorMessage",
+    "errorCode",
+    "message",
+    "mesaj",
+    "hata",
+    "error",
+    "authentication",
+    "errors",
+)
+
+
+def _first_text(mapping: dict, keys) -> str | None:
+    """Verilen anahtarlardan ilk dolu metni dondurur (liste ise ilk elemani)."""
+    for key in keys:
+        value = mapping.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if isinstance(value, list) and value:
+            return str(value[0])
+    return None
+
+
 def _error_message(payload) -> str:
-    if isinstance(payload, dict):
-        # Tamamliyo hatalari `data.errorMessage` altinda dondurur (errorCode: HATA_*)
-        inner = payload.get("data")
-        if isinstance(inner, dict):
-            detail = inner.get("errorMessage") or inner.get("errorCode")
-            if isinstance(detail, str) and detail.strip():
-                return detail.strip()
-        for key in ("errorMessage", "errorCode", "message", "mesaj", "hata", "error", "authentication", "errors"):
-            value = payload.get(key)
-            if isinstance(value, str) and value.strip():
-                return value.strip()
-            if isinstance(value, list) and value:
-                return str(value[0])
-    return "Tamamliyo servisi beklenmeyen yanit dondurdu."
+    if not isinstance(payload, dict):
+        return DEFAULT_ERROR
+    # Tamamliyo hatalari `data.errorMessage` altinda dondurur (errorCode: HATA_*)
+    inner = payload.get("data")
+    detail = _first_text(inner, ("errorMessage", "errorCode")) if isinstance(inner, dict) else None
+    return detail or _first_text(payload, ERROR_KEYS) or DEFAULT_ERROR
+
+
+def _backoff_seconds(attempt: int) -> float:
+    """Ustel bekleme + jitter (ayni anda donen istekler ust uste binmesin)."""
+    return 0.5 * (2**attempt) + _jitter.random() * 0.25
+
+
+def _network_error(exc: Exception, retry: bool) -> TamamliyoError:
+    """Yanit hic alinamadi; odeme isteklerinde cekim yapilmis olabilir isareti konur."""
+    if not retry:
+        return TamamliyoError(
+            f"{PAYMENT_UNKNOWN_MARKER}: Tamamliyo yaniti alinamadi, cekim yapilmis olabilir ({exc})."
+        )
+    return TamamliyoError(f"Tamamliyo servisine ulasilamadi: {exc}", retryable=True)
+
+
+def _payload_of(res) -> dict:
+    try:
+        return res.json()
+    except ValueError:
+        return {"raw": res.text[:500]}
+
+
+def _accepted(res, data) -> bool:
+    """HTTP 2xx/3xx ve govdede `success: false` yoksa yanit kabul edilir."""
+    return res.status_code < 400 and (
+        not isinstance(data, dict) or data.get("success") is not False
+    )
+
+
+def _checked(data: dict, status: int) -> dict:
+    """Basarili gorunen yanitta gomulu kimlik hatasini yakalar."""
+    if isinstance(data, dict) and data.get("authentication"):
+        raise TamamliyoError(str(data["authentication"]), status, data)
+    return data
 
 
 async def _request(method: str, path: str, payload: dict | None = None, retry: bool = True) -> dict:
@@ -102,29 +153,21 @@ async def _request(method: str, path: str, payload: dict | None = None, retry: b
     attempts = MAX_ATTEMPTS if retry else 1
     async with httpx.AsyncClient(timeout=httpx.Timeout(connect=5.0, read=30.0, write=15.0, pool=5.0)) as client:
         for attempt in range(attempts):
+            last_attempt = attempt == attempts - 1
             try:
                 res = await client.request(method, url, json=payload, headers=headers)
             except (httpx.TimeoutException, httpx.NetworkError) as exc:
-                if attempt == attempts - 1:
-                    if not retry:
-                        raise TamamliyoError(
-                            f"{PAYMENT_UNKNOWN_MARKER}: Tamamliyo yaniti alinamadi, cekim yapilmis olabilir ({exc})."
-                        ) from exc
-                    raise TamamliyoError(f"Tamamliyo servisine ulasilamadi: {exc}", retryable=True) from exc
-                await asyncio.sleep(0.5 * (2**attempt) + _jitter.random() * 0.25)
+                if last_attempt:
+                    raise _network_error(exc, retry) from exc
+                await asyncio.sleep(_backoff_seconds(attempt))
                 continue
-            try:
-                data = res.json()
-            except ValueError:
-                data = {"raw": res.text[:500]}
-            if res.status_code < 400 and (not isinstance(data, dict) or data.get("success") is not False):
-                if isinstance(data, dict) and data.get("authentication"):
-                    raise TamamliyoError(str(data["authentication"]), res.status_code, data)
-                return data
+            data = _payload_of(res)
+            if _accepted(res, data):
+                return _checked(data, res.status_code)
             retryable = retry and res.status_code in RETRYABLE_STATUS
-            if not retryable or attempt == attempts - 1:
+            if not retryable or last_attempt:
                 raise TamamliyoError(_error_message(data), res.status_code, data, retryable)
-            await asyncio.sleep(0.5 * (2**attempt) + _jitter.random() * 0.25)
+            await asyncio.sleep(_backoff_seconds(attempt))
     raise TamamliyoError("Tamamliyo istegi tamamlanamadi.", retryable=True)
 
 
@@ -227,25 +270,26 @@ async def quote_info(quote_id) -> dict:
     return await _request("POST", f"{PATH}/teklif-bilgileri", {"teklifId": quote_id})
 
 
+def _pdf_text(node: str) -> str | None:
+    """Metin base64/ham PDF ya da police PDF baglantisi mi?"""
+    text = node.strip()
+    if text.startswith((PDF_MAGIC, "%PDF")):
+        return text
+    is_link = re.match(r"^https?://\S+", text) and (
+        ".pdf" in text.lower() or "police" in text.lower()
+    )
+    return text if is_link else None
+
+
 def _find_pdf_value(node) -> str | None:
     """Yanit icinde base64 PDF ya da PDF baglantisi arar (alan adi surumle degisebiliyor)."""
     if isinstance(node, str):
-        text = node.strip()
-        if text.startswith(PDF_MAGIC) or text.startswith("%PDF"):
-            return text
-        if re.match(r"^https?://\S+", text) and (".pdf" in text.lower() or "police" in text.lower()):
-            return text
-        return None
-    if isinstance(node, dict):
-        for value in node.values():
-            found = _find_pdf_value(value)
-            if found:
-                return found
-    if isinstance(node, list):
-        for value in node:
-            found = _find_pdf_value(value)
-            if found:
-                return found
+        return _pdf_text(node)
+    children = node.values() if isinstance(node, dict) else node if isinstance(node, list) else ()
+    for value in children:
+        found = _find_pdf_value(value)
+        if found:
+            return found
     return None
 
 

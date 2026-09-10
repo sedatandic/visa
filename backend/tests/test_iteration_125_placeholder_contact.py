@@ -35,7 +35,13 @@ class FakeSettings:
     async def update_one(self, _query, update):
         self.updates.append(update["$set"])
         for key, val in update["$set"].items():
-            self.value[key[6:]] = val
+            if self.value is not None:
+                self.value[key[6:]] = val
+
+
+# Dubai ofis alanlari bostaysa acilista varsayilanla doldurulur (server.FILL_IF_EMPTY);
+# numara testleri bu alanlari dolu vererek yalnizca telefon/WhatsApp guncellemesini olcer.
+FILLED_OFFICE = {field: COMPANY[field] for field in server.FILL_IF_EMPTY}
 
 
 @pytest.fixture
@@ -75,23 +81,31 @@ class TestFixPlaceholderContact:
         assert col.value["phone"] == COMPANY["phone"] == "+90 538 483 82 24"
 
     def test_real_numbers_are_untouched(self, settings):
-        col = settings({"phone": "+90 212 555 44 33", "whatsapp": "905551112233"})
+        col = settings({**FILLED_OFFICE, "phone": "+90 212 555 44 33", "whatsapp": "905551112233"})
         run(server.fix_placeholder_contact())
         assert col.updates == []
         assert col.value["whatsapp"] == "905551112233"
 
     def test_current_numbers_are_untouched(self, settings):
-        col = settings({"phone": COMPANY["phone"], "whatsapp": COMPANY["whatsapp"]})
+        col = settings(
+            {**FILLED_OFFICE, "phone": COMPANY["phone"], "whatsapp": COMPANY["whatsapp"]}
+        )
         run(server.fix_placeholder_contact())
         assert col.updates == []
 
     def test_missing_settings_document_is_safe(self, settings):
+        """Kayit yoksa upsert edilmez (gercek Mongo'da update_one bos gecer), hata da olusmaz."""
         col = settings(None)
         run(server.fix_placeholder_contact())
-        assert col.updates == []
+        assert col.value is None
+
+    def test_empty_dubai_office_is_filled(self, settings):
+        col = settings({"phone": COMPANY["phone"], "whatsapp": COMPANY["whatsapp"]})
+        run(server.fix_placeholder_contact())
+        assert col.updates == [{f"value.{field}": value for field, value in FILLED_OFFICE.items()}]
 
     def test_both_fields_fixed_in_single_update(self, settings):
-        col = settings({"phone": "+90 850 000 00 00", "whatsapp": "905331234567"})
+        col = settings({**FILLED_OFFICE, "phone": "+90 850 000 00 00", "whatsapp": "905331234567"})
         run(server.fix_placeholder_contact())
         assert col.updates == [
             {"value.phone": COMPANY["phone"], "value.whatsapp": COMPANY["whatsapp"]}

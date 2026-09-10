@@ -69,6 +69,12 @@
       143 → 90 satır, C901 düştü, 32 birim testi (`test_iteration_117_zami_fill_steps.py`).
 
 ## P2
+- [x] ~~Fatura/police PDF fonksiyonlarinin karmasiklik refactor'u~~ → 2026-06-18: once altin
+      kopya testleri yazildi (`tests/test_iteration_139_pdf_golden.py` + `tests/golden/`),
+      ardindan ortak kalem/indirim mantigi `backend/pdf_pricing.py`'a tasindi
+      (`_application_summary_rows` C15→A3, `_pricing_rows` C11→A4, `_request` C16→B10).
+- [ ] Kalan karmasiklik: `emailer.send_email` ve `emailer.admin_subject` (henuz altin kopya
+      testi yok; e-posta govdeleri icin ayni yontem uygulanabilir).
 - [ ] `routes_admin.py` (1375 satir / 30 import) ve `routes_public.py` (1390 satir)
       domain bazli bolunebilir (2026-06-16 kod incelemesi). Teklif uclari `routes_admin_offers.py`
       olarak ayrildi; kalan alanlar (basvurular, icerik, e-posta) ayni yontemle bolunebilir.

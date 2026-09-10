@@ -1,0 +1,7 @@
+yol: dubaivize/uploads/insurance_policy/<id>.pdf
+content_type: application/pdf
+doc_type: insurance_policy
+is_deleted: False
+original_filename: Police-SV-GOLD-003.pdf
+size: 15
+storage_path: s3://dubaivize/uploads/insurance_policy/<id>.pdf

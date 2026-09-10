@@ -708,9 +708,22 @@ async def _ocr_success(file_id: str, result: dict, duration_ms: int) -> dict:
     coverage = await ocr_metrics.record_attempt(
         file_id=file_id, duration_ms=duration_ms, ok=True, data=result
     )
+    # Okunan alanlar dosya kaydinda saklanir: basvuru olusurken musteriye sorulmayan
+    # alanlar (dogum yeri, verilis yeri/tarihi) buradan tamamlanir.
     await uploads_col.update_one(
         {"id": file_id},
-        {"$set": {"ocr": {"at": datetime.now(timezone.utc), "confidence": result.get("confidence")}}},
+        {
+            "$set": {
+                "ocr": {
+                    "at": datetime.now(timezone.utc),
+                    "confidence": result.get("confidence"),
+                    "fields": {
+                        field: str(result.get(field) or "")
+                        for field in ocr_metrics.TRACKED_FIELDS
+                    },
+                }
+            }
+        },
     )
     return {
         "ok": True,
@@ -847,6 +860,24 @@ def _fill_uae_defaults(data: dict) -> None:
         data["father_name"] = surname
 
 
+# Musteriye sorulmayan, yalnizca pasaporttan okunan alanlar
+PASSPORT_ONLY_FIELDS = ("birth_place", "passport_issue_place", "passport_issue_date", "nationality")
+
+
+async def _fill_from_passport_ocr(data: dict) -> None:
+    """Bos kalan pasaport alanlarini (dogum yeri vb.) yuklenen pasaportun okumasindan tamamlar."""
+    missing = [field for field in PASSPORT_ONLY_FIELDS if not str(data.get(field) or "").strip()]
+    file_id = str(data.get("passport_file_id") or "")
+    if not missing or not file_id:
+        return
+    record = await uploads_col.find_one({"id": file_id}, {"ocr": 1})
+    fields = ((record or {}).get("ocr") or {}).get("fields") or {}
+    for field in missing:
+        value = str(fields.get(field) or "").strip()
+        if value:
+            data[field] = value
+
+
 async def _build_travelers(traveler_inputs, travel=None) -> tuple[list, list]:
     """Yolcu girdilerini vize bilgileri ile zenginlestirir; (travelers, prices) dondurur."""
     travelers: list = []
@@ -857,6 +888,7 @@ async def _build_travelers(traveler_inputs, travel=None) -> tuple[list, list]:
             raise HTTPException(400, "Gecersiz vize tipi secildi.")
         data = t.model_dump()
         _fill_uae_defaults(data)
+        await _fill_from_passport_ocr(data)
         data.update(
             {
                 "id": str(uuid.uuid4()),

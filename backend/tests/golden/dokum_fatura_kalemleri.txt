@@ -1,0 +1,19 @@
+[kalemler]
+Sedat Andıç · 30 Gün Tek Giriş x1 = 5.190,00 TL
+Elif Andıç · 30 Gün Tek Giriş (çocuk) x1 = 2.470,00 TL
+Ekspres hizmet x2 = 4.940,00 TL
+Seyahat sağlık sigortası (30 gün) x2 = 1.288,00 TL
+Dubai Çöl Safarisi (21.09.2026) x2 = 4.440,00 TL
+[ozet]
+Ara toplam = 18.328,00 TL
+Aile indirimi (%10) = - 766,00 TL
+Sigorta dahil vize indirimi (%10) = - 519,00 TL
+Seyahat paketi indirimi (%10) = - 1.200,00 TL
+TOPLAM = 15.843,00 TL
+[siparis kalemleri]
+Dubai eSIM 10 GB x1 = 690,00 TL
+Seyahat sağlık sigortası (15 gün) (01.10.2026) x2 = 1.120,00 TL
+[siparis ozeti]
+Ara toplam = 1.810,00 TL
+Seyahat paketi indirimi = - 181,00 TL
+TOPLAM = 1.629,00 TL
