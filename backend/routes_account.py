@@ -444,11 +444,10 @@ async def save_draft(payload: DraftIn, request: Request) -> dict:
     resume_url = (
         f"{origin}/basvuru?taslak={doc['id']}&kod={doc['resume_code']}" if origin else ""
     )
-    # Otomatik kayitlar (5 sn'de bir) e-posta tetiklemez: yalnizca ilk kayit veya
-    # kullanicinin acik "kaydet" istegi, alici basina saatte en fazla 3 posta.
+    # E-posta YALNIZCA kullanici "Kaydet, sonra devam et" dedigi zaman gider.
+    # Otomatik/sessiz kayitlar (5 sn'de bir) hicbir posta tetiklemez.
     email_result: dict = {"status": "skipped"}
-    should_mail = existing is None or payload.notify
-    if should_mail and rate_allow(f"draft-mail:{email}", 3, 3600):
+    if payload.notify and rate_allow(f"draft-mail:{email}", 3, 3600):
         email_result = await send_email(
             email,
             subject_with_ref(doc.get("resume_code", ""), "kaydedildi - kaldığınız yerden devam edin"),

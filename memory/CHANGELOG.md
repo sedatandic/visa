@@ -2800,3 +2800,22 @@ daha saga baslamasi (right-align imzasi).
   zeminde, son 6 ay icinde cekilmis biyometrik fotograf. **Gozluksuz ve sapkasiz
   olmalidir.**"
 Dogrulama: Adim 3 ekran goruntusu; uyari kutusu DOM'da yok, yeni ibare gorunuyor.
+
+## 2026-06-18 (11) · Otomatik taslak e-postasi kapatildi + 2 dk bosta kalma teklifi
+Sorun: `routes_account.save_draft` icindeki `should_mail = existing is None or notify`
+kurali yuzunden, kullanici "Kaydet, sonra devam et" demeden ILK sessiz otomatik kayitta
+"Basvurunuz kaydedildi" e-postasi gidiyordu.
+- Duzeltme: `if payload.notify and rate_allow(...)` - posta yalnizca kullanici acikca
+  kaydettiginde gider. Test guncellendi (`test_iteration_122_security_hardening.py`:
+  ilk kayit artik `email_status == "skipped"`, notify cap testi 1+ skipped).
+- Yeni: Apply.jsx'e bosta kalma teklifi (`IDLE_PROMPT_MS = 120000`). 2 dakika boyunca
+  mouse/klavye/scroll/dokunma olmazsa dialog acilir: "Basvurunuza devam edecek misiniz?"
+  → "Formda kalayim" (kapat, 2 dk sonra tekrar sorabilir) / "Kaydet ve baglantiyi gonder"
+  (taslagi kaydeder + devam linkini e-postalar; e-posta bos ise Adim 1'e alip e-posta
+  alanina odaklanir). Kaydettikten sonra tekrar sormaz (`idleSavedRef`).
+  Basvuru gonderilmisse (`created`) veya gonderim sirasinda teklif cikmaz.
+Dogrulama: curl - sessiz kayit `skipped`, notify=true gonderim denedi; Playwright (gecici
+3 sn esik) - dialog cikti, "Formda kalayim" kapatti ve tekrar sordu, "Kaydet ve gonder"
+kaydetti (toast: devam kodu) ve bir daha sormadi; esik 120000'e geri alindi.
+NOT: 72 saat sonra gonderilen "basvurunuz yarim kaldi" hatirlatma e-postalari (max 2,
+`doc_reminders.py`) hala aktif - kullaniciya soruldu.

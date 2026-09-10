@@ -45,8 +45,8 @@ class TestDraftMailAbuse:
         )
         assert first.status_code == 200, first.text
         created = first.json()
-        # Ilk kayit posta dener (test adresinde saglayici hata dondurebilir, "skipped" olmaz)
-        assert created["email_status"] != "skipped"
+        # Kullanici "kaydet" demedikce (notify yok) hicbir posta gitmez
+        assert created["email_status"] == "skipped"
 
         body = {
             "email": email,
@@ -67,7 +67,7 @@ class TestDraftMailAbuse:
             for _ in range(4)
         ]
         assert statuses[-1] == "skipped", statuses
-        assert statuses.count("skipped") >= 2, statuses
+        assert statuses.count("skipped") >= 1, statuses
 
 
 class TestUploadSignature:

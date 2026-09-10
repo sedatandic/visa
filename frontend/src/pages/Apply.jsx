@@ -95,6 +95,9 @@ const SUGGESTION_COVERS = {
     esim: "https://images.unsplash.com/photo-1651467606797-e1c660cf3fda?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200",
 };
 
+// Formda 2 dakika islem yapilmazsa "daha sonra devam" teklifi gosterilir
+const IDLE_PROMPT_MS = 120000;
+
 const STEPS = [
     { key: "people", label: "Bilgiler", icon: Users },
     { key: "visa", label: "Vize", icon: CalendarDays },
@@ -248,6 +251,7 @@ export default function Apply() {
     const [step, setStep] = useState(0);
     const [compareOpen, setCompareOpen] = useState(false);
     const [visaEditOpen, setVisaEditOpen] = useState(false);
+    const [idlePrompt, setIdlePrompt] = useState(false);
     const [datesEditOpen, setDatesEditOpen] = useState(false);
     const cart = useCart();
 
@@ -389,6 +393,44 @@ export default function Apply() {
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [contact, travelers, travel, addons, step, submitting]);
+
+    // 2 dakika hicbir islem yapilmazsa "daha sonra devam eder misiniz?" diye soruyoruz.
+    const emailReadyForDraft = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((contact.email || "").trim());
+
+    const dismissIdlePrompt = () => setIdlePrompt(false);
+
+    // Bosta kalma teklifinden kaydettiyse tekrar sormuyoruz
+    const idleSavedRef = useRef(false);
+
+    const saveFromIdlePrompt = async () => {
+        if (!emailReadyForDraft) {
+            setIdlePrompt(false);
+            setStep(0);
+            toast.info("Devam bağlantısını gönderebilmemiz için e-posta adresinizi girin.");
+            setTimeout(() => document.getElementById("c-email")?.focus(), 300);
+            return;
+        }
+        await saveDraft();
+        idleSavedRef.current = true;
+        setIdlePrompt(false);
+    };
+
+    useEffect(() => {
+        if (created || submitting || idlePrompt || idleSavedRef.current) return;
+        let timer;
+        const reset = () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => setIdlePrompt(true), IDLE_PROMPT_MS);
+        };
+        const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "focusin"];
+        events.forEach((ev) => window.addEventListener(ev, reset, { passive: true }));
+        reset();
+        return () => {
+            clearTimeout(timer);
+            events.forEach((ev) => window.removeEventListener(ev, reset));
+        };
+    }, [created, submitting, idlePrompt]);
+
 
     // taslaktan devam / onceki basvurudan kopyala
     useEffect(() => {
@@ -3819,6 +3861,52 @@ export default function Apply() {
                     </div>
                 </div>
             </section>
+
+            {/* 2 dakika islem yapilmazsa: kaldigin yerden devam teklifi */}
+            <Dialog open={idlePrompt} onOpenChange={(open) => !open && dismissIdlePrompt()}>
+                <DialogContent className="max-w-md" data-testid="idle-resume-dialog">
+                    <DialogHeader>
+                        <DialogTitle>Başvurunuza devam edecek misiniz?</DialogTitle>
+                        <DialogDescription>
+                            2 dakikadır işlem yapılmadı. İsterseniz başvurunuzu kaydedelim; devam
+                            bağlantısını e-postanıza gönderip kaldığınız yerden dilediğiniz zaman
+                            devam edebilirsiniz.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row-reverse">
+                        <Button
+                            type="button"
+                            className="h-11 flex-1"
+                            disabled={savingDraft}
+                            onClick={saveFromIdlePrompt}
+                            data-testid="idle-save-and-email-button"
+                        >
+                            {savingDraft ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor
+                                </>
+                            ) : emailReadyForDraft ? (
+                                <>
+                                    <Save className="mr-2 h-4 w-4" /> Kaydet ve bağlantıyı gönder
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="mr-2 h-4 w-4" /> E-posta girip kaydet
+                                </>
+                            )}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="h-11 flex-1 border border-border"
+                            onClick={dismissIdlePrompt}
+                            data-testid="idle-continue-button"
+                        >
+                            Formda kalayım
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
