@@ -220,7 +220,7 @@ export const VisaExplainer = () => {
             data-testid="visa-explainer"
         >
             {/* CIZIM KATMANI */}
-            <div className="relative order-1 flex w-full flex-col sm:order-2">
+            <div className="relative order-1 flex w-full flex-col sm:order-2 sm:max-w-[620px] sm:justify-self-start">
                 <div className="relative aspect-[3/2] w-full overflow-hidden sm:aspect-auto sm:h-[386px] sm:w-full">
                 <AnimatePresence initial={false}>
                     <motion.img
@@ -236,7 +236,7 @@ export const VisaExplainer = () => {
                             x: { duration: 0.7, ease: "easeOut" },
                             scale: { duration: paused ? 0.4 : sceneMs / 1000, ease: "linear" },
                         }}
-                        className="absolute inset-0 h-full w-full object-contain object-center p-1.5 sm:p-2 sm:pr-8"
+                        className="absolute inset-0 h-full w-full object-contain object-center p-1.5 sm:p-2"
                         data-testid={`explainer-image-${scene.key}`}
                     />
                 </AnimatePresence>
@@ -332,7 +332,7 @@ export const VisaExplainer = () => {
             </div>
 
             {/* METIN KATMANI */}
-            <div className="relative order-2 flex flex-col gap-3 p-5 pt-2 sm:order-1 sm:min-h-[420px] sm:justify-center sm:gap-4 sm:p-6">
+            <div className="relative order-2 flex flex-col gap-3 p-5 pt-2 sm:order-1 sm:min-h-[420px] sm:items-end sm:justify-center sm:gap-4 sm:p-6">
                 {started && !playing && (
                     <button
                         type="button"
