@@ -221,8 +221,12 @@ PLACEHOLDER_CONTACT = {
 }
 
 
+# DB'de bos kalirsa statik varsayilandan doldurulur (Dubai ofis karti/haritasi kaybolmasin)
+FILL_IF_EMPTY = ("dubai_address", "dubai_phone")
+
+
 async def fix_placeholder_contact() -> None:
-    """Eski demo telefon/WhatsApp numaralarini guncel numarayla degistirir (her ortamda)."""
+    """Eski demo numaralari duzeltir; bos Dubai ofis alanlarini varsayilanla doldurur."""
     doc = await settings_col.find_one({"key": "company_info"})
     value = (doc or {}).get("value") or {}
     update = {
@@ -230,6 +234,13 @@ async def fix_placeholder_contact() -> None:
         for field, placeholders in PLACEHOLDER_CONTACT.items()
         if str(value.get(field) or "").strip() in placeholders
     }
+    update.update(
+        {
+            f"value.{field}": COMPANY[field]
+            for field in FILL_IF_EMPTY
+            if not str(value.get(field) or "").strip()
+        }
+    )
     if update:
         await settings_col.update_one({"key": "company_info"}, {"$set": update})
         logger.info("placeholder contact fixed: %s", sorted(update))
