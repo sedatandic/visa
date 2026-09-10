@@ -2745,3 +2745,17 @@ en fazla tek adim ilerler (Adim 1'den Adim 4'e atlanamaz). Basvuru gonderildikte
 (`created`) adimlar kilitli. Hover/focus-visible durumlari + aria-current="step" eklendi.
 Dogrulama (Playwright): Adim3 -> Adim1 (geri) OK, Adim1 -> Adim2 (ileri, dogrulama gecti)
 OK, Adim2'den Adim4'e tiklama -> yalnizca Adim3'e gitti (atlama engellendi).
+
+## 2026-06-18 (5) · Vize turu + seyahat tarihleri 1. adimdan 2. adima tasindi
+Kullanici istegi: "1. adimda kisisel bilgiler ve pasaport olsa yeterli".
+- Adim 1'den kaldirilan bloklar: `primary-visa-block` (Basvurdugunuz vize turu) ve
+  `travel-dates-block` (Seyahat tarihleriniz). Adim 1 artik: basvuru tipi + iletisim +
+  yolcu/pasaport bilgileri.
+- Dogrulama tasindi: gidis/donus tarihi, tarih-belirsiz penceresi ve pasaport 6 ay
+  gecerlilik kontrolleri `step === 0` -> `step === 1` blogunda.
+- Adim 2 (Vize): vize secilmemisse (`visaMissing`) vize secici kendiliginden acik gelir,
+  ozet seridi ve "Degistir" butonu gizlenir, baslik "Vizenizi secin" olur; tarih yoksa
+  (`datesMissing`) tarih duzenleyici acik gelir, "Tarihleri duzenle" seridi gizlenir.
+Dogrulama (Playwright): Adim1'de iki blok da yok; ileri -> Adim2 basligi "Vizenizi secin",
+vize secici ve tarih duzenleyici acik; vize/tarih girilmeden ileri tiklamasi adimda tuttu;
+vize + tarih girilince Adim3'e gecti.

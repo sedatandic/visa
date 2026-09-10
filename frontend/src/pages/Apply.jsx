@@ -1715,6 +1715,11 @@ export default function Apply() {
             if (hasChild && !hasAdult)
                 e.travelers_adult =
                     "18 yaş altı yolcular en az bir yetişkinle birlikte başvurmalıdır. Lütfen yolcu ekleyin.";
+        }
+        if (step === 1) {
+            travelers.forEach((t) => {
+                if (!t.visa_type_id) e[t.key] = { ...(e[t.key] || {}), visa_type_id: "Vize türü seçin." };
+            });
             if (travel.dates_unknown) {
                 if (!travel.travel_window)
                     e.travel_window = "Yaklaşık olarak ne zaman gitmeyi planladığınızı seçin.";
@@ -1748,11 +1753,6 @@ export default function Apply() {
                             .join(", ")}`;
                 }
             }
-        }
-        if (step === 1) {
-            travelers.forEach((t) => {
-                if (!t.visa_type_id) e[t.key] = { ...(e[t.key] || {}), visa_type_id: "Vize türü seçin." };
-            });
             if (!travel.dates_unknown && travel.arrival_date && travel.departure_date) {
                 const stayDays =
                     Math.round(
@@ -2028,6 +2028,10 @@ export default function Apply() {
         </Dialog>
         </>
     );
+
+    // 2. adim: vize/tarih secilmemisse duzenleyiciler kendiliginden acik gelir
+    const visaMissing = !primaryVisaId;
+    const datesMissing = !datesFlexible && (!travel.arrival_date || !travel.departure_date);
 
     const travelDatesEditor = (
         <div
@@ -2437,49 +2441,7 @@ export default function Apply() {
                                         </label>
                                     </div>
 
-                                    {/* BASVURULAN VIZE TURU: vize kartindan gelindiyse otomatik secili */}
-                                    <div
-                                        className="mt-6 rounded-xl border border-border bg-[hsl(var(--cloud))] p-5"
-                                        data-testid="primary-visa-block"
-                                    >
-                                        <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                                            Başvurduğunuz vize türü
-                                        </h3>
-                                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                            Bir vize kartından geldiyseniz otomatik seçilir. Yolcu bazında farklı vize
-                                            seçmek isterseniz 2. adımda düzenleyebilirsiniz.
-                                        </p>
-                                        {visaPickerFields}
-                                        {primaryVisa && (
-                                            <p
-                                                className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs leading-5 text-muted-foreground"
-                                                data-testid="primary-visa-meta"
-                                            >
-                                                <span>
-                                                    Kalış süresi:{" "}
-                                                    <strong className="text-foreground">
-                                                        {primaryVisa.duration_days} gün
-                                                    </strong>
-                                                </span>
-                                                <span>
-                                                    Giriş:{" "}
-                                                    <strong className="text-foreground">
-                                                        {primaryVisa.entry_type === "multiple" ? "Çok girişli" : "Tek girişli"}
-                                                    </strong>
-                                                </span>
-                                                <span>
-                                                    Kişi başı:{" "}
-                                                    <strong className="text-foreground">
-                                                        {formatMoney(primaryVisa.price, primaryVisa.currency)}
-                                                    </strong>
-                                                </span>
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* SEYAHAT TARIHLERI: oneriler bu tarihlere gore hesaplanir */}
-                                    {travelDatesEditor}
-
+                                    {/* SEYAHAT TARIHLERI ve VIZE TURU 2. adimda secilir */}
 
                                     <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="font-heading text-base font-bold">
@@ -2783,12 +2745,16 @@ export default function Apply() {
                             {step === 1 && (
                                 <div data-testid="wizard-visa-details-form">
                                     <h2 className="font-heading text-xl font-bold">
-                                        {travelers.length > 1 ? "Vize seçimi" : "Vizenizi onaylayın"}
+                                        {travelers.length > 1
+                                            ? "Vize seçimi"
+                                            : visaMissing
+                                              ? "Vizenizi seçin"
+                                              : "Vizenizi onaylayın"}
                                     </h2>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         {travelers.length > 1
-                                            ? "Yolcularınız için vize türünü seçin; seyahat tarihlerinizi 1. adımda güncelleyebilirsiniz."
-                                            : "Seçiminizi kontrol edin, istersen yanına ek hizmet ekleyin."}
+                                            ? "Yolcularınız için vize türünü ve seyahat tarihlerinizi seçin."
+                                            : "Vize türünüzü ve seyahat tarihlerinizi seçin, istersen yanına ek hizmet ekleyin."}
                                     </p>
 
                                     <div className="mt-6">
@@ -2835,7 +2801,7 @@ export default function Apply() {
                                                 );
                                             })}
                                         </div>
-                                    ) : (
+                                    ) : visaMissing ? null : (
                                         <div
                                             className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4 text-sm"
                                             data-testid="visa-step-selected-summary"
@@ -2850,23 +2816,27 @@ export default function Apply() {
                                                     {formatMoney(primaryVisa.price, primaryVisa.currency)}
                                                 </span>
                                             )}
-                                            <button
-                                                type="button"
-                                                onClick={() => setVisaEditOpen((o) => !o)}
-                                                className="ml-auto text-xs font-semibold text-primary hover:underline"
-                                                data-testid="visa-step-change-visa-button"
-                                            >
-                                                {visaEditOpen ? "Kapat" : "Değiştir"}
-                                            </button>
+                                            {!visaMissing && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setVisaEditOpen((o) => !o)}
+                                                    className="ml-auto text-xs font-semibold text-primary hover:underline"
+                                                    data-testid="visa-step-change-visa-button"
+                                                >
+                                                    {visaEditOpen ? "Kapat" : "Değiştir"}
+                                                </button>
+                                            )}
                                         </div>
                                     )}
 
-                                    {travelers.length <= 1 && visaEditOpen && (
+                                    {travelers.length <= 1 && (visaEditOpen || visaMissing) && (
                                         <div
                                             className="mt-3 rounded-xl border border-primary/25 bg-primary/[0.04] p-5"
                                             data-testid="visa-step-visa-editor"
                                         >
-                                            <p className="font-heading text-sm font-bold">Vize türünü değiştirin</p>
+                                            <p className="font-heading text-sm font-bold">
+                                                {visaMissing ? "Vize türünüzü seçin" : "Vize türünü değiştirin"}
+                                            </p>
                                             <p className="mt-1 text-xs leading-5 text-muted-foreground">
                                                 Listeden seçin ya da vizeleri karşılaştırın; fiyat ve öneriler anında
                                                 güncellenir.
@@ -2875,32 +2845,34 @@ export default function Apply() {
                                         </div>
                                     )}
 
-                                    <div
-                                        className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4 text-sm"
-                                        data-testid="visa-step-dates-summary"
-                                    >
-                                        <CalendarDays className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                                        <span className="text-muted-foreground">Seyahat tarihleriniz:</span>
-                                        <strong data-testid="visa-step-dates-value">
-                                            {datesFlexible
-                                                ? travelWindowLabel || "Henüz belli değil"
-                                                : travel.arrival_date && travel.departure_date
-                                                  ? `${formatDate(travel.arrival_date)} – ${formatDate(travel.departure_date)}${
-                                                        tripDays ? ` · ${tripDays} gün` : ""
-                                                    }`
-                                                  : "Seçilmedi"}
-                                        </strong>
-                                        <button
-                                            type="button"
-                                            onClick={() => setDatesEditOpen((o) => !o)}
-                                            className="ml-auto text-xs font-semibold text-primary hover:underline"
-                                            data-testid="visa-step-edit-dates-button"
+                                    {!datesMissing && (
+                                        <div
+                                            className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4 text-sm"
+                                            data-testid="visa-step-dates-summary"
                                         >
-                                            {datesEditOpen ? "Kapat" : "Tarihleri düzenle"}
-                                        </button>
-                                    </div>
+                                            <CalendarDays className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                                            <span className="text-muted-foreground">Seyahat tarihleriniz:</span>
+                                            <strong data-testid="visa-step-dates-value">
+                                                {datesFlexible
+                                                    ? travelWindowLabel || "Henüz belli değil"
+                                                    : travel.arrival_date && travel.departure_date
+                                                      ? `${formatDate(travel.arrival_date)} – ${formatDate(travel.departure_date)}${
+                                                            tripDays ? ` · ${tripDays} gün` : ""
+                                                        }`
+                                                      : "Seçilmedi"}
+                                            </strong>
+                                            <button
+                                                type="button"
+                                                onClick={() => setDatesEditOpen((o) => !o)}
+                                                className="ml-auto text-xs font-semibold text-primary hover:underline"
+                                                data-testid="visa-step-edit-dates-button"
+                                            >
+                                                {datesEditOpen ? "Kapat" : "Tarihleri düzenle"}
+                                            </button>
+                                        </div>
+                                    )}
 
-                                    {datesEditOpen && (
+                                    {(datesEditOpen || datesMissing) && (
                                         <div className="mt-1" data-testid="visa-step-dates-editor">
                                             {travelDatesEditor}
                                         </div>
