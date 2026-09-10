@@ -2276,7 +2276,7 @@ export default function Apply() {
                         style={{ boxShadow: "var(--shadow-card)" }}
                         data-testid="wizard-stepper"
                     >
-                        <div className="flex items-stretch gap-1.5 overflow-x-auto px-4 py-3.5 sm:gap-2 sm:px-5">
+                        <div className="grid grid-cols-2 items-stretch gap-x-2 gap-y-2.5 px-3 py-3 sm:flex sm:gap-2 sm:px-5 sm:py-3.5">
                             {STEPS.map((s, i) => {
                                 const Icon = s.icon;
                                 const done = i < step;
@@ -2290,13 +2290,13 @@ export default function Apply() {
                                         disabled={locked}
                                         aria-current={active ? "step" : undefined}
                                         title={locked ? "Başvurunuz gönderildi" : `Adım ${i + 1}: ${s.label}`}
-                                        className={`relative flex min-w-fit flex-1 items-center gap-2 rounded-lg px-1.5 pb-3 pt-1 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                                        className={`relative flex min-w-0 flex-1 items-center gap-1.5 rounded-lg px-1 pb-3 pt-1 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-1.5 ${
                                             locked ? "cursor-default" : "cursor-pointer hover:bg-primary/[0.05]"
                                         }`}
                                         data-testid={`wizard-step-item-${s.key}`}
                                     >
                                         <span
-                                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-[13px] font-bold transition-colors duration-200 ${
+                                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border text-[13px] font-bold transition-colors duration-200 sm:h-9 sm:w-9 ${
                                                 done
                                                     ? "border-primary bg-primary text-primary-foreground"
                                                     : active
@@ -2306,12 +2306,12 @@ export default function Apply() {
                                         >
                                             {done ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                                         </span>
-                                        <span className="flex flex-col leading-tight">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        <span className="flex min-w-0 flex-col leading-tight">
+                                            <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">
                                                 Adım {i + 1}
                                             </span>
                                             <span
-                                                className={`whitespace-nowrap text-xs font-bold sm:text-sm ${
+                                                className={`text-[11px] font-bold leading-snug sm:whitespace-nowrap sm:text-sm ${
                                                     active ? "text-foreground" : "text-muted-foreground"
                                                 }`}
                                             >

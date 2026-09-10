@@ -3131,3 +3131,11 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
   "TÜRKİYE CUMHURİYETİ / REPUBLIC OF TÜRKİYE" yaziyor ve alan etiketleri duzgun.
   Mockup alt yazisi: "isim ve numaralar gizlendi, pasaport gorseli ornek belgedir".
 - pytest: **636 passed, 3 skipped**.
+
+### 2026-06-18 (34) · Mobil adım şeridi yatay kaymıyor
+- `/basvuru` sihirbaz adım şeridi (`wizard-stepper`) mobilde `overflow-x-auto` + `min-w-fit`
+  ile yana kayıyordu (ADIM 3/4 ekran dışında kalıyordu). Artık mobilde 2x2 ızgara
+  (`grid grid-cols-2`), `sm` ve üzerinde eski tek satır düzeni korunuyor; ikon 32px,
+  etiketler 11px ve tek satırda sığıyor - dört adım da ADIM 1 ile aynı görünümde.
+- Doğrulama (Playwright): 390px'te `scrollWidth == clientWidth` (kayma yok), dört adım da
+  ekranda; 768px ve 1920px'te tek satır düzeni bozulmadı.
