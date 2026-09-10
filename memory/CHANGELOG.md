@@ -2759,3 +2759,11 @@ Kullanici istegi: "1. adimda kisisel bilgiler ve pasaport olsa yeterli".
 Dogrulama (Playwright): Adim1'de iki blok da yok; ileri -> Adim2 basligi "Vizenizi secin",
 vize secici ve tarih duzenleyici acik; vize/tarih girilmeden ileri tiklamasi adimda tuttu;
 vize + tarih girilince Adim3'e gecti.
+
+## 2026-06-18 (6) · Basvuru formu PDF: sorulmayan alanlar kaldirildi
+Formda hic sorulmayan alanlar PDF dokumunden cikarildi (`application_pdf.py`):
+- Iletisim blogundan "Sehir" (`contact.address_city` hicbir zaman doldurulmuyor, "-" cikiyordu)
+- Yolcu blogundan "Medeni hal" ve "Meslek" (formda alan yok; backend varsayilan olarak
+  "single"/"Employee" gonderiyor, bu yuzden yanlis bilgi gorunuyordu)
+Uyruk ve dogum yeri korundu. Dogrulama: gercek basvuru dokumu ile PDF uretildi, metin
+taramasinda Medeni/Meslek/Sehir yok; pytest test_iteration_112_application_form 9 passed.

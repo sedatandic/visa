@@ -254,7 +254,6 @@ def _contact_pairs(app_doc: dict) -> list:
         ("Adı Soyadı", contact.get("full_name")),
         ("E-posta", contact.get("email")),
         ("Telefon (WhatsApp)", format_phone(contact.get("phone"))),
-        ("Şehir", contact.get("address_city")),
     ]
 
 
@@ -337,8 +336,6 @@ def _traveler_extra_pairs(app_doc: dict) -> list:
     return [
         ("Uyruğu", _nationality(t.get("nationality"))),
         ("Doğum yeri", t.get("birth_place")),
-        ("Medeni hal", MARITAL_LABELS.get(t.get("marital_status") or "", t.get("marital_status"))),
-        ("Meslek", t.get("profession")),
     ]
 
 
