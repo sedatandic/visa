@@ -2729,3 +2729,10 @@ Konumlar: sidebar Basvuru ozeti (Toplam'in altinda, `summary-total-savings`) ve 
 fiyat dokumu (`breakdown-total-savings`). Indirim yoksa hic gorunmuyor.
 Dogrulama: 1 yolcu + 15 gun police -> "Bu basvuruda toplam 56 ₺ tasarruf ettiniz",
 toplam 5.694 ₺ (ekran goruntusu ile teyit).
+
+## 2026-06-18 (3) · "Diger Evraklar" yukleme alani kaldirildi
+Kullanici istegi: Evraklar adimindaki opsiyonel "Diger Evraklar" (davet mektubu/ogrenci
+belgesi) FileDropzone'u kaldirildi. Ucak bileti ve otel rezervasyonu alanlari duruyor.
+Backend payload'inda `other_file_ids` alani korundu (artik her zaman bos gonderiliyor),
+eski taslak/basvuru kayitlari bozulmuyor.
+Dogrulama: Adim 3 ekran goruntusu - "Diger Evraklar" DOM'da yok, ticket/hotel alanlari calisiyor.

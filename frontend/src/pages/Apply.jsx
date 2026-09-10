@@ -3111,9 +3111,6 @@ export default function Apply() {
                                                         </p>
                                                     )}
                                                 </div>
-                                                <div className="md:col-span-2">
-                                                    <FileDropzone label="Diğer Evraklar" hint="Varsa" badge="optional" icon={FileUp} description="Davet mektubu, öğrenci belgesi gibi destekleyici evraklar." docType="other" value={extraDocs.other} onChange={(f) => setExtraDocs((s) => ({ ...s, other: f }))} testId="other-upload-input" />
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
