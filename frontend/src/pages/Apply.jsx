@@ -1824,6 +1824,18 @@ export default function Apply() {
         setStep((s) => Math.max(s - 1, 0));
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
+    // Stepper'dan adim degistirme: geriye serbest, ileriye tek adim + dogrulama
+    const goToStep = (target) => {
+        if (target === step) return;
+        if (target < step) {
+            setStep(target);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+        if (!validateStep()) return;
+        setStep(Math.min(target, step + 1));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
 
     const setConsent = (key, value) => setConsents((s) => ({ ...s, [key]: value }));
 
@@ -2178,15 +2190,23 @@ export default function Apply() {
                         style={{ boxShadow: "var(--shadow-card)" }}
                         data-testid="wizard-stepper"
                     >
-                        <div className="flex items-center gap-2 overflow-x-auto px-4 py-3.5 sm:px-5">
+                        <div className="flex items-stretch gap-1.5 overflow-x-auto px-4 py-3.5 sm:gap-2 sm:px-5">
                             {STEPS.map((s, i) => {
                                 const Icon = s.icon;
                                 const done = i < step;
                                 const active = i === step;
+                                const locked = Boolean(created);
                                 return (
-                                    <div
+                                    <button
+                                        type="button"
                                         key={s.key}
-                                        className="relative flex min-w-fit items-center gap-2 pb-3"
+                                        onClick={() => !locked && goToStep(i)}
+                                        disabled={locked}
+                                        aria-current={active ? "step" : undefined}
+                                        title={locked ? "Başvurunuz gönderildi" : `Adım ${i + 1}: ${s.label}`}
+                                        className={`relative flex min-w-fit flex-1 items-center gap-2 rounded-lg px-1.5 pb-3 pt-1 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                                            locked ? "cursor-default" : "cursor-pointer hover:bg-primary/[0.05]"
+                                        }`}
                                         data-testid={`wizard-step-item-${s.key}`}
                                     >
                                         <span
@@ -2214,7 +2234,7 @@ export default function Apply() {
                                         </span>
                                         {i < STEPS.length - 1 && (
                                             <span
-                                                className={`mx-2 hidden h-0.5 w-8 rounded-full lg:block ${
+                                                className={`mx-2 hidden h-0.5 flex-1 rounded-full lg:block ${
                                                     done ? "bg-primary/50" : "bg-border"
                                                 }`}
                                                 aria-hidden="true"
@@ -2232,7 +2252,7 @@ export default function Apply() {
                                             aria-hidden="true"
                                             data-testid={`wizard-step-bar-${s.key}`}
                                         />
-                                    </div>
+                                    </button>
                                 );
                             })}
                             {quote ? (

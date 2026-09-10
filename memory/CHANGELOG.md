@@ -2736,3 +2736,12 @@ belgesi) FileDropzone'u kaldirildi. Ucak bileti ve otel rezervasyonu alanlari du
 Backend payload'inda `other_file_ids` alani korundu (artik her zaman bos gonderiliyor),
 eski taslak/basvuru kayitlari bozulmuyor.
 Dogrulama: Adim 3 ekran goruntusu - "Diger Evraklar" DOM'da yok, ticket/hotel alanlari calisiyor.
+
+## 2026-06-18 (4) · Stepper tam genislik + tiklanabilir adimlar
+Apply.jsx STEPPER: adim ogeleri `div` -> `button` oldu, `flex-1` ile satirin tamamini
+"Toplam" blogunun soluna kadar dolduruyor (baglanti cizgisi `w-8` -> `flex-1`).
+Navigasyon kurali (`goToStep`): geriye serbest; ileri yonde `validateStep()` calisir ve
+en fazla tek adim ilerler (Adim 1'den Adim 4'e atlanamaz). Basvuru gonderildikten sonra
+(`created`) adimlar kilitli. Hover/focus-visible durumlari + aria-current="step" eklendi.
+Dogrulama (Playwright): Adim3 -> Adim1 (geri) OK, Adim1 -> Adim2 (ileri, dogrulama gecti)
+OK, Adim2'den Adim4'e tiklama -> yalnizca Adim3'e gitti (atlama engellendi).
