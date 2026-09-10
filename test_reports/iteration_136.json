@@ -1,0 +1,15 @@
+{
+  "summary": "Frontend regression sweep after global .container-page width change (max-w-6xl -> max-w-[1344px]). Verified 8 public pages, /iletisim Dubai office card with map, footer without Vize Rehberi block, DateField calendar-icon vertical alignment while error visible, /gerekli-belgeler side-by-side passport+photo guides, home explainer card, apply wizard step navigation and mobile (390x844) stacking. All targeted checks passed with concrete measurements.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": ["All requested changes verified with measurements; no issues found."],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100%"},
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Evidence: (1) All 8 pages have scrollWidth-innerWidth=0 at 1920x1080 (/, /vize-tipleri, /gerekli-belgeler, /iletisim, /dubai-turlari, /basvuru, /basvuru-takip, /hakkimizda). (2) /iletisim: all Dubai testids present (contact-office-dubai,-address,-phone,-directions,-map) plus contact-office-istanbul; footer contains Dubai address text. (3) footer-visa-guides absent; site-footer, footer-agency-info, footer-affiliation present. (4) DateField on /dubai-turlari: entering '11' + blur shows error 'Geçerli bir tarih girin (gg.aa.yyyy).'; input centerY=540.25 == icon centerY=540.25 (0px diff). Calendar opens; picking day 20 fills '20.09.2026'. (5) /gerekli-belgeler: passport LEFT (x=337), photo RIGHT (x=966), heights equal 972.66px, all 8 images loaded (naturalWidth>0), 1 DOĞRU+3 YANLIŞ each card, documents-apply-button href=/basvuru. (6) Home visa-explainer text (l:523,r:790) and image (l:911,r:1531) do NOT overlap. Play button reveals scene image (explainer-image-*). (7) /basvuru stepper labels: 'Kişisel Bilgiler','Vize Türü','Gerekli Evraklar'; step 1 -> step 2 navigation OK. (8) Mobile 390x844: /gerekli-belgeler & / zero horizontal overflow; passport/photo cards stack vertically (photo.top 3393 > passport.bottom).",
+  "rca of the issue": "n/a"
+}

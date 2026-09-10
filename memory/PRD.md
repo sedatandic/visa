@@ -1693,3 +1693,22 @@ Bekleyen isler: gercek IBAN'lar, WhatsApp canli mod (Meta kimlik bilgileri), tek
 donusum raporu, teklif geri sayimi, makbuz linki imzali kod, gercek tur fotograflari,
 ATV +40 USD ek secenek. Kullaniciya sorulan acik soru: 72 saatlik "yarim kalan basvuru"
 hatirlatma e-postalari kalsin mi?
+
+## 2026-06-18 (fork, 3) · Sayfa genisligi, Dubai ofisi, evrak ornekleri
+Kullanici talepleriyle yapilanlar (detay: CHANGELOG.md ayni tarih, 16-21):
+- Tarih alanlarinda takvim ikonu artik "gg.aa.yyyy" ile ayni hizada (hata metni ikonu
+  asagi itmiyor).
+- Tum sayfalar tek paylasilan genislikte: `.container-page` = 1344px (icerik 1296px),
+  sol kenar logonun, sag kenar "Basvuru Yap" butonunun uzerinde bitiyor. Navbar 1560px.
+- /iletisim'de Dubai (BAE) ofis karti + Google harita yayinda; DB alani bosalirsa
+  `fix_placeholder_contact()` varsayilanla doldurur.
+- Footer'daki "Vize Rehberi" link blogu kaldirildi (menude duruyor).
+- Ana sayfa anlatim kartinda metin ve animasyon ortaya yanastirildi.
+- /gerekli-belgeler: solda "Pasaport taramasi nasil olmali?" (1 dogru + 3 yanlis, gercek
+  T.C. e-pasaport duzeninde ORNEK/SPECIMEN gorseller, vesikalikla ayni yuz), sagda
+  "Vesikalik nasil olmali?" - iki kart esit yukseklikte.
+Durum: DONE - testing agent regresyon taramasi %100 (iteration_136.json).
+
+Bekleyen isler (degismedi): gercek IBAN'lar, WhatsApp canli mod (Meta kimlik bilgileri),
+teklif linki donusum raporu, teklif geri sayimi, makbuz linki imzali kod, gercek tur
+fotograflari, ATV +40 USD ek secenek.

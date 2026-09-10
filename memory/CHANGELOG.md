@@ -2869,3 +2869,50 @@ duran kartlarda (Pasaport/Vesikalik ve Ucak Bileti/Otel Rezervasyonu) aciklama s
 sayisi farkli olsa bile yukleme alani ve "Yuklendi" karti ayni y'de basliyor.
 Dogrulama (Playwright): ticket/hotel ve passport/photo dropzone Y degerleri esit (1270),
 iki dosya yuklendikten sonra "Yuklendi" kartlari da ayni y ve ayni yukseklikte (150px).
+
+### 2026-06-18 (16) · Tarih alani takvim ikonu hizasi
+- Sikayet: "takvim gg.aa.yyyy ile ayni hizada olsun". Kok neden: `DateField.jsx` icinde
+  ikon butonu `absolute right-1 top-1 h-[calc(100%-0.5rem)]` ile DIS kapsayiciya gore
+  konumlaniyordu; kapsayici hata paragrafini da icerdigi icin uyari cikinca kutu uzuyor
+  ve ikon asagi kayiyordu.
+- Cozum: input + Popover trigger kendi `relative` sarmalayicisina alindi, hata metni
+  disarida kaldi. Olcum (/dubai-turlari, hata gorunurken): input merkezi 536.25 =
+  ikon merkezi 536.25.
+
+### 2026-06-18 (17) · Tek sayfa genisligi (logo <-> Basvuru Yap)
+- Adim adim kullanici geri bildirimi: 1152px (max-w-6xl) -> 1400 -> 1560 -> final 1344px.
+- `.container-page` (index.css) = `mx-auto w-full max-w-[1344px] px-4 sm:px-6`; navbar
+  kendi kapsayicisi `max-w-[88rem]` -> `max-w-[1560px]` (eskiden sag grup tasiyordu);
+  Apply.jsx'teki ayri `max-w-[1400px]` sarmalayici `container-page` sinifina baglandi.
+- 1920px'de icerik kenarlari 312 / 1608; logo merkezi 347, buton merkezi 1643 -> iki kenar
+  da hedef ogelerin uzerinde (kapsayici ortalanmis oldugu icin tam merkez matematiksel
+  olarak mumkun degil, logo 286px buton 147px).
+
+### 2026-06-18 (18) · Dubai ofisi haritasi geri geldi
+- Kart/harita/yol tarifi kodu vardi ama `company_info.dubai_address` / `dubai_phone` DB'de
+  bos oldugu icin render edilmiyordu (2. tekrar).
+- `server.py` `fix_placeholder_contact()` artik bu iki alan bossa `COMPANY` varsayilanindan
+  dolduruyor (Level 27, Unit 2705, Marina Plaza, Dubai Marina / +971 50 867 26 30).
+  DB tekrar sifirlanirsa kart kendiliginden geri gelir. Admin -> Acente Bilgileri ezer.
+
+### 2026-06-18 (19) · Footer "Vize Rehberi" blogu kaldirildi
+- `Footer.jsx`'ten link listesi + `guides` state + `/visa-guides` istegi silindi.
+  Rehber sayfalari ve menudeki "Bilgi & Hizmetler -> Vize Rehberi" girisleri duruyor.
+
+### 2026-06-18 (20) · Anlatim karti ortaya yanastirildi
+- `VisaExplainer.jsx`: metin kolonu `sm:items-end`, gorsel kolonu
+  `sm:max-w-[620px] sm:justify-self-start`, gorselden `sm:pr-8` kaldirildi.
+  Oynat butonu gorselle ayni kutuda kaldigi icin hizasi korunuyor.
+
+### 2026-06-18 (21) · Pasaport taramasi dogru/yanlis ornekleri
+- Yeni `PassportGuide.jsx` (public/passport-guide/{ok,bad-crop,bad-glare,bad-blur}.jpg):
+  1 DOGRU + 3 YANLIS (kesik kose, flas parlamasi, bulanik + parmak MRZ'de).
+- `Documents.jsx`: amber uyari kutusu sol kolondan cikarilip tam genislige alindi; icinde
+  solda PassportGuide, sagda PhotoGuide (`compact` prop -> 2x2 grid). Iki kart esit
+  yukseklik (973px), her ikisi de `aspect-[3/4]`.
+- Gorseller: kullanicinin gonderdigi GERCEK pasaport (SEDAT ANDIC) KVKK nedeniyle
+  yayinlanmadi; yalnizca duzen referansi olarak kullanilip Gemini ile ORNEK/SPECIMEN
+  damgali, placeholder verili (ORNEK AHMET / U00000000) T.C. e-pasaport sayfasi uretildi.
+  Pasaporttaki portre, vesikalik "DOGRU" ornegindeki kisiyle ayni yuz (kullanici istegi).
+- Regresyon: testing agent iteration_136.json -> frontend %100, 8 sayfada yatay tasma yok,
+  mobilde (390x844) kartlar alt alta diziliyor.

@@ -52,7 +52,7 @@ export const PassportGuide = ({ testId = "passport-guide" }) => (
                             src={ex.src}
                             alt={ex.note}
                             loading="lazy"
-                            className="aspect-[4/3] w-full object-cover"
+                            className="aspect-[3/4] w-full object-cover"
                         />
                         <span
                             className={`absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white ${
