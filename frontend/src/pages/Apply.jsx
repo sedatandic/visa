@@ -3022,7 +3022,7 @@ export default function Apply() {
                                                                 hint="Otomatik kontrol edilir"
                                                                 badge="required"
                                                                 icon={Camera}
-                                                                description="Beyaz veya beyaza yakın düz zeminde, son 6 ay içinde çekilmiş biyometrik fotoğraf."
+                                                                description="Beyaz veya beyaza yakın düz zeminde, son 6 ay içinde çekilmiş biyometrik fotoğraf. Gözlüksüz ve şapkasız olmalıdır."
                                                                 docType="photo"
                                                                 value={t.photoFile}
                                                                 onInputRef={(el) => {
@@ -3100,11 +3100,6 @@ export default function Apply() {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="mt-7 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-4 text-sm leading-6 text-[hsl(var(--status-warning))]">
-                                        Fotoğraflarınız beyaz fonda, son 6 ay içinde çekilmiş, gözlüksüz ve şapkasız
-                                        olmalıdır. Uygun olmayan fotoğraf en sık ret sebebidir.
                                     </div>
                                 </div>
                             )}

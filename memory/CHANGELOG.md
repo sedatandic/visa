@@ -2792,3 +2792,11 @@ tablosundaki "Tutar" kolonu ve basligi, odeme makbuzu kalem tablosu (`_items_tab
 + makbuz ozeti (ayni `_amount_table`). Artik tum "TL" sonlari ayni dikey hizada.
 Dogrulama: PNG render (pdftoppm) ile gorsel teyit + PDF metin akisinda kisa tutarlarin
 daha saga baslamasi (right-align imzasi).
+
+## 2026-06-18 (10) · Evraklar adimi metin duzenlemeleri
+- Adim 3 altindaki sari "Fotograflariniz beyaz fonda ... en sik ret sebebidir" uyari
+  kutusu kaldirildi (kullanici istegi).
+- Vesikalik fotograf alani aciklamasina ibare eklendi: "Beyaz veya beyaza yakin duz
+  zeminde, son 6 ay icinde cekilmis biyometrik fotograf. **Gozluksuz ve sapkasiz
+  olmalidir.**"
+Dogrulama: Adim 3 ekran goruntusu; uyari kutusu DOM'da yok, yeni ibare gorunuyor.
