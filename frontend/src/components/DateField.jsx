@@ -142,7 +142,8 @@ export const DateField = ({
         (maxDate && today > new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate()));
 
     return (
-        <div className={`relative ${className}`}>
+        <div className={className}>
+            <div className="relative">
             <Input
                 id={id}
                 type="text"
@@ -249,6 +250,7 @@ export const DateField = ({
                     </div>
                 </PopoverContent>
             </Popover>
+            </div>
 
             {showError && (
                 <p className="mt-1.5 text-xs font-medium text-destructive" data-testid={dataTestId ? `${dataTestId}-error` : undefined}>

@@ -87,7 +87,13 @@ from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_v
 import ocr_metrics
 import offer_links
 import social_links
-from passport_ai import apply_background_report, background_report, check_photo, read_passport
+from passport_ai import (
+    apply_background_report,
+    background_report,
+    check_photo,
+    compare_passport_photo,
+    read_passport,
+)
 from rate_limit import allow as rate_allow, check as rate_check, client_ip
 from usage_quota import consume_daily
 import file_access
@@ -633,6 +639,55 @@ async def check_photo_document(request: Request, file_id: str = Form(...)) -> di
     result = apply_background_report(result, background)
     await _store_photo_check(file_id, result)
     return {"checked": True, "message": _photo_check_message(result), **result}
+
+
+MATCH_MISMATCH_MESSAGE = (
+    "Pasaporttaki fotoğraf ile yüklediğiniz vesikalık aynı kişiye ait görünmüyor. "
+    "Lütfen doğru kişinin vesikalık fotoğrafını yükleyin."
+)
+
+
+@router.post("/photo/match")
+async def match_photo_with_passport(
+    request: Request,
+    passport_file_id: str = Form(...),
+    photo_file_id: str = Form(...),
+) -> dict:
+    """Pasaport sayfasindaki fotograf ile vesikaligi karsilastirir (uyari amacli)."""
+    rate_check(
+        f"photo-match-ip:{client_ip(request)}",
+        AI_MAX_PER_IP_HOUR,
+        3600,
+        "Cok fazla fotograf karsilastirmasi. Lutfen bir sure sonra tekrar deneyin.",
+    )
+    passport_record = await _get_upload_record(passport_file_id)
+    photo_record = await _get_upload_record(photo_file_id)
+    photo_type = photo_record.get("content_type") or ""
+    if photo_type == "application/pdf":
+        return {"checked": False, "reason": "pdf", "message": ""}
+
+    passport_data, passport_ct = _read_upload_bytes(passport_record)
+    photo_data, photo_ct = _read_upload_bytes(photo_record)
+
+    await consume_daily(
+        "photo_match",
+        "Fotograf karsilastirma gunluk siniri doldu. Lutfen yarin tekrar deneyin.",
+    )
+    try:
+        result = await compare_passport_photo(
+            passport_data,
+            passport_record.get("content_type") or passport_ct,
+            photo_data,
+            photo_type or photo_ct,
+        )
+    except Exception as exc:
+        logger.error("photo match failed: %s", exc)
+        return {"checked": False, "reason": "ai_error", "message": ""}
+
+    message = ""
+    if result.get("same_person") is False:
+        message = MATCH_MISMATCH_MESSAGE
+    return {"checked": True, "message": message, **result}
 
 
 async def _ocr_failure(

@@ -99,9 +99,9 @@ const SUGGESTION_COVERS = {
 const IDLE_PROMPT_MS = 120000;
 
 const STEPS = [
-    { key: "people", label: "Bilgiler", icon: Users },
-    { key: "visa", label: "Vize", icon: CalendarDays },
-    { key: "docs", label: "Evraklar", icon: FileText },
+    { key: "people", label: "Kişisel Bilgiler", icon: Users },
+    { key: "visa", label: "Vize Türü", icon: CalendarDays },
+    { key: "docs", label: "Gerekli Evraklar", icon: FileText },
     { key: "summary", label: "Ödeme", icon: CreditCard },
 ];
 
@@ -290,6 +290,8 @@ export default function Apply() {
     });
     const [errors, setErrors] = useState({});
     const [ocr, setOcr] = useState({});
+    // Pasaporttaki fotograf ile vesikaligin ayni kisi olup olmadigi (uyari amacli)
+    const [faceMatch, setFaceMatch] = useState({});
     const [photoCheck, setPhotoCheck] = useState({});
     const [payMethod, setPayMethod] = useState("card");
     const [transferInfo, setTransferInfo] = useState(null);
@@ -1727,6 +1729,39 @@ export default function Apply() {
     };
 
 
+    // Pasaport sayfasindaki fotograf ile yuklenen vesikaligi karsilastirir (uyari amacli)
+    const matchFaces = async (key, passportFile, photoFile) => {
+        const passportId = passportFile?.file_id;
+        const photoId = photoFile?.file_id;
+        if (!passportId || !photoId || (photoFile.content_type || "").includes("pdf")) {
+            setFaceMatch((s) => ({ ...s, [key]: undefined }));
+            return;
+        }
+        setFaceMatch((s) => ({ ...s, [key]: { status: "loading" } }));
+        try {
+            const form = new FormData();
+            form.append("passport_file_id", passportId);
+            form.append("photo_file_id", photoId);
+            const { data } = await api.post("/photo/match", form, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            if (!data?.checked || data.same_person === null || data.same_person === undefined) {
+                setFaceMatch((s) => ({ ...s, [key]: { status: "skipped" } }));
+                return;
+            }
+            setFaceMatch((s) => ({
+                ...s,
+                [key]: {
+                    status: data.same_person ? "ok" : "mismatch",
+                    message: data.message || "",
+                    note: data.note || "",
+                },
+            }));
+        } catch {
+            setFaceMatch((s) => ({ ...s, [key]: { status: "skipped" } }));
+        }
+    };
+
     const setC = (key) => (e) => {
         setContact((f) => ({ ...f, [key]: e.target.value }));
         setErrors((p) => ({ ...p, [key]: undefined }));
@@ -2323,7 +2358,10 @@ export default function Apply() {
                             ) : null}
                         </div>
                     </div>
+                </div>
 
+                {/* Alt bolum (form + ozet) ust bloklardan daha genis */}
+                <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6">
                     <div className="mt-8 grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
                         <motion.div
                             key={step}
@@ -2640,6 +2678,7 @@ export default function Apply() {
                                                                 onChange={(f) => {
                                                                     updateTraveler(t.key, { passportFile: f });
                                                                     readPassportWithAI(t.key, f);
+                                                                    matchFaces(t.key, f, t.photoFile);
                                                                 }}
                                                                 testId={`traveler-${idx}-passport-ai-input`}
                                                             />
@@ -3034,6 +3073,7 @@ export default function Apply() {
                                                                 onChange={(f) => {
                                                                     updateTraveler(t.key, { passportFile: f });
                                                                     readPassportWithAI(t.key, f);
+                                                                    matchFaces(t.key, f, t.photoFile);
                                                                 }}
                                                                 testId={`traveler-${idx}-passport-upload-input`}
                                                             />
@@ -3080,6 +3120,7 @@ export default function Apply() {
                                                                 onChange={(f) => {
                                                                     updateTraveler(t.key, { photoFile: f });
                                                                     checkPhotoWithAI(t.key, f);
+                                                                    matchFaces(t.key, t.passportFile, f);
                                                                 }}
                                                                 testId={`traveler-${idx}-photo-upload-input`}
                                                             />
@@ -3108,6 +3149,41 @@ export default function Apply() {
                                                                     photoUrl={t.photoFile?.url}
                                                                     onRetry={() => photoInputs.current[t.key]?.click()}
                                                                 />
+                                                            )}
+                                                            {faceMatch[t.key]?.status === "loading" && (
+                                                                <p
+                                                                    className="mt-2 flex items-center gap-2 text-xs font-medium text-primary"
+                                                                    data-testid={`traveler-${idx}-face-match-loading`}
+                                                                >
+                                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                                    Pasaporttaki fotoğrafla karşılaştırılıyor...
+                                                                </p>
+                                                            )}
+                                                            {faceMatch[t.key]?.status === "ok" && (
+                                                                <p
+                                                                    className="mt-2 flex items-center gap-2 text-xs font-semibold text-[hsl(var(--brand-green))]"
+                                                                    data-testid={`traveler-${idx}-face-match-ok`}
+                                                                >
+                                                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                                                    Vesikalık, pasaporttaki kişiyle uyumlu görünüyor.
+                                                                </p>
+                                                            )}
+                                                            {faceMatch[t.key]?.status === "mismatch" && (
+                                                                <div
+                                                                    className="mt-2 flex items-start gap-2 rounded-lg border border-[hsl(var(--status-warning)/0.4)] bg-[hsl(var(--status-warning)/0.1)] p-3"
+                                                                    data-testid={`traveler-${idx}-face-match-warning`}
+                                                                >
+                                                                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--status-warning))]" />
+                                                                    <div className="text-xs leading-5">
+                                                                        <p className="font-semibold text-[hsl(var(--status-warning))]">
+                                                                            Pasaporttaki fotoğraf ile vesikalık eşleşmiyor gibi görünüyor.
+                                                                        </p>
+                                                                        <p className="mt-0.5 text-muted-foreground">
+                                                                            {faceMatch[t.key].note ||
+                                                                                "Doğru kişinin vesikalık fotoğrafını yüklediğinizden emin olun."}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
                                                             )}
                                                             {te.photo && (
                                                                 <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-destructive">

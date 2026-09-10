@@ -16,6 +16,7 @@ from db import db
 DEFAULT_LIMITS = {
     "passport_ocr": 400,
     "photo_check": 800,
+    "photo_match": 400,
 }
 
 

@@ -446,3 +446,83 @@ async def read_passport(data: bytes, content_type: str) -> dict:
     if not parsed:
         raise ValueError("Pasaport bilgileri okunamadi.")
     return normalize_result(parsed)
+
+
+# ------------------------------------------- pasaport fotografi <-> vesikalik
+MATCH_SYSTEM_PROMPT = (
+    "Sen vize basvurulari icin belge tutarlilik kontrolu yapan bir asistansin. Sana iki goruntu "
+    "verilir: birincisi pasaportun kimlik bilgileri sayfasi (uzerinde kucuk bir vesikalik vardir), "
+    "ikincisi basvuruya yuklenen vesikalik fotograf. Ikisinin ayni basvuru sahibine ait gorunup "
+    "gorunmedigini degerlendirip SADECE gecerli JSON dondur, aciklama yazma."
+)
+
+MATCH_USER_PROMPT = """Birinci goruntu pasaportun kimlik sayfasi, ikinci goruntu basvuruya yuklenen vesikalik fotograf.
+Bu iki goruntudeki kisi ayni kisi gibi mi gorunuyor? Tam olarak su JSON semasinda dondur:
+
+{
+  "passport_photo_visible": true veya false (pasaport sayfasindaki vesikalik yeterince net gorunuyor mu),
+  "same_person": true, false veya null (emin olamiyorsan null),
+  "confidence": 0.0 ile 1.0 arasinda,
+  "note": "tek cumlelik kisa Turkce aciklama"
+}
+
+Kurallar:
+- Yalnizca genel gorsel benzerligi (yuz sekli, sac, yas ve cinsiyet izlenimi) karsilastir; kisiyi
+  tanimlamaya, isim tahmin etmeye veya biyometrik kimlik dogrulamasi yapmaya calisma.
+- Goruntulerden biri pasaport sayfasi degilse ya da vesikalik gorunmuyorsa passport_photo_visible
+  false ve same_person null olsun.
+- Isik, aci ve yas farkina ragmen belirgin benzerlik varsa true; belirgin farkliliklar varsa false;
+  emin olamazsan null dondur.
+- Sadece JSON dondur."""
+
+MATCH_BOOLS = {"true": True, "yes": True, "evet": True, "false": False, "no": False, "hayir": False}
+
+
+def normalize_match_result(raw: dict) -> dict:
+    """LLM cikisini {same_person, confidence, note} sozlugune indirger."""
+    same = raw.get("same_person")
+    if isinstance(same, str):
+        same = MATCH_BOOLS.get(same.strip().lower())
+    if not isinstance(same, bool):
+        same = None
+    visible = bool(raw.get("passport_photo_visible", True))
+    return {
+        "passport_photo_visible": visible,
+        "same_person": same if visible else None,
+        "confidence": _clamp_unit(raw.get("confidence")),
+        "note": str(raw.get("note") or "").strip()[:220],
+    }
+
+
+async def compare_passport_photo(
+    passport_data: bytes, passport_type: str, photo_data: bytes, photo_type: str
+) -> dict:
+    """Pasaport sayfasindaki vesikalik ile yuklenen vesikaligi karsilastirir."""
+    api_key = (os.environ.get("EMERGENT_LLM_KEY") or "").strip()
+    if not api_key:
+        raise RuntimeError("EMERGENT_LLM_KEY tanimli degil.")
+
+    from emergentintegrations.llm.chat import ImageContent, LlmChat, UserMessage
+
+    passport_b64s = _prepare_images(passport_data, passport_type)[:1]
+    photo_b64, _mime = _prepare_image(photo_data, photo_type)
+
+    chat = LlmChat(
+        api_key=api_key,
+        session_id=f"facematch-{uuid.uuid4()}",
+        system_message=MATCH_SYSTEM_PROMPT,
+    ).with_model(MODEL_PROVIDER, MODEL_NAME)
+
+    response = await chat.send_message(
+        UserMessage(
+            text=MATCH_USER_PROMPT,
+            file_contents=[
+                ImageContent(image_base64=b64) for b64 in [*passport_b64s, photo_b64]
+            ],
+        )
+    )
+    text = response if isinstance(response, str) else str(response)
+    parsed = _extract_json(text)
+    if not parsed:
+        raise ValueError("Fotograf karsilastirmasi yapilamadi.")
+    return normalize_match_result(parsed)

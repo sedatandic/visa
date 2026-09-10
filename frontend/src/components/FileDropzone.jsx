@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
 import { api, apiError, fileUrl } from "../lib/api";
 import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 export const FileDropzone = ({
     label,
@@ -21,6 +22,7 @@ export const FileDropzone = ({
     const [error, setError] = useState("");
     const [dragOver, setDragOver] = useState(false);
     const [preview, setPreview] = useState(null);
+    const [viewOpen, setViewOpen] = useState(false);
 
     const handleFiles = async (files) => {
         const file = files?.[0];
@@ -88,21 +90,45 @@ export const FileDropzone = ({
                     data-testid={`${testId}-uploaded`}
                 >
                     {isImage && preview ? (
-                        <img
-                            src={preview}
-                            alt={value.original_filename}
-                            className="h-16 w-16 rounded-lg border border-border object-cover"
-                        />
+                        <button
+                            type="button"
+                            onClick={() => setViewOpen(true)}
+                            className="group/thumb relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border transition-colors duration-200 hover:border-primary"
+                            data-testid={`${testId}-thumb`}
+                            aria-label="Yüklenen belgeyi görüntüle"
+                        >
+                            <img src={preview} alt={value.original_filename} className="h-full w-full object-cover" />
+                            <span className="absolute inset-0 flex items-center justify-center bg-foreground/45 opacity-0 transition-opacity duration-200 group-hover/thumb:opacity-100">
+                                <Eye className="h-5 w-5 text-white" aria-hidden="true" />
+                            </span>
+                        </button>
                     ) : isImage ? (
-                        <img
-                            src={fileUrl(value.url)}
-                            alt={value.original_filename}
-                            className="h-16 w-16 rounded-lg border border-border object-cover"
-                        />
+                        <button
+                            type="button"
+                            onClick={() => setViewOpen(true)}
+                            className="group/thumb relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border transition-colors duration-200 hover:border-primary"
+                            data-testid={`${testId}-thumb`}
+                            aria-label="Yüklenen belgeyi görüntüle"
+                        >
+                            <img
+                                src={fileUrl(value.url)}
+                                alt={value.original_filename}
+                                className="h-full w-full object-cover"
+                            />
+                            <span className="absolute inset-0 flex items-center justify-center bg-foreground/45 opacity-0 transition-opacity duration-200 group-hover/thumb:opacity-100">
+                                <Eye className="h-5 w-5 text-white" aria-hidden="true" />
+                            </span>
+                        </button>
                     ) : (
-                        <span className="flex h-16 w-16 items-center justify-center rounded-lg border border-border bg-card">
+                        <button
+                            type="button"
+                            onClick={() => setViewOpen(true)}
+                            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-border bg-card transition-colors duration-200 hover:border-primary hover:text-primary"
+                            data-testid={`${testId}-thumb`}
+                            aria-label="Yüklenen belgeyi görüntüle"
+                        >
                             <FileText className="h-6 w-6 text-muted-foreground" />
-                        </span>
+                        </button>
                     )}
                     <div className="min-w-[110px] flex-1">
                         <div className="flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--brand-green))]">
@@ -114,6 +140,15 @@ export const FileDropzone = ({
                         </p>
                     </div>
                     <div className="ml-auto flex shrink-0 items-center gap-1.5">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="h-10 shrink-0 px-3"
+                            onClick={() => setViewOpen(true)}
+                            data-testid={`${testId}-view`}
+                        >
+                            <Eye className="mr-1.5 h-4 w-4" /> Görüntüle
+                        </Button>
                         <Button
                             type="button"
                             variant="secondary"
@@ -196,6 +231,56 @@ export const FileDropzone = ({
                     {error}
                 </p>
             )}
+
+            {/* Yuklenen belgeyi buyuk onizleme */}
+            <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+                <DialogContent
+                    className="max-h-[92vh] max-w-[min(94vw,880px)] overflow-y-auto"
+                    data-testid={`${testId}-preview-dialog`}
+                >
+                    <DialogHeader>
+                        <DialogTitle className="truncate pr-8 text-base">
+                            {value?.original_filename || label}
+                        </DialogTitle>
+                    </DialogHeader>
+                    {value && (
+                        <div className="mt-2">
+                            {isImage ? (
+                                <img
+                                    src={preview || fileUrl(value.url)}
+                                    alt={value.original_filename}
+                                    className="mx-auto max-h-[68vh] w-auto rounded-xl border border-border object-contain"
+                                    data-testid={`${testId}-preview-image`}
+                                />
+                            ) : (
+                                <iframe
+                                    src={fileUrl(value.url)}
+                                    title={value.original_filename || "Belge"}
+                                    className="h-[68vh] w-full rounded-xl border border-border"
+                                    data-testid={`${testId}-preview-frame`}
+                                />
+                            )}
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                <Button asChild variant="secondary" className="h-10 border border-border">
+                                    <a
+                                        href={fileUrl(value.url)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        data-testid={`${testId}-preview-newtab`}
+                                    >
+                                        Yeni sekmede aç
+                                    </a>
+                                </Button>
+                                <Button asChild variant="secondary" className="h-10 border border-border">
+                                    <a href={fileUrl(value.url, true)} data-testid={`${testId}-preview-download`}>
+                                        İndir
+                                    </a>
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
