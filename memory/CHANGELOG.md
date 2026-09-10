@@ -3056,3 +3056,22 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
   toplam 21.671,50 TL. (Tur, tarih secilene kadar toplama girmiyor - banner bunu soyluyor.)
 - Not: tekrarlanan hizli testlerde /api/quote rate-limit'e girip ozet bir sure eski kalabiliyor;
   kod sorunu degil.
+
+### 2026-06-18 (31) · Kod inceleme raporu dogrulandi (cogu bulgu yanlis pozitif)
+- Rapor: "22 tanimsiz degisken" -> `pyflakes backend/*.py tests/*.py` = **0 undefined name**;
+  frontend CRA eslint = 0 hata. BULGU GECERSIZ.
+- Rapor: "236 hatali literal karsilastirmasi (`is` yerine `==`)" -> listelenen tum satirlar
+  (`zami_status.py:204`, `zami_rpa.py:153/172/522/586/626`, `zami.py:151/417/793`,
+  `whatsapp.py:146/434/439`, `wa_cloud.py:84`, `visitors.py:67`, `usage_quota.py:26`)
+  `is None` / `is not None` / `is False` idiomudur; `==` ile degistirmek HATA olurdu
+  (ozellikle `data.get("success") is False` -> None/0 ile False'u ayirmak icin bilincli).
+  BULGU GECERSIZ, degisiklik yapilmadi.
+- Rapor: "kullanilmayan import (routes_store.py, tests/test_iteration_83.py)" -> ikisi de
+  `# noqa: F401` ile bilincli re-export/bagimlilik; dokunulmadi.
+- **GERCEK BULGU (duzeltildi)**: bu oturumda yapilan refactor'lardan kalan 3 olu import
+  `Apply.jsx` icinde: `Camera`, `Tag`, `PhotoRetryHelper` (artik `TravelerPhotoField`
+  icinde kullaniliyor). Kaldirildi; derleme temiz, sayfa hatasiz (`pageerror` = 0).
+- Karar: emailer/PDF fonksiyonlarinin (admin_subject, _application_summary_rows,
+  _pricing_rows...) karmasiklik refactor'u YAPILMADI - musteriye giden fatura/police
+  ciktilarini ureten, calisan ve gorsel regresyon testi olmayan kod; islevsel hata yok,
+  refactor net risk. Ayni sekilde route dosyalarinin import sayisi mimari tercih.

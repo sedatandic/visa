@@ -10,7 +10,6 @@ import {
     BookUser,
     Building2,
     CalendarDays,
-    Camera,
     Check,
     CheckCircle2,
     CreditCard,
@@ -30,7 +29,6 @@ import {
     ShieldCheck,
     Sparkles,
     ScanLine,
-    Tag,
     ChevronDown,
     Trash2,
     User,
@@ -52,7 +50,6 @@ import { ImportantNotice } from "../components/ImportantNotice";
 import { FamilyDiscountMeter } from "../components/FamilyDiscountMeter";
 import { TravelerPhotoField } from "../components/TravelerPhotoField";
 import { UploadExamplesHint } from "../components/UploadExamplesHint";
-import { PhotoRetryHelper } from "../components/PhotoRetryHelper";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { useCart } from "../lib/cart";
 import { BankTransferInfo } from "../components/BankTransferInfo";
