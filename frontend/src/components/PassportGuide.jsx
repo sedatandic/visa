@@ -3,42 +3,46 @@ import { Check, X } from "lucide-react";
 
 const EXAMPLES = [
     {
-        src: "/photo-guide/ok.jpg",
+        src: "/passport-guide/ok.jpg",
         good: true,
         title: "Doğru",
-        note: "Düz beyaz zemin, tam karşıdan, gözlüksüz ve gölgesiz.",
+        note: "Sayfanın tamamı çerçevede, düz ışık, yazılar net.",
     },
     {
-        src: "/photo-guide/bad-background.jpg",
+        src: "/passport-guide/bad-crop.jpg",
         good: false,
         title: "Yanlış",
-        note: "Kalabalık ve koyu arka plan; başka kişiler görünüyor.",
+        note: "Köşeler kesilmiş, sayfanın bir kısmı çerçeve dışında.",
     },
     {
-        src: "/photo-guide/bad-sunglasses.jpg",
+        src: "/passport-guide/bad-glare.jpg",
         good: false,
         title: "Yanlış",
-        note: "Güneş gözlüğü, şapka ve yüzde sert gölgeler.",
+        note: "Flaş parlaması bilgileri okunamaz hâle getiriyor.",
     },
     {
-        src: "/photo-guide/bad-selfie.jpg",
+        src: "/passport-guide/bad-blur.jpg",
         good: false,
         title: "Yanlış",
-        note: "Selfie açısı, bulanık kare ve dağınık ev ortamı.",
+        note: "Eğik ve bulanık; parmak alt satırları kapatıyor.",
     },
 ];
 
-/** Fotograf uyarisi alan yolcuya dogru/yanlis ornekleri yan yana gosterir. */
-export const PhotoGuide = ({ testId = "photo-guide", compact = false }) => (
+/** Pasaport taramasinda dogru/yanlis ornekleri gosterir. */
+export const PassportGuide = ({ testId = "passport-guide" }) => (
     <div className="mt-3 rounded-xl border border-border bg-card p-4" data-testid={testId}>
-        <p className="font-heading text-sm font-bold">Vesikalık nasıl olmalı?</p>
+        <p className="font-heading text-sm font-bold">Pasaport taraması nasıl olmalı?</p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Aşağıdaki örnekleri karşılaştırın. Telefonla da çekebilirsiniz: beyaz bir duvarın önünde,
-            gündüz ışığında, omuz hizasından.
+            Kimlik sayfasını telefonla da çekebilirsiniz: pasaportu masaya düz koyun, dört köşe
+            çerçevede olsun, flaş kullanmayın.
         </p>
-        <div className={`mt-3 grid gap-3 ${compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4"}`}>
+        <div className="mt-3 grid grid-cols-2 gap-3">
             {EXAMPLES.map((ex) => (
-                <figure key={ex.src} className="space-y-1.5" data-testid={`${testId}-${ex.good ? "good" : "bad"}`}>
+                <figure
+                    key={ex.src}
+                    className="space-y-1.5"
+                    data-testid={`${testId}-${ex.good ? "good" : "bad"}`}
+                >
                     <div
                         className={`relative overflow-hidden rounded-lg border-2 ${
                             ex.good ? "border-[hsl(var(--success))]" : "border-destructive/60"
@@ -48,11 +52,7 @@ export const PhotoGuide = ({ testId = "photo-guide", compact = false }) => (
                             src={ex.src}
                             alt={ex.note}
                             loading="lazy"
-                            className={`w-full ${
-                                compact
-                                    ? "aspect-[4/3] bg-muted object-contain"
-                                    : "aspect-[3/4] object-cover"
-                            }`}
+                            className="aspect-[4/3] w-full object-cover"
                         />
                         <span
                             className={`absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white ${

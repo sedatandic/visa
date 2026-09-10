@@ -7,6 +7,7 @@ import { PageHeader } from "../components/SiteLayout";
 import { ImportantNotice } from "../components/ImportantNotice";
 import { ContentByline } from "../components/ContentByline";
 import { PhotoGuide } from "../components/PhotoGuide";
+import { PassportGuide } from "../components/PassportGuide";
 import { VisaSpecimen } from "../components/VisaSpecimen";
 import { Button } from "../components/ui/button";
 
@@ -30,7 +31,8 @@ export default function Documents() {
             />
 
             <section className="pb-14 pt-6 sm:pb-20 sm:pt-8">
-                <div className="container-page grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
+                <div className="container-page">
+                    <div className="grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
                     <div>
                         <div
                             className="mb-6 rounded-xl border border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.07)] p-6"
@@ -80,29 +82,6 @@ export default function Documents() {
                             ))}
                         </ul>
 
-                        <div className="mt-8 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-6">
-                            <div className="flex items-center gap-2.5">
-                                <AlertTriangle className="h-5 w-5 text-[hsl(var(--status-warning))]" />
-                                <h2 className="font-heading text-base font-bold text-[hsl(var(--status-warning))]">
-                                    En sık yaşanan ret sebebi: uygun olmayan fotoğraf
-                                </h2>
-                            </div>
-                            <ul className="mt-4 space-y-2.5">
-                                {(content?.photo_rules || []).map((r) => (
-                                    <li key={r} className="flex items-start gap-2 text-sm leading-6 text-[hsl(var(--status-warning))]">
-                                        <Camera className="mt-1 h-3.5 w-3.5 shrink-0" />
-                                        {r}
-                                    </li>
-                                ))}
-                            </ul>
-                            <PhotoGuide testId="documents-photo-guide" />
-                        </div>
-
-                        <Button asChild className="mt-8 h-12 px-7 text-base" data-testid="documents-apply-button">
-                            <Link to="/basvuru">
-                                Belgeleri yükleyerek başla <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
                     </div>
 
                     <div className="space-y-6">
@@ -130,6 +109,37 @@ export default function Documents() {
                             </Button>
                         </div>
                     </div>
+                    </div>
+
+                    <div
+                        className="mt-12 rounded-xl border border-[hsl(var(--status-warning)/0.35)] bg-[hsl(var(--status-warning)/0.09)] p-6"
+                        data-testid="documents-upload-warning"
+                    >
+                        <div className="flex items-center gap-2.5">
+                            <AlertTriangle className="h-5 w-5 text-[hsl(var(--status-warning))]" />
+                            <h2 className="font-heading text-base font-bold text-[hsl(var(--status-warning))]">
+                                En sık yaşanan ret sebepleri: uygun olmayan fotoğraf ve pasaport taraması
+                            </h2>
+                        </div>
+                        <ul className="mt-4 space-y-2.5">
+                            {(content?.photo_rules || []).map((r) => (
+                                <li key={r} className="flex items-start gap-2 text-sm leading-6 text-[hsl(var(--status-warning))]">
+                                    <Camera className="mt-1 h-3.5 w-3.5 shrink-0" />
+                                    {r}
+                                </li>
+                            ))}
+                        </ul>
+                        <div className="grid items-start gap-3 lg:grid-cols-2">
+                            <PassportGuide testId="documents-passport-guide" />
+                            <PhotoGuide testId="documents-photo-guide" compact />
+                        </div>
+                    </div>
+
+                    <Button asChild className="mt-8 h-12 px-7 text-base" data-testid="documents-apply-button">
+                        <Link to="/basvuru">
+                            Belgeleri yükleyerek başla <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
                 </div>
             </section>
 
