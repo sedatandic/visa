@@ -31,6 +31,7 @@ import {
     Sparkles,
     ScanLine,
     Tag,
+    ChevronDown,
     Trash2,
     User,
     Users,
@@ -45,8 +46,6 @@ import { PageHeader } from "../components/SiteLayout";
 import { FileDropzone } from "../components/FileDropzone";
 import { DateField, fromISODate } from "../components/DateField";
 import { FxNote } from "../components/FxNote";
-import { BundlePicker } from "../components/BundlePicker";
-import { ComboSelector } from "../components/ComboSelector";
 import { TripSuggestions } from "../components/TripSuggestions";
 import { ExtraOptions } from "../components/ExtraOptions";
 import { ImportantNotice } from "../components/ImportantNotice";
@@ -308,6 +307,7 @@ export default function Apply() {
     const [savedTravelers, setSavedTravelers] = useState([]);
     const [showAllInsurance, setShowAllInsurance] = useState(false);
     const [showAllEsim, setShowAllEsim] = useState(false);
+    const [showCatalog, setShowCatalog] = useState(false);
 
     // Giris yapmis musterinin kayitli yolcularini getir (aile profili)
     useEffect(() => {
@@ -767,12 +767,6 @@ export default function Apply() {
         return match?.id || null;
     }, [bundles, insurancePick, esimQty]);
 
-    const pickBundle = (bundle) => {
-        setInsurancePick(bundle.insurance.id);
-        setEsimQty({ [bundle.esim.id]: 1 });
-        toast.success(`${bundle.name} eklendi.`);
-    };
-
     // Ana sayfadan paket secilerek gelindiyse (/basvuru/pack-x veya ?paket=pack_x) secimleri hazir getir
     const bundleParam = pathIds.paket || searchParams.get("paket");
     const bundleApplied = useRef(false);
@@ -908,23 +902,6 @@ export default function Apply() {
             setEsimQty({ [recommendedEsimId]: Math.min(Math.max(travelerCount, 1), 10) });
         }
         toast.success("Seyahat sürenize en uygun sigorta ve eSIM paketi eklendi. %10 paket indirimi uygulandı.");
-    };
-
-    // Kombinasyon secimi: sadece vize / +eSIM / +sigorta / hepsi
-    const applyCombo = (option) => {
-        if (option.insurance) {
-            const pick = recommendedInsuranceId || insuranceProducts[0]?.id;
-            if (pick) setInsurancePick(pick);
-        } else {
-            setInsurancePick(null);
-        }
-        if (option.esim) {
-            const pick = recommendedEsimId || esimProducts[0]?.id;
-            if (pick) setEsimQty({ [pick]: Math.min(Math.max(travelerCount, 1), 10) });
-        } else {
-            setEsimQty({});
-        }
-        toast.success(`${option.label} seçildi.`);
     };
 
     // Basvuru tipi: tek yolcu = bireysel, birden fazla yolcu = grup/aile
@@ -1126,6 +1103,10 @@ export default function Apply() {
     const insuranceNudgeTotal = recommendedInsurance
         ? (insuranceDiscountFor(recommendedInsurance)?.finalPrice || Number(recommendedInsurance.price) || 0) *
           Math.max(travelerCount, 1)
+        : 0;
+    const recommendedEsim = esimProducts.find((p) => p.id === recommendedEsimId) || null;
+    const esimNudgeTotal = recommendedEsim
+        ? (Number(recommendedEsim.price) || 0) * Math.max(travelerCount, 1)
         : 0;
 
     const esimOptions = visibleEsim.map((p) => ({
@@ -1402,7 +1383,11 @@ export default function Apply() {
                 unit: "kişi",
                 selected,
                 image: tour.image_url || "",
-                onToggle: () => toggleSuggestedTour(tour),
+                onToggle: () => {
+                    const wasSelected = selected;
+                    toggleSuggestedTour(tour);
+                    if (!wasSelected) setShowCatalog(true);
+                },
             });
         }
         return list;
@@ -3163,109 +3148,36 @@ export default function Apply() {
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         Sigorta, eSIM ve Dubai turları opsiyoneldir; birlikte alırsanız paket indirimi otomatik uygulanır.</p>
 
-                                    <div className="mt-8">
-                                        <h3 className="font-heading text-base font-bold">Hizmet yükseltmeleri</h3>
-                                        <p className="mt-1.5 text-sm text-muted-foreground">Yolcu başına eklenir.</p>
-                                        <div className="mt-4 space-y-4">
-                                            {addonMeta.map((a) => (
-                                                <label key={a.id} className="flex cursor-pointer items-start gap-4 rounded-xl border border-border bg-card p-5" data-testid={`addon-toggle-row-${a.id}`}>
-                                                    <Switch
-                                                        checked={!!addons[a.id]}
-                                                        onCheckedChange={(c) => setAddons((s) => ({ ...s, [a.id]: !!c }))}
-                                                        className="mt-1"
-                                                        data-testid={`addon-switch-${a.id}`}
-                                                    />
-                                                    <div className="flex-1">
-                                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                                            <p className="font-heading text-sm font-bold">{a.name}</p>
-                                                            <span className="font-heading text-sm font-bold text-primary">
-                                                                + {formatMoney(a.price, a.currency)} / kişi
-                                                            </span>
-                                                        </div>
-                                                        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{a.description}</p>
-                                                    </div>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* NE ALMAK ISTIYORSUNUZ (kombinasyonlar) */}
-                                    <ComboSelector
-                                        hasInsurance={Boolean(insurancePick)}
-                                        hasEsim={Object.values(esimQty).some((q) => q > 0)}
-                                        onChange={applyCombo}
-                                    />
-
-                                    {/* EKSTRA HIZMET ONERILERI: sigorta + eSIM + col safarisi */}
+                                    {/* SEYAHATINIZ ICIN ONERILENLER (sigorta + eSIM + col safarisi) */}
                                     {extrasSelectable && tripSuggestions.length > 0 && (
                                         <TripSuggestions
                                             suggestions={tripSuggestions}
                                             tripDays={tripDays}
                                             bundleActive={bundleActive}
+                                            bundleNote={
+                                                bundleInfo?.note ||
+                                                "Sigorta ve eSIM'i birlikte alın, paket indirimi otomatik uygulanır."
+                                            }
+                                            discountText={
+                                                quote?.bundle_discount > 0
+                                                    ? `Paket indirimi uygulandı: - ${formatMoney(
+                                                          quote.bundle_discount,
+                                                          quote.currency,
+                                                      )}`
+                                                    : ""
+                                            }
+                                            onAddAll={applyRecommended}
+                                            addAllDisabled={!extrasSelectable || bundleActive}
                                         />
                                     )}
 
-                                    {/* AKILLI PAKET ONERISI + PAKET INDIRIMI */}
-                                    {(insuranceProducts.length > 0 || esimProducts.length > 0) && (
-                                        <div
-                                            className="mt-10 rounded-xl border border-[hsl(var(--brand-green)/0.35)] bg-[hsl(var(--brand-green)/0.06)] p-5"
-                                            data-testid="bundle-promo-box"
-                                        >
-                                            <div className="flex flex-wrap items-start justify-between gap-4">
-                                                <div className="max-w-xl">
-                                                    <p className="flex items-center gap-2 font-heading text-sm font-bold">
-                                                        <Tag className="h-4 w-4 text-[hsl(var(--brand-green))]" aria-hidden="true" />
-                                                        {bundleInfo?.title || "Seyahat paketi indirimi"}
-                                                    </p>
-                                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                                                        {bundleInfo?.note ||
-                                                            "Sigorta ve eSIM'i birlikte alın, %10 indirim otomatik uygulanır."}
-                                                    </p>
-                                                    {tripDays && (
-                                                        <p className="mt-2 text-sm text-muted-foreground" data-testid="bundle-trip-days">
-                                                            Seyahatiniz <strong className="text-foreground">{tripDays} gün</strong> — size uygun paketleri işaretledik.
-                                                        </p>
-                                                    )}
-                                                    {!tripDays && datesFlexible && (
-                                                        <p className="mt-2 text-sm text-muted-foreground" data-testid="bundle-flexible-note">
-                                                            Tarihiniz henüz belli değil — <strong className="text-foreground">vize sürenize</strong> uygun paketleri listeledik.
-                                                        </p>
-                                                    )}
-                                                    {quote?.bundle_discount > 0 && (
-                                                        <p
-                                                            className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--brand-green))]"
-                                                            data-testid="bundle-discount-applied"
-                                                        >
-                                                            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                                                            Paket indirimi uygulandı: - {formatMoney(quote.bundle_discount, quote.currency)}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    className="h-10 border border-border"
-                                                    onClick={applyRecommended}
-                                                    disabled={!extrasSelectable || bundleActive}
-                                                    data-testid="apply-recommended-bundle-button"
-                                                >
-                                                    <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-                                                    {bundleActive ? "Paket eklendi" : "Önerilenleri ekle"}
-                                                </Button>
-                                            </div>
-                                        </div>
+                                    {!extrasSelectable && (
+                                        <p className="mt-6 text-sm text-muted-foreground" data-testid="extras-need-dates-note">
+                                            Ek hizmetleri seçebilmek için önce gidiş tarihinizi girin veya "tarihim
+                                            henüz belli değil" seçeneğini işaretleyin.
+                                        </p>
                                     )}
 
-                                    {/* VIZE SURESINE GORE HAZIR PAKETLER */}
-                                    <BundlePicker
-                                        bundles={bundles}
-                                        selectedId={selectedBundleId}
-                                        onSelect={pickBundle}
-                                        visaDays={visaCoverDays}
-                                    />
-
-                                    {/* SEYAHAT SIGORTASI (magaza katalogu) */}
-                                    {insuranceBlock}
                                     {insurancePick && (
                                         <div className="mt-5" data-testid="insurance-identity-block">
                                             <p className="font-heading text-sm font-bold">
@@ -3286,11 +3198,36 @@ export default function Apply() {
                                         </div>
                                     )}
 
-                                    {/* DUBAI eSIM (magaza katalogu) */}
-                                    {esimBlock}
+                                    {/* TUM KATALOG (acilir): sigorta + eSIM + turlar */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCatalog((v) => !v)}
+                                        className="mt-8 flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-5 py-4 text-left transition-colors duration-200 hover:border-primary/60"
+                                        data-testid="toggle-extras-catalog-button"
+                                    >
+                                        <span>
+                                            <span className="block font-heading text-sm font-bold">
+                                                {showCatalog ? "Diğer paketleri gizle" : "Diğer paketleri gör"}
+                                            </span>
+                                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                                                Tüm sigorta poliçeleri, eSIM paketleri ve Dubai turları
+                                            </span>
+                                        </span>
+                                        <ChevronDown
+                                            className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 ${
+                                                showCatalog ? "rotate-180" : ""
+                                            }`}
+                                            aria-hidden="true"
+                                        />
+                                    </button>
 
-                                    {/* DUBAI AKTIVITELERI (col safarisi) */}
-                                    {tourProducts.length > 0 && (
+                                    {showCatalog && (
+                                        <div data-testid="extras-catalog">
+                                            {insuranceBlock}
+                                            {esimBlock}
+
+                                            {/* DUBAI AKTIVITELERI (col safarisi) */}
+                                            {tourProducts.length > 0 && (
                                         <div className="mt-10" data-testid="apply-tour-section">
                                             <div className="flex items-center gap-2">
                                                 <Sparkles className="h-5 w-5 text-primary" />
@@ -3441,6 +3378,34 @@ export default function Apply() {
                                             </div>
                                         </div>
                                     )}
+                                        </div>
+                                    )}
+
+                                    <div className="mt-8 border-t border-border pt-8">
+                                        <h3 className="font-heading text-base font-bold">Hizmet yükseltmeleri</h3>
+                                        <p className="mt-1.5 text-sm text-muted-foreground">Yolcu başına eklenir.</p>
+                                        <div className="mt-4 space-y-4">
+                                            {addonMeta.map((a) => (
+                                                <label key={a.id} className="flex cursor-pointer items-start gap-4 rounded-xl border border-border bg-card p-5" data-testid={`addon-toggle-row-${a.id}`}>
+                                                    <Switch
+                                                        checked={!!addons[a.id]}
+                                                        onCheckedChange={(c) => setAddons((s) => ({ ...s, [a.id]: !!c }))}
+                                                        className="mt-1"
+                                                        data-testid={`addon-switch-${a.id}`}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                                            <p className="font-heading text-sm font-bold">{a.name}</p>
+                                                            <span className="font-heading text-sm font-bold text-primary">
+                                                                + {formatMoney(a.price, a.currency)} / kişi
+                                                            </span>
+                                                        </div>
+                                                        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{a.description}</p>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
@@ -3474,6 +3439,34 @@ export default function Apply() {
                                                 data-testid="insurance-last-call-add-button"
                                             >
                                                 <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" /> Sigortayı ekle
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {!created && !esimSelected && recommendedEsim && extrasSelectable && (
+                                        <div
+                                            className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[hsl(var(--brand-green)/0.4)] bg-[hsl(var(--brand-green)/0.07)] p-4"
+                                            data-testid="esim-last-call"
+                                        >
+                                            <p className="flex items-start gap-2 text-sm leading-6">
+                                                <Wifi className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--brand-green))]" aria-hidden="true" />
+                                                <span>
+                                                    Sadece{" "}
+                                                    <strong data-testid="esim-last-call-amount">
+                                                        {formatMoney(esimNudgeTotal, recommendedEsim.currency)}
+                                                    </strong>{" "}
+                                                    daha ekleyin; Dubai'ye indiğiniz an internetiniz hazır olsun
+                                                    ({recommendedEsim.validity_days} gün
+                                                    {recommendedEsim.data_amount ? ` · ${recommendedEsim.data_amount}` : ""}).
+                                                </span>
+                                            </p>
+                                            <Button
+                                                type="button"
+                                                className="h-10"
+                                                onClick={() => toggleEsim(recommendedEsim)}
+                                                data-testid="esim-last-call-add-button"
+                                            >
+                                                <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" /> eSIM ekle
                                             </Button>
                                         </div>
                                     )}

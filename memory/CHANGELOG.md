@@ -2988,3 +2988,26 @@ kisim adim 2'de olsun", "adim 3 basligini degistirelim".
   basildiginda toplam 5.190 -> 5.694 TL (tam +504) oldu, hatirlatma kayboldu ve
   "56 TL tasarruf ettiniz" notu belirdi. Ipucu onizlemeleri ve dialog acilisi da
   dogrulandi, kirik gorsel yok.
+
+### 2026-06-18 (27) · Adim 3 sadelestirildi + eSIM son adim hatirlatmasi
+Kullanici: "hem paket/tur/vize/eSIM teklif ediyor hem ayri ayri hem 'size onerilen' diyor,
+sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog.
+- **KALDIRILDI**: `ComboSelector` ("Ne almak istiyorsunuz?" kombinasyonlari),
+  `BundlePicker` ("Vize suresine gore hazir paketler"), ayri `bundle-promo-box` ve
+  `TripSuggestions` icindeki tekrar eden "%10 paket indirimi" seridi.
+  Import'lar ve olu `applyCombo` / `pickBundle` fonksiyonlari da temizlendi.
+  (Ana sayfadan `?paket=` ile gelen hazir paket secimi calismaya devam ediyor.)
+- **YENI DUZEN (Adim 3)**: ① "Seyahatiniz icin onerilenler" — sigorta, eSIM, col safarisi
+  karti (fiyat + tek tik ekle), basliginda paket indirimi mesaji ve
+  **"Hepsini ekle"** butonu (`apply-recommended-bundle-button`, secildiyse "Paket eklendi")
+  ② police kimlik alanlari (sigorta seciliyse) ③ **"Diger paketleri gor"** acilir katalog
+  (`toggle-extras-catalog-button` / `extras-catalog`): tum sigortalar + eSIM'ler + turlar
+  ④ en altta "Hizmet yukseltmeleri" (Ekspres Vize).
+- Tur karti secilince katalog otomatik aciliyor ki tur tarihi/saati gorunsun.
+- **eSIM son adim hatirlatmasi** (`esim-last-call`): odeme adiminda eSIM secilmemisse
+  tek satir "+{tutar} ekle" teklifi (sigorta hatirlatmasinin ikizi).
+- Dogrulama (Playwright, tam akis): Adim 3'te 3 oneri karti + katalog kapali; "Hepsini
+  ekle" -> "Paket eklendi", "Paket indirimi uygulandi: -353 TL", toplam 8.311 TL,
+  tasarruf 409 TL. Tur secilince katalog+tur bolumu acildi. Adim 4'te iki hatirlatma:
+  sigorta "Sadece 504 TL", eSIM "Sadece 740 TL"; eSIM eklenince toplam 5.190 -> 5.930 TL
+  ve hatirlatma kayboldu.

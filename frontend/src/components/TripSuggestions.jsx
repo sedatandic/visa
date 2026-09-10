@@ -4,18 +4,50 @@ import { Button } from "./ui/button";
 import { formatMoney } from "../lib/site";
 
 // Odeme adiminda sunulan ekstra hizmet onerileri (sigorta + eSIM + col safarisi).
-export const TripSuggestions = ({ suggestions, tripDays, bundleActive }) => (
-    <div className="mt-10" data-testid="trip-suggestions">
-        <div className="flex items-center gap-2">
-            <Star className="h-4.5 w-4.5 text-primary" aria-hidden="true" />
-            <h3 className="font-heading text-base font-bold">Ekstra hizmetler</h3>
+export const TripSuggestions = ({
+    suggestions,
+    tripDays,
+    bundleActive,
+    bundleNote,
+    discountText,
+    onAddAll,
+    addAllDisabled,
+}) => (
+    <div className="mt-8" data-testid="trip-suggestions">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-2xl">
+                <div className="flex items-center gap-2">
+                    <Star className="h-4.5 w-4.5 text-primary" aria-hidden="true" />
+                    <h3 className="font-heading text-base font-bold">Seyahatiniz için önerilenler</h3>
+                </div>
+                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                    {tripDays
+                        ? `${tripDays} günlük Dubai seyahatiniz için seçtik.`
+                        : "Seyahat planınıza göre seçtik."}{" "}
+                    {bundleNote}
+                </p>
+                {discountText && (
+                    <p
+                        className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--brand-green))]"
+                        data-testid="bundle-discount-applied"
+                    >
+                        <Check className="h-4 w-4" aria-hidden="true" /> {discountText}
+                    </p>
+                )}
+            </div>
+            {onAddAll && (
+                <Button
+                    type="button"
+                    className="h-10"
+                    onClick={onAddAll}
+                    disabled={addAllDisabled}
+                    data-testid="apply-recommended-bundle-button"
+                >
+                    <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                    {bundleActive ? "Paket eklendi" : "Hepsini ekle"}
+                </Button>
+            )}
         </div>
-        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-            {tripDays
-                ? `${tripDays} günlük Dubai seyahatiniz için seçtik.`
-                : "Seyahat planınıza göre seçtik."}{" "}
-            Ödemeden önce dilediğinizi ekleyin; istediğinizi tek tıkla kaldırabilirsiniz.
-        </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
             {suggestions.map((s) => {
                 const Icon = s.icon;
@@ -86,13 +118,5 @@ export const TripSuggestions = ({ suggestions, tripDays, bundleActive }) => (
                 );
             })}
         </div>
-        {bundleActive && (
-            <p
-                className="mt-3 rounded-lg bg-[hsl(var(--brand-green))]/10 px-3.5 py-2.5 text-xs font-bold leading-5 text-[hsl(var(--brand-green))]"
-                data-testid="suggestions-bundle-note"
-            >
-                Sigorta + eSIM birlikte seçildi: %10 paket indirimi toplama otomatik uygulanır.
-            </p>
-        )}
     </div>
 );

@@ -1734,3 +1734,10 @@ fotograflari, ATV +40 USD ek secenek.
   (tiklayinca buyuk rehber). Yeni bilesen: `components/UploadExamplesHint.jsx`.
 - Adim 4'te sigortasiz devam eden kullaniciya tek satirlik "+{tutar} ekle" teklifi
   (`insurance-last-call`), tek tikla ekleniyor.
+
+## 2026-06-18 (fork, 7) · Adim 3 tek oneri + acilir katalog
+- Kombinasyon secici ve hazir paket kartlari kaldirildi; ek hizmet satisi tek oneri blogu
+  (3 kart + "Hepsini ekle") ve "Diger paketleri gor" acilir katalogu uzerinden yapiliyor.
+- Odeme adiminda hem sigorta hem eSIM icin tek satirlik "+X TL ekle" hatirlatmasi var.
+- Not: `BundlePicker.jsx` ve `ComboSelector.jsx` dosyalari duruyor ama artik kullanilmiyor
+  (Cart/diger sayfalarda kullanim varsa korunmali).
