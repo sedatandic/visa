@@ -2862,3 +2862,10 @@ VisaTypeCard ve AddonCard'da ortak minimum yuksekliklerle 4 kart birebir hizalan
   slot eklendi. Boylece butonlar tum kartlarda ayni y'de.
 Dogrulama (Playwright, 1920 ve 1280 px): fiyat kutulari ayni y + ayni yukseklik,
 ozellik listeleri ayni y, butonlar ayni y (hepsi True).
+
+## 2026-06-18 (15) · Evrak yukleme kartlari hizalandi
+FileDropzone aciklama paragrafina `min-h-[3.75rem]` (3 satir) verildi; boylece yanyana
+duran kartlarda (Pasaport/Vesikalik ve Ucak Bileti/Otel Rezervasyonu) aciklama satir
+sayisi farkli olsa bile yukleme alani ve "Yuklendi" karti ayni y'de basliyor.
+Dogrulama (Playwright): ticket/hotel ve passport/photo dropzone Y degerleri esit (1270),
+iki dosya yuklendikten sonra "Yuklendi" kartlari da ayni y ve ayni yukseklikte (150px).

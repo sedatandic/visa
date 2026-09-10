@@ -79,7 +79,7 @@ export const FileDropzone = ({
                 {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
             </div>
             {description ? (
-                <p className="text-xs leading-5 text-muted-foreground">{description}</p>
+                <p className="min-h-[3.75rem] text-xs leading-5 text-muted-foreground">{description}</p>
             ) : null}
 
             {value ? (
