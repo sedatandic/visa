@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Check, Images, RotateCcw, X } from "lucide-react";
+import { AlertTriangle, Camera, Check, CheckCircle2, Images, RotateCcw, X } from "lucide-react";
+import { analyzeImageQuality } from "../lib/imageQuality";
 import { Button } from "./ui/button";
 
 // ID-3 pasaport kimlik sayfasi orani (125 x 88 mm)
@@ -29,6 +30,7 @@ export const CameraCapture = ({ mode = "passport", open, onClose, onCapture, onP
     const [error, setError] = useState("");
     const [ready, setReady] = useState(false);
     const [shot, setShot] = useState(null);
+    const [quality, setQuality] = useState(null);
 
     const stop = useCallback(() => {
         streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -44,6 +46,7 @@ export const CameraCapture = ({ mode = "passport", open, onClose, onCapture, onP
         let cancelled = false;
         setError("");
         setShot(null);
+        setQuality(null);
         (async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -108,12 +111,13 @@ export const CameraCapture = ({ mode = "passport", open, onClose, onCapture, onP
         }
         ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(
-            (blob) => {
+            async (blob) => {
                 if (!blob) return;
                 setShot({
                     url: URL.createObjectURL(blob),
                     file: new File([blob], config.fileName, { type: "image/jpeg" }),
                 });
+                setQuality(await analyzeImageQuality(blob));
             },
             "image/jpeg",
             0.92
@@ -157,12 +161,35 @@ export const CameraCapture = ({ mode = "passport", open, onClose, onCapture, onP
                     className={`h-full w-full object-cover ${config.facing === "user" ? "scale-x-[-1]" : ""}`}
                 />
                 {shot ? (
-                    <img
-                        src={shot.url}
-                        alt="Çekilen kare"
-                        className="absolute inset-0 h-full w-full bg-black object-contain"
-                        data-testid="camera-shot-preview"
-                    />
+                    <>
+                        <img
+                            src={shot.url}
+                            alt="Çekilen kare"
+                            className="absolute inset-0 h-full w-full bg-black object-contain"
+                            data-testid="camera-shot-preview"
+                        />
+                        {quality && (
+                            <div
+                                className={`absolute inset-x-4 top-4 flex items-start gap-2 rounded-xl px-4 py-3 text-sm font-semibold ${
+                                    quality.level === "good"
+                                        ? "bg-[hsl(var(--brand-green))] text-white"
+                                        : quality.level === "warn"
+                                          ? "bg-amber-400 text-amber-950"
+                                          : "bg-destructive text-destructive-foreground"
+                                }`}
+                                data-testid={`camera-quality-${quality.level}`}
+                            >
+                                {quality.level === "good" ? (
+                                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                                ) : (
+                                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                                )}
+                                <span className="leading-5" data-testid="camera-quality-message">
+                                    {quality.message}
+                                </span>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <>
                         <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-5">
@@ -196,15 +223,33 @@ export const CameraCapture = ({ mode = "passport", open, onClose, onCapture, onP
                     <>
                         <Button
                             type="button"
-                            variant="secondary"
-                            className="h-12 flex-1 border border-white/20 bg-white/10 text-white hover:bg-white/20"
-                            onClick={() => setShot(null)}
+                            variant={quality?.level === "bad" ? "default" : "secondary"}
+                            className={`h-12 flex-1 ${
+                                quality?.level === "bad"
+                                    ? ""
+                                    : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                            }`}
+                            onClick={() => {
+                                setShot(null);
+                                setQuality(null);
+                            }}
                             data-testid="camera-retake-button"
                         >
                             <RotateCcw className="mr-2 h-4 w-4" /> Tekrar çek
                         </Button>
-                        <Button type="button" className="h-12 flex-1" onClick={use} data-testid="camera-use-button">
-                            <Check className="mr-2 h-4 w-4" /> Kullan
+                        <Button
+                            type="button"
+                            variant={quality?.level === "bad" ? "secondary" : "default"}
+                            className={`h-12 flex-1 ${
+                                quality?.level === "bad"
+                                    ? "border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                                    : ""
+                            }`}
+                            onClick={use}
+                            data-testid="camera-use-button"
+                        >
+                            <Check className="mr-2 h-4 w-4" />
+                            {quality?.level === "bad" ? "Yine de kullan" : "Kullan"}
                         </Button>
                     </>
                 ) : (

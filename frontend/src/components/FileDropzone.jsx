@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
-import { AlertCircle, Camera, CheckCircle2, Eye, FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
+import { AlertCircle, AlertTriangle, Camera, CheckCircle2, Eye, FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
 import { api, apiError, fileUrl } from "../lib/api";
+import { analyzeImageQuality } from "../lib/imageQuality";
 import { Button } from "./ui/button";
 import { CameraCapture } from "./CameraCapture";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -26,16 +27,29 @@ export const FileDropzone = ({
     const [preview, setPreview] = useState(null);
     const [viewOpen, setViewOpen] = useState(false);
     const [cameraOpen, setCameraOpen] = useState(false);
+    const [pendingBad, setPendingBad] = useState(null);
+    const [qualityNote, setQualityNote] = useState(null);
     const cameraSupported = Boolean(capture && navigator.mediaDevices?.getUserMedia);
 
-    const handleFiles = async (files) => {
+    const handleFiles = async (files, { skipQualityGate = false } = {}) => {
         const file = files?.[0];
         if (!file) return;
         setError("");
+        setQualityNote(null);
         if (file.size > 10 * 1024 * 1024) {
             setError("Dosya boyutu en fazla 10 MB olabilir.");
             return;
         }
+        // Yukleme oncesi anlik kalite kontrolu: bulanik/parlamali kareyi bosuna yuklemeyelim
+        let quality = null;
+        if (file.type.startsWith("image/")) {
+            quality = await analyzeImageQuality(file);
+            if (!skipQualityGate && quality?.level === "bad") {
+                setPendingBad({ file, quality });
+                return;
+            }
+        }
+        setPendingBad(null);
         const form = new FormData();
         form.append("file", file);
         form.append("doc_type", docType);
@@ -49,6 +63,7 @@ export const FileDropzone = ({
             } else {
                 setPreview(null);
             }
+            if (quality && quality.level !== "good") setQualityNote(quality);
             onChange(data);
         } catch (err) {
             setError(apiError(err, "Dosya yüklenemedi. Lütfen tekrar deneyin."));
@@ -60,6 +75,8 @@ export const FileDropzone = ({
     const removeFile = () => {
         setPreview(null);
         setError("");
+        setQualityNote(null);
+        setPendingBad(null);
         if (inputRef.current) inputRef.current.value = "";
         onChange(null);
     };
@@ -186,6 +203,44 @@ export const FileDropzone = ({
                 </div>
             ) : (
                 <div className="flex flex-col gap-2">
+                    {pendingBad && (
+                        <div
+                            className="rounded-xl border border-destructive/40 bg-destructive/[0.06] p-4"
+                            data-testid={`${testId}-quality-block`}
+                        >
+                            <p className="flex items-start gap-2 text-sm font-bold text-destructive">
+                                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                                {pendingBad.quality.message}
+                            </p>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                Bulanık veya parlamalı belgeler onay sürecini geciktirir. Yüklemeden önce
+                                tekrar çekmeniz zaman kazandırır.
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                <Button
+                                    type="button"
+                                    className="h-11 flex-1"
+                                    onClick={() => {
+                                        setPendingBad(null);
+                                        if (cameraSupported) setCameraOpen(true);
+                                        else inputRef.current?.click();
+                                    }}
+                                    data-testid={`${testId}-quality-retake`}
+                                >
+                                    <Camera className="mr-2 h-4 w-4" /> Tekrar çek
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="h-11 flex-1 border border-border"
+                                    onClick={() => handleFiles([pendingBad.file], { skipQualityGate: true })}
+                                    data-testid={`${testId}-quality-force-upload`}
+                                >
+                                    Yine de yükle
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                     {cameraSupported && (
                         <Button
                             type="button"
@@ -252,6 +307,16 @@ export const FileDropzone = ({
                 onChange={(e) => handleFiles(e.target.files)}
             />
 
+            {qualityNote && (
+                <p
+                    className="flex items-start gap-1.5 text-xs font-medium text-amber-700"
+                    data-testid={`${testId}-quality-note`}
+                >
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    {qualityNote.message}
+                </p>
+            )}
+
             {error && (
                 <p className="flex items-start gap-1.5 text-xs font-medium text-destructive" data-testid={`${testId}-error`}>
                     <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -264,7 +329,7 @@ export const FileDropzone = ({
                     mode={capture}
                     open={cameraOpen}
                     onClose={() => setCameraOpen(false)}
-                    onCapture={(file) => handleFiles([file])}
+                    onCapture={(file) => handleFiles([file], { skipQualityGate: true })}
                     onPickFile={() => inputRef.current?.click()}
                 />
             )}

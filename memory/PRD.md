@@ -1779,3 +1779,5 @@ fotograflari, ATV +40 USD ek secenek.
   pasaport oranli cerceve, cerceveye gore otomatik kirpma, onizleme/tekrar cek,
   izin yoksa galeriden secme. Yeni bilesen: `components/CameraCapture.jsx`,
   `FileDropzone`'a `capture` prop'u eklendi.
+- Yukleme oncesi kalite uyarisi: bulanik/parlamali kare yuklenmeden "Tekrar cek" onerilir
+  (`lib/imageQuality.js`); sinirda olanlarda amber not. Yapay zeka maliyeti yok.

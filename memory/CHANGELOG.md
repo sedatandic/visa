@@ -3177,3 +3177,18 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
   buton (48px) → çekim ekranı → shutter → önizleme → tekrar çek → kullan → `pasaport.jpg`
   yüklendi; vesikalık modu da aynı akışta çalıştı. Masaüstünde kamera düğmesi dropzone'un
   altında, mobil çubuk gizli, yatay kaydırma yok.
+
+### 2026-06-18 (37) · Çekim kalite uyarısı (yükleme öncesi)
+- Yeni yardımcı `frontend/src/lib/imageQuality.js`: 480px'e küçültülen karede **Laplacian
+  varyansı** (netlik), **parlama oranı** (>248 parlaklık piksel yüzdesi) ve ortalama parlaklık
+  ölçülür; eşiklere göre `good / warn / bad` + Türkçe öneri döner. Cihazda çalışır, yapay
+  zekâ maliyeti yok.
+- Kamera ekranında çekilen karenin üstünde anında renkli şerit: iyi (yeşil) / sınırda (amber) /
+  kötü (kırmızı). `bad` ise ana düğme **"Tekrar çek"** olur, ikincil düğme "Yine de kullan".
+- Dosya/galeri seçiminde **yükleme öncesi kapı**: kare bulanık ya da parlamalıysa dosya
+  yüklenmez, yerine "Tekrar çek" / "Yine de yükle" kartı çıkar (`*-quality-block`);
+  sınırda kalan karelerde yükleme yapılır ama amber not gösterilir (`*-quality-note`).
+- Doğrulama (sahte kamera + hazır dosyalar): bulanık dosya → engel + "Fotoğraf bulanık…",
+  "Yine de yükle" → yüklendi + amber not; parlamalı dosya → engel + "Parlama var…";
+  net pasaport örneği → uyarı çıkmadan yüklendi (yanlış alarm yok); kamera akışında şerit
+  ve düğme metinleri doğru.
