@@ -649,13 +649,26 @@ BUNDLE_DISCOUNT = {
 
 
 # Sigortayi vize basvurusuyla birlikte alan musteriye poliçe bedelinde indirim
-# (tek basina magazadan alimda gecerli degil - amac vize + sigorta paketini cazip kilmak)
+# (tek basina magazadan alimda gecerli degil - amac vize + sigorta paketini cazip kilmak).
+# Kampanya kalicidir; oran 2026-06'da %10'dan %20'ye cikarildi (yeni saglayici maliyeti dustu).
 WITH_VISA_INSURANCE_DISCOUNT = {
-    "rate": 0.10,
+    "rate": 0.20,
     "title": "Sigorta dahil vize indirimi",
-    "badge": "Vize + sigorta = poliçede %10 indirim",
-    "card_badge": "Vize ile birlikte %10 indirim",
-    "note": "Sigortayı vize başvurunuzla birlikte alın, poliçe bedelinde %10 indirim uygulanır.",
+    "badge": "Vize + sigorta = poliçede %20 indirim",
+    "card_badge": "Vize ile birlikte %20 indirim",
+    "note": "Sigortayı vize başvurunuzla birlikte alın, poliçe bedelinde %20 indirim uygulanır.",
+    "campaign_title": "Vize + sigorta birlikte: poliçede %20 indirim",
+    "campaign_note": (
+        "Dubai vize başvurunuzu yaparken seyahat sağlık sigortasını da seçin; poliçe bedelinizin "
+        "%20'si sepette otomatik düşülür. Kampanya süresiz geçerlidir."
+    ),
+    "cross_sell_title": "Vizenizi de bizden alın, poliçede %20 indirim",
+    "cross_sell_note": (
+        "Sepetinizdeki seyahat sağlık sigortasını vize başvurunuzla birlikte alırsanız poliçe "
+        "bedelinde %20 indirim uygulanır."
+    ),
+    "cta_label": "Vize başvurusuna başla",
+    "cta_href": "/basvuru",
 }
 
 

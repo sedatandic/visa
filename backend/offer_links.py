@@ -230,9 +230,63 @@ def admin_view(doc: dict, base: str = "") -> dict:
             "apply_url": apply_url(token, base),
             "whatsapp_url": whatsapp_url(doc, url),
             "share_text": share_text(doc, url),
+            "opened": int(doc.get("views") or 0) > 0,
         }
     )
     return out
+
+
+def _pct(part: int, base: int) -> int:
+    return round(part / base * 100) if base else 0
+
+
+def _hours_between(start, end) -> float | None:
+    first, second = as_utc(start), as_utc(end)
+    if not (first and second) or second < first:
+        return None
+    return (second - first).total_seconds() / 3600
+
+
+def report_summary(docs: list, now: datetime | None = None) -> dict:
+    """Teklif performansi: kac teklif acildi, kaci basvuruya dondu, tutar karsiliklari."""
+    now = now or datetime.now(timezone.utc)
+    statuses = {"active": 0, "used": 0, "expired": 0, "disabled": 0}
+    opened = converted = views = 0
+    offered_value = converted_value = 0.0
+    open_hours = []
+    for doc in docs:
+        state = status_of(doc, now)
+        statuses[state] = statuses.get(state, 0) + 1
+        view_count = int(doc.get("views") or 0)
+        views += view_count
+        amount = float(doc.get("total") or 0)
+        offered_value += amount
+        if view_count:
+            opened += 1
+            gap = _hours_between(
+                doc.get("created_at"), doc.get("first_viewed_at") or doc.get("last_viewed_at")
+            )
+            if gap is not None:
+                open_hours.append(gap)
+        if doc.get("application_id"):
+            converted += 1
+            converted_value += amount
+    total = len(docs)
+    return {
+        "total": total,
+        "opened": opened,
+        "not_opened": total - opened,
+        "converted": converted,
+        "views": views,
+        "open_rate": _pct(opened, total),
+        "conversion_rate": _pct(converted, total),
+        "converted_of_opened": _pct(converted, opened),
+        "offered_value": round(offered_value),
+        "converted_value": round(converted_value),
+        "currency": (docs[0].get("currency") if docs else "TRY") or "TRY",
+        "statuses": statuses,
+        "avg_open_hours": round(sum(open_hours) / len(open_hours), 1) if open_hours else None,
+    }
 
 
 async def _repriced(doc: dict) -> dict:

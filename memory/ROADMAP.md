@@ -81,6 +81,16 @@
 - [x] ~~Paylasilabilir aile paketi / teklif linki~~ -> 2026-06-16: Admin -> Teklif
       Linkleri (`/admin/teklifler`) + musteri sayfasi `/teklif/<token>` + `?teklif=` ile
       basvuru on dolumu tamamlandi (bkz. CHANGELOG 2026-06-16).
+- [x] ~~Teklif dönüşüm raporu~~ → 2026-06-19: Admin → Teklif Linkleri'nde gönderilen /
+      açılan / dönüşen oranları, tutar karşılıkları ve durum filtreleri
+      (`offer_links.report_summary`, `components/OfferReport.jsx`).
+- [x] ~~Teklif linkine geri sayım~~ → 2026-06-19: `components/OfferCountdown.jsx`,
+      48 saatin altında aciliyet görünümü.
+- [x] ~~Tur tarihi otomatik önerisi~~ → daha önce yapılmış (`Apply.jsx suggestedTourDate`:
+      varış + 1 gün, dönüşü aşarsa varış günü).
+- [ ] **ATV ek hizmeti**: standart safari açıklamasında "isteğe bağlı ATV +40 USD" yazıyor
+      ama VIP paket (+10 USD) ATV'yi dahil ediyor → fiyat çelişkisi. Seçilebilir eklenti
+      yapılmadan önce kullanıcıdan doğru ATV fiyatı teyit edilmeli.
 - [ ] Eski test dosyalarındaki katalog beklentileri güncellenmeli: `test_visa_categories.py`,
       `test_tour_safari.py`, `test_iteration_48.py::TestVisaPrices`, `test_zami_otp_fix.py`.
 - [ ] `backend_test.py` içindeki çok uzun test fonksiyonlarının bölünmesi.

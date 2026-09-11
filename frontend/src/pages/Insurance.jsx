@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { setMeta } from "../lib/site";
 import { PageHeader } from "../components/SiteLayout";
+import { InsuranceCampaign } from "../components/InsuranceCampaign";
 import { PlanShowcase } from "../components/PlanShowcase";
 import { Button } from "../components/ui/button";
 import { useContact } from "../lib/contact";
@@ -115,11 +116,13 @@ export default function Insurance() {
                 description="Seyahat sağlık sigortası vize başvurusu için zorunlu bir belge değildir; ancak Birleşik Arap Emirlikleri'nde sağlık masraflarının yüksekliği bu poliçeyi düşünmeye değer kılar. Aşağıda kapsamı, sınırlarını ve başvurunuza nasıl eklendiğini bulacaksınız."
             />
 
-            <section className="pb-12 pt-6 sm:pb-16 sm:pt-8" data-testid="insurance-plans">
+            <section className="pb-8 pt-6 sm:pb-10 sm:pt-8" data-testid="insurance-plans">
                 <div className="container-page">
                     <PlanShowcase kind="insurance" />
                 </div>
             </section>
+
+            <InsuranceCampaign />
 
             <section className="section border-y border-border bg-[hsl(var(--cloud))]" data-testid="insurance-coverage">
                 <div className="container-page">

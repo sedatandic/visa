@@ -3206,3 +3206,30 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
 - Doğrulama (Playwright, sahte kamera): mobilde kamera düğmeleri var, masaüstünde yok;
   örnekler başlangıçta gizli, OCR başarısız olunca beliriyor; beyaz fonlu vesikalık ve
   parlamalı pasaport karesi artık engellenmiyor, bulanık kare hâlâ engelleniyor.
+
+### 2026-06-19 (39) · Teklif dönüşüm raporu + teklifte geri sayım
+- **Admin → Teklif Linkleri dönüşüm raporu (P1)**: `GET /api/admin/offer-links` artık
+  `report` alanı döndürüyor (`offer_links.report_summary`): gönderilen teklif sayısı,
+  açılan (adet + oran), başvuruya dönen (adet + oran + açılanlara oranı), toplam
+  görüntülenme, ortalama açılma süresi, toplam teklif tutarı ve dönüşen tutar, durum
+  kırılımı (active/used/expired/disabled). Rapor tüm kayıtlar üzerinden hesaplanır,
+  liste yine son 60 kayıt.
+- **Liste filtresi**: `?status=` → `not_opened | opened | used | expired | disabled | active`
+  (`routes_admin_offers._matches`). Panelde filtre pilleri (`offer-filter-*`).
+- **Satır detayı**: her teklifte "N görüntülenme · son açılış <tarih>" ya da
+  "Henüz açılmadı" + dönüşen tekliflerde başvuru referansı ve dönüşüm tarihi.
+  `admin_view` yeni `opened` alanı.
+- **İlk açılış zamanı**: `/api/offers/{token}` görüntülemede `$min: first_viewed_at`
+  yazıyor → ortalama "gönderim → ilk açılış" süresi hesaplanabiliyor.
+- **Müşteri tarafında geri sayım (P2)**: `components/OfferCountdown.jsx` — teklif
+  sayfasında "Bu fiyat 1 gün 23:59:37 boyunca geçerli"; 48 saatin altında kırmızı/
+  nabız animasyonlu aciliyet görünümü, süre bitince "Teklif süresi doldu".
+- Yeni bileşen `components/OfferReport.jsx` (4 istatistik kutucuğu).
+- Test: `backend/tests/test_iteration_147_offer_report.py` (8 PASS) + uçtan uca curl
+  (rapor oranları, iki filtre) + Playwright doğrulaması (rapor kutucukları, filtre
+  sayaçları, geri sayım metni).
+- Temizlik: `offer_links` koleksiyonundaki 93 test teklifi (Teklif Test / isimsiz /
+  demo kayıtlar) silindi — rapor artık gerçek verilerle başlıyor.
+- NOT: Tam pytest koşusunda `test_refactor_regression`, `test_iteration_84`,
+  `test_iteration_133_offer_links` hataları **hız sınırı (429)** kaynaklı; dosyalar tek
+  tek koşulduğunda hepsi geçiyor (16/16, 5/5). Regresyon değil.

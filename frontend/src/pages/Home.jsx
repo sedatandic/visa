@@ -34,6 +34,7 @@ import { VisaSpecimen } from "../components/VisaSpecimen";
 import { HeroHeadline } from "../components/HeroHeadline";
 import { HomeBundleStrip } from "../components/HomeBundleStrip";
 import { HomeInsuranceStrip } from "../components/HomeInsuranceStrip";
+import { InsuranceCampaign } from "../components/InsuranceCampaign";
 import { HomeTourStrip } from "../components/HomeTourStrip";
 import { EasyCompare } from "../components/EasyCompare";
 import { AskFirstSection } from "../components/AskFirstSection";
@@ -288,6 +289,8 @@ export default function Home() {
             <HomeBundleStrip />
 
             {/* SADECE SIGORTA (vizeden bagimsiz satis) */}
+            <InsuranceCampaign />
+
             <HomeInsuranceStrip />
 
             {/* COL SAFARISI TANITIM SERIDI */}

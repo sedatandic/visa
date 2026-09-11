@@ -51,6 +51,7 @@ from content import (
     VISA_CATEGORIES,
     VISA_TYPES,
     WHY_US,
+    WITH_VISA_INSURANCE_DISCOUNT,
     affiliation_note,
     compute_pricing,
 )
@@ -344,6 +345,7 @@ async def get_site_content() -> dict:
         "addons": await addons_with_fx(),
         "fx": await get_fx(),
         "family_discount_tiers": [{"min": m, "rate": r} for m, r in FAMILY_DISCOUNT_TIERS],
+        "visa_insurance": WITH_VISA_INSURANCE_DISCOUNT,
         "family_discount_text": FAMILY_DISCOUNT_TEXT,
         "max_travelers": MAX_TRAVELERS,
         "process_steps": PROCESS_STEPS,
@@ -452,7 +454,11 @@ async def get_offer_link(token: str, request: Request) -> dict:
         )
     await offer_links_col.update_one(
         {"token": doc["token"]},
-        {"$inc": {"views": 1}, "$set": {"last_viewed_at": datetime.now(timezone.utc)}},
+        {
+            "$inc": {"views": 1},
+            "$set": {"last_viewed_at": datetime.now(timezone.utc)},
+            "$min": {"first_viewed_at": datetime.now(timezone.utc)},
+        },
     )
     return await offer_links.public_view(doc)
 

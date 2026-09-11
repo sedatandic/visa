@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
 import { formatDateTime, formatMoney } from "../lib/site";
 import { AdminLayout } from "../components/AdminLayout";
+import { OfferReport } from "../components/OfferReport";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -31,6 +32,14 @@ const STATUS_BADGE = {
     expired: { label: "Süresi doldu", className: "bg-amber-50 text-amber-700 border-amber-200" },
     disabled: { label: "Kapatıldı", className: "bg-muted text-muted-foreground border-border" },
 };
+
+const FILTERS = [
+    { key: "", label: "Tümü" },
+    { key: "not_opened", label: "Açılmadı" },
+    { key: "opened", label: "Açıldı" },
+    { key: "used", label: "Dönüştü" },
+    { key: "expired", label: "Süresi doldu" },
+];
 
 const copyText = (value, message) => {
     navigator.clipboard
@@ -89,9 +98,13 @@ const OfferRow = ({ offer, onDisable }) => {
                 )}
             </div>
 
-            <p className="mt-2 text-xs text-muted-foreground">
-                {offer.travelers?.length || 0} yolcu · {offer.views || 0} görüntülenme
+            <p className="mt-2 text-xs text-muted-foreground" data-testid={`offer-activity-${offer.token}`}>
+                {offer.travelers?.length || 0} yolcu ·{" "}
+                {offer.opened
+                    ? `${offer.views} görüntülenme · son açılış ${formatDateTime(offer.last_viewed_at)}`
+                    : "Henüz açılmadı"}
                 {offer.reference_code ? ` · Başvuru: ${offer.reference_code}` : ""}
+                {offer.used_at ? ` (${formatDateTime(offer.used_at)})` : ""}
             </p>
         </div>
     );
@@ -101,6 +114,8 @@ export default function AdminOffers() {
     const [visaTypes, setVisaTypes] = useState([]);
     const [products, setProducts] = useState([]);
     const [items, setItems] = useState([]);
+    const [report, setReport] = useState(null);
+    const [filter, setFilter] = useState("");
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
 
@@ -126,14 +141,22 @@ export default function AdminOffers() {
 
     const setField = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
-    const loadOffers = () =>
+    const loadOffers = (status = "") =>
         api
-            .get("/admin/offer-links")
-            .then(({ data }) => setItems(data.items || []))
+            .get("/admin/offer-links", { params: status ? { status } : {} })
+            .then(({ data }) => {
+                setItems(data.items || []);
+                setReport(data.report || null);
+            })
             .catch((e) => toast.error(apiError(e, "Teklifler yüklenemedi.")));
 
     useEffect(() => {
-        Promise.all([api.get("/visa-types"), api.get("/products"), loadOffers()])
+        loadOffers(filter);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filter]);
+
+    useEffect(() => {
+        Promise.all([api.get("/visa-types"), api.get("/products")])
             .then(([v, p]) => {
                 setVisaTypes(v.data || []);
                 setProducts(p.data.items || []);
@@ -217,6 +240,7 @@ export default function AdminOffers() {
                 store_items: storeItems,
             });
             setItems((list) => [data, ...list]);
+            loadOffers(filter);
             copyText(data.url, "Teklif oluşturuldu ve bağlantı kopyalandı.");
         } catch (e) {
             toast.error(apiError(e, "Teklif oluşturulamadı."));
@@ -245,7 +269,9 @@ export default function AdminOffers() {
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
             ) : (
-                <div className="grid max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr]" data-testid="admin-offers-page">
+                <div className="max-w-6xl space-y-6" data-testid="admin-offers-page">
+                    <OfferReport report={report} />
+                    <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
                     <div className="card-surface p-5 sm:p-6">
                         <h2 className="font-heading text-lg font-bold">Yeni teklif</h2>
 
@@ -516,16 +542,36 @@ export default function AdminOffers() {
                                 {items.length} kayıt
                             </span>
                         </div>
+                        <div className="mt-3 flex flex-wrap gap-2" data-testid="offer-filters">
+                            {FILTERS.map((f) => (
+                                <button
+                                    key={f.key || "all"}
+                                    type="button"
+                                    onClick={() => setFilter(f.key)}
+                                    data-testid={`offer-filter-${f.key || "all"}`}
+                                    className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-colors duration-150 ${
+                                        filter === f.key
+                                            ? "border-primary bg-primary/10 text-primary"
+                                            : "border-border text-muted-foreground hover:bg-muted"
+                                    }`}
+                                >
+                                    {f.label}
+                                </button>
+                            ))}
+                        </div>
                         <div className="mt-3 space-y-3">
                             {items.length === 0 && (
                                 <p className="card-surface p-5 text-sm text-muted-foreground" data-testid="offer-empty">
-                                    Henüz teklif oluşturmadınız. Soldaki formu doldurup linki WhatsApp'tan gönderin.
+                                    {filter
+                                        ? "Bu filtreye uyan teklif yok."
+                                        : "Henüz teklif oluşturmadınız. Soldaki formu doldurup linki WhatsApp'tan gönderin."}
                                 </p>
                             )}
                             {items.map((offer) => (
                                 <OfferRow key={offer.id} offer={offer} onDisable={disable} />
                             ))}
                         </div>
+                    </div>
                     </div>
                 </div>
             )}

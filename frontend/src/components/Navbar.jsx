@@ -134,7 +134,7 @@ export const Navbar = () => {
             data-testid="site-navbar"
         >
             <div className="h-px w-full bg-border" aria-hidden="true" />
-            <div className="mx-auto flex h-[84px] w-full max-w-[1560px] items-end justify-between gap-4 px-4 pb-3 sm:h-[96px] sm:px-6 sm:pb-3.5 lg:h-[108px]">
+            <div className="mx-auto flex h-[84px] w-full max-w-[1560px] items-end justify-between gap-2 px-4 pb-3 sm:h-[96px] sm:gap-4 sm:px-6 sm:pb-3.5 lg:h-[108px]">
                 <Link
                     to="/"
                     onClick={goHomeTop}
@@ -148,15 +148,16 @@ export const Navbar = () => {
                     to="/"
                     onClick={goHomeTop}
                     aria-label="Ana sayfaya dön"
-                    className="hidden flex-1 items-end justify-center pb-[1px] min-[360px]:flex lg:pb-[2px]"
+                    className="hidden min-w-0 flex-1 items-center justify-start pb-1 min-[360px]:flex sm:pb-1.5 lg:pb-[2px]"
                     data-testid="brand-flag-pair"
                 >
                     <span className="flex items-center gap-1 lg:gap-2">
-                        <TrFlag className="h-4 w-8 min-[380px]:h-5 min-[380px]:w-10 sm:h-6 sm:w-12 lg:h-[46px] lg:w-[92px]" />
-                        <ArrowRight className="hidden h-4 w-4 text-primary lg:block" />
-                        <UaeFlag className="h-4 w-8 min-[380px]:h-5 min-[380px]:w-10 sm:h-6 sm:w-12 lg:h-[46px] lg:w-[92px]" />
+                        <TrFlag className="h-5 w-10 min-[390px]:h-6 min-[390px]:w-12 min-[430px]:h-7 min-[430px]:w-14 min-[480px]:h-8 min-[480px]:w-16 lg:h-[46px] lg:w-[92px]" />
+                        <ArrowRight className="h-3.5 w-3.5 shrink-0 text-primary lg:h-4 lg:w-4" />
+                        <UaeFlag className="h-5 w-10 min-[390px]:h-6 min-[390px]:w-12 min-[430px]:h-7 min-[430px]:w-14 min-[480px]:h-8 min-[480px]:w-16 lg:h-[46px] lg:w-[92px]" />
                     </span>
                 </Link>
+
 
                 <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Ana menü">
                     {PRIMARY_LINKS.map((l) => (
@@ -251,8 +252,9 @@ export const Navbar = () => {
                             <div className="flex items-center gap-2.5 border-b border-border py-4 pl-5 pr-12">
                                 <BrandMark />
                                 <span className="flex shrink-0 items-center gap-1">
-                                    <TrFlag className="h-4 w-8" />
-                                    <UaeFlag className="h-4 w-8" />
+                                    <TrFlag className="h-5 w-10" />
+                                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                    <UaeFlag className="h-5 w-10" />
                                 </span>
                             </div>
 
