@@ -152,9 +152,9 @@ export const Navbar = () => {
                     data-testid="brand-flag-pair"
                 >
                     <span className="flex items-center gap-1 lg:gap-2">
-                        <TrFlag className="h-5 w-10 min-[390px]:h-6 min-[390px]:w-12 min-[430px]:h-7 min-[430px]:w-14 min-[480px]:h-8 min-[480px]:w-16 lg:h-[46px] lg:w-[92px]" />
-                        <ArrowRight className="h-3.5 w-3.5 shrink-0 text-primary lg:h-4 lg:w-4" />
-                        <UaeFlag className="h-5 w-10 min-[390px]:h-6 min-[390px]:w-12 min-[430px]:h-7 min-[430px]:w-14 min-[480px]:h-8 min-[480px]:w-16 lg:h-[46px] lg:w-[92px]" />
+                        <TrFlag className="h-5 w-10 min-[390px]:h-6 min-[390px]:w-12 min-[430px]:h-7 min-[430px]:w-14 min-[560px]:h-14 min-[560px]:w-28 sm:h-16 sm:w-32 lg:h-20 lg:w-40 xl:h-[46px] xl:w-[92px] min-[1400px]:h-14 min-[1400px]:w-28" />
+                        <ArrowRight className="h-3.5 w-3.5 shrink-0 text-primary lg:h-5 lg:w-5" />
+                        <UaeFlag className="h-5 w-10 min-[390px]:h-6 min-[390px]:w-12 min-[430px]:h-7 min-[430px]:w-14 min-[560px]:h-14 min-[560px]:w-28 sm:h-16 sm:w-32 lg:h-20 lg:w-40 xl:h-[46px] xl:w-[92px] min-[1400px]:h-14 min-[1400px]:w-28" />
                     </span>
                 </Link>
 
@@ -249,12 +249,12 @@ export const Navbar = () => {
                             Site menüsü: vize bilgileri, rehberler ve iletişim bağlantıları
                         </SheetDescription>
                         <div className="flex h-full flex-col" data-testid="mobile-menu">
-                            <div className="flex items-center gap-2.5 border-b border-border py-4 pl-5 pr-12">
-                                <BrandMark />
+                            <div className="flex items-center gap-2 border-b border-border py-4 pl-4 pr-11">
+                                <BrandMark compact />
                                 <span className="flex shrink-0 items-center gap-1">
-                                    <TrFlag className="h-5 w-10" />
-                                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                    <UaeFlag className="h-5 w-10" />
+                                    <TrFlag className="h-7 w-14 min-[390px]:h-8 min-[390px]:w-16 min-[430px]:h-9 min-[430px]:w-[72px]" />
+                                    <ArrowRight className="h-3 w-3 shrink-0 text-primary" />
+                                    <UaeFlag className="h-7 w-14 min-[390px]:h-8 min-[390px]:w-16 min-[430px]:h-9 min-[430px]:w-[72px]" />
                                 </span>
                             </div>
 

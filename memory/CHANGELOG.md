@@ -3245,3 +3245,16 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
   import" -> `pytest.raises(ModuleNotFoundError): __import__("tamamliyo")` bilincli test.
   `routes_admin.py` / `routes_public.py` bolunmesi ve diger eski fonksiyonlarin
   karmasiklik refaktoru ROADMAP'te acik madde olarak duruyor (riskli, ayri is).
+
+### 2026-06-19 (40) · Bayraklar logo yüksekliğine çıkarıldı
+- Kullanıcı isteği: "bayrakların büyüklükleri Dubai vize hattı kadar olsun üstten aşağı"
+  (mobil menü ekran görüntüsü ile).
+- **Mobil menü (Sheet) başlığı**: `BrandMark` yeni `compact` prop'u ile h-7/h-8/h-9
+  ölçeğinde; TR→BAE bayrakları **logo ile birebir aynı yükseklikte** (28/32/36 px).
+  Başlık paddingleri pl-4 pr-11, ok 12 px → 360/390/430 px genişliklerde taşma yok.
+- **Üst navbar**: bayraklar 560 px'ten itibaren logo yüksekliğiyle eşit
+  (560→56 px, 640→64 px, 1024→80 px). 1280-1399 aralığında menü bağlantıları devreye
+  girdiği için 46 px, 1400 px ve üstünde 56 px.
+- Ölçüm doğrulaması (Playwright, bayrak bitiş X'i ile menü başlangıç X'i): 360/390/430/
+  560/640/768/1024/1280/1400/1536/1680/1920/2560 px → hiçbirinde çakışma yok
+  (en dar pay 1280'de 22 px, 1536'da 34 px).
