@@ -1,6 +1,0 @@
-base64_ic_alan: 22 bayt · %PDF-1.4
-indirme_baglantisi: 25 bayt · %PDF-1.4
-liste_icinde_baglanti: 25 bayt · %PDF-1.4
-ham_pdf: 19 bayt · %PDF-1.4
-pdf_yok: hata · Poliçe PDF'i yanıtta bulunamadı.
-indirme adresi: https://api.tamamliyo.test/police-goster/9001

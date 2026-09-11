@@ -7,13 +7,11 @@ Altin kopya yaklasimi: sabit (deterministik) fixture'lardan PDF uretilir, metni 
 tablo kolon genislikleri `tests/golden/*.txt` altindaki kayitli kopyayla karsilastirilir.
 Kasitli tasarim degisikliginde kopyalar `UPDATE_GOLDEN=1 pytest ...` ile yenilenir.
 
-Police PDF'i saglayicidan (Tamamliyo) indirilir; bu yuzden police tarafinda altin kopya
-boru hattini korur: yanittan PDF cozme (base64 / link / ham), dosya kaydi, musteriye
-giden e-posta ve WhatsApp metni.
+Police PDF'i saglayicidan indirilir; police tarafinda altin kopya dosya kaydini ve
+musteriye giden e-posta / WhatsApp metnini korur.
 """
 
 import asyncio
-import base64
 import io
 import os
 import sys
@@ -27,7 +25,6 @@ import application_pdf
 import insurance_delivery
 import insurance_provider
 import payment_receipt_pdf as receipt
-import tamamliyo
 
 GOLDEN_DIR = Path(__file__).parent / "golden"
 UPDATE = os.environ.get("UPDATE_GOLDEN") == "1"
@@ -305,7 +302,7 @@ class TestPoliceTeslimi:
         report = [
             "[e-posta]",
             insurance_delivery.policy_html(
-                POLICY_TASK, POLICY_LINK, "Poliçeniz Tamamliyo üzerinden düzenlendi."
+                POLICY_TASK, POLICY_LINK, "Poliçeniz düzenlendi."
             ),
             "[whatsapp]",
             insurance_delivery.policy_wa_text(POLICY_TASK, POLICY_LINK),
@@ -337,149 +334,3 @@ class TestPoliceTeslimi:
         report = [f"yol: {saved['path'].replace(file_id, '<id>')}"]
         report += [f"{key}: {str(doc[key]).replace(file_id, '<id>')}" for key in sorted(doc)]
         golden("police_dosya_kaydi", "\n".join(report))
-
-
-PDF_PAYLOADS = {
-    "base64_ic_alan": {
-        "data": {"policeDokuman": base64.b64encode(b"%PDF-1.4 base64 police").decode()}
-    },
-    "indirme_baglantisi": {"data": {"pdfUrl": "https://api.tamamliyo.test/police/9001.pdf"}},
-    "liste_icinde_baglanti": {
-        "data": {
-            "belgeler": [
-                {"tur": "police", "link": "https://api.tamamliyo.test/police-goster/9001"}
-            ]
-        }
-    },
-    "ham_pdf": {"data": {"pdf": "%PDF-1.4 ham police"}},
-    "pdf_yok": {"data": {"durum": "OK", "policeNo": "P-9001"}},
-}
-
-
-class TestPoliceYanitCozumleme:
-    def test_pdf_degeri_bulma(self):
-        lines = []
-        for name, payload in PDF_PAYLOADS.items():
-            value = tamamliyo._find_pdf_value(payload)
-            lines.append(f"{name}: {value if value else 'bulunamadi'}")
-        golden("police_pdf_cozumleme", "\n".join(lines))
-
-    def test_baytlara_cevirme(self, monkeypatch):
-        class FakeResponse:
-            content = b"%PDF-1.4 indirilen police"
-
-            def raise_for_status(self):
-                return None
-
-        class FakeClient:
-            def __init__(self, *args, **kwargs):
-                pass
-
-            async def __aenter__(self):
-                return self
-
-            async def __aexit__(self, *args):
-                return False
-
-            async def get(self, url):
-                FakeClient.url = url
-                return FakeResponse()
-
-        monkeypatch.setattr(tamamliyo.httpx, "AsyncClient", FakeClient)
-        lines = []
-        for name, payload in PDF_PAYLOADS.items():
-            try:
-                data = asyncio.run(tamamliyo.fetch_policy_bytes(payload))
-                lines.append(f"{name}: {len(data)} bayt · {data[:8].decode('latin-1')}")
-            except tamamliyo.TamamliyoError as exc:
-                lines.append(f"{name}: hata · {exc}")
-        lines.append(f"indirme adresi: {FakeClient.url}")
-        golden("police_pdf_baytlari", "\n".join(lines))
-
-    def test_saglayici_hata_mesajlari(self):
-        cases = {
-            "data_errorMessage": {"data": {"errorMessage": "Poliçe kesilemedi."}},
-            "data_errorCode": {"data": {"errorCode": "HATA_2"}},
-            "ust_seviye_message": {"message": "Token geçersiz."},
-            "liste": {"errors": ["ulkeKodu gonderilmesi zorunludur", "ikinci hata"]},
-            "authentication": {"authentication": "Yetkisiz istek."},
-            "bos": {"data": {}},
-            "dict_degil": "metin",
-        }
-        lines = [f"{name}: {tamamliyo._error_message(payload)}" for name, payload in cases.items()]
-        golden("saglayici_hata_mesajlari", "\n".join(lines))
-
-
-class FakeResponse:
-    def __init__(self, status: int, payload=None, text: str = ""):
-        self.status_code = status
-        self._payload = payload
-        self.text = text
-
-    def json(self):
-        if self._payload is None:
-            raise ValueError("json yok")
-        return self._payload
-
-
-def _fake_transport(monkeypatch, responses: list):
-    """tamamliyo._request icin sirali yanit/istisna dondurur; cagri sayisini tutar."""
-    calls = []
-
-    class FakeClient:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *args):
-            return False
-
-        async def request(self, method, url, json=None, headers=None):
-            calls.append(method)
-            item = responses[min(len(calls) - 1, len(responses) - 1)]
-            if isinstance(item, Exception):
-                raise item
-            return item
-
-    monkeypatch.setenv("TAMAMLIYO_BASE_URL", "https://api.tamamliyo.test")
-    monkeypatch.setenv("TAMAMLIYO_TOKEN", "test-token")
-    monkeypatch.setattr(tamamliyo.httpx, "AsyncClient", FakeClient)
-    return calls
-
-
-class TestSaglayiciIstegi:
-    """`_request` retry/hata davranisi (bolunmeden once kilitlenen sozlesme)."""
-
-    def _run(self, monkeypatch, responses: list, retry: bool = True) -> str:
-        async def no_sleep(_seconds):
-            return None
-
-        monkeypatch.setattr(tamamliyo.asyncio, "sleep", no_sleep)
-        calls = _fake_transport(monkeypatch, responses)
-        try:
-            data = asyncio.run(tamamliyo._request("POST", "/test", {"a": 1}, retry=retry))
-            return f"{len(calls)} istek · yanit {data}"
-        except tamamliyo.TamamliyoError as exc:
-            return f"{len(calls)} istek · hata({exc.status}, retryable={exc.retryable}) {exc}"
-
-    def test_istek_akislari(self, monkeypatch):
-        timeout = tamamliyo.httpx.ReadTimeout("zaman asimi")
-        senaryolar = {
-            "basarili": ([FakeResponse(200, {"success": True, "data": {"teklifId": "9001"}})], True),
-            "gecici_hata_sonra_basarili": (
-                [FakeResponse(500, {"message": "sunucu"}), FakeResponse(200, {"data": {"ok": 1}})],
-                True,
-            ),
-            "kalici_hata": ([FakeResponse(400, {"data": {"errorMessage": "Teklif yok."}})], True),
-            "kimlik_hatasi": ([FakeResponse(200, {"authentication": "Yetkisiz istek."})], True),
-            "json_degil": ([FakeResponse(200, None, "sunucu hatasi")], True),
-            "zaman_asimi_tekrarli": ([timeout], True),
-            "zaman_asimi_odeme": ([timeout], False),
-        }
-        lines = [
-            f"{name}: {self._run(monkeypatch, responses, retry)}"
-            for name, (responses, retry) in senaryolar.items()
-        ]
-        golden("saglayici_istek_akislari", "\n".join(lines))

@@ -1,7 +1,0 @@
-data_errorMessage: Poliçe kesilemedi.
-data_errorCode: HATA_2
-ust_seviye_message: Token geçersiz.
-liste: ulkeKodu gonderilmesi zorunludur
-authentication: Yetkisiz istek.
-bos: Tamamliyo servisi beklenmeyen yanit dondurdu.
-dict_degil: Tamamliyo servisi beklenmeyen yanit dondurdu.

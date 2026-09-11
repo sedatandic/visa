@@ -1,5 +1,0 @@
-base64_ic_alan: JVBERi0xLjQgYmFzZTY0IHBvbGljZQ==
-indirme_baglantisi: https://api.tamamliyo.test/police/9001.pdf
-liste_icinde_baglanti: https://api.tamamliyo.test/police-goster/9001
-ham_pdf: %PDF-1.4 ham police
-pdf_yok: bulunamadi

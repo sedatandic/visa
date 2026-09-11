@@ -61,7 +61,7 @@ class TestInsuranceCatalog:
             assert pid in ids, f"Missing product {pid}"
 
     def test_prices_and_currency(self, session):
-        """Fiyatlar Tamamliyo maliyetinden %100 marj ile uretilir (10 TL'ye yuvarlanir)."""
+        """Fiyatlar saglayici maliyetinden %100 marj ile uretilir (10 TL'ye yuvarlanir)."""
         r = session.get(f"{API}/products", params={"kind": "insurance"})
         items = {p["id"]: p for p in r.json()["items"]}
         for pid, expected_days in EXPECTED_DAYS.items():

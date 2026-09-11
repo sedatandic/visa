@@ -288,11 +288,6 @@ class TestProviderWiring:
         assert run(insurance_provider.active_provider()) == "sigortambudur"
         assert run(insurance_provider.api_enabled()) is True
 
-    def test_price_sync_stays_off_for_sigortambudur(self):
-        # Fiyat senkronu kisisel veri gerektirmeyen Tamamliyo sorgusuna ozeldi
-        assert run(insurance_provider.price_sync_enabled()) is False
-        assert run(insurance_provider.sync_prices())["reason"] == "provider_disabled"
-
     def test_missing_secret_falls_back_to_manual_issue(self, monkeypatch):
         monkeypatch.setenv("SIGORTAMBUDUR_CLIENT_SECRET", "")
 

@@ -1,7 +1,0 @@
-basarili: 1 istek · yanit {'success': True, 'data': {'teklifId': '9001'}}
-gecici_hata_sonra_basarili: 2 istek · yanit {'data': {'ok': 1}}
-kalici_hata: 1 istek · hata(400, retryable=False) Teklif yok.
-kimlik_hatasi: 1 istek · hata(200, retryable=False) Yetkisiz istek.
-json_degil: 1 istek · yanit {'raw': 'sunucu hatasi'}
-zaman_asimi_tekrarli: 3 istek · hata(None, retryable=True) Tamamliyo servisine ulasilamadi: zaman asimi
-zaman_asimi_odeme: 1 istek · hata(None, retryable=False) ODEME_DURUMU_BILINMIYOR: Tamamliyo yaniti alinamadi, cekim yapilmis olabilir (zaman asimi).

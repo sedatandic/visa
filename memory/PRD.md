@@ -1852,3 +1852,25 @@ fotograflari, ATV +40 USD ek secenek.
   Eski Tamamliyo testleri yeni kapiya uyarlandi. 110 test gecti.
 - Not: `test_iteration_101/102/84/test_uae_defaults` fiyat beklentileri ESKI (marj korumasi
   fiyatlari yukselttigi icin) — bu hatalar bu isten ONCE de vardi.
+
+## 2026-06-18 (fork, 17) · Tamamliyo TAMAMEN kaldirildi
+- Kullanici: "tamamliyo tamamen kaldır".
+- Silinenler: `backend/tamamliyo.py`, `tests/test_iteration_118_tamamliyo_payment.py`,
+  `tests/test_iteration_130_tamamliyo_balance.py`, `memory/tamamliyo/` klasoru,
+  Tamamliyo'ya ozel altin kopyalar (police_pdf_cozumleme / police_pdf_baytlari /
+  saglayici_hata_mesajlari / saglayici_istek_akislari), `.env` icindeki tum TAMAMLIYO_* anahtarlari.
+- Kaldirilan ozellikler: canli fiyat senkronu (`sync_prices`, `probe_product`,
+  `price_sync_loop`, `fetch_cost`) ve arkaplan dongusu (artik 6 scheduler),
+  admin uclari `POST /api/admin/insurance/sync-prices` ve `GET /api/admin/insurance/product-check`
+  (404), panelde fiyat senkronu + urun kodu sorgusu bloklari, kart/CVV odeme modu.
+- Kalanlar saglayicidan bagimsiz hale getirildi: `insurance_payment` (PAYMENT_UNKNOWN_MARKER
+  artik "gerçekleşmiş olabilir" ifadesi, uyari metinleri acente cari hesabina gore),
+  `PROVIDER_LABELS` = {sigortambudur, manual}, elle kesim linki portal.panaceasigorta.com,
+  urun kaydi `provider: "sigortambudur"`, panelde odeme karti sadece kuyruk durumunu gosteriyor.
+- Fiyatlar artik panelden elle yonetiliyor (Kâr koruması paneli maliyet/satis/marj kontrolunu
+  ve zarar durumunda otomatik fiyat duzeltmeyi surduruyor).
+- Testler: 113 sigorta/PDF/refactor testi gecti (yeni `TestNoTamamliyoLeftovers` sinifi modulun
+  gercekten kaldirildigini dogruluyor); altin kopyalar UPDATE_GOLDEN=1 ile yenilendi.
+  Panel ekraninda hicbir yerde "Tamamliyo" gecmiyor (dogrulandi).
+- Not: `test_iteration_101/102/84/test_uae_defaults` fiyat beklentileri ESKI oldugu icin
+  hâlâ kirmizi; bu hatalar bu isten once de vardi (marj korumasi fiyatlari yukseltmisti).

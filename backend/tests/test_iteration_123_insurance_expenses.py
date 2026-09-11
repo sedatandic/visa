@@ -1,8 +1,8 @@
-"""Iteration 123: sigorta gider raporu (karttan cekilen tutarlar) + cekim kaydi.
+"""Iteration 123: sigorta gider raporu (saglayiciya odenen tutarlar) + cekim kaydi.
 
-Poliçe bedeli kurumsal karttan cekildiginde gorev uzerine `charged_try` + `charged_at`
-yazilir; panel bu veriden aylik gider tablosunu uretir. Elle/test kesimlerinde cekim
-olmadigi icin gider raporuna girmez.
+Poliçe bedeli saglayicinin acente cari hesabindan cekildiginde gorev uzerine
+`charged_try` + `charged_at` yazilir; panel bu veriden aylik gider tablosunu uretir.
+Elle/test kesimlerinde cekim olmadigi icin gider raporuna girmez.
 """
 
 import asyncio
@@ -60,16 +60,12 @@ class TestRecordCharge:
         assert saved["charged_try"] == 244.85
         assert isinstance(saved["charged_at"], datetime)
 
-    def test_payment_step_records_charge(self, monkeypatch):
+    def test_policy_step_records_charge(self, monkeypatch):
         calls = []
 
-        async def fake_pay(quote_id):
-            calls.append(("pay", quote_id))
-            return {"success": True}
-
-        async def fake_policy(quote_id):
-            calls.append(("policy", quote_id))
-            return {"data": {"policeNo": "P-9"}}
+        async def fake_issue(response_id):
+            calls.append(("policy", response_id))
+            return {"id": "pol-1", "policyNumber": "P-9"}
 
         async def fake_mark(task_id, step, detail=None):
             return None
@@ -77,30 +73,27 @@ class TestRecordCharge:
         async def fake_record(task_id):
             calls.append(("charge", task_id))
 
-        monkeypatch.setattr(insurance_provider.tamamliyo, "pay_for_quote", fake_pay)
-        monkeypatch.setattr(insurance_provider.tamamliyo, "create_policy", fake_policy)
+        monkeypatch.setattr(insurance_provider.sigortambudur, "issue_policy", fake_issue)
         monkeypatch.setattr(insurance_provider, "_mark_step", fake_mark)
         monkeypatch.setattr(insurance_provider, "_record_charge", fake_record)
 
-        run(insurance_provider._ensure_policy({"id": "t1"}, "2135835", {}))
-        assert calls == [("pay", "2135835"), ("charge", "t1"), ("policy", "2135835")]
+        policy_id = run(insurance_provider._sigortambudur_policy({"id": "t1"}, "resp-1"))
+        assert policy_id == "pol-1"
+        assert calls == [("policy", "resp-1"), ("charge", "t1")]
 
-    def test_charge_is_not_recorded_when_payment_already_done(self, monkeypatch):
+    def test_charge_is_not_recorded_when_policy_already_issued(self, monkeypatch):
         calls = []
 
         async def fake_record(task_id):
             calls.append(task_id)
 
-        async def fake_policy(quote_id):
-            return {"data": {}}
-
-        async def fake_mark(task_id, step, detail=None):
-            return None
+        async def fake_issue(_response_id):
+            raise AssertionError("police zaten kesilmis, tekrar istek gitmemeli")
 
         monkeypatch.setattr(insurance_provider, "_record_charge", fake_record)
-        monkeypatch.setattr(insurance_provider.tamamliyo, "create_policy", fake_policy)
-        monkeypatch.setattr(insurance_provider, "_mark_step", fake_mark)
-        run(insurance_provider._ensure_policy({"id": "t1"}, "1", {"payment_confirm": "done"}))
+        monkeypatch.setattr(insurance_provider.sigortambudur, "issue_policy", fake_issue)
+        task = {"id": "t1", "provider_detail": {"policy": {"policy_id": "pol-9"}}}
+        assert run(insurance_provider._sigortambudur_policy(task, "resp-1")) == "pol-9"
         assert calls == []
 
 

@@ -101,8 +101,9 @@ class TestHealthLifespan:
                 continue
             assert "NameError" not in tail, f"NameError in {path}"
 
-    def test_all_7_schedulers_started(self):
-        # Check most recent backend log for 7 scheduler start lines
+    def test_all_schedulers_started(self):
+        # Check most recent backend log for scheduler start lines (6 loops after
+        # Tamamliyo removal: fiyat senkronu dongusu kaldirildi)
         import glob
         log = ""
         for path in sorted(glob.glob("/var/log/supervisor/backend.out.log*")) + sorted(
@@ -123,7 +124,7 @@ class TestHealthLifespan:
             "cart reminder scheduler started",
             "document retention scheduler started",
             "daily digest scheduler started",
-            "insurance price sync scheduler started",
+            "insurance payment queue scheduler started",
         ]
         missing = [m for m in expected if m not in log]
         assert not missing, f"missing scheduler lines: {missing}"
@@ -286,35 +287,13 @@ class TestProviderPanel:
         assert r.status_code == 200, r.text
         body = r.json()
         # 2026-06-18: Tamamliyo iptal, aktif saglayici ayara bagli (sigortambudur / manual)
-        assert body.get("provider") in {"sigortambudur", "tamamliyo", "manual"}
+        assert body.get("provider") in {"sigortambudur", "manual"}
         assert isinstance(body.get("api_enabled"), bool)
-        assert isinstance(body.get("price_sync"), bool)
         assert body.get("provider_label")
         assert isinstance(body.get("auto_issue"), bool)
         rows = body.get("products") or body.get("rows") or body.get("items") or []
         active_rows = [r for r in rows if r.get("active")]
         assert len(active_rows) == 4, f"expected 4 active products, got {len(active_rows)}"
-
-    def test_sync_prices(self, sess, admin_headers):
-        """Fiyat senkronu yalnizca Tamamliyo API'si acikken calisir; aksi halde atlanir."""
-        r = sess.post(
-            f"{API}/admin/insurance/sync-prices", headers=admin_headers, timeout=30
-        )
-        assert r.status_code == 200, r.text
-        body = r.json()
-        if body.get("skipped"):
-            assert body.get("reason") == "provider_disabled"
-            return
-        rows = body.get("rows") or body.get("items") or body.get("products") or []
-        assert len(rows) == 4
-        errors = body.get("errors") or []
-        assert errors == [] or errors == 0
-        for row in rows:
-            cost = row.get("cost") or row.get("cost_try")
-            price = row.get("price") or row.get("price_try")
-            assert cost and price
-            expected = round(cost * 2 / 10) * 10
-            assert price == expected, f"{row.get('product_id')}: price {price} != round(cost*2/10)*10 = {expected}"
 
 
 # ------------------------------------------------------- daily digest

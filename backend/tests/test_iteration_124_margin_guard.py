@@ -2,9 +2,8 @@
 
 - `guard_products()`: zarar eden urunun satis fiyatini maliyet x marj yapar, ince marjda
   (%20 alti) yalnizca uyarir.
-- `check_charge()`: police kesiminde karttan cekilen tutar musteriden alinan tutari
+- `check_charge()`: police kesiminde saglayicidan cekilen tutar musteriden alinan tutari
   asarsa fiyati duzeltir ve uyari gonderir (soguma yok, her zarar bildirilir).
-- `probe_product()`: bir Tamamliyo urun kodu (orn. 220) satista mi?
 """
 
 import asyncio
@@ -20,7 +19,6 @@ if BACKEND_DIR not in sys.path:
 
 import insurance_margin  # noqa: E402
 import insurance_provider  # noqa: E402
-import tamamliyo  # noqa: E402
 
 
 def run(coro):
@@ -335,45 +333,3 @@ class TestStatus:
         assert state["risk_count"] == 1
         assert state["low_margin_pct"] == insurance_margin.LOW_MARGIN_PCT
         assert [row["state"] for row in state["items"]] == ["ok", "loss"]
-
-
-class TestProbeProduct:
-    @pytest.fixture(autouse=True)
-    def api_on(self, monkeypatch):
-        """Fiyat senkronu kapaliyken probe erken doner; test icin acik varsayilir."""
-
-        async def _on():
-            return True
-
-        monkeypatch.setattr(insurance_provider, "api_enabled", _on)
-        monkeypatch.setattr(insurance_provider, "price_sync_enabled", _on)
-
-    def test_available_product_returns_cost_and_price(self, monkeypatch):
-        async def fake_price(_count, _start, _end, urun_id):
-            assert urun_id == 220
-            return {"data": {"urunBilgileri": {"fiyatFloat": 244.85, "urunAdi": "Seyahat"}}}
-
-        monkeypatch.setattr(tamamliyo, "price", fake_price)
-        result = run(insurance_provider.probe_product(220))
-        assert result["available"] is True
-        assert result["cost_try"] == 244.85
-        assert result["price_try"] == 490.0
-
-    def test_provider_error_is_reported(self, monkeypatch):
-        async def fake_price(*_args, **_kwargs):
-            raise tamamliyo.TamamliyoError("Fiyat bulunamadı. 758")
-
-        monkeypatch.setattr(tamamliyo, "price", fake_price)
-        result = run(insurance_provider.probe_product(220))
-        assert result["available"] is False
-        assert "758" in result["error"]
-        assert result["active_urun_id"] == tamamliyo.URUN_ID
-
-    def test_empty_price_marks_unavailable(self, monkeypatch):
-        async def fake_price(*_args, **_kwargs):
-            return {"data": {"urunBilgileri": {}}}
-
-        monkeypatch.setattr(tamamliyo, "price", fake_price)
-        result = run(insurance_provider.probe_product(220))
-        assert result["available"] is False
-        assert result["price_try"] is None

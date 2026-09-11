@@ -1,11 +1,8 @@
-"""Iteration 144: Tamamliyo API'si iptal edildi, sigorta saglayicisi ayara baglandi.
+"""Iteration 144 (guncellendi 2026-06-18): API bilgisi yokken elle kesim modu.
 
-Kullanici istegi (2026-06): "cancel the tamamliyo api" + "baska bir api tanimlayacagim".
-
-- Varsayilan mod `manual`: hicbir Tamamliyo cagrisi yapilmaz, police elle kesilip yuklenir.
-- `sync_prices` / `probe_product` / `issue_via_provider` / `retry_waiting_tasks` erken doner.
-- Panelden `tamamliyo` secilse bile API bilgileri yoksa `api_enabled` False kalir.
-- Yeni police gorevleri aktif saglayici adiyla acilir (artik sabit "tamamliyo" degil).
+Kullanici istegi: "cancel the tamamliyo api" -> "tamamliyo tamamen kaldir".
+Saglayici secimi artik `sigortambudur` (API) veya `manual` (elle kesim). API bilgisi
+eksikse sistem hicbir servise baglanmaz; satis devam eder, police gorevi elle kesilir.
 """
 
 import asyncio
@@ -20,7 +17,6 @@ if BACKEND_DIR not in sys.path:
 
 import insurance_provider  # noqa: E402
 import insurance_tasks  # noqa: E402
-import tamamliyo  # noqa: E402
 
 
 def run(coro):
@@ -36,6 +32,8 @@ def no_settings(monkeypatch):
 
     monkeypatch.setattr(insurance_provider, "_settings_value", empty)
     monkeypatch.delenv("INSURANCE_PROVIDER", raising=False)
+    monkeypatch.setenv("SIGORTAMBUDUR_CLIENT_ID", "cid")
+    monkeypatch.setenv("SIGORTAMBUDUR_CLIENT_SECRET", "")
 
 
 class TestActiveProvider:
@@ -43,37 +41,22 @@ class TestActiveProvider:
         assert run(insurance_provider.active_provider()) == "manual"
         assert run(insurance_provider.api_enabled()) is False
 
-    def test_env_can_select_tamamliyo_but_needs_credentials(self, monkeypatch):
-        monkeypatch.setenv("INSURANCE_PROVIDER", "tamamliyo")
-        monkeypatch.setattr(tamamliyo, "configured", lambda: False)
-        assert run(insurance_provider.active_provider()) == "tamamliyo"
+    def test_api_needs_credentials(self, monkeypatch):
+        monkeypatch.setenv("INSURANCE_PROVIDER", "sigortambudur")
         assert run(insurance_provider.api_enabled()) is False
-
-        monkeypatch.setattr(tamamliyo, "configured", lambda: True)
+        monkeypatch.setenv("SIGORTAMBUDUR_CLIENT_SECRET", "secret")
         assert run(insurance_provider.api_enabled()) is True
 
     def test_unknown_provider_falls_back_to_manual(self, monkeypatch):
-        monkeypatch.setenv("INSURANCE_PROVIDER", "sigortam-net")
+        monkeypatch.setenv("INSURANCE_PROVIDER", "tamamliyo")
         assert run(insurance_provider.active_provider()) == "manual"
 
+    def test_set_provider_rejects_unknown(self):
+        with pytest.raises(ValueError):
+            run(insurance_provider.set_provider("tamamliyo"))
 
-class TestApiCallsBlocked:
-    def test_sync_prices_skipped(self, monkeypatch):
-        async def boom(*_args, **_kwargs):
-            raise AssertionError("Tamamliyo cagrilmamali")
 
-        monkeypatch.setattr(tamamliyo, "price", boom)
-        assert run(insurance_provider.sync_prices())["reason"] == "provider_disabled"
-
-    def test_probe_product_reports_api_off(self, monkeypatch):
-        async def boom(*_args, **_kwargs):
-            raise AssertionError("Tamamliyo cagrilmamali")
-
-        monkeypatch.setattr(tamamliyo, "price", boom)
-        result = run(insurance_provider.probe_product(220))
-        assert result["available"] is False
-        assert "kapalı" in result["error"]
-
+class TestManualMode:
     def test_issue_via_provider_asks_for_manual_upload(self, monkeypatch):
         async def fake_find(_query):
             return {"id": "t1", "status": "pending"}
@@ -116,3 +99,6 @@ class TestTaskProviderName:
         )
         assert task["provider"] == "manual"
         assert task["status"] == "pending"
+
+    def test_manual_link_points_to_provider_portal(self):
+        assert "panaceasigorta.com" in insurance_tasks.PROVIDER_PANEL

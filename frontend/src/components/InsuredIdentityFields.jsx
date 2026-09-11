@@ -5,7 +5,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { cleanTckn, validTckn } from "../lib/tckn";
 
-// Poliçe kesimi için sigortalı kimlik bilgileri (Tamamliyo TC kimlik no + doğum tarihi ister).
+// Poliçe kesimi için sigortalı kimlik bilgileri (sağlayıcı TC kimlik no + doğum tarihi ister).
 export const InsuredIdentityFields = ({
     rows,
     onChange,

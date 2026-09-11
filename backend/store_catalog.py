@@ -88,9 +88,9 @@ ESIM_PRODUCTS = [
     },
 ]
 
-# Seyahat sagligi policeleri: maliyet Tamamliyo Travel API'sinden (urun_id 141,
-# "Yurt Disi Saglik Destek Paketi") gunluk cekilir; satis fiyati %100 marj ile TL olarak
-# hesaplanir (`insurance_provider.sync_prices`). Buradaki degerler ilk kurulum/yedek tarifedir.
+# Seyahat sagligi policeleri: maliyet saglayici tarifesinden (Sigortambudur,
+# en ucuz sirket teklifi) gelir; satis fiyati %100 marj ile TL olarak belirlenir
+# (`insurance_margin`). Buradaki degerler katalog/yedek tarifedir, panelden guncellenir.
 INSURANCE_MARKUP = 2.0
 
 _BASIC_FEATURES = [
@@ -116,7 +116,7 @@ def _insurance(pid, days, base_try, popular=False, order=1):
         "coverage": "30.000 € teminat",
         "validity_days": days,
         "features": _BASIC_FEATURES,
-        "provider": "tamamliyo",
+        "provider": "sigortambudur",
         "provider_urun_id": 141,
         "needs_tckn": True,
         "order": order,

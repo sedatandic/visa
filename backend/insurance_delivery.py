@@ -1,6 +1,6 @@
 """Police teslimi: musteriye e-posta + WhatsApp gonderimi ve gorevin kapatilmasi.
 
-Bu modul `insurance_tasks` (kuyruk) ile `insurance_provider` (Tamamliyo API) arasindaki
+Bu modul `insurance_tasks` (kuyruk) ile `insurance_provider` (saglayici API) arasindaki
 dairesel bagimliligi kirmak icin ayrildi: her iki modul de buradan besleniyor, bu modul
 hicbirini import etmiyor.
 """

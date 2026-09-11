@@ -1,7 +1,7 @@
 """Sigorta iceren siparis testleri icin sigortali verisi.
 
 POST /api/orders artik sigorta satiri varsa her sigortali icin ad-soyad, gecerli
-TC kimlik no ve dogum tarihi istiyor (Tamamliyo police sarti).
+TC kimlik no ve dogum tarihi istiyor (saglayici police sarti).
 """
 
 

@@ -114,7 +114,7 @@ async def admin_update_order(order_id: str, payload: dict, admin: dict = Depends
 # --------------------------------------------------- sigorta: saglayici paneli
 @router.get("/admin/insurance/provider")
 async def admin_insurance_provider(admin: dict = Depends(require_admin)) -> dict:
-    """Tamamliyo baglanti durumu + guncel maliyet/satis fiyatlari."""
+    """Aktif saglayici durumu + guncel maliyet/satis fiyatlari."""
     from insurance_provider import provider_status
 
     return await provider_status()
@@ -122,7 +122,7 @@ async def admin_insurance_provider(admin: dict = Depends(require_admin)) -> dict
 
 @router.post("/admin/insurance/provider")
 async def admin_insurance_set_provider(payload: dict, admin: dict = Depends(require_admin)) -> dict:
-    """Aktif sigorta saglayicisini secer: "tamamliyo" (API) veya "manual" (elle kesim)."""
+    """Aktif sigorta saglayicisini secer: "sigortambudur" (API) veya "manual" (elle kesim)."""
     from insurance_provider import provider_status, set_provider
 
     try:
@@ -147,22 +147,6 @@ async def admin_insurance_provider_check(admin: dict = Depends(require_admin)) -
         return await sigortambudur.connection_check()
     except sigortambudur.SigortambudurError as exc:
         raise HTTPException(502, str(exc))
-
-
-@router.post("/admin/insurance/sync-prices")
-async def admin_insurance_sync_prices(admin: dict = Depends(require_admin)) -> dict:
-    """Canli tarifeden maliyetleri ceker, satis fiyatlarini %100 marj ile guncelller."""
-    from insurance_provider import sync_prices
-
-    return await sync_prices()
-
-
-@router.get("/admin/insurance/product-check")
-async def admin_insurance_product_check(urun_id: int, admin: dict = Depends(require_admin)) -> dict:
-    """Bir Tamamliyo urun kodu partner hesabinda satista mi (fiyat sorgusu, police kesmez)."""
-    from insurance_provider import probe_product
-
-    return await probe_product(urun_id)
 
 
 # ------------------------------------------------------ sigorta: kar korumasi
@@ -191,10 +175,10 @@ async def admin_insurance_auto_issue(payload: dict, admin: dict = Depends(requir
     return await set_auto_issue(bool(payload.get("enabled")))
 
 
-# ------------------------------------------------ sigorta: police odemesi (kart)
+# ------------------------------------------------ sigorta: police odemesi
 @router.get("/admin/insurance/payment")
 async def admin_insurance_payment(admin: dict = Depends(require_admin)) -> dict:
-    """Tamamliyo kart odemesi durumu + odeme bekleyen police sayilari."""
+    """Odeme yontemi + odeme bekleyen police sayilari."""
     from insurance_payment import status
     from insurance_provider import REVIEW_STATUS, WAITING_STATUS
 
@@ -206,7 +190,7 @@ async def admin_insurance_payment(admin: dict = Depends(require_admin)) -> dict:
 
 @router.get("/admin/insurance/expenses")
 async def admin_insurance_expenses(months: int = 12, admin: dict = Depends(require_admin)) -> dict:
-    """Karttan cekilen police bedelleri: aylik toplam + son cekimler."""
+    """Saglayiciya odenen police bedelleri: aylik toplam + son cekimler."""
     from insurance_tasks import expense_report
 
     return await expense_report(months)
@@ -214,7 +198,7 @@ async def admin_insurance_expenses(months: int = 12, admin: dict = Depends(requi
 
 @router.post("/admin/insurance/payment/retry")
 async def admin_insurance_payment_retry(admin: dict = Depends(require_admin)) -> dict:
-    """Odeme bekleyen policeleri hemen tekrar dener (kart sorunu cozuldugunde)."""
+    """Odeme bekleyen policeleri hemen tekrar dener (cari bakiye yuklenince)."""
     from insurance_payment import status
     from insurance_provider import retry_waiting_tasks
 
@@ -227,7 +211,7 @@ async def admin_insurance_payment_retry(admin: dict = Depends(require_admin)) ->
 async def admin_issue_policy_via_provider(
     task_id: str, request: Request, admin: dict = Depends(require_admin)
 ) -> dict:
-    """Policeyi Tamamliyo API'si uzerinden keser ve musteriye gonderir."""
+    """Policeyi saglayici API'si uzerinden keser ve musteriye gonderir."""
     from insurance_provider import issue_via_provider
 
     result = await issue_via_provider(

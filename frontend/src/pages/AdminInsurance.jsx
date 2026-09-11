@@ -218,16 +218,11 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
 };
 
 const ProviderPanel = ({ status, onChange }) => {
-    const [syncing, setSyncing] = useState(false);
     const [toggling, setToggling] = useState(false);
-    const [probeId, setProbeId] = useState("220");
-    const [probing, setProbing] = useState(false);
-    const [probe, setProbe] = useState(null);
     const [switching, setSwitching] = useState(false);
     const [checking, setChecking] = useState(false);
     const [connection, setConnection] = useState(null);
     const apiOn = !!status.api_enabled;
-    const priceSync = !!status.price_sync;
     const isSigortambudur = status.provider === "sigortambudur";
 
     const switchProvider = async (provider) => {
@@ -260,37 +255,6 @@ const ProviderPanel = ({ status, onChange }) => {
             toast.error(apiError(err, "Bağlantı kurulamadı."));
         } finally {
             setChecking(false);
-        }
-    };
-
-    const checkProduct = async () => {
-        setProbing(true);
-        try {
-            const { data } = await api.get(`/admin/insurance/product-check?urun_id=${Number(probeId)}`);
-            setProbe(data);
-            if (data.available)
-                toast.success(`${data.urun_id} kodu satışta: maliyet ${data.cost_try} ₺.`);
-            else toast.warning(`${data.urun_id} kodu henüz açık değil.`);
-        } catch (err) {
-            toast.error(apiError(err, "Ürün kodu sorgulanamadı."));
-        } finally {
-            setProbing(false);
-        }
-    };
-
-    const sync = async () => {
-        setSyncing(true);
-        try {
-            const { data } = await api.post("/admin/insurance/sync-prices");
-            const failed = (data.errors || []).length;
-            toast[failed ? "warning" : "success"](
-                `${(data.rows || []).length} poliçe fiyatı güncellendi${failed ? `, ${failed} hata` : ""}.`
-            );
-            onChange();
-        } catch (err) {
-            toast.error(apiError(err, "Fiyatlar güncellenemedi."));
-        } finally {
-            setSyncing(false);
         }
     };
 
@@ -333,19 +297,6 @@ const ProviderPanel = ({ status, onChange }) => {
                                     elle kesilir.
                                 </p>
                             )}
-                        </>
-                    ) : apiOn ? (
-                        <>
-                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                Maliyetler günlük çekilir, satış fiyatı %
-                                {Math.round((status.markup - 1) * 100)} kâr marjıyla hesaplanır. Poliçe bedeli
-                                her kesimde Tamamliyo partner cari bakiyenizden düşülür (odemeTipi=3); sunucuda
-                                kart veya CVV bilgisi tutulmaz.
-                            </p>
-                            <p className="mt-1 text-xs leading-5 text-amber-700" data-testid="insurance-payment-note">
-                                Cari bakiye yetmezse poliçe kesilemez; sipariş kuyruğa alınır ve bakiye
-                                yüklenince kendiliğinden kesilip müşteriye gönderilir.
-                            </p>
                         </>
                     ) : (
                         <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
@@ -444,104 +395,6 @@ const ProviderPanel = ({ status, onChange }) => {
                 </div>
             )}
 
-            {priceSync && (
-                <>
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-                <div>
-                    <dt className="text-xs text-muted-foreground">Son fiyat senkronu</dt>
-                    <dd className="font-medium" data-testid="insurance-last-sync">
-                        {status.last_sync_at ? formatDateTime(status.last_sync_at) : "Henüz yapılmadı"}
-                    </dd>
-                </div>
-                <div>
-                    <dt className="text-xs text-muted-foreground">Ürün kodu</dt>
-                    <dd className="font-medium">{status.urun_id}</dd>
-                </div>
-                <div>
-                    <dt className="text-xs text-muted-foreground">Otomatik poliçe kesimi</dt>
-                    <dd className="mt-1 flex items-center gap-2">
-                        <Switch
-                            checked={!!status.auto_issue}
-                            disabled={toggling || !status.configured}
-                            onCheckedChange={toggleAuto}
-                            data-testid="insurance-auto-issue-switch"
-                        />
-                        <span className="text-xs font-semibold">
-                            {status.auto_issue ? "Açık" : "Kapalı (elle kesilir)"}
-                        </span>
-                    </dd>
-                </div>
-            </dl>
-
-            {(status.last_errors || []).length > 0 && (
-                <p
-                    className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs font-semibold text-destructive"
-                    data-testid="insurance-provider-errors"
-                >
-                    Son senkron hataları: {status.last_errors.map((e) => `${e.product_id}: ${e.error}`).join(" · ")}
-                </p>
-            )}
-
-            <Button
-                onClick={sync}
-                disabled={syncing || !status.configured}
-                className="mt-4 h-10"
-                data-testid="insurance-sync-prices"
-            >
-                {syncing ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                )}
-                Fiyatları Tamamliyo'dan güncelle
-            </Button>
-
-            <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3">
-                <p className="text-xs font-semibold">Ürün kodu satışa açık mı?</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Tamamliyo'ya fiyat sorgusu gönderir; poliçe kesmez, ücret çıkarmaz. Kod açıldığında
-                    sunucudaki <code>TAMAMLIYO_URUN_ID</code> değeri güncellenip fiyatlar senkronlanır.
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <input
-                        type="number"
-                        value={probeId}
-                        onChange={(e) => setProbeId(e.target.value)}
-                        className="h-10 w-28 rounded-lg border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                        data-testid="insurance-product-check-input"
-                    />
-                    <Button
-                        variant="secondary"
-                        onClick={checkProduct}
-                        disabled={probing || !status.configured}
-                        className="h-10 border border-border"
-                        data-testid="insurance-product-check"
-                    >
-                        {probing ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Search className="mr-2 h-4 w-4" />
-                        )}
-                        Kodu sorgula
-                    </Button>
-                </div>
-                {probe && (
-                    <p
-                        className={`mt-2 text-xs font-semibold ${
-                            probe.available ? "text-emerald-700" : "text-amber-700"
-                        }`}
-                        data-testid="insurance-product-check-result"
-                    >
-                        {probe.available
-                            ? `${probe.urun_id} · ${probe.product_name || "ürün"} satışta: maliyet ${
-                                  probe.cost_try
-                              } ₺, önerilen satış ${probe.price_try} ₺.`
-                            : `${probe.urun_id} kodu kullanılamıyor: ${probe.error}`}
-                    </p>
-                )}
-            </div>
-                </>
-            )}
         </div>
     );
 };
@@ -830,9 +683,7 @@ const PaymentPanel = ({ state, onChange }) => {
 
     const waiting = state.waiting_tasks || 0;
     const review = state.review_tasks || 0;
-    const balance = state.method === "balance";
-    const blocked = !state.card_configured;
-    const tone = blocked || review
+    const tone = review
         ? "border-destructive/40 bg-destructive/[0.06]"
         : waiting
           ? "border-amber-400/50 bg-amber-50"
@@ -843,28 +694,19 @@ const PaymentPanel = ({ state, onChange }) => {
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 className="flex items-center gap-2 font-heading text-sm font-bold">
-                        <Wallet className="h-4 w-4 text-primary" /> Poliçe ödemesi ·{" "}
-                        {balance ? "cari bakiye" : "kurumsal kart"}
+                        <Wallet className="h-4 w-4 text-primary" /> Poliçe ödemesi · acente cari hesabı
                     </h2>
                     <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-                        {balance
-                            ? "Tamamliyo poliçe bedeli her kesimde partner cari bakiyenizden düşülür (odemeTipi=3). Sunucuda kart veya CVV bilgisi tutulmaz; bakiye yetersizse poliçeler kuyrukta bekler ve size uyarı gider."
-                            : "Tamamliyo poliçe bedeli her kesimde kurumsal karttan çekilir (odemeTipi=2). Kart bilgileri yalnızca sunucudaki ortam değişkenlerinde tutulur; panelde, veritabanında ve kayıtlarda görünmez."}
+                        Poliçe bedeli her kesimde sağlayıcıdaki acente cari/nakit hesabınızdan düşülür
+                        (agency_credit). Sunucuda kart veya CVV bilgisi tutulmaz; bakiye yetersizse
+                        poliçeler kuyrukta bekler ve size uyarı gider.
                     </p>
                 </div>
                 <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        blocked
-                            ? "bg-destructive/10 text-destructive"
-                            : "bg-emerald-100 text-emerald-800"
-                    }`}
+                    className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800"
                     data-testid="insurance-payment-state"
                 >
-                    {balance
-                        ? "Cari bakiye"
-                        : blocked
-                          ? "Kart tanımlı değil"
-                          : `Kart hazır ${state.card_hint || ""}`}
+                    Cari hesap
                 </span>
             </div>
 
@@ -895,24 +737,13 @@ const PaymentPanel = ({ state, onChange }) => {
                 </div>
             </dl>
 
-            {blocked && (
-                <p
-                    className="mt-3 rounded-lg border border-destructive/40 bg-destructive/[0.06] p-3 text-xs font-semibold text-destructive"
-                    data-testid="insurance-payment-warning"
-                >
-                    Kart bilgileri sunucuda tanımlı değil: poliçe kesimi durur ve siparişler kuyrukta
-                    bekler. TAMAMLIYO_CARD_NUMBER, TAMAMLIYO_CARD_EXPIRY, TAMAMLIYO_CARD_CVV,
-                    TAMAMLIYO_CARD_NAME, TAMAMLIYO_CARD_SURNAME değerleri girilmeli.
-                </p>
-            )}
-
             {review > 0 && (
                 <p
                     className="mt-3 rounded-lg border border-amber-400/50 bg-amber-50 p-3 text-xs font-semibold text-amber-900"
                     data-testid="insurance-payment-review-warning"
                 >
                     {review} poliçede ödeme yanıtı alınamadı; çekim yapılmış olabilir. Mükerrer çekimi
-                    önlemek için otomatik tekrar denenmiyor — Tamamliyo panelinden ödeme durumunu
+                    önlemek için otomatik tekrar denenmiyor — sağlayıcı panelinden ödeme durumunu
                     kontrol edip poliçeyi elle kesin.
                 </p>
             )}
@@ -1004,9 +835,7 @@ export default function AdminInsurance() {
             </div>
 
             {provider && <ProviderPanel status={provider} onChange={load} />}
-            {payment && provider?.provider === "tamamliyo" && provider?.api_enabled && (
-                <PaymentPanel state={payment} onChange={load} />
-            )}
+            {payment && provider?.api_enabled && <PaymentPanel state={payment} onChange={load} />}
             {margin && <MarginPanel data={margin} onChange={load} />}
             {expenses && <ExpensePanel data={expenses} />}
 

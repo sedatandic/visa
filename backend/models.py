@@ -51,7 +51,7 @@ class TravelerIn(BaseModel):
     mother_name: str = Field(default="", max_length=80)
     father_name: str = Field(default="", max_length=80)
     visa_type_id: str = Field(..., min_length=3)
-    # Sigorta satin alinirsa police kesimi icin zorunlu (Tamamliyo API'si TC kimlik istiyor)
+    # Sigorta satin alinirsa police kesimi icin zorunlu (saglayici API'si TC kimlik istiyor)
     tc_kimlik_no: Optional[str] = Field(default="", max_length=11)
     passport_file_id: str = Field(..., min_length=8)
     photo_file_id: str = Field(..., min_length=8)
@@ -98,7 +98,7 @@ class StoreItemIn(BaseModel):
 
 
 class InsuredIn(BaseModel):
-    """Sigorta policesi icin sigortali kisi (Tamamliyo TC kimlik + dogum tarihi ister)."""
+    """Sigorta policesi icin sigortali kisi (saglayici TC kimlik + dogum tarihi ister)."""
 
     full_name: str = Field(..., min_length=3, max_length=90)
     tc_kimlik_no: str = Field(..., min_length=11, max_length=11)

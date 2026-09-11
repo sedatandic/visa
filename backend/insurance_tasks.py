@@ -29,7 +29,7 @@ from insurance_provider import (
 logger = logging.getLogger(__name__)
 
 PROVIDER_NAME = PROVIDER_MANUAL
-PROVIDER_PANEL = "https://dashboard.tamamliyo.com/anasayfa"
+PROVIDER_PANEL = "https://portal.panaceasigorta.com"
 LEGACY_PROVIDER_BASE = "https://seyahatpolicesi.com/dubai-seyahat-saglik-sigortasi"
 
 
