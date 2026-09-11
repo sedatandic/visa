@@ -282,7 +282,8 @@ class TestProviderErrorHint:
         monkeypatch.setattr(insurance_provider, "insurance_tasks_col", self.FakeCol(saved))
         run(insurance_provider._save_provider_error("t1", "Kredi kartı limiti yetersiz."))
         assert "Kredi kartı limiti yetersiz." in saved["message"]
-        assert "kartın limitini" in saved["message"].lower()
+        # Mesaj saglayicidan bagimsiz: cari bakiye / kart limiti kontrolu istenir
+        assert "kart limitinizi" in saved["message"].lower()
 
     def test_unknown_payment_warns_about_double_charge(self, monkeypatch):
         saved = {}

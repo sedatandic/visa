@@ -120,6 +120,35 @@ async def admin_insurance_provider(admin: dict = Depends(require_admin)) -> dict
     return await provider_status()
 
 
+@router.post("/admin/insurance/provider")
+async def admin_insurance_set_provider(payload: dict, admin: dict = Depends(require_admin)) -> dict:
+    """Aktif sigorta saglayicisini secer: "tamamliyo" (API) veya "manual" (elle kesim)."""
+    from insurance_provider import provider_status, set_provider
+
+    try:
+        await set_provider(str(payload.get("provider") or ""))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    return await provider_status()
+
+
+@router.get("/admin/insurance/provider-check")
+async def admin_insurance_provider_check(admin: dict = Depends(require_admin)) -> dict:
+    """Sigortambudur baglanti testi: jeton alir, yetkili sirketleri ve ulke kodunu dondurur."""
+    import sigortambudur
+
+    if not sigortambudur.configured():
+        raise HTTPException(
+            400,
+            "Sigortambudur API bilgileri eksik: SIGORTAMBUDUR_CLIENT_ID ve "
+            "SIGORTAMBUDUR_CLIENT_SECRET tanimlanmali.",
+        )
+    try:
+        return await sigortambudur.connection_check()
+    except sigortambudur.SigortambudurError as exc:
+        raise HTTPException(502, str(exc))
+
+
 @router.post("/admin/insurance/sync-prices")
 async def admin_insurance_sync_prices(admin: dict = Depends(require_admin)) -> dict:
     """Canli tarifeden maliyetleri ceker, satis fiyatlarini %100 marj ile guncelller."""

@@ -285,21 +285,26 @@ class TestProviderPanel:
         r = sess.get(f"{API}/admin/insurance/provider", headers=admin_headers, timeout=15)
         assert r.status_code == 200, r.text
         body = r.json()
-        assert body.get("configured") is True
-        # Otomatik police kesimi panelden acilip kapatilabiliyor (2026-09-08'de acildi)
+        # 2026-06-18: Tamamliyo iptal, aktif saglayici ayara bagli (sigortambudur / manual)
+        assert body.get("provider") in {"sigortambudur", "tamamliyo", "manual"}
+        assert isinstance(body.get("api_enabled"), bool)
+        assert isinstance(body.get("price_sync"), bool)
+        assert body.get("provider_label")
         assert isinstance(body.get("auto_issue"), bool)
-        assert body.get("urun_id")
-        assert body.get("last_sync_at")
         rows = body.get("products") or body.get("rows") or body.get("items") or []
         active_rows = [r for r in rows if r.get("active")]
         assert len(active_rows) == 4, f"expected 4 active products, got {len(active_rows)}"
 
     def test_sync_prices(self, sess, admin_headers):
+        """Fiyat senkronu yalnizca Tamamliyo API'si acikken calisir; aksi halde atlanir."""
         r = sess.post(
             f"{API}/admin/insurance/sync-prices", headers=admin_headers, timeout=30
         )
         assert r.status_code == 200, r.text
         body = r.json()
+        if body.get("skipped"):
+            assert body.get("reason") == "provider_disabled"
+            return
         rows = body.get("rows") or body.get("items") or body.get("products") or []
         assert len(rows) == 4
         errors = body.get("errors") or []

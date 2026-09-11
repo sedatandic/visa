@@ -119,7 +119,7 @@ class TestPaymentStatusPanel:
         monkeypatch.setattr(insurance_provider, "insurance_tasks_col", FakeCol())
         run(insurance_provider._save_provider_error("t1", "Yetersiz bakiye."))
         assert "cari bakiye" in saved["message"].lower()
-        assert "kart" not in saved["message"].lower()
+        assert "kuyrukta bekliyor" in saved["message"].lower()
 
 
 class TestNoCardSecretsOnServer:

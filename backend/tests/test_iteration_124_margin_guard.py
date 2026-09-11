@@ -338,6 +338,16 @@ class TestStatus:
 
 
 class TestProbeProduct:
+    @pytest.fixture(autouse=True)
+    def api_on(self, monkeypatch):
+        """Fiyat senkronu kapaliyken probe erken doner; test icin acik varsayilir."""
+
+        async def _on():
+            return True
+
+        monkeypatch.setattr(insurance_provider, "api_enabled", _on)
+        monkeypatch.setattr(insurance_provider, "price_sync_enabled", _on)
+
     def test_available_product_returns_cost_and_price(self, monkeypatch):
         async def fake_price(_count, _start, _end, urun_id):
             assert urun_id == 220

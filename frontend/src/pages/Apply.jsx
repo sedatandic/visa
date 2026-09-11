@@ -34,6 +34,7 @@ import {
     User,
     Users,
     Wifi,
+    Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -638,6 +639,8 @@ export default function Apply() {
 
     // Aile indirimi yalnizca bilgileri VE iki belgesi tamam olan yolcular icin gecerli
     const readyTravelerCount = useMemo(() => travelers.filter(travelerReady).length, [travelers]);
+    // Ekspres hizmet artik "Ek Hizmetler" listesi yerine vize adiminda oneri olarak sunulur
+    const expressAddon = useMemo(() => addonMeta.find((a) => a.id === "express") || null, [addonMeta]);
 
     // Adim 1'de dogrulama basarisiz olan yolcular: tamamla / kaldir kartinda listelenir
     const incompleteTravelers = useMemo(() => {
@@ -3237,6 +3240,42 @@ export default function Apply() {
                                         </div>
                                     )}
 
+                                    {expressAddon && (
+                                        <label
+                                            className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-[hsl(var(--gold))]/45 bg-[hsl(var(--gold))]/[0.07] p-4 transition-colors hover:border-[hsl(var(--gold))]/70"
+                                            data-testid="addon-toggle-row-express"
+                                        >
+                                            <Zap
+                                                className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--gold))]"
+                                                aria-hidden="true"
+                                            />
+                                            <div className="flex-1">
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                    <p className="font-heading text-sm font-bold">
+                                                        {expressAddon.name}
+                                                    </p>
+                                                    <span className="rounded-full bg-[hsl(var(--gold))]/20 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[hsl(var(--brand-green-deep))]">
+                                                        Öneri
+                                                    </span>
+                                                    <span className="ml-auto font-heading text-sm font-bold text-primary">
+                                                        + {formatMoney(expressAddon.price, expressAddon.currency)} / kişi
+                                                    </span>
+                                                </div>
+                                                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                    {expressAddon.description}
+                                                </p>
+                                            </div>
+                                            <Switch
+                                                checked={!!addons.express}
+                                                onCheckedChange={(c) =>
+                                                    setAddons((s) => ({ ...s, express: !!c }))
+                                                }
+                                                className="mt-0.5"
+                                                data-testid="addon-switch-express"
+                                            />
+                                        </label>
+                                    )}
+
                                     {!datesMissing && (
                                         <div
                                             className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-[hsl(var(--cloud))] p-4 text-sm"
@@ -3662,32 +3701,6 @@ export default function Apply() {
                                     )}
                                         </div>
                                     )}
-
-                                    <div className="mt-8 border-t border-border pt-8">
-                                        <h3 className="font-heading text-base font-bold">Hizmet yükseltmeleri</h3>
-                                        <p className="mt-1.5 text-sm text-muted-foreground">Yolcu başına eklenir.</p>
-                                        <div className="mt-4 space-y-4">
-                                            {addonMeta.map((a) => (
-                                                <label key={a.id} className="flex cursor-pointer items-start gap-4 rounded-xl border border-border bg-card p-5" data-testid={`addon-toggle-row-${a.id}`}>
-                                                    <Switch
-                                                        checked={!!addons[a.id]}
-                                                        onCheckedChange={(c) => setAddons((s) => ({ ...s, [a.id]: !!c }))}
-                                                        className="mt-1"
-                                                        data-testid={`addon-switch-${a.id}`}
-                                                    />
-                                                    <div className="flex-1">
-                                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                                            <p className="font-heading text-sm font-bold">{a.name}</p>
-                                                            <span className="font-heading text-sm font-bold text-primary">
-                                                                + {formatMoney(a.price, a.currency)} / kişi
-                                                            </span>
-                                                        </div>
-                                                        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{a.description}</p>
-                                                    </div>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
                                 </div>
                             )}
 

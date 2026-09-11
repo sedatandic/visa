@@ -1816,3 +1816,39 @@ fotograflari, ATV +40 USD ek secenek.
      gosterim artik `group.twoCol` flag'i ile kontrol ediliyor.
 - Dogrulama: menu 5+2 olarak gruplu (masaustu ekran goruntusu + DOM metni), /basvuru Adim 2'de
   not goruntuleniyor, belgeli tek yolcu akisi Adim 2'ye sorunsuz geciyor.
+
+## 2026-06-18 (fork, 16) · Tamamliyo iptal + yeni saglayici: Sigortambudur (Panacea) B2B API
+- Kullanici: "cancel the tamamliyo api" -> "baska bir api tanimlayacagim" ->
+  Postman dokumani paylasildi: Sigortambudur B2B Partner API (https://api.panaceasigorta.com).
+- Karar (ask_human): en ucuz sirket otomatik secilsin; odeme `agency_credit` (acente cari/nakit);
+  kapsam Tum Dunya (scope 2), ulke = BAE, Covid/Kayak teminati kapali.
+- Saglayici artik ayara bagli: `insurance_provider.active_provider()` ->
+  `sigortambudur` | `tamamliyo` | `manual`; panelden (Sigorta Policeleri -> Aktif saglayici)
+  secilir, `.env` `INSURANCE_PROVIDER` varsayilani verir. API bilgisi olmayan saglayici secilemez.
+  API kapaliyken tum akis elle kesime duser (gorev + PDF yukleme + musteriye e-posta calisir).
+- Yeni dosya `backend/sigortambudur.py`: /auth/token (jeton onbellegi, 401'de yenileme),
+  /customer-detail, /travel-abroad (grup teklif), teklif bekleme + en ucuz SUCCESS secimi,
+  /travel-abroad/{responseId}/policy (agency_credit, ZAMAN ASIMINDA TEKRARLANMAZ),
+  /policies/{id} + /print/... PDF cozumleme, /authorized-providers, /countries (BAE kodu cache).
+- `insurance_provider.py`: saglayici bazli dagitim (`_issue_with_sigortambudur`), mukerrer kesim
+  korumasi (`provider_issuing` atomik claim), fiyat senkronu artik yalniz Tamamliyo'da
+  (`price_sync_enabled`), hata mesajlari saglayicidan bagimsiz.
+- Admin: `GET /api/admin/insurance/provider-check` (jeton + yetkili sirketler + ulke kodu testi),
+  `POST /api/admin/insurance/provider` (saglayici secimi). Panelde Tamamliyo'ya ozel bloklar
+  (fiyat senkronu, urun kodu sorgusu, kart/cari paneli) yalnizca Tamamliyo aktifken gorunur.
+- `.env`: TAMAMLIYO_BASE_URL/TOKEN bosaltildi; INSURANCE_PROVIDER=sigortambudur,
+  SIGORTAMBUDUR_BASE_URL, SIGORTAMBUDUR_CLIENT_ID=35646db1ebe12af98dffadc0cb5517f9,
+  SIGORTAMBUDUR_CLIENT_SECRET=<BEKLENIYOR>, SIGORTAMBUDUR_PAYMENT_METHOD=agency_credit,
+  SIGORTAMBUDUR_SCOPE=2. Ek opsiyonel: SIGORTAMBUDUR_COUNTRY_ID, SIGORTAMBUDUR_COVID,
+  SIGORTAMBUDUR_SKI, SIGORTAMBUDUR_PRINT_PATH / SIGORTAMBUDUR_PRINT_DOC_TYPE.
+- BEKLEYEN (kullanici): (1) `clientSecret` (portal.panaceasigorta.com -> API Kullanicilari;
+  kullanici adi sedat.andic, giris SMS/e-posta OTP istedigi icin ajan giremiyor),
+  (2) sunucu cikis IP'si **34.7.135.173** saglayicida whitelist'e eklenmeli (deploy sonrasi IP
+  degisebilir), (3) police PDF basim yolunun (`/print/{?}/document/{?}`) parametre adlari
+  dokumanin herkese acik surumunde gizli -> canli yanitla dogrulanacak.
+- Testler: `tests/test_iteration_145_sigortambudur.py` (17 test: jeton onbellegi/401 yenileme,
+  hata bicimi, teklif govdesi, en ucuz secim, polling, agency_credit, zaman asiminda tekrar yok,
+  PDF base64/print/elle yukleme, saglayici kablolama) + `test_iteration_144_*` (manuel mod).
+  Eski Tamamliyo testleri yeni kapiya uyarlandi. 110 test gecti.
+- Not: `test_iteration_101/102/84/test_uae_defaults` fiyat beklentileri ESKI (marj korumasi
+  fiyatlari yukselttigi icin) — bu hatalar bu isten ONCE de vardi.

@@ -18,11 +18,17 @@ from urllib.parse import urlencode
 from db import insurance_tasks_col, notifications_col, orders_col
 from store_catalog import product_list
 from emailer import send_email
-from insurance_provider import auto_issue_on, issue_via_provider
+from insurance_provider import (
+    PROVIDER_MANUAL,
+    active_provider,
+    api_enabled,
+    auto_issue_on,
+    issue_via_provider,
+)
 
 logger = logging.getLogger(__name__)
 
-PROVIDER_NAME = "tamamliyo"
+PROVIDER_NAME = PROVIDER_MANUAL
 PROVIDER_PANEL = "https://dashboard.tamamliyo.com/anasayfa"
 LEGACY_PROVIDER_BASE = "https://seyahatpolicesi.com/dubai-seyahat-saglik-sigortasi"
 
@@ -59,7 +65,7 @@ def _insurance_lines(order: dict) -> list:
     return [line for line in (order.get("items") or []) if line.get("kind") == "insurance"]
 
 
-def _build_policy_task(order: dict, line: dict, contact: dict, now: datetime) -> dict:
+def _build_policy_task(order: dict, line: dict, contact: dict, now: datetime, provider: str) -> dict:
     return {
         "id": str(uuid.uuid4()),
         "order_id": order.get("id"),
@@ -80,7 +86,7 @@ def _build_policy_task(order: dict, line: dict, contact: dict, now: datetime) ->
         },
         "insured": order.get("insured") or [],
         "note": order.get("note", ""),
-        "provider": PROVIDER_NAME,
+        "provider": provider,
         "provider_link": provider_link(line, order),
         "provider_quote_id": None,
         "provider_steps": {},
@@ -124,9 +130,10 @@ async def queue_policy_tasks(order: dict) -> list:
 
     now = datetime.now(timezone.utc)
     contact = order.get("contact") or {}
+    provider = await active_provider()
     created = []
     for line in lines:
-        task = _build_policy_task(order, line, contact, now)
+        task = _build_policy_task(order, line, contact, now, provider)
         await insurance_tasks_col.insert_one(dict(task))
         created.append(task)
 
@@ -138,9 +145,7 @@ async def queue_policy_tasks(order: dict) -> list:
 
 async def _maybe_auto_issue(tasks: list) -> None:
     """Otomatik kesim acikken policeyi hemen keser (varsayilan kapali)."""
-    import tamamliyo
-
-    if not (tasks and tamamliyo.configured() and await auto_issue_on()):
+    if not (tasks and await api_enabled() and await auto_issue_on()):
         return
 
     origin = (os.environ.get("PUBLIC_SITE_URL") or "").strip().rstrip("/")

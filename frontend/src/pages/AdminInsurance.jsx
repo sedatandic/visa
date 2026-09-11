@@ -39,7 +39,7 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
         setApiBusy(true);
         try {
             const { data } = await api.post(`/admin/insurance-tasks/${task.id}/issue-provider`);
-            toast.success("Poliçe Tamamliyo üzerinden kesildi ve müşteriye gönderildi.");
+            toast.success("Poliçe API üzerinden kesildi ve müşteriye gönderildi.");
             onIssued(data.task);
         } catch (err) {
             toast.error(apiError(err, "Poliçe kesilemedi."));
@@ -115,7 +115,7 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
                     className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs font-semibold text-destructive"
                     data-testid={`insurance-provider-error-${task.id}`}
                 >
-                    Tamamliyo hatası: {task.provider_error}
+                    Sağlayıcı hatası: {task.provider_error}
                 </p>
             )}
 
@@ -153,11 +153,11 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
                 <div className="mt-4 space-y-3">
                     {providerReady && (
                         <div className="rounded-xl border border-primary/30 bg-primary/[0.05] p-4">
-                            <p className="text-sm font-semibold">Tamamliyo API ile otomatik kes</p>
+                            <p className="text-sm font-semibold">Sağlayıcı API'si ile otomatik kes</p>
                             <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                Teklif → cari ödeme onayı → poliçe → PDF adımları tek tıkla çalışır; poliçe
-                                müşteriye e-postalanır. Yarıda kalan adımlar tekrar denendiğinde kaldığı yerden
-                                devam eder.
+                                Sigortalı kaydı → teklif toplama (en ucuz şirket seçilir) → ödeme → poliçe →
+                                PDF adımları tek tıkla çalışır; poliçe müşteriye e-postalanır. Yarıda kalan
+                                adımlar tekrar denendiğinde kaldığı yerden devam eder.
                             </p>
                             <Button
                                 onClick={issueViaProvider}
@@ -170,7 +170,7 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
                                 ) : (
                                     <ShieldCheck className="mr-2 h-4 w-4" />
                                 )}
-                                Tamamliyo'dan poliçeyi kes ve gönder
+                                Poliçeyi API ile kes ve gönder
                             </Button>
                         </div>
                     )}
@@ -181,7 +181,7 @@ const TaskRow = ({ task, onIssued, providerReady }) => {
                         className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
                         data-testid={`insurance-provider-link-${task.id}`}
                     >
-                        <ExternalLink className="h-4 w-4" /> {task.provider} üzerinde poliçeyi kes
+                        <ExternalLink className="h-4 w-4" /> Sağlayıcı sitesinde poliçeyi kes
                     </a>
                     <FileDropzone
                         label="Poliçe PDF"
@@ -223,6 +223,45 @@ const ProviderPanel = ({ status, onChange }) => {
     const [probeId, setProbeId] = useState("220");
     const [probing, setProbing] = useState(false);
     const [probe, setProbe] = useState(null);
+    const [switching, setSwitching] = useState(false);
+    const [checking, setChecking] = useState(false);
+    const [connection, setConnection] = useState(null);
+    const apiOn = !!status.api_enabled;
+    const priceSync = !!status.price_sync;
+    const isSigortambudur = status.provider === "sigortambudur";
+
+    const switchProvider = async (provider) => {
+        setSwitching(true);
+        try {
+            const { data } = await api.post("/admin/insurance/provider", { provider });
+            toast.success(
+                provider === "manual"
+                    ? "Sağlayıcı API'si kapatıldı: poliçeler elle kesilip yüklenecek."
+                    : `${data.provider_label} aktif edildi.`
+            );
+            onChange();
+        } catch (err) {
+            toast.error(apiError(err, "Sağlayıcı değiştirilemedi."));
+        } finally {
+            setSwitching(false);
+        }
+    };
+
+    const checkConnection = async () => {
+        setChecking(true);
+        try {
+            const { data } = await api.get("/admin/insurance/provider-check");
+            setConnection(data);
+            toast.success(
+                `Bağlantı başarılı · ${(data.providers || []).length} sigorta şirketi açık.`
+            );
+        } catch (err) {
+            setConnection(null);
+            toast.error(apiError(err, "Bağlantı kurulamadı."));
+        } finally {
+            setChecking(false);
+        }
+    };
 
     const checkProduct = async () => {
         setProbing(true);
@@ -277,28 +316,136 @@ const ProviderPanel = ({ status, onChange }) => {
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 className="flex items-center gap-2 font-heading text-sm font-bold">
-                        <ShieldCheck className="h-4 w-4 text-primary" /> Tamamliyo bağlantısı
+                        <ShieldCheck className="h-4 w-4 text-primary" /> Sigorta sağlayıcı bağlantısı
                     </h2>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                        Maliyetler günlük çekilir, satış fiyatı %{Math.round((status.markup - 1) * 100)} kâr
-                        marjıyla hesaplanır. Poliçe bedeli her kesimde Tamamliyo partner cari
-                        bakiyenizden düşülür (odemeTipi=3); sunucuda kart veya CVV bilgisi tutulmaz.
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-amber-700" data-testid="insurance-payment-note">
-                        Cari bakiye yetmezse poliçe kesilemez; sipariş kuyruğa alınır ve bakiye
-                        yüklenince kendiliğinden kesilip müşteriye gönderilir.
-                    </p>
+                    {isSigortambudur ? (
+                        <>
+                            <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+                                Sigortambudur (Panacea) B2B API'sine bağlı. Ödeme alındığında sigortalılar TC
+                                kimlik no ile kaydedilir, tüm sigorta şirketlerinden teklif toplanır ve{" "}
+                                <strong>en düşük primli şirket otomatik seçilir</strong>. Poliçe bedeli acente
+                                cari/nakit hesabınızdan düşülür (agency_credit); sunucuda kart bilgisi tutulmaz.
+                            </p>
+                            {!status.configured && (
+                                <p className="mt-1 text-xs leading-5 text-amber-700" data-testid="insurance-secret-missing">
+                                    <code>SIGORTAMBUDUR_CLIENT_SECRET</code> sunucuda tanımlı değil. Secret
+                                    girilene ve sunucu IP'si sağlayıcıda whitelist'e eklenene kadar poliçeler
+                                    elle kesilir.
+                                </p>
+                            )}
+                        </>
+                    ) : apiOn ? (
+                        <>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                Maliyetler günlük çekilir, satış fiyatı %
+                                {Math.round((status.markup - 1) * 100)} kâr marjıyla hesaplanır. Poliçe bedeli
+                                her kesimde Tamamliyo partner cari bakiyenizden düşülür (odemeTipi=3); sunucuda
+                                kart veya CVV bilgisi tutulmaz.
+                            </p>
+                            <p className="mt-1 text-xs leading-5 text-amber-700" data-testid="insurance-payment-note">
+                                Cari bakiye yetmezse poliçe kesilemez; sipariş kuyruğa alınır ve bakiye
+                                yüklenince kendiliğinden kesilip müşteriye gönderilir.
+                            </p>
+                        </>
+                    ) : (
+                        <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+                            Sağlayıcı API'si kapalı: sistem hiçbir sigorta servisine bağlanmıyor. Satış devam
+                            eder, ödeme alındığında poliçe kesim görevi oluşur; poliçeyi kendi sağlayıcınızda
+                            kesip PDF'i aşağıdaki göreve yüklediğinizde müşteriye otomatik e-postalanır.
+                        </p>
+                    )}
                 </div>
                 <span
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        status.configured ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"
+                        apiOn ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"
                     }`}
                     data-testid="insurance-provider-state"
                 >
-                    {status.configured ? "Bağlı" : "API bilgisi yok"}
+                    {apiOn
+                        ? `Bağlı · ${status.provider_label || ""}`
+                        : isSigortambudur
+                          ? "Bilgi eksik · elle kesim"
+                          : "API kapalı · elle kesim"}
                 </span>
             </div>
 
+            <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3" data-testid="insurance-provider-switch">
+                <p className="text-xs font-semibold">Aktif sağlayıcı</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                    {(status.providers || []).map((option) => {
+                        const selected = status.provider === option.id;
+                        return (
+                            <Button
+                                key={option.id}
+                                variant={selected ? "default" : "secondary"}
+                                onClick={() => switchProvider(option.id)}
+                                disabled={switching || selected || !option.configured}
+                                className={`h-10 text-xs ${selected ? "" : "border border-border"}`}
+                                data-testid={`insurance-provider-option-${option.id}`}
+                            >
+                                {selected && <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />}
+                                {option.label}
+                            </Button>
+                        );
+                    })}
+                </div>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    API bilgileri sunucuda (<code>backend/.env</code>) tutulur; eksik olan sağlayıcı seçilemez.
+                </p>
+            </div>
+
+            {isSigortambudur && (
+                <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3" data-testid="insurance-connection-box">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <p className="text-xs font-semibold">Bağlantı testi</p>
+                            <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">
+                                Jeton alır, acentenize açık sigorta şirketlerini ve BAE ülke kodunu getirir.
+                                Poliçe kesmez, ücret çıkarmaz. IP yetkilendirmesi eksikse burada 401 görürsünüz.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                checked={!!status.auto_issue}
+                                disabled={toggling || !status.configured}
+                                onCheckedChange={toggleAuto}
+                                data-testid="insurance-auto-issue-switch"
+                            />
+                            <span className="text-xs font-semibold">
+                                Otomatik kesim: {status.auto_issue ? "Açık" : "Kapalı"}
+                            </span>
+                        </div>
+                    </div>
+                    <Button
+                        variant="secondary"
+                        onClick={checkConnection}
+                        disabled={checking || !status.configured}
+                        className="mt-3 h-10 border border-border text-xs"
+                        data-testid="insurance-connection-check"
+                    >
+                        {checking ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Search className="mr-2 h-4 w-4" />
+                        )}
+                        Bağlantıyı test et
+                    </Button>
+                    {connection && (
+                        <p
+                            className="mt-2 text-xs font-semibold leading-5 text-emerald-700"
+                            data-testid="insurance-connection-result"
+                        >
+                            Bağlantı başarılı · ülke kodu {connection.country_id}
+                            {connection.country_name ? ` (${connection.country_name})` : ""} · ödeme{" "}
+                            {connection.payment_method} · şirketler:{" "}
+                            {(connection.providers || []).map((p) => p.name).join(", ") || "liste boş"}
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {priceSync && (
+                <>
             <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
                 <div>
                     <dt className="text-xs text-muted-foreground">Son fiyat senkronu</dt>
@@ -393,6 +540,8 @@ const ProviderPanel = ({ status, onChange }) => {
                     </p>
                 )}
             </div>
+                </>
+            )}
         </div>
     );
 };
@@ -570,8 +719,8 @@ const ExpensePanel = ({ data }) => {
                         <Receipt className="h-4 w-4 text-primary" /> Sigorta gideri · ödenen poliçeler
                     </h2>
                     <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-                        Tamamliyo'ya ödenen poliçe bedelleri (cari bakiyeden düşülen). Yalnızca gerçekten
-                        çekim yapılan poliçeler listelenir; elle/test kesimleri gidere girmez.
+                        Sağlayıcıya ödenen poliçe bedelleri. Yalnızca gerçekten çekim yapılan
+                        poliçeler listelenir; elle/test kesimleri gidere girmez.
                     </p>
                 </div>
                 <div className="text-right">
@@ -855,7 +1004,9 @@ export default function AdminInsurance() {
             </div>
 
             {provider && <ProviderPanel status={provider} onChange={load} />}
-            {payment && <PaymentPanel state={payment} onChange={load} />}
+            {payment && provider?.provider === "tamamliyo" && provider?.api_enabled && (
+                <PaymentPanel state={payment} onChange={load} />
+            )}
             {margin && <MarginPanel data={margin} onChange={load} />}
             {expenses && <ExpensePanel data={expenses} />}
 
@@ -951,7 +1102,7 @@ export default function AdminInsurance() {
                             key={task.id}
                             task={task}
                             onIssued={onIssued}
-                            providerReady={!!provider?.configured}
+                            providerReady={!!provider?.api_enabled}
                         />
                     ))}
                 </div>

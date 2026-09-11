@@ -16,6 +16,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import insurance_margin
 import insurance_payment
+import sigortambudur
 import tamamliyo
 from content import COMPANY
 from db import insurance_tasks_col, products_col, settings_col, uploads_col
@@ -31,6 +32,62 @@ RETRY_INTERVAL_MINUTES = 15
 WAITING_STATUS = "waiting_payment"
 REVIEW_STATUS = "payment_review"
 STEPS = ("quote", "payment_confirm", "policy", "policy_pdf")
+
+# Aktif saglayici: "sigortambudur" (API), "tamamliyo" (eski API, anlasma iptal) veya
+# "manual" (API yok, police elle kesilip yuklenir).
+PROVIDER_TAMAMLIYO = "tamamliyo"
+PROVIDER_SIGORTAMBUDUR = "sigortambudur"
+PROVIDER_MANUAL = "manual"
+PROVIDER_LABELS = {
+    PROVIDER_SIGORTAMBUDUR: "Sigortambudur API",
+    PROVIDER_TAMAMLIYO: "Tamamliyo API",
+    PROVIDER_MANUAL: "Elle kesim (API yok)",
+}
+API_OFF_MESSAGE = (
+    "Sigorta sağlayıcı API'si kapalı. Poliçeyi sağlayıcı panelinden kesip PDF'i buraya yükleyin."
+)
+
+
+def provider_configured(name: str) -> bool:
+    if name == PROVIDER_SIGORTAMBUDUR:
+        return sigortambudur.configured()
+    if name == PROVIDER_TAMAMLIYO:
+        return tamamliyo.configured()
+    return False
+
+
+async def _settings_value() -> dict:
+    doc = await settings_col.find_one({"key": SETTINGS_KEY})
+    return ((doc or {}).get("value") or {})
+
+
+async def active_provider() -> str:
+    """Panel ayari varsa o, yoksa ortam degiskeni, o da yoksa elle kesim."""
+    value = await _settings_value()
+    name = (value.get("provider") or os.environ.get("INSURANCE_PROVIDER") or "").strip().lower()
+    return name if name in PROVIDER_LABELS else PROVIDER_MANUAL
+
+
+async def api_enabled() -> bool:
+    """Saglayici API'si uzerinden police kesilebilir mi?"""
+    return provider_configured(await active_provider())
+
+
+async def price_sync_enabled() -> bool:
+    """Canli fiyat senkronu yalnizca Tamamliyo'da vardi (kisisel veri gerektirmeyen fiyat sorgusu)."""
+    return await active_provider() == PROVIDER_TAMAMLIYO and tamamliyo.configured()
+
+
+async def set_provider(name: str) -> dict:
+    provider = (name or "").strip().lower()
+    if provider not in PROVIDER_LABELS:
+        raise ValueError("Geçersiz sağlayıcı.")
+    await settings_col.update_one(
+        {"key": SETTINGS_KEY},
+        {"$set": {"key": SETTINGS_KEY, "value.provider": provider}},
+        upsert=True,
+    )
+    return {"provider": provider, "api_enabled": await api_enabled()}
 
 
 def _sale_price(cost: float) -> float:
@@ -99,6 +156,8 @@ async def _save_sync_state(now, rows: list, errors: list) -> None:
 
 async def sync_prices() -> dict:
     """4 sigorta urununun maliyet ve satis fiyatini canli tarifeden gunceller."""
+    if not await price_sync_enabled():
+        return {"skipped": True, "reason": "provider_disabled", "rows": [], "errors": []}
     now = datetime.now(timezone.utc)
     rows, errors = [], []
     for product in INSURANCE_PRODUCTS:
@@ -122,6 +181,8 @@ async def sync_prices() -> dict:
 
 async def probe_product(urun_id: int) -> dict:
     """Verilen urun kodu partner hesabinda satista mi (fiyat donuyor mu)? Police kesmez."""
+    if not await price_sync_enabled():
+        return {"urun_id": int(urun_id), "available": False, "error": API_OFF_MESSAGE}
     start = date.today() + timedelta(days=1)
     end = start + timedelta(days=7)
     try:
@@ -152,9 +213,9 @@ async def probe_product(urun_id: int) -> dict:
 
 async def auto_issue_on() -> bool:
     """Otomatik police kesimi: panel ayari varsa o, yoksa ortam degiskeni."""
-    doc = await settings_col.find_one({"key": SETTINGS_KEY})
-    value = ((doc or {}).get("value") or {}).get("auto_issue")
-    return tamamliyo.auto_issue_enabled() if value is None else bool(value)
+    value = await _settings_value()
+    setting = value.get("auto_issue")
+    return tamamliyo.auto_issue_enabled() if setting is None else bool(setting)
 
 
 async def set_auto_issue(enabled: bool) -> dict:
@@ -167,16 +228,29 @@ async def set_auto_issue(enabled: bool) -> dict:
 
 
 async def provider_status() -> dict:
-    doc = await settings_col.find_one({"key": SETTINGS_KEY})
-    value = (doc or {}).get("value") or {}
+    value = await _settings_value()
     last_sync = value.get("last_sync_at")
     products = await products_col.find(
         {"kind": "insurance", "active": True},
         {"_id": 0, "id": 1, "name": 1, "cost_try": 1, "price_try": 1, "active": 1},
     ).sort("order", 1).to_list(20)
+    provider = await active_provider()
     return {
-        "configured": tamamliyo.configured(),
-        "base_url": tamamliyo.base_url(),
+        "provider": provider,
+        "provider_label": PROVIDER_LABELS[provider],
+        "providers": [
+            {"id": key, "label": label, "configured": provider_configured(key) or key == PROVIDER_MANUAL}
+            for key, label in PROVIDER_LABELS.items()
+        ],
+        "api_enabled": await api_enabled(),
+        "price_sync": await price_sync_enabled(),
+        "configured": provider_configured(provider),
+        "payment_method": sigortambudur.payment_method()
+        if provider == PROVIDER_SIGORTAMBUDUR
+        else ("balance" if tamamliyo.balance_mode() else "card"),
+        "base_url": sigortambudur.base_url()
+        if provider == PROVIDER_SIGORTAMBUDUR
+        else tamamliyo.base_url(),
         "urun_id": tamamliyo.URUN_ID,
         "auto_issue": await auto_issue_on(),
         "markup": INSURANCE_MARKUP,
@@ -323,15 +397,11 @@ async def _ensure_policy_pdf(task: dict, quote_id: str) -> str:
 async def _save_provider_error(task_id: str, message: str) -> None:
     if insurance_payment.is_payment_unknown(message):
         message += (
-            " Mükerrer çekim riski var: Tamamliyo panelinden ödeme durumunu kontrol edin, "
+            " Mükerrer çekim riski var: sağlayıcı panelinden ödeme durumunu kontrol edin, "
             "poliçeyi elle kesin."
         )
     elif insurance_payment.is_payment_blocked(message):
-        message += (
-            " Tamamliyo cari bakiyenizi kontrol edin, poliçe kuyrukta bekliyor."
-            if tamamliyo.balance_mode()
-            else " Kurumsal kartın limitini/geçerliliğini kontrol edin, poliçe kuyrukta bekliyor."
-        )
+        message += " Sağlayıcı cari bakiyenizi/kart limitinizi kontrol edin, poliçe kuyrukta bekliyor."
     await insurance_tasks_col.update_one(
         {"id": task_id},
         {
@@ -356,13 +426,84 @@ async def _park_for_payment(task_id: str, kind: str) -> None:
     await insurance_payment.maybe_alert(kind, waiting)
 
 
+async def _sigortambudur_quote(task: dict, insured: list) -> tuple[str, str]:
+    """Sigortalilari kaydeder, grup teklifi acar ve en ucuz SUCCESS yaniti secer (idempotent)."""
+    task_id = task["id"]
+    if task.get("provider_response_id"):
+        return task.get("provider_quote_id"), task["provider_response_id"]
+
+    insured_ids = [
+        await sigortambudur.customer_id(person["tc_kimlik_no"], person["birth_date"])
+        for person in insured
+    ]
+    offer_id = await sigortambudur.create_offer(insured_ids, task["starts_on"], task["ends_on"])
+    best = await sigortambudur.wait_for_offer(offer_id)
+    await insurance_tasks_col.update_one(
+        {"id": task_id},
+        {
+            "$set": {
+                "provider_quote_id": offer_id,
+                "provider_response_id": str(best.get("id")),
+                "provider_quote_price": best.get("totalPremium"),
+                "provider_steps.quote": "done",
+                "provider_detail.quote": {
+                    "offer_id": offer_id,
+                    "provider_name": best.get("providerName"),
+                    "provider_slug": best.get("providerSlug"),
+                    "premium": best.get("totalPremium"),
+                },
+                "provider_error": None,
+            }
+        },
+    )
+    return offer_id, str(best.get("id"))
+
+
+async def _sigortambudur_policy(task: dict, response_id: str) -> str:
+    """Secilen teklifi policeye cevirir (acente cari hesabindan odeme) ve police id dondurur."""
+    task_id = task["id"]
+    detail = (task.get("provider_detail") or {}).get("policy") or {}
+    policy_id = detail.get("policy_id")
+    if policy_id:
+        return str(policy_id)
+
+    result = await sigortambudur.issue_policy(response_id)
+    policy_id = str(result.get("id") or result.get("policyId") or "")
+    if not policy_id:
+        raise sigortambudur.SigortambudurError("Poliçe numarası alınamadı.", payload=result)
+    await _mark_step(task_id, "payment_confirm", {"method": sigortambudur.payment_method()})
+    await _mark_step(task_id, "policy", {"policy_id": policy_id, "policy_no": result.get("policyNumber")})
+    await _record_charge(task_id)
+    return policy_id
+
+
+async def _issue_with_sigortambudur(task: dict, insured: list) -> str:
+    """Teklif -> police -> PDF adimlarini yurutur ve PDF dosya kimligini dondurur."""
+    _, response_id = await _sigortambudur_quote(task, insured)
+    fresh = await insurance_tasks_col.find_one({"id": task["id"]}) or task
+    policy_id = await _sigortambudur_policy(fresh, response_id)
+    pdf = await sigortambudur.policy_pdf_bytes(policy_id)
+    file_id = await _store_policy_pdf(task, pdf)
+    await _mark_step(task["id"], "policy_pdf", {"file_id": file_id, "size": len(pdf)})
+    return file_id
+
+
+def _delivery_message(task: dict) -> str:
+    """Musteriye giden police e-postasindaki kisa not (police hangi sirkette kesildi)."""
+    insurer = ((task.get("provider_detail") or {}).get("quote") or {}).get("provider_name")
+    return f"Poliçeniz {insurer} tarafından düzenlendi." if insurer else "Poliçeniz düzenlendi."
+
+
 async def issue_via_provider(task_id: str, origin: str, actor: str = "") -> dict:
-    """Tamamliyo uzerinden policeyi keser; her adim tek sefer calisir (idempotent)."""
+    """Aktif saglayici API'si ile policeyi keser; her adim tek sefer calisir (idempotent)."""
     task = await insurance_tasks_col.find_one({"id": task_id})
     if not task:
         return {"ok": False, "error": "Görev bulunamadı."}
     if task.get("status") == "issued":
         return {"ok": True, "already": True, "task_id": task_id}
+    provider = await active_provider()
+    if not provider_configured(provider):
+        return {"ok": False, "error": API_OFF_MESSAGE, "manual": True}
 
     try:
         insured = _validate_task(task)
@@ -372,24 +513,36 @@ async def issue_via_provider(task_id: str, origin: str, actor: str = "") -> dict
         )
         return {"ok": False, "error": str(exc)}
 
+    # Mukerrer kesim korumasi: ayni gorev icin tek seferde tek istek gider
+    claim = await insurance_tasks_col.find_one_and_update(
+        {"id": task_id, "provider_issuing": {"$ne": True}},
+        {"$set": {"provider_issuing": True, "provider_updated_at": datetime.now(timezone.utc)}},
+    )
+    if not claim:
+        return {"ok": False, "error": "Bu poliçenin kesimi şu anda sürüyor, lütfen bekleyin."}
+
     quote_id = task.get("provider_quote_id")
     try:
-        quote_id = await _ensure_quote(task, insured)
-        await _ensure_policy(task, quote_id, _steps(task))
-        file_id = await _ensure_policy_pdf(task, quote_id)
+        if provider == PROVIDER_SIGORTAMBUDUR:
+            file_id = await _issue_with_sigortambudur(task, insured)
+        else:
+            quote_id = await _ensure_quote(task, insured)
+            await _ensure_policy(task, quote_id, _steps(task))
+            file_id = await _ensure_policy_pdf(task, quote_id)
     except Exception as exc:
         message = str(exc)
+        await insurance_tasks_col.update_one({"id": task_id}, {"$set": {"provider_issuing": False}})
         await _save_provider_error(task_id, message)
         if insurance_payment.is_payment_unknown(message):
             await _park_for_payment(task_id, "review")
         elif insurance_payment.is_payment_blocked(message):
             await _park_for_payment(task_id, "blocked")
-        logger.error("tamamliyo police kesimi basarisiz (%s): %s", task_id, message)
+        logger.error("police kesimi basarisiz (%s / %s): %s", provider, task_id, message)
         return {"ok": False, "error": message, "quote_id": quote_id}
 
-    sent = await issue_policy(
-        task_id, file_id, origin, message="Poliçeniz Tamamliyo üzerinden düzenlendi."
-    )
+    await insurance_tasks_col.update_one({"id": task_id}, {"$set": {"provider_issuing": False}})
+    fresh = await insurance_tasks_col.find_one({"id": task_id}) or task
+    sent = await issue_policy(task_id, file_id, origin, message=_delivery_message(fresh))
     await insurance_tasks_col.update_one(
         {"id": task_id},
         {"$set": {"provider_error": None, "provider_issued_by": actor or "system"}},
@@ -397,7 +550,7 @@ async def issue_via_provider(task_id: str, origin: str, actor: str = "") -> dict
     fresh = await insurance_tasks_col.find_one({"id": task_id})
     return {
         "ok": True,
-        "quote_id": quote_id,
+        "quote_id": (fresh or {}).get("provider_quote_id") or quote_id,
         "policy_file_id": file_id,
         "delivery": sent,
         "task_status": (fresh or {}).get("status"),
@@ -414,9 +567,9 @@ async def retry_waiting_tasks() -> dict:
         .sort("created_at", 1)
         .to_list(50)
     )
-    if not waiting or not tamamliyo.configured():
+    if not waiting or not await api_enabled():
         return {"issued": 0, "waiting": len(waiting)}
-    if not tamamliyo.card_configured():
+    if tamamliyo.configured() and not tamamliyo.card_configured():
         return {"issued": 0, "waiting": len(waiting), "reason": "card_not_configured"}
 
     origin = (os.environ.get("PUBLIC_SITE_URL") or "").strip().rstrip("/")
@@ -445,7 +598,7 @@ async def price_sync_loop() -> None:
     """Gunluk fiyat senkronu (servis acilisinda bir kez, sonra 24 saatte bir)."""
     while True:
         try:
-            if tamamliyo.configured():
+            if await price_sync_enabled():
                 result = await sync_prices()
                 logger.info(
                     "sigorta fiyatlari guncellendi: %s urun, %s hata",

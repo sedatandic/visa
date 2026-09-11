@@ -153,6 +153,15 @@ class TestAlerts:
 class TestQueue:
     """Odeme sorunu olan gorev kuyruga alinir; belirsiz cekim otomatik denenmez."""
 
+    @pytest.fixture(autouse=True)
+    def api_on(self, monkeypatch):
+        """Kuyruk denemesi saglayici API'si acikken calisir (varsayilan artik kapali)."""
+
+        async def _on():
+            return True
+
+        monkeypatch.setattr(insurance_provider, "api_enabled", _on)
+
     @pytest.fixture
     def tasks(self, monkeypatch):
         state = {"updates": [], "counts": 3, "alerts": []}
