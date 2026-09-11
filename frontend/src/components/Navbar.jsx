@@ -70,6 +70,7 @@ const MENU_GROUPS = [
 
 const MENU_LINKS = MENU_GROUPS.flatMap((g) => g.items);
 const GUIDE_GROUP_LABEL = "Vize Rehberi";
+const CHILD_GUIDE_GROUP_LABEL = "Çocuk Vizeleri (18 yaş altı)";
 const testId = (to) => `nav-link-${to.replace(/^\//, "").replaceAll("/", "-")}`;
 
 const navLinkClass = ({ isActive }) =>
@@ -101,9 +102,19 @@ export const Navbar = () => {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    const guideItems = guides.map((g) => ({ to: g.path, label: g.title, icon: BookOpen }));
-    const groups = guideItems.length
-        ? [MENU_GROUPS[0], { label: GUIDE_GROUP_LABEL, items: guideItems }, ...MENU_GROUPS.slice(1)]
+    // Rehberler basvuru formundaki filtreyle ayni mantikla gruplanir:
+    // yetiskin vizeleri "Vize Rehberi", cocuk vizeleri ayri baslik altinda.
+    const toGuideItem = (g) => ({ to: g.path, label: g.title, icon: BookOpen });
+    const adultGuides = guides.filter((g) => g.applicant_type !== "child").map(toGuideItem);
+    const childGuides = guides.filter((g) => g.applicant_type === "child").map(toGuideItem);
+    const guideGroups = [
+        ...(adultGuides.length ? [{ label: GUIDE_GROUP_LABEL, items: adultGuides, twoCol: true }] : []),
+        ...(childGuides.length
+            ? [{ label: CHILD_GUIDE_GROUP_LABEL, items: childGuides, twoCol: true }]
+            : []),
+    ];
+    const groups = guideGroups.length
+        ? [MENU_GROUPS[0], ...guideGroups, ...MENU_GROUPS.slice(1)]
         : MENU_GROUPS;
     const menuActive =
         MENU_LINKS.some((l) => location.pathname.startsWith(l.to)) ||
@@ -181,11 +192,7 @@ export const Navbar = () => {
                                         {group.label}
                                     </DropdownMenuLabel>
                                     <div
-                                        className={
-                                            group.label === GUIDE_GROUP_LABEL
-                                                ? "grid grid-cols-2 gap-0.5"
-                                                : ""
-                                        }
+                                        className={group.twoCol ? "grid grid-cols-2 gap-0.5" : ""}
                                     >
                                         {group.items.map(({ to, label, icon: Icon }) => (
                                             <DropdownMenuItem key={to} asChild className="rounded-lg">

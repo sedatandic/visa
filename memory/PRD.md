@@ -1802,3 +1802,17 @@ fotograflari, ATV +40 USD ek secenek.
   5. Dosya hic yuklenmediginde ornek serit basligi "Pasaport okunamadi" yerine
      "Pasaport kimlik sayfasi gerekli" / "Vesikalik fotograf gerekli".
 - Test: testing agent iteration_143 -> frontend %100 (6/6 senaryo, 1920 + 390px).
+
+## 2026-06-18 (fork, 15) · "Formda 5, rehberde 7 vize" tutarsizligi
+- Veri hatasi degildi: 7 aktif vize var (30/60 tek, 30/60 cok, 30/60 cocuk, 30 gun uzatma;
+  48 saatlik transit `active:false`). Form acilir listesi yolcu tipine gore filtreliyor
+  (`visaOptionsFor`), yetiskin yolcuda 2 cocuk vizesi gizlendigi icin 5 gorunuyordu.
+- Kullanici karari **a + c**:
+  a) `Apply.jsx` vize secim alaninin altina aciklama notu (`visa-type-filter-note`):
+     yetiskinde "Cocuk vizeleri, yolcuyu 'Cocuk' olarak isaretlediginizde bu listede cikar",
+     cocuk yolcuda tersi mesaj.
+  c) `Navbar.jsx` menusu forma benzedi: rehberler `applicant_type`'a gore iki gruba ayrildi —
+     "VIZE REHBERI" (5 yetiskin) + "COCUK VIZELERI (18 YAS ALTI)" (2). Grup 2 kolonlu
+     gosterim artik `group.twoCol` flag'i ile kontrol ediliyor.
+- Dogrulama: menu 5+2 olarak gruplu (masaustu ekran goruntusu + DOM metni), /basvuru Adim 2'de
+  not goruntuleniyor, belgeli tek yolcu akisi Adim 2'ye sorunsuz geciyor.

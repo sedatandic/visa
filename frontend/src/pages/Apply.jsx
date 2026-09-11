@@ -2169,6 +2169,14 @@ export default function Apply() {
                         </SelectContent>
                     </Select>
                 </Field>
+                <p
+                    className="mt-1.5 text-xs leading-5 text-muted-foreground"
+                    data-testid="visa-type-filter-note"
+                >
+                    {primaryApplicantType === "child"
+                        ? "Çocuk (18 yaş altı) vizeleri listeleniyor. Yetişkin vizelerini görmek için yolcu tipini “Yetişkin” yapın."
+                        : "Listede yetişkin vizeleri var. Çocuk vizeleri (30/60 gün), yolcuyu “Çocuk” olarak işaretlediğinizde bu listede çıkar."}
+                </p>
             </div>
             <Button
                 type="button"
