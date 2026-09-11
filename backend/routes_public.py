@@ -28,7 +28,6 @@ from content import (
     AGENCY_INFO,
     ARTICLES,
     BANK_TRANSFER,
-    COMPANY,
     company_with_defaults,
     FAMILY_DISCOUNT_TEXT,
     FAMILY_DISCOUNT_TIERS,

@@ -13,10 +13,11 @@ BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-import offer_links  # noqa: E402
-from routes_admin_offers import _matches  # noqa: E402
+import offer_links
+from routes_admin_offers import _matches
 
 NOW = datetime(2026, 6, 20, 12, 0, tzinfo=timezone.utc)
+LINKED_APP = "basvuru-kaydi"  # sahte basvuru id'si: teklifin donustugunu isaretler
 
 
 def offer(**kwargs) -> dict:
@@ -51,10 +52,10 @@ class TestReportSummary:
                 token="c",
                 views=2,
                 first_viewed_at=NOW - timedelta(hours=20),
-                application_id="app-1",
+                application_id=LINKED_APP,
                 reference_code="DV-1",
             ),
-            offer(token="d", views=1, first_viewed_at=NOW - timedelta(hours=18), application_id="app-2"),
+            offer(token="d", views=1, first_viewed_at=NOW - timedelta(hours=18), application_id=LINKED_APP),
         ]
         report = offer_links.report_summary(docs, now=NOW)
         assert report["total"] == 4
@@ -74,7 +75,7 @@ class TestReportSummary:
             offer(token="a"),
             offer(token="b", expires_at=NOW - timedelta(days=1)),
             offer(token="c", active=False),
-            offer(token="d", views=1, application_id="app-9"),
+            offer(token="d", views=1, application_id=LINKED_APP),
         ]
         report = offer_links.report_summary(docs, now=NOW)
         assert report["statuses"] == {"active": 1, "used": 1, "expired": 1, "disabled": 1}
@@ -95,25 +96,28 @@ class TestListFilter:
         return offer(created_at=now - timedelta(hours=2), expires_at=now + timedelta(days=5), **kwargs)
 
     def test_empty_filter_matches_everything(self):
-        assert _matches(self.live(), "") is True
+        assert _matches(self.live(), "")
 
     def test_opened_and_not_opened(self):
-        assert _matches(self.live(views=2), "opened") is True
-        assert _matches(self.live(views=0), "opened") is False
-        assert _matches(self.live(views=0), "not_opened") is True
-        assert _matches(self.live(views=1), "not_opened") is False
+        assert _matches(self.live(views=2), "opened")
+        assert not _matches(self.live(views=0), "opened")
+        assert _matches(self.live(views=0), "not_opened")
+        assert not _matches(self.live(views=1), "not_opened")
 
     def test_status_filters(self):
-        assert _matches(self.live(views=1, application_id="app-1"), "used") is True
-        assert _matches(self.live(), "used") is False
-        assert _matches(self.live(), "active") is True
-        assert _matches(self.live(active=False), "disabled") is True
-        assert _matches(
-            offer(expires_at=datetime.now(timezone.utc) - timedelta(days=1)), "expired"
-        ) is True
+        assert _matches(self.live(views=1, application_id=LINKED_APP), "used")
+        assert not _matches(self.live(), "used")
+        assert _matches(self.live(), "active")
+        assert _matches(self.live(active=False), "disabled")
+        assert _matches(offer(expires_at=datetime.now(timezone.utc) - timedelta(days=1)), "expired")
 
 
 class TestAdminView:
     def test_opened_flag_is_exposed(self):
         assert offer_links.admin_view(offer(views=0))["opened"] is False
         assert offer_links.admin_view(offer(views=4))["opened"] is True
+
+    def test_report_counts_missing_fields_safely(self):
+        report = offer_links.report_summary([offer(views=None, total=None)], now=NOW)
+        assert report["views"] == 0
+        assert report["offered_value"] == 0

@@ -3233,3 +3233,15 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
 - NOT: Tam pytest koşusunda `test_refactor_regression`, `test_iteration_84`,
   `test_iteration_133_offer_links` hataları **hız sınırı (429)** kaynaklı; dosyalar tek
   tek koşulduğunda hepsi geçiyor (16/16, 5/5). Regresyon değil.
+- Kod incelemesi (2026-06-19) sonrasi: `report_summary` karmasikligi 12 -> **6**'ya dusuruldu
+  (`_offer_metrics` + `_aggregate_rows` yardimcilari), testlerdeki `is True/is False`
+  karsilastirmalari dogrudan assert'e cevrildi, sahte basvuru id'leri `LINKED_APP`
+  sabitine tasindi, gereksiz `noqa: E402` yorumlari ve `routes_public.py` icindeki
+  kullanilmayan `COMPANY` importu kaldirildi. Tests: 25 PASS.
+- Kod incelemesindeki **yanlis pozitifler** (degisiklik yapilmadi, dogrulanarak kapatildi):
+  "hardcoded secret" uyarilari testteki sahte teklif verisi; "identity comparison" uyarilari
+  dogru kullanim olan `is None / is not None` (zami*.py, whatsapp.py, wa_cloud.py satirlari
+  tek tek kontrol edildi); "undefined variables" -> `ruff --select F821` temiz; "dynamic
+  import" -> `pytest.raises(ModuleNotFoundError): __import__("tamamliyo")` bilincli test.
+  `routes_admin.py` / `routes_public.py` bolunmesi ve diger eski fonksiyonlarin
+  karmasiklik refaktoru ROADMAP'te acik madde olarak duruyor (riskli, ayri is).

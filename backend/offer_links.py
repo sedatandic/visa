@@ -247,44 +247,64 @@ def _hours_between(start, end) -> float | None:
     return (second - first).total_seconds() / 3600
 
 
+def _offer_metrics(doc: dict, now: datetime) -> dict:
+    """Tek teklifin rapor girdileri: durum, goruntulenme, tutar, acilma suresi."""
+    views = int(doc.get("views") or 0)
+    first_view = doc.get("first_viewed_at") or doc.get("last_viewed_at")
+    return {
+        "status": status_of(doc, now),
+        "views": views,
+        "opened": views > 0,
+        "amount": float(doc.get("total") or 0),
+        "converted": bool(doc.get("application_id")),
+        "open_hours": _hours_between(doc.get("created_at"), first_view) if views else None,
+    }
+
+
+def _aggregate_rows(rows: list) -> dict:
+    """Teklif satirlarini rapor toplamlarina indirger."""
+    acc = {
+        "statuses": {"active": 0, "used": 0, "expired": 0, "disabled": 0},
+        "opened": 0,
+        "converted": 0,
+        "views": 0,
+        "offered_value": 0.0,
+        "converted_value": 0.0,
+        "open_hours": [],
+    }
+    for row in rows:
+        acc["statuses"][row["status"]] += 1
+        acc["views"] += row["views"]
+        acc["offered_value"] += row["amount"]
+        if row["opened"]:
+            acc["opened"] += 1
+        if row["converted"]:
+            acc["converted"] += 1
+            acc["converted_value"] += row["amount"]
+        if row["open_hours"] is not None:
+            acc["open_hours"].append(row["open_hours"])
+    return acc
+
+
 def report_summary(docs: list, now: datetime | None = None) -> dict:
     """Teklif performansi: kac teklif acildi, kaci basvuruya dondu, tutar karsiliklari."""
-    now = now or datetime.now(timezone.utc)
-    statuses = {"active": 0, "used": 0, "expired": 0, "disabled": 0}
-    opened = converted = views = 0
-    offered_value = converted_value = 0.0
-    open_hours = []
-    for doc in docs:
-        state = status_of(doc, now)
-        statuses[state] = statuses.get(state, 0) + 1
-        view_count = int(doc.get("views") or 0)
-        views += view_count
-        amount = float(doc.get("total") or 0)
-        offered_value += amount
-        if view_count:
-            opened += 1
-            gap = _hours_between(
-                doc.get("created_at"), doc.get("first_viewed_at") or doc.get("last_viewed_at")
-            )
-            if gap is not None:
-                open_hours.append(gap)
-        if doc.get("application_id"):
-            converted += 1
-            converted_value += amount
-    total = len(docs)
+    rows = [_offer_metrics(doc, now or datetime.now(timezone.utc)) for doc in docs]
+    acc = _aggregate_rows(rows)
+    total = len(rows)
+    open_hours = acc["open_hours"]
     return {
         "total": total,
-        "opened": opened,
-        "not_opened": total - opened,
-        "converted": converted,
-        "views": views,
-        "open_rate": _pct(opened, total),
-        "conversion_rate": _pct(converted, total),
-        "converted_of_opened": _pct(converted, opened),
-        "offered_value": round(offered_value),
-        "converted_value": round(converted_value),
+        "opened": acc["opened"],
+        "not_opened": total - acc["opened"],
+        "converted": acc["converted"],
+        "views": acc["views"],
+        "open_rate": _pct(acc["opened"], total),
+        "conversion_rate": _pct(acc["converted"], total),
+        "converted_of_opened": _pct(acc["converted"], acc["opened"]),
+        "offered_value": round(acc["offered_value"]),
+        "converted_value": round(acc["converted_value"]),
         "currency": (docs[0].get("currency") if docs else "TRY") or "TRY",
-        "statuses": statuses,
+        "statuses": acc["statuses"],
         "avg_open_hours": round(sum(open_hours) / len(open_hours), 1) if open_hours else None,
     }
 
