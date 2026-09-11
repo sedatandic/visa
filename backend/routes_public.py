@@ -85,6 +85,7 @@ from store_catalog import (
     trip_day_count,
 )
 from fx import addon_prices_try, addons_with_fx, apply_fx_to_list, apply_fx_to_visa, get_fx
+import doc_alerts
 import ocr_metrics
 import offer_links
 import social_links
@@ -692,12 +693,22 @@ async def match_photo_with_passport(
 
 
 async def _ocr_failure(
-    file_id: str, duration_ms: int, reason: str, message: str, data: dict | None = None
+    file_id: str,
+    duration_ms: int,
+    reason: str,
+    message: str,
+    data: dict | None = None,
+    contact: dict | None = None,
 ) -> dict:
     """Basarisiz OCR denemesini olcume yazar ve istemciye ayni bicimde yanit dondurur."""
     await ocr_metrics.record_attempt(
         file_id=file_id, duration_ms=duration_ms, ok=False, reason=reason, data=data or {}
     )
+    # Ekip aninda haberdar olsun (panel + WhatsApp + e-posta); bildirim hatasi akisi bozmaz
+    try:
+        await doc_alerts.notify_unreadable_passport(file_id, reason, contact or {})
+    except Exception as exc:  # pragma: no cover
+        logger.warning("passport alert failed: %s", exc)
     payload = {"ok": False, "reason": reason, "message": message}
     if data is not None:
         payload["data"] = data
@@ -753,7 +764,13 @@ def _read_upload_bytes(record: dict) -> tuple[bytes, str]:
 
 
 @router.post("/passport/read")
-async def read_passport_document(request: Request, file_id: str = Form(...)) -> dict:
+async def read_passport_document(
+    request: Request,
+    file_id: str = Form(...),
+    contact_name: str = Form(""),
+    contact_phone: str = Form(""),
+    contact_email: str = Form(""),
+) -> dict:
     """Yuklenen pasaport goruntusunu yapay zeka ile okuyup form alanlarini doldurur.
 
     Her deneme sure + alan kapsamiyla olculur (`ocr_metrics`), boylece "form ne
@@ -773,6 +790,7 @@ async def read_passport_document(request: Request, file_id: str = Form(...)) -> 
         return int((time.perf_counter() - started) * 1000)
 
     data, ct = _read_upload_bytes(record)
+    contact = {"name": contact_name, "phone": contact_phone, "email": contact_email}
 
     await consume_daily(
         "passport_ocr",
@@ -787,6 +805,7 @@ async def read_passport_document(request: Request, file_id: str = Form(...)) -> 
             elapsed_ms(),
             "ai_error",
             "Pasaport otomatik okunamadi. Bilgileri elle girebilirsiniz.",
+            contact=contact,
         )
 
     if not result.get("is_passport") or not (result.get("passport_no") or result.get("last_name")):
@@ -796,6 +815,7 @@ async def read_passport_document(request: Request, file_id: str = Form(...)) -> 
             "not_readable",
             "Goruntuden bilgiler okunamadi. Daha net bir fotograf yukleyin veya elle girin.",
             data=result,
+            contact=contact,
         )
 
     return await _ocr_success(file_id, result, elapsed_ms())
@@ -909,11 +929,34 @@ async def _build_travelers(traveler_inputs, travel=None) -> tuple[list, list]:
         prices.append(float(visa["price"]))
 
     # Once kabul kurallari (yas, kalis suresi, pasaport gecerliligi), sonra dosya kontrolu
+    _reject_duplicate_documents(traveler_inputs)
     if travel is not None:
         _validate_travel_rules(travel, travelers)
     for t in traveler_inputs:
         await _ensure_uploads_exist(t.passport_file_id, t.photo_file_id)
     return travelers, prices
+
+
+def _reject_duplicate_documents(traveler_inputs) -> None:
+    """Ayni pasaport numarasi/dosyasi iki yolcuda olamaz (yanlislikla ayni belge yuklenmesi)."""
+    checks = (
+        ("passport_no", lambda t: (t.passport_no or "").strip().upper(), "pasaport numarasi"),
+        ("passport_file_id", lambda t: t.passport_file_id, "pasaport fotografi"),
+        ("photo_file_id", lambda t: t.photo_file_id, "vesikalik fotografi"),
+    )
+    for _field, pick, label in checks:
+        seen: dict[str, int] = {}
+        for index, traveler in enumerate(traveler_inputs, start=1):
+            key = pick(traveler)
+            if not key:
+                continue
+            if key in seen:
+                raise HTTPException(
+                    400,
+                    f"{seen[key]}. ve {index}. yolcuda ayni {label} kullanilmis. "
+                    "Her yolcu icin kendi belgesini yukleyin.",
+                )
+            seen[key] = index
 
 
 # Basvuru kabul kurallari (BAE gocmenlik idaresi sartlari)

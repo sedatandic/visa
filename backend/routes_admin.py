@@ -964,6 +964,33 @@ async def admin_whatsapp_link(
     return {"url": url, "message": message, "phone": number}
 
 
+# --------------------------------------------------- ekip alarmlari (bildirimler)
+@router.get("/admin/alerts")
+async def admin_list_alerts(
+    kind: str = "passport_unreadable",
+    unread: bool = True,
+    admin: dict = Depends(require_admin),
+) -> dict:
+    """Panelde gosterilen ekip alarmlari (pasaport okunamadi vb.)."""
+    query: dict = {"kind": kind}
+    if unread:
+        query["read"] = False
+    docs = await notifications_col.find(query).sort("created_at", -1).to_list(20)
+    open_count = await notifications_col.count_documents({"kind": kind, "read": False})
+    return {"items": serialize_doc(docs), "open_count": open_count}
+
+
+@router.post("/admin/alerts/{alert_id}/read")
+async def admin_mark_alert_read(alert_id: str, admin: dict = Depends(require_admin)) -> dict:
+    res = await notifications_col.update_one(
+        {"id": alert_id},
+        {"$set": {"read": True, "read_at": datetime.now(timezone.utc), "read_by": admin.get("sub")}},
+    )
+    if not res.matched_count:
+        raise HTTPException(404, "Alarm bulunamadi.")
+    return {"ok": True}
+
+
 # --------------------------------------------------------- musteri yorumlari
 @router.get("/admin/testimonials")
 async def admin_list_testimonials(admin: dict = Depends(require_admin)) -> dict:

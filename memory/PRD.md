@@ -1781,3 +1781,24 @@ fotograflari, ATV +40 USD ek secenek.
   `FileDropzone`'a `capture` prop'u eklendi.
 - Yukleme oncesi kalite uyarisi: bulanik/parlamali kare yuklenmeden "Tekrar cek" onerilir
   (`lib/imageQuality.js`); sinirda olanlarda amber not. Yapay zeka maliyeti yok.
+
+## 2026-06-18 (fork, 14) · Eksik yolcu engeli + aile indirimi belge kosulu
+- Kullanici raporu: "2. yolcu secilmis ancak bilgileri girilmemis, adim 2'ye gecememesi lazim,
+  uyari ver silmek ister misiniz; aile indirimi sadece min 2 kisi pasaport ve resim
+  eklendiginde uygulanacaktir."
+- Kok neden: pasaport/vesikalik dosya dogrulamasi `validateStep` icinde `step === 1`
+  (Vize Turu adimi) blogundaydi; Adim 1 -> 2 gecisinde hic bakilmiyordu. Aile indirimi
+  metresi de yalniz `travelers.length`e bakiyordu.
+- Yapilanlar (`pages/Apply.jsx`, `components/FamilyDiscountMeter.jsx`,
+  `components/UploadExamplesHint.jsx`):
+  1. Belge + fotograf AI kontrolu Adim 1 dogrulamasina tasindi; eksik belge varsa gecis yok.
+  2. Yeni amber kart `incomplete-travelers-notice`: eksik yolcular ve eksik alanlari listeler,
+     "Bilgileri tamamla" (karta kaydirir) + iki adimli "Bu yolcuyu kaldir / Evet, kaldir".
+  3. Aile indirimi yalnizca bilgileri ve iki belgesi tam yolculari sayar (`travelerReady`);
+     eksik varsa "%10 aktif" yerine `family-discount-pending-text` gosterilir, metredeki
+     "Yolcu ekle" dugmesi gizlenir.
+  4. Mukerrer belge artik ENGELLIYOR (ayni dosya veya ayni pasaport no): kirmizi
+     `step1-document-block-warning` + yolcu kartinda kirmizi uyari.
+  5. Dosya hic yuklenmediginde ornek serit basligi "Pasaport okunamadi" yerine
+     "Pasaport kimlik sayfasi gerekli" / "Vesikalik fotograf gerekli".
+- Test: testing agent iteration_143 -> frontend %100 (6/6 senaryo, 1920 + 390px).

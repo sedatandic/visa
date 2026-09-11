@@ -9,6 +9,7 @@ const DEFAULT_TIERS = [{ min: 2, rate: 0.1 }];
 export const FamilyDiscountMeter = ({
     tiers,
     travelerCount,
+    pendingCount = 0,
     discountAmount = 0,
     currency = "TRY",
     onAddTraveler,
@@ -62,6 +63,14 @@ export const FamilyDiscountMeter = ({
                     ) : null}
                     .
                 </p>
+            ) : pendingCount > 0 ? (
+                <p
+                    className="mt-2 text-sm font-semibold leading-6 text-amber-700"
+                    data-testid="family-discount-pending-text"
+                >
+                    {pendingCount} yolcunun pasaport veya vesikalık belgesi eksik. Aile indirimi, en az 2 yolcunun
+                    pasaportu ve fotoğrafı yüklendiğinde uygulanır.
+                </p>
             ) : (
                 <p className="mt-2 text-sm leading-6 text-muted-foreground" data-testid="family-discount-progress-text">
                     <strong className="text-foreground">{Math.max(1, target - travelerCount)} yolcu daha</strong> ekleyin,
@@ -96,7 +105,7 @@ export const FamilyDiscountMeter = ({
                 })}
             </ul>
 
-            {!active && canAddTraveler && onAddTraveler && (
+            {!active && pendingCount === 0 && canAddTraveler && onAddTraveler && (
                 <Button
                     type="button"
                     variant="outline"

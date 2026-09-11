@@ -175,9 +175,31 @@ const ERROR_LABELS = {
     travel_window: "Yaklaşık seyahat zamanı",
     passport: "Pasaport fotoğrafı",
     photo: "Vesikalık fotoğraf",
+    duplicate: "Başka yolcuyla aynı belge",
     ticket: "Dönüş uçak bileti",
     hotel: "Otel rezervasyonu",
 };
+
+// Yolcunun zorunlu bilgileri + iki belgesi tamam mi? (adim gecisi ve aile indirimi icin)
+const travelerReady = (t) =>
+    !!(
+        t.first_name?.trim() &&
+        t.last_name?.trim() &&
+        t.birth_date &&
+        t.passport_no?.trim() &&
+        t.passport_expiry &&
+        t.passportFile &&
+        t.photoFile
+    );
+
+// Eklenmis ama hic dokunulmamis yolcu (kullanici yanlislikla eklemis olabilir)
+const travelerEmpty = (t) =>
+    !t.first_name?.trim() &&
+    !t.last_name?.trim() &&
+    !t.passport_no?.trim() &&
+    !t.birth_date &&
+    !t.passportFile &&
+    !t.photoFile;
 
 /** Hata nesnesinden kullaniciya gosterilecek alan adlarini cikarir. */
 const collectErrorLabels = (errorObj, travelers) => {
@@ -587,6 +609,50 @@ export default function Apply() {
         if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
         return Math.round((end - start) / 86400000) + 1;
     }, [travel.arrival_date, travel.departure_date]);
+
+    // Ayni belge/pasaport numarasi birden fazla yolcuda gorunuyorsa uyar:
+    // genelde ikinci yolcuya yanlislikla birinci yolcunun dosyasi yuklenir.
+    const duplicateHints = useMemo(() => {
+        const fileKey = (f) => (f ? `${(f.filename || "").toLowerCase()}|${f.size || 0}|${f.file_id || ""}` : "");
+        const fields = [
+            ["passportFile", "pasaport kimlik sayfası", (t) => fileKey(t.passportFile)],
+            ["photoFile", "vesikalık fotoğraf", (t) => fileKey(t.photoFile)],
+            ["passportNo", "pasaport numarası", (t) => (t.passport_no || "").trim().toUpperCase()],
+        ];
+        const seen = { passportFile: new Map(), photoFile: new Map(), passportNo: new Map() };
+        const hints = {};
+        travelers.forEach((t, idx) => {
+            fields.forEach(([field, label, pick]) => {
+                const key = pick(t);
+                if (!key) return;
+                const firstIdx = seen[field].get(key);
+                if (firstIdx === undefined) {
+                    seen[field].set(key, idx);
+                    return;
+                }
+                hints[t.key] = [...(hints[t.key] || []), `${firstIdx + 1}. yolcuyla aynı ${label}`];
+            });
+        });
+        return hints;
+    }, [travelers]);
+
+    // Aile indirimi yalnizca bilgileri VE iki belgesi tamam olan yolcular icin gecerli
+    const readyTravelerCount = useMemo(() => travelers.filter(travelerReady).length, [travelers]);
+
+    // Adim 1'de dogrulama basarisiz olan yolcular: tamamla / kaldir kartinda listelenir
+    const incompleteTravelers = useMemo(() => {
+        if (step !== 0) return [];
+        return travelers
+            .map((t, idx) => ({ t, idx, fields: Object.keys(errors[t.key] || {}) }))
+            .filter((row) => row.fields.length > 0)
+            .map((row) => ({
+                ...row,
+                missing: row.fields.map((f) => ERROR_LABELS[f] || f),
+                empty: travelerEmpty(row.t),
+            }));
+    }, [step, travelers, errors]);
+    const [confirmRemoveKey, setConfirmRemoveKey] = useState(null);
+
 
     // Poliçe seçenekleri, seçilen vizenin kalış süresini AŞMAYACAK şekilde listelenir
     // (30 günlük vizede 30 gün ve altı, 60 günlük vizede 60 gün ve altı poliçeler).
@@ -1600,6 +1666,11 @@ export default function Apply() {
             return;
         }
         setTravelers((list) => list.filter((t) => t.key !== key));
+        setErrors((p) => {
+            const next = { ...p };
+            delete next[key];
+            return next;
+        });
     };
 
     // --- Yapay zeka ile pasaport okuma -------------------------------------
@@ -1616,6 +1687,10 @@ export default function Apply() {
         try {
             const form = new FormData();
             form.append("file_id", fileInfo.file_id);
+            // Okuma basarisiz olursa ekip musteriyi hemen arayabilsin
+            form.append("contact_name", contact.full_name || "");
+            form.append("contact_phone", contact.phone || "");
+            form.append("contact_email", contact.email || "");
             const { data } = await api.post("/passport/read", form, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
@@ -1850,7 +1925,7 @@ export default function Apply() {
                     e.stay_length = `Planlanan kalış ${stayDays} gün; seçilen vize bu süreyi kapsamıyor. Daha uzun süreli bir vize seçin veya tarihleri güncelleyin.`;
             }
         }
-        if (step === 1) {
+        if (step === 0) {
             const photoPending = [];
             const photoRejected = [];
             travelers.forEach((t) => {
@@ -1872,11 +1947,29 @@ export default function Apply() {
                 e.photo_quality = `Vesikalık fotoğraf vize standartlarına uygun olmadan devam edemezsiniz (${photoRejected.join(", ")}). Lütfen uygun bir fotoğraf yükleyin.`;
             else if (photoPending.length)
                 e.photo_quality = `Vesikalık fotoğraf kontrolü sürüyor (${photoPending.join(", ")}). Lütfen birkaç saniye bekleyin.`;
+            // Ayni pasaport/vesikalik iki yolcuda kullanilamaz: hatali basvuru ve ret riski
+            const dupTravelers = travelers.filter((t) => (duplicateHints[t.key] || []).length > 0);
+            if (dupTravelers.length) {
+                dupTravelers.forEach((t) => {
+                    e[t.key] = {
+                        ...(e[t.key] || {}),
+                        duplicate: "Bu yolcuda başka bir yolcunun belgesi görünüyor.",
+                    };
+                });
+                e.duplicate_docs = `Aynı pasaport veya vesikalık birden fazla yolcuda kullanılmış (${dupTravelers
+                    .map((t) => `${travelers.indexOf(t) + 1}. yolcu`)
+                    .join(", ")}). Her yolcu için kendi belgelerini yükleyin.`;
+            }
         }
         setErrors(e);
         if (Object.keys(e).length) {
             const labels = collectErrorLabels(e, travelers);
-            const blocking = e.travelers_adult || e.stay_length || e.passport_validity || e.photo_quality;
+            const blocking =
+                e.travelers_adult ||
+                e.stay_length ||
+                e.passport_validity ||
+                e.photo_quality ||
+                e.duplicate_docs;
             toast.error(
                 blocking ||
                     (labels.length
@@ -1897,7 +1990,7 @@ export default function Apply() {
             return false;
         }
         return true;
-    }, [step, contact, travelers, travel, extraDocs, visaTypes, photoCheck]);
+    }, [step, contact, travelers, travel, extraDocs, visaTypes, photoCheck, duplicateHints]);
 
     const next = () => {
         if (!validateStep()) return;
@@ -2601,6 +2694,98 @@ export default function Apply() {
                                         </div>
                                     </div>
 
+                                    {(errors.photo_quality || errors.duplicate_docs) && (
+                                        <div
+                                            className="mt-5 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-4"
+                                            data-testid="step1-document-block-warning"
+                                        >
+                                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                                            <p className="text-sm font-semibold leading-6 text-destructive">
+                                                {errors.duplicate_docs || errors.photo_quality}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {incompleteTravelers.length > 0 && (
+                                        <div
+                                            className="mt-5 rounded-xl border border-amber-400/70 bg-amber-50 p-4"
+                                            data-testid="incomplete-travelers-notice"
+                                        >
+                                            <p className="flex items-center gap-2 font-heading text-sm font-bold text-amber-900">
+                                                <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                                                Eksik yolcu bilgisi · devam edemiyoruz
+                                            </p>
+                                            <ul className="mt-3 space-y-3">
+                                                {incompleteTravelers.map(({ t, idx, missing, empty }) => {
+                                                    const name = `${t.first_name} ${t.last_name}`.trim();
+                                                    return (
+                                                        <li
+                                                            key={t.key}
+                                                            className="rounded-lg border border-amber-300/70 bg-white/70 p-3"
+                                                            data-testid={`incomplete-traveler-${idx}`}
+                                                        >
+                                                            <p className="text-xs font-semibold leading-5 text-amber-900">
+                                                                {idx + 1}. Yolcu{name ? ` · ${name}` : ""} —{" "}
+                                                                {empty
+                                                                    ? "hiçbir bilgi girilmemiş. Bu yolcuyu kullanmayacaksanız kaldırın."
+                                                                    : `eksik: ${missing.join(", ")}`}
+                                                            </p>
+                                                            <div className="mt-2.5 flex flex-wrap gap-2">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="secondary"
+                                                                    className="h-10 border border-border text-xs"
+                                                                    onClick={() =>
+                                                                        document
+                                                                            .querySelector(
+                                                                                `[data-testid="traveler-card-${idx}"]`
+                                                                            )
+                                                                            ?.scrollIntoView({
+                                                                                behavior: "smooth",
+                                                                                block: "center",
+                                                                            })
+                                                                    }
+                                                                    data-testid={`incomplete-traveler-${idx}-fill`}
+                                                                >
+                                                                    Bilgileri tamamla
+                                                                </Button>
+                                                                {travelers.length > 1 &&
+                                                                    (confirmRemoveKey === t.key ? (
+                                                                        <Button
+                                                                            type="button"
+                                                                            className="h-10 bg-destructive text-xs text-destructive-foreground hover:bg-destructive/90"
+                                                                            onClick={() => {
+                                                                                removeTraveler(t.key);
+                                                                                setConfirmRemoveKey(null);
+                                                                                toast.success(
+                                                                                    `${idx + 1}. yolcu başvurudan kaldırıldı.`
+                                                                                );
+                                                                            }}
+                                                                            data-testid={`incomplete-traveler-${idx}-remove-confirm`}
+                                                                        >
+                                                                            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Evet,
+                                                                            kaldır
+                                                                        </Button>
+                                                                    ) : (
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="secondary"
+                                                                            className="h-10 border border-border text-xs text-destructive"
+                                                                            onClick={() => setConfirmRemoveKey(t.key)}
+                                                                            data-testid={`incomplete-traveler-${idx}-remove`}
+                                                                        >
+                                                                            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Bu
+                                                                            yolcuyu kaldır
+                                                                        </Button>
+                                                                    ))}
+                                                            </div>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        </div>
+                                    )}
+
                                     {savedTravelers.length > 0 && (
                                         <div
                                             className="mt-5 rounded-xl border border-primary/25 bg-primary/5 p-5"
@@ -2712,13 +2897,32 @@ export default function Apply() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="mt-5 rounded-xl border border-primary/35 bg-primary/[0.05] p-4" data-invalid={te.passport || te.photo ? "true" : undefined} data-testid={`traveler-${idx}-ai-passport-box`}>
+                                                    <div className="mt-5 rounded-xl border border-primary/35 bg-primary/[0.05] p-4" data-invalid={te.passport || te.photo || te.duplicate ? "true" : undefined} data-testid={`traveler-${idx}-ai-passport-box`}>
                                                         <p className="flex items-center gap-2 font-heading text-base font-bold">
                                                             <ScanLine className="h-4.5 w-4.5 text-primary" aria-hidden="true" />
                                                             Pasaportu yükleyin, gerisini biz dolduralım
                                                         </p>
                                                         <p className="mt-1 text-xs leading-5 text-muted-foreground">
                                                             Tek fotoğraf yeter; ad, soyad, tarih ve pasaport no otomatik dolar. Vesikalığı da hemen yanına ekleyebilirsiniz.</p>
+                                                        {duplicateHints[t.key]?.length > 0 && (
+                                                            <div
+                                                                className={`mt-3 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-xs font-semibold leading-5 ${
+                                                                    te.duplicate
+                                                                        ? "border-destructive/60 bg-destructive/10 text-destructive"
+                                                                        : "border-amber-400/70 bg-amber-50 text-amber-900"
+                                                                }`}
+                                                                data-testid={`traveler-${idx}-duplicate-warning`}
+                                                            >
+                                                                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                                                                <span>
+                                                                    Dikkat: {duplicateHints[t.key].join(" · ")}. Her yolcu için
+                                                                    kendi pasaportunu ve vesikalığını ekleyin
+                                                                    {te.duplicate
+                                                                        ? "; aynı belgeyle devam edemezsiniz."
+                                                                        : "."}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                         <div className="mt-3 grid gap-4 md:grid-cols-2">
                                                             <div>
                                                             <FileDropzone
@@ -2741,6 +2945,11 @@ export default function Apply() {
                                                                 <UploadExamplesHint
                                                                     type="passport"
                                                                     warning
+                                                                    warningTitle={
+                                                                        !t.passportFile
+                                                                            ? "Pasaport kimlik sayfası gerekli"
+                                                                            : undefined
+                                                                    }
                                                                     testId={`traveler-${idx}-passport-examples`}
                                                                 />
                                                             )}
@@ -2767,6 +2976,9 @@ export default function Apply() {
                                                                 <UploadExamplesHint
                                                                     type="photo"
                                                                     warning
+                                                                    warningTitle={
+                                                                        !t.photoFile ? "Vesikalık fotoğraf gerekli" : undefined
+                                                                    }
                                                                     testId={`traveler-${idx}-photo-examples`}
                                                                 />
                                                             )}
@@ -3881,7 +4093,8 @@ export default function Apply() {
                                     <div className="mt-4">
                                         <FamilyDiscountMeter
                                             tiers={familyTiers}
-                                            travelerCount={travelers.length}
+                                            travelerCount={readyTravelerCount}
+                                            pendingCount={travelers.length - readyTravelerCount}
                                             discountAmount={quote?.family_discount || 0}
                                             currency={quote?.currency || "TRY"}
                                             canAddTraveler={travelers.length < maxTravelers}

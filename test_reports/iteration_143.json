@@ -1,0 +1,68 @@
+{
+  "summary": "Frontend regression testing of /basvuru step-1 traveler validation fixes. All 6 requested scenarios pass: (1) blocking incomplete traveler with amber notice, (2) two-step remove confirm + fill-scroll, (3) family-discount pending state, (4) happy path single traveler advances after AI OCR upload, (5) duplicate documents block with red banner + per-traveler warning, (6) mobile 390px regression (no horizontal scroll, action bar & notice render, blocks progression).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "detailed_results": {
+    "test1_block_with_notice": {
+      "wizard_progress_label_after_blocked_next": "Adım 1 / 4",
+      "incomplete_travelers_notice_present": true,
+      "empty_traveler_copy_present": "'hiçbir bilgi girilmemiş. Bu yolcuyu kullanmayacaksanız kaldırın.' rendered for 2. Yolcu",
+      "incomplete_traveler_1_present": true,
+      "notice_text_sample": "Eksik yolcu bilgisi · devam edemiyoruz; 1. Yolcu · ALI TEST — eksik: Doğum Tarihi, Pasaport numarası, Pasaport geçerlilik tarihi, Pasaport fotoğrafı, Vesikalık fotoğraf"
+    },
+    "test2_remove_and_fill": {
+      "remove_button_present": true,
+      "confirm_button_text": "Evet, kaldır",
+      "confirm_removes_second_traveler": true,
+      "travelers_after_remove": 1,
+      "success_toast": "2. yolcu başvurudan kaldırıldı.",
+      "fill_button_click_no_error": true
+    },
+    "test3_family_discount_meter_pending": {
+      "family_discount_active_badge": false,
+      "family_discount_pending_text": true,
+      "pending_text_sample": "2 yolcunun pasaport veya vesikalık belgesi eksik. Aile indirimi, en az 2 yolcunun pasaportu ve fotoğrafı yüklendiğinde uygulanır.",
+      "add_traveler_in_meter_hidden_when_pending": true
+    },
+    "test4_happy_path": {
+      "single_traveler_with_documents_advances": true,
+      "progress_label_after_advance": "Adım 2 / 4",
+      "used_files": [
+        "/app/frontend/public/passport-guide/ok.jpg",
+        "/app/frontend/public/photo-guide/ok.jpg"
+      ]
+    },
+    "test5_duplicate_block": {
+      "step1_document_block_warning_present": true,
+      "block_text": "Aynı pasaport veya vesikalık birden fazla yolcuda kullanılmış (2. yolcu). Her yolcu için kendi belgelerini yükleyin.",
+      "traveler_1_duplicate_warning_present": true,
+      "traveler_1_warning_text": "Dikkat: 1. yolcuyla aynı pasaport numarası. Her yolcu için kendi pasaportunu ve vesikalığını ekleyin; aynı belgeyle devam edemezsiniz.",
+      "wizard_progress_label_stays": "Adım 1 / 4",
+      "family_discount_meter_state": "%10 aktif (acceptable per test spec - duplicate block is what prevents submission)"
+    },
+    "test6_mobile_390px": {
+      "document_element_scroll_width": 390,
+      "no_horizontal_scroll": true,
+      "mobile_action_bar_visible": true,
+      "mobile_next_step_button_blocks_progression": true,
+      "notice_and_family_discount_meter_render_correctly_without_overflow": true,
+      "note": "First playwright force-click on mobile-next-step-button appeared to no-op once (likely browser event timing); native JS .click() and subsequent runs all fire correctly. Element is not covered - elementFromPoint at button center returns the button itself. Not a real user-facing bug."
+    }
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apply.jsx is 4306 lines - exceeds the 700-line guideline; strongly recommend splitting into per-step subcomponents (Step1Personal, Step2Visa, Step3Extras, Step4Payment) and extracting duplicate/incomplete-travelers logic to hooks for maintainability."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only)", "frontend": "100% (6/6 scenarios)"},
+  "test_credentials": "N/A - public /basvuru page",
+  "seed_data_creation": "None. Test only created transient draft rows in MongoDB (harmless per E1).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All bug fixes on Apply.jsx step-1 validation verified working. testids used: input-contact-name/email/phone, add-adult-traveler-button, wizard-next-step-button, mobile-next-step-button, wizard-progress-label, incomplete-travelers-notice, incomplete-traveler-{idx}, incomplete-traveler-{idx}-fill, incomplete-traveler-{idx}-remove, incomplete-traveler-{idx}-remove-confirm, family-discount-meter, family-discount-active-badge, family-discount-pending-text, family-discount-add-traveler, step1-document-block-warning, traveler-{idx}-duplicate-warning, traveler-{idx}-passport-ai-input, traveler-{idx}-photo-upload-input. Uploads /app/frontend/public/passport-guide/ok.jpg and /app/frontend/public/photo-guide/ok.jpg pass AI OCR/photo checks and populate name/passport-no automatically (~20-30s). If mobile-next-step-button appears not to fire under playwright, retry using page.evaluate(()=>btn.click())."
+}

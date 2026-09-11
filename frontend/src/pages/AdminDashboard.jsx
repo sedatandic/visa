@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { api, apiError } from "../lib/api";
 import { AdminWelcomeCard } from "../components/AdminWelcomeCard";
 import { OcrReportCard } from "../components/OcrReportCard";
+import { DocAlertsCard } from "../components/DocAlertsCard";
 import { STATUS_OPTIONS, STATUS_META, formatDateTime, formatMoney, setMeta } from "../lib/site";
 import { AdminLayout } from "../components/AdminLayout";
 import { PaymentBadge, StatusBadge } from "../components/StatusBadge";
@@ -152,6 +153,9 @@ export default function AdminDashboard() {
                         </Button>
                     </div>
                 )}
+
+                {/* PASAPORT OKUNAMADI ALARMLARI */}
+                <DocAlertsCard />
 
                 {/* OCR PERFORMANS RAPORU */}
                 <OcrReportCard />

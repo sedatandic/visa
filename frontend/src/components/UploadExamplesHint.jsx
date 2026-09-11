@@ -20,9 +20,10 @@ const CONFIG = {
 };
 
 /** Yalnizca belge okunamadiginda uyari olarak cikar; tiklaninca buyuk rehber acilir. */
-export const UploadExamplesHint = ({ type, testId, warning = false }) => {
+export const UploadExamplesHint = ({ type, testId, warning = false, warningTitle: titleOverride }) => {
     const [open, setOpen] = useState(false);
-    const { examples, title, Guide, warningTitle } = CONFIG[type];
+    const { examples, title, Guide } = CONFIG[type];
+    const warningTitle = titleOverride || CONFIG[type].warningTitle;
 
     return (
         <>
