@@ -2,13 +2,11 @@
 // Yapay zekaya gitmeden, cihazda anlik calisir.
 
 const SAMPLE_WIDTH = 480;
+// Not: parlama orani olculmuyor - beyaz fonlu vesikaliklarda yanlis alarm veriyordu.
 const THRESHOLDS = {
     blurBad: 25,
     blurWarn: 60,
-    glareBad: 0.06,
-    glareWarn: 0.025,
     darkWarn: 55,
-    brightWarn: 228,
 };
 
 const toGray = (data, width, height) => {
@@ -39,24 +37,15 @@ const laplacianVariance = (gray, width, height) => {
     return sumSq / count - mean * mean;
 };
 
-const verdict = ({ sharpness, glare, brightness }) => {
-    if (glare > THRESHOLDS.glareBad) {
-        return { level: "bad", message: "Parlama var, yazılar okunmuyor. Işığı yandan alıp tekrar çekin." };
-    }
+const verdict = ({ sharpness, brightness }) => {
     if (sharpness < THRESHOLDS.blurBad) {
         return { level: "bad", message: "Fotoğraf bulanık. Telefonu sabit tutup tekrar çekin." };
-    }
-    if (glare > THRESHOLDS.glareWarn) {
-        return { level: "warn", message: "Hafif parlama görünüyor; açıyı değiştirip tekrar çekmeniz daha iyi olur." };
     }
     if (sharpness < THRESHOLDS.blurWarn) {
         return { level: "warn", message: "Netlik sınırda; bilgiler okunmuyorsa tekrar çekin." };
     }
     if (brightness < THRESHOLDS.darkWarn) {
         return { level: "warn", message: "Fotoğraf karanlık; daha aydınlık bir yerde tekrar çekin." };
-    }
-    if (brightness > THRESHOLDS.brightWarn) {
-        return { level: "warn", message: "Fotoğraf fazla parlak; flaşı kapatıp tekrar çekin." };
     }
     return { level: "good", message: "Netlik iyi görünüyor." };
 };
@@ -78,15 +67,10 @@ export const analyzeImageQuality = async (source) => {
         const { data } = ctx.getImageData(0, 0, width, height);
         const gray = toGray(data, width, height);
 
-        let bright = 0;
         let total = 0;
-        for (let i = 0; i < gray.length; i += 1) {
-            total += gray[i];
-            if (gray[i] > 248) bright += 1;
-        }
+        for (let i = 0; i < gray.length; i += 1) total += gray[i];
         const metrics = {
             sharpness: Math.round(laplacianVariance(gray, width, height)),
-            glare: bright / gray.length,
             brightness: total / gray.length,
         };
         return { ...metrics, ...verdict(metrics) };

@@ -29,7 +29,12 @@ export const FileDropzone = ({
     const [cameraOpen, setCameraOpen] = useState(false);
     const [pendingBad, setPendingBad] = useState(null);
     const [qualityNote, setQualityNote] = useState(null);
-    const cameraSupported = Boolean(capture && navigator.mediaDevices?.getUserMedia);
+    // Kamera secenegi yalnizca dokunmatik cihazlarda (telefon/tablet) gosterilir
+    const [cameraSupported] = useState(
+        () =>
+            Boolean(capture && navigator.mediaDevices?.getUserMedia) &&
+            Boolean(window.matchMedia?.("(pointer: coarse)").matches)
+    );
 
     const handleFiles = async (files, { skipQualityGate = false } = {}) => {
         const file = files?.[0];
@@ -244,7 +249,7 @@ export const FileDropzone = ({
                     {cameraSupported && (
                         <Button
                             type="button"
-                            className="order-first h-12 w-full text-base sm:order-last sm:h-11 sm:text-sm"
+                            className="h-12 w-full text-base"
                             onClick={() => setCameraOpen(true)}
                             data-testid={`${testId}-camera-button`}
                         >

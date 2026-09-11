@@ -5,21 +5,35 @@ import { PHOTO_EXAMPLES, PhotoGuide } from "./PhotoGuide";
 import { PASSPORT_EXAMPLES, PassportGuide } from "./PassportGuide";
 
 const CONFIG = {
-    passport: { examples: PASSPORT_EXAMPLES, title: "Pasaport taraması örnekleri", Guide: PassportGuide },
-    photo: { examples: PHOTO_EXAMPLES, title: "Vesikalık örnekleri", Guide: PhotoGuide },
+    passport: {
+        examples: PASSPORT_EXAMPLES,
+        title: "Pasaport taraması örnekleri",
+        Guide: PassportGuide,
+        warningTitle: "Pasaport okunamadı",
+    },
+    photo: {
+        examples: PHOTO_EXAMPLES,
+        title: "Vesikalık örnekleri",
+        Guide: PhotoGuide,
+        warningTitle: "Fotoğraf uygun bulunmadı",
+    },
 };
 
-/** Yukleme kutusunun altinda kucuk dogru/yanlis onizlemeleri; tiklaninca buyuk rehber acilir. */
-export const UploadExamplesHint = ({ type, testId }) => {
+/** Yalnizca belge okunamadiginda uyari olarak cikar; tiklaninca buyuk rehber acilir. */
+export const UploadExamplesHint = ({ type, testId, warning = false }) => {
     const [open, setOpen] = useState(false);
-    const { examples, title, Guide } = CONFIG[type];
+    const { examples, title, Guide, warningTitle } = CONFIG[type];
 
     return (
         <>
             <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="mt-2 flex w-full items-center gap-3 rounded-lg border border-border bg-card px-2.5 py-2.5 text-left transition-colors hover:border-primary/60 sm:gap-2.5 sm:py-2"
+                className={`mt-2 flex w-full items-center gap-3 rounded-lg border px-2.5 py-2.5 text-left transition-colors sm:gap-2.5 sm:py-2 ${
+                    warning
+                        ? "border-amber-400/70 bg-amber-50 hover:border-amber-500"
+                        : "border-border bg-card hover:border-primary/60"
+                }`}
                 data-testid={testId}
             >
                 <span className="grid grid-cols-2 gap-1.5 sm:flex">
@@ -42,9 +56,13 @@ export const UploadExamplesHint = ({ type, testId }) => {
                     ))}
                 </span>
                 <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold sm:text-xs">Doğru / yanlış örnekler</span>
+                    <span
+                        className={`block text-sm font-bold sm:text-xs ${warning ? "text-amber-900" : ""}`}
+                    >
+                        {warning ? warningTitle : "Doğru / yanlış örnekler"}
+                    </span>
                     <span className="block text-xs leading-4 text-muted-foreground sm:text-[11px]">
-                        Büyütmek için dokunun
+                        {warning ? "Doğru / yanlış örnekleri inceleyin" : "Büyütmek için dokunun"}
                     </span>
                 </span>
             </button>

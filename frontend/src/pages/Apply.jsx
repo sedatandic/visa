@@ -2737,10 +2737,13 @@ export default function Apply() {
                                                                 }}
                                                                 testId={`traveler-${idx}-passport-ai-input`}
                                                             />
-                                                            <UploadExamplesHint
-                                                                type="passport"
-                                                                testId={`traveler-${idx}-passport-examples`}
-                                                            />
+                                                            {(ocr[t.key]?.status === "failed" || !!te.passport) && (
+                                                                <UploadExamplesHint
+                                                                    type="passport"
+                                                                    warning
+                                                                    testId={`traveler-${idx}-passport-examples`}
+                                                                />
+                                                            )}
                                                             </div>
                                                             <div>
                                                             <TravelerPhotoField
@@ -2760,10 +2763,13 @@ export default function Apply() {
                                                                 }}
                                                                 onRetry={() => photoInputs.current[t.key]?.click()}
                                                             />
-                                                            <UploadExamplesHint
-                                                                type="photo"
-                                                                testId={`traveler-${idx}-photo-examples`}
-                                                            />
+                                                            {(photoCheck[t.key]?.status === "warn" || !!te.photo) && (
+                                                                <UploadExamplesHint
+                                                                    type="photo"
+                                                                    warning
+                                                                    testId={`traveler-${idx}-photo-examples`}
+                                                                />
+                                                            )}
                                                             </div>
                                                         </div>
                                                         {ocr[t.key]?.status === "loading" && (

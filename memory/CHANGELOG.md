@@ -3192,3 +3192,17 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
   "Yine de yükle" → yüklendi + amber not; parlamalı dosya → engel + "Parlama var…";
   net pasaport örneği → uyarı çıkmadan yüklendi (yanlış alarm yok); kamera akışında şerit
   ve düğme metinleri doğru.
+
+### 2026-06-18 (38) · Kullanıcı geri bildirimi: parlama uyarısı kaldırıldı, kamera sadece mobil
+- **Parlama uyarısı kaldırıldı** (kullanıcı isteği): beyaz fonlu vesikalıklarda parlak piksel
+  oranı %33'e çıkıp "Parlama var, yazılar okunmuyor" yanlış alarmı veriyordu. `imageQuality.js`
+  artık yalnızca **netlik** (Laplacian varyansı) ve karanlık kontrolü yapıyor; ölçüm:
+  net pasaport 2648, net vesikalık 299, bulanık 1-2 → eşikler (bad <25, warn <60) güvenli.
+- **"Kamerayla çek" yalnızca mobilde**: `pointer: coarse` olmayan cihazlarda (masaüstü web)
+  düğme hiç görünmüyor; masaüstünde sadece dosya seçme/sürükleme kalıyor.
+- **Doğru/yanlış örnekler artık sürekli görünmüyor**: yalnızca pasaport okunamadığında
+  (`ocr.status === "failed"`) ya da fotoğraf kontrolü uyarı verdiğinde / belge eksik olduğunda
+  amber uyarı olarak çıkıyor; başlık "Pasaport okunamadı" / "Fotoğraf uygun bulunmadı".
+- Doğrulama (Playwright, sahte kamera): mobilde kamera düğmeleri var, masaüstünde yok;
+  örnekler başlangıçta gizli, OCR başarısız olunca beliriyor; beyaz fonlu vesikalık ve
+  parlamalı pasaport karesi artık engellenmiyor, bulanık kare hâlâ engelleniyor.
