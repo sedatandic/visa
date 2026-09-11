@@ -284,6 +284,31 @@ class TestProviderWiring:
         monkeypatch.setattr(insurance_provider, "_settings_value", empty)
         monkeypatch.setenv("INSURANCE_PROVIDER", "sigortambudur")
 
+    def test_pdf_failure_after_policy_warns_that_money_was_charged(self, monkeypatch):
+        """Police kesildikten sonra PDF alinamazsa operator tekrar kesmemeli."""
+
+        async def fake_quote(_task, _insured):
+            return "offer-1", "resp-1"
+
+        async def fake_policy(_task, _response_id):
+            return "pol-77"
+
+        async def fake_find(_query):
+            return {"id": "t1"}
+
+        async def boom(_policy_id):
+            raise sigortambudur.SigortambudurError("Poliçe PDF'i alınamadı; elle yükleyin.")
+
+        monkeypatch.setattr(insurance_provider, "_sigortambudur_quote", fake_quote)
+        monkeypatch.setattr(insurance_provider, "_sigortambudur_policy", fake_policy)
+        monkeypatch.setattr(insurance_provider.insurance_tasks_col, "find_one", fake_find)
+        monkeypatch.setattr(insurance_provider.sigortambudur, "policy_pdf_bytes", boom)
+
+        with pytest.raises(sigortambudur.SigortambudurError) as exc:
+            run(insurance_provider._issue_with_sigortambudur({"id": "t1"}, []))
+        message = str(exc.value)
+        assert "ücret çekildi" in message and "pol-77" in message
+
     def test_sigortambudur_is_active_and_api_enabled(self):
         assert run(insurance_provider.active_provider()) == "sigortambudur"
         assert run(insurance_provider.api_enabled()) is True

@@ -283,8 +283,9 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
         "#",
         "Adı Soyadı",
         "Doğum Tarihi",
+        "Doğum Yeri",
         "Pasaport No",
-        "Geçerlilik Tarihi",
+        "Geçerlilik",
         "Vize Türü",
         "Tutar",
     ]
@@ -298,6 +299,8 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
                 Paragraph(str(i), st["body"]),
                 Paragraph(_safe(name), st["value"]),
                 Paragraph(_date(t.get("birth_date")), st["body"]),
+                # Dogum yeri pasaporttan (AI okumasi) gelir; okunamadiysa "-" yazilir
+                Paragraph(_safe(_place(t.get("birth_place"))), st["body"]),
                 Paragraph(_safe(t.get("passport_no")), st["body"]),
                 Paragraph(_date(t.get("passport_expiry")), st["body"]),
                 Paragraph(_safe(t.get("visa_short_name") or t.get("visa_type_name")), st["body"]),
@@ -306,7 +309,7 @@ def _travelers_table(app_doc: dict, st: dict) -> Table:
         )
     table = Table(
         rows,
-        colWidths=_cols(6, 40, 22, 26, 24, 36, 26),
+        colWidths=_cols(6, 30, 20, 18, 22, 20, 38, 26),
         repeatRows=1,
     )
     table.setStyle(
@@ -333,15 +336,16 @@ def _place(value) -> str:
 
 
 def _traveler_extra_pairs(app_doc: dict) -> list:
-    """Zami/portal icin tasinan ek yolcu alanlari (tek yolcuda gosterilir)."""
+    """Zami/portal icin tasinan ek yolcu alanlari (tek yolcuda gosterilir).
+
+    Dogum yeri artik yolcu tablosunda her yolcu icin ayri kolonda yazdigi icin burada
+    tekrarlanmaz.
+    """
     travelers = app_doc.get("travelers") or []
     if len(travelers) != 1:
         return []
     t = travelers[0]
-    return [
-        ("Uyruğu", _nationality(t.get("nationality"))),
-        ("Doğum yeri", _place(t.get("birth_place"))),
-    ]
+    return [("Uyruğu", _nationality(t.get("nationality")))]
 
 
 def _pricing_rows(app_doc: dict) -> list:

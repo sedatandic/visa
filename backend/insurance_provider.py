@@ -265,7 +265,13 @@ async def _issue_with_sigortambudur(task: dict, insured: list) -> str:
     _, response_id = await _sigortambudur_quote(task, insured)
     fresh = await insurance_tasks_col.find_one({"id": task["id"]}) or task
     policy_id = await _sigortambudur_policy(fresh, response_id)
-    pdf = await sigortambudur.policy_pdf_bytes(policy_id)
+    try:
+        pdf = await sigortambudur.policy_pdf_bytes(policy_id)
+    except Exception as exc:
+        # Police kesildi ve ucret cekildi: operator bunu bilmeli, tekrar kesmemeli
+        raise sigortambudur.SigortambudurError(
+            f"Poliçe kesildi ve ücret çekildi (poliçe kodu {policy_id}) ancak PDF alınamadı: {exc}"
+        ) from exc
     file_id = await _store_policy_pdf(task, pdf)
     await _mark_step(task["id"], "policy_pdf", {"file_id": file_id, "size": len(pdf)})
     return file_id

@@ -25,13 +25,20 @@ def get_bundle(bundles, bid):
 # --- 1) Family bundle values ---------------------------------------------------
 class TestFamilyBundle:
     def test_bundle_count_and_family(self, bundles):
+        """Tutarlar canli fiyattan turetilir (fiyatlar panelden yonetiliyor)."""
         assert len(bundles) == 6, f"expected 6 bundles, got {len(bundles)}"
         fam = get_bundle(bundles, "pack_family")
         assert fam is not None
         assert fam["name"] == "Aile Paketi"
         assert fam["quantities"] == {"insurance": 3, "esim": 2, "tour": 0}
-        assert fam["price"] == 2844.0
-        assert fam["total_with_visa"] == 14409.0
+        list_total = round(3 * fam["insurance"]["price"] + 2 * fam["esim"]["price"], 2)
+        assert fam["list_total"] == list_total
+        assert fam["discount"] == round(list_total * 0.1, 2)
+        assert fam["price"] == round(list_total - fam["discount"], 2)
+        f = fam["family"]
+        assert fam["total_with_visa"] == round(
+            f["visa_subtotal"] - f["visa_discount"] + fam["price"], 2
+        )
 
     def test_family_details(self, bundles):
         fam = get_bundle(bundles, "pack_family")
@@ -39,16 +46,25 @@ class TestFamilyBundle:
         assert f["adults"] == 2
         assert f["children"] == 1
         assert f["traveler_count"] == 3
-        assert f["visa_subtotal"] == 12850.0
-        assert f["visa_discount"] == 1285.0
         assert f["visa_discount_rate"] == 0.1
+        assert f["visa_discount"] == round(f["visa_subtotal"] * 0.1, 2)
         assert f["child_visa"]["id"] == "visa_30_child"
-        assert f["child_visa"]["price"] == 2470.0
+        assert f["child_visa"]["price"] > 0
+        # 2 yetiskin + 1 cocuk vizesi toplami (yetiskin vizesi paketin "visa" alaninda)
+        assert f["visa_subtotal"] == round(
+            2 * fam["visa"]["price"] + f["child_visa"]["price"], 2
+        )
 
     def test_pack_standard_unchanged(self, bundles):
         std = get_bundle(bundles, "pack_standard")
-        assert std["price"] == 1170.0
-        assert std["total_with_visa"] == 6360.0
+        list_total = round(
+            std["quantities"]["insurance"] * std["insurance"]["price"]
+            + std["quantities"]["esim"] * std["esim"]["price"],
+            2,
+        )
+        assert std["list_total"] == list_total
+        assert std["price"] == round(list_total - std["discount"], 2)
+        assert std["total_with_visa"] > std["price"]
         assert std.get("family") is None
 
 

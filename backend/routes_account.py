@@ -34,6 +34,7 @@ from emailer import draft_saved_html, login_code_html, send_email, subject_with_
 from rate_limit import allow as rate_allow
 from rate_limit import check as rate_check
 from rate_limit import client_ip, code_request_window
+from store_catalog import customer_order_view
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -260,7 +261,7 @@ async def account_orders(email: str = Depends(require_customer)) -> dict:
     cursor = orders_col.find(
         {"contact.email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}}
     ).sort("created_at", -1)
-    items = [serialize_doc(doc) async for doc in cursor]
+    items = [customer_order_view(serialize_doc(doc)) async for doc in cursor]
     return {"items": items}
 
 

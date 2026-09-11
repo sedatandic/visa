@@ -43,7 +43,9 @@ from store_catalog import (  # noqa: F401 - tests/other modules re-import from h
     DEFAULT_PRODUCTS,
     KIND_LABELS,
     MAX_QTY,
+    customer_order_view,
     product_list,
+    public_products,
     tour_schedule,
 )
 
@@ -350,7 +352,7 @@ async def get_products(kind: Optional[str] = None) -> dict:
         raise HTTPException(400, "Gecersiz urun tipi.")
     items = await product_list(kind)
     return {
-        "items": items,
+        "items": public_products(items),
         "fx": await get_fx(),
         "bundle": BUNDLE_DISCOUNT,
         "visa_insurance": WITH_VISA_INSURANCE_DISCOUNT,
@@ -532,7 +534,7 @@ async def create_order(payload: OrderCreateIn, request: Request) -> dict:
     bank = await _bank_transfer_details(payload.payment_method)
     view = serialize_doc(doc)
     await _notify_new_order(doc, view, bank)
-    return {"order": view, "bank": bank}
+    return {"order": customer_order_view(view), "bank": bank}
 
 
 class CartSnapshotIn(BaseModel):
@@ -718,7 +720,7 @@ async def get_order(reference: str, email: str) -> dict:
     settings_doc = await settings_col.find_one({"key": "bank_transfer"})
     bank = (settings_doc or {}).get("value") or BANK_TRANSFER
     return {
-        "order": serialize_doc(doc),
+        "order": customer_order_view(serialize_doc(doc)),
         "bank": bank if (doc.get("payment") or {}).get("method") == "bank_transfer" else None,
     }
 

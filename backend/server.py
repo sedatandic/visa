@@ -74,19 +74,25 @@ async def seed_visa_types() -> None:
 
 
 async def seed_products() -> None:
-    """eSIM ve sigorta urunlerini bir kez olusturur; fiyatlar admin tarafindan yonetilir."""
+    """eSIM ve sigorta urunlerini bir kez olusturur; fiyatlar admin tarafindan yonetilir.
+
+    Para alanlari (`price_try`, `cost_try`, `price_usd`) yalnizca ilk olusturmada yazilir;
+    aksi halde her yeniden baslatmada panelden girilen fiyatlar katalog degerine donuyordu.
+    """
     from store_catalog import DEFAULT_PRODUCTS
 
     for product in DEFAULT_PRODUCTS:
         doc = dict(product)
-        price_usd = doc.pop("price_usd", None)
-        popular = doc.pop("popular", False)
+        insert_only = {
+            "price_usd": doc.pop("price_usd", None),
+            "price_try": doc.pop("price_try", None),
+            "cost_try": doc.pop("cost_try", None),
+            "popular": doc.pop("popular", False),
+            "active": True,
+        }
         await products_col.update_one(
             {"id": doc["id"]},
-            {
-                "$set": doc,
-                "$setOnInsert": {"price_usd": price_usd, "popular": popular, "active": True},
-            },
+            {"$set": doc, "$setOnInsert": insert_only},
             upsert=True,
         )
     logger.info("store products seeded (%d)", len(DEFAULT_PRODUCTS))

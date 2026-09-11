@@ -241,6 +241,31 @@ async def product_list(kind: Optional[str] = None, include_inactive: bool = Fals
         items.append(item)
     return items
 
+
+# Musteriye/rakibe gosterilmemesi gereken tedarik alanlari (maliyet ve saglayici kodlari)
+PRIVATE_PRODUCT_FIELDS = ("cost_try", "cost_updated_at", "cost_source", "provider_urun_id", "provider")
+
+
+def public_products(items: list) -> list:
+    """Herkese acik yanitlar icin urun listesinden maliyet/saglayici alanlarini temizler."""
+    public = []
+    for item in items:
+        row = dict(item)
+        for field in PRIVATE_PRODUCT_FIELDS:
+            row.pop(field, None)
+        public.append(row)
+    return public
+
+
+def customer_order_view(order: dict) -> dict:
+    """Siparis kaydini musteriye gosterilecek hale getirir (satir maliyetleri gizlenir)."""
+    view = dict(order or {})
+    view["items"] = [
+        {k: v for k, v in dict(line).items() if k not in {"unit_cost", "unit_price_usd"}}
+        for line in (view.get("items") or [])
+    ]
+    return view
+
 def tour_schedule(product: dict, scheduled_date, scheduled_time, start=None, end=None) -> dict:
     """Tur urunleri icin secilen tarih/saati dogrular ve satira eklenecek alanlari dondurur.
 

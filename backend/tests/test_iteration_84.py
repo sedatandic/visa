@@ -106,7 +106,8 @@ class TestApplicationFourTravelers:
         visa_id = v["id"]
         unit = float(v["price"])
 
-        fids = [self._upload_png(s) for _ in range(2)]
+        # Her yolcu kendi belgesini yuklemeli (mukerrer belge kurali API'de engelli)
+        fids = [(self._upload_png(s), self._upload_png(s)) for _ in range(4)]
 
         def traveler_tpl(i):
             return {
@@ -119,8 +120,8 @@ class TestApplicationFourTravelers:
                 "passport_no": f"U1234567{i}",
                 "passport_expiry": "2032-12-31",
                 "visa_type_id": visa_id,
-                "passport_file_id": fids[0],
-                "photo_file_id": fids[1],
+                "passport_file_id": fids[i][0],
+                "photo_file_id": fids[i][1],
             }
         payload = {
             "contact": {

@@ -30,21 +30,21 @@ YOLCULAR VE VİZE SEÇİMİ
 #
 Adı Soyadı
 Doğum Tarihi
+Doğum Yeri
 Pasaport No
-Geçerlilik Tarihi
+Geçerlilik
 Vize Türü
 Tutar
 1
 Ayşe Yılmaz
 01.01.1990
+Ankara
 U11223344
 09.05.2031
 60 Gün Tek Giriş
 9.880,00 TL
 Uyruğu
 Türkiye
-Doğum yeri
-Ankara
 HİZMET BEDELİ DÖKÜMÜ
 Vize bedelleri
 9.880,00 TL

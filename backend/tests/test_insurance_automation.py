@@ -70,10 +70,11 @@ def test_insurance_products(api) -> None:
         assert pid in items, f"missing {pid}"
         p = items[pid]
         assert p.get("validity_days") == want["days"], f"{pid} days"
-        assert p.get("cost_try") is not None and float(p["cost_try"]) > 0, f"{pid} cost missing"
+        # Maliyet herkese acik yanitta gorunmez (2026-06-18); marj kontrolu
+        # admin raporunda yapilir (`test_insurance_report`)
+        assert "cost_try" not in p, f"{pid} maliyet herkese acik yanitta"
         price = float(p.get("price_try") or p.get("price") or 0)
-        # satis fiyati = maliyet x2 (10 TL'ye yuvarlanir)
-        assert abs(price - round(float(p["cost_try"]) * 2 / 10) * 10) < 0.01, f"{pid} price {price}"
+        assert price > 0, f"{pid} price {price}"
 
 
 # 2) kar raporu
@@ -88,8 +89,9 @@ def test_insurance_report(admin) -> None:
         assert row["cost_try"] > 0
         assert row["price_try"] > 0
         assert row["profit_try"] == round(row["price_try"] - row["cost_try"], 2)
-        # ~%100 marj
-        assert row["margin_pct"] is not None and 90 <= row["margin_pct"] <= 110
+        # Fiyatlar panelden yonetiliyor; marj en az %100 olmali (2026-06: yeni saglayici
+        # maliyetleri dustu, satis fiyatlari korundu -> marj daha yuksek)
+        assert row["margin_pct"] is not None and row["margin_pct"] >= 90
     totals = body["totals"]
     assert set(totals.keys()) >= {"sold_quantity", "revenue_try", "cost_total_try", "profit_total_try"}
 

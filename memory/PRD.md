@@ -1874,3 +1874,33 @@ fotograflari, ATV +40 USD ek secenek.
   Panel ekraninda hicbir yerde "Tamamliyo" gecmiyor (dogrulandi).
 - Not: `test_iteration_101/102/84/test_uae_defaults` fiyat beklentileri ESKI oldugu icin
   hâlâ kirmizi; bu hatalar bu isten once de vardi (marj korumasi fiyatlari yukseltmisti).
+
+## 2026-06-18 (fork, 18) · Sigortambudur canli + fiyat/maliyet duzeltmeleri + form PDF
+- **Sigortambudur canli**: kullanici `clientSecret`i verdi, `.env`e islendi. Baglanti testi
+  basarili (IP zaten yetkili): acenteye acik sirketler UNICO / TÜRK NİPPON / GIG / QUICK,
+  BAE ulke kodu 228, odeme `agency_credit`, kapsam Tum Dunya.
+- **Canli teklif testi** (Sedat Andıç TC ile, police KESILMEDI): gercek maliyetler
+  7g 71,08 · 15g 81,23 · 30g 93,65 · 60g 107,18 TL (Quick/GIG en ucuz). Turk Nippon
+  "cep telefonu zorunlu" diyerek eleniyor (dokumanda musteri telefonu alani yok).
+  Sahte TC kabul edilmiyor (MERNIS dogrulamasi) -> otomatik testler teklif adimini mock ile gecer.
+- **Fiyat karari (kullanici: "b")**: satis fiyatlari KORUNDU (390/450/510/740 TL), yalnizca
+  maliyetler guncellendi -> police basina kar 319-633 TL.
+- **Otomatik kesim KAPALI** (guvenlik): ilk gercek siparisde police panelden tek tikla kesilir.
+  Police kesilip PDF alinamazsa hata mesaji artik "police kesildi ve ucret cekildi (kod X)"
+  diyerek mukerrer kesimi onluyor.
+- **HATA DUZELTME (onemli)**: `seed_products()` her sunucu acilisinda katalogdaki
+  `price_try`/`cost_try`/`price_usd` degerlerini `$set` ile yaziyor, panelden girilen fiyatlari
+  eziyordu. Para alanlari artik yalnizca ilk olusturmada yazilir
+  (`tests/test_iteration_146_price_persistence.py`).
+- **Maliyet sizintisi kapatildi** (guvenlik denetimi P3): `GET /api/products` ve musteriye
+  donen siparis yanitlarindan `cost_try` / `unit_cost` / `provider` alanlari temizlendi
+  (`store_catalog.public_products`, `store_catalog.customer_order_view`; `/orders`,
+  `/orders/{ref}`, `/account/orders`).
+- **Form PDF · dogum yeri**: "Doğum Yeri" artik yolcu tablosunda HER yolcu icin ayri kolon
+  (pasaport AI okumasindan gelir, okunamazsa "-"). Tek yolcuda gosterilen tekrar eden
+  "Doğum yeri" satiri kaldirildi; kolon genislikleri yeniden dengelendi (tutar tek satirda).
+  Altin kopyalar yenilendi.
+- **Menu ikonu**: "Hizmetler" restoran cani (ConciergeBell) yerine `HandHelping`.
+- **Eski testler tazelendi**: 101/102 aile paketi tutarlari artik canli fiyattan turetiliyor,
+  84/uae_defaults her yolcuya ayri belge yukluyor (mukerrer belge kurali), insurance_automation
+  marj kontrolu ">= %90" ve maliyet admin ucundan okunuyor. **Tum backend testleri yesil (642).**

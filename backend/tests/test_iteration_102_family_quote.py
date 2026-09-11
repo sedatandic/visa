@@ -27,15 +27,19 @@ class TestQuoteFamily:
         assert r.status_code == 200, r.text
         it = r.json()["item"]
         assert it["quantities"] == {"insurance": 3, "esim": 2, "tour": 0}
-        assert it["list_total"] == 3160.0
-        assert it["discount"] == 316.0
-        assert it["price"] == 2844.0
+        # Tutarlar canli fiyattan turetilir (fiyatlar panelden yonetiliyor)
+        list_total = round(3 * it["insurance"]["price"] + 2 * it["esim"]["price"], 2)
+        assert it["list_total"] == list_total
+        assert it["discount"] == round(list_total * 0.1, 2)
+        assert it["price"] == round(list_total - it["discount"], 2)
         f = it["family"]
-        assert f["visa_subtotal"] == 12850.0
-        assert f["visa_discount"] == 1285.0
+        assert f["visa_subtotal"] == round(2 * it["visa"]["price"] + f["child_visa"]["price"], 2)
+        assert f["visa_discount"] == round(f["visa_subtotal"] * 0.1, 2)
         assert f["visa_discount_rate"] == 0.1
         assert f["traveler_count"] == 3
-        assert it["total_with_visa"] == 14409.0
+        assert it["total_with_visa"] == round(
+            f["visa_subtotal"] - f["visa_discount"] + it["price"], 2
+        )
         # tour object exposed but not selected
         assert it["tour"] is not None
         assert it["tour"]["selected"] is False
@@ -56,10 +60,13 @@ class TestQuoteFamily:
         assert it["discount"] == round(list_total * 0.1, 2)
         assert it["price"] == round(list_total * 0.9, 2)
         assert it["tour"]["selected"] is True
-        # visa untouched
-        assert it["family"]["visa_subtotal"] == 12850.0
-        assert it["family"]["visa_discount"] == 1285.0
-        assert it["total_with_visa"] == round(12850.0 - 1285.0 + list_total * 0.9, 2)
+        # vize tarafi degismez: 2 yetiskin + 1 cocuk
+        f = it["family"]
+        assert f["visa_subtotal"] == round(2 * it["visa"]["price"] + f["child_visa"]["price"], 2)
+        assert f["visa_discount"] == round(f["visa_subtotal"] * 0.1, 2)
+        assert it["total_with_visa"] == round(
+            f["visa_subtotal"] - f["visa_discount"] + list_total * 0.9, 2
+        )
 
     def test_3a_2c_with_tour_family_tier_15pct(self):
         r = _quote(bundle_id="pack_family", adults=3, children=2, tour="true")
@@ -73,10 +80,12 @@ class TestQuoteFamily:
         assert it["price"] == round(list_total * 0.9, 2)
         f = it["family"]
         assert f["visa_discount_rate"] == 0.15
-        # visa subtotal 3*5190 + 2*2470 = 15570+4940 = 20510 ; 15% = 3076.5
-        assert f["visa_subtotal"] == 20510.0
-        assert f["visa_discount"] == 3076.5
-        assert it["total_with_visa"] == round(20510.0 - 3076.5 + list_total * 0.9, 2)
+        # 3 yetiskin + 2 cocuk vizesi; %15 aile indirimi
+        assert f["visa_subtotal"] == round(3 * it["visa"]["price"] + 2 * f["child_visa"]["price"], 2)
+        assert f["visa_discount"] == round(f["visa_subtotal"] * 0.15, 2)
+        assert it["total_with_visa"] == round(
+            f["visa_subtotal"] - f["visa_discount"] + list_total * 0.9, 2
+        )
 
     def test_4a_2c_15pct_tier(self):
         r = _quote(bundle_id="pack_family", adults=4, children=2, tour="false")

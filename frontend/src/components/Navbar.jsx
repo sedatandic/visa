@@ -4,7 +4,7 @@ import {
     ArrowRight,
     BookOpen,
     ChevronDown,
-    ConciergeBell,
+    HandHelping,
     FileCheck2,
     HelpCircle,
     Info,
@@ -46,7 +46,7 @@ const MENU_GROUPS = [
         label: "Vize Bilgileri",
         items: [
             { to: "/gerekli-belgeler", label: "Gerekli Belgeler", icon: BookOpen },
-            { to: "/hizmetler", label: "Hizmetler", icon: ConciergeBell },
+            { to: "/hizmetler", label: "Hizmetler", icon: HandHelping },
             { to: "/sss", label: "Sıkça Sorulan Sorular", icon: HelpCircle },
         ],
     },

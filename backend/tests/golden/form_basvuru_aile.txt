@@ -36,13 +36,15 @@ YOLCULAR VE VİZE SEÇİMİ
 #
 Adı Soyadı
 Doğum Tarihi
+Doğum Yeri
 Pasaport No
-Geçerlilik Tarihi
+Geçerlilik
 Vize Türü
 Tutar
 1
 Sedat Andıç
 11.04.1985
+İstanbul
 U12345678
 15.03.2032
 30 Gün Tek Giriş
@@ -50,6 +52,7 @@ U12345678
 2
 Elif Andıç (çocuk)
 02.07.2018
+-
 U87654321
 20.01.2030
 30 Gün Tek Giriş (çocuk)

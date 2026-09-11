@@ -60,19 +60,25 @@ class TestInsuranceCatalog:
         for pid in EXPECTED_DAYS:
             assert pid in ids, f"Missing product {pid}"
 
-    def test_prices_and_currency(self, session):
-        """Fiyatlar saglayici maliyetinden %100 marj ile uretilir (10 TL'ye yuvarlanir)."""
+    def test_prices_and_currency(self, session, admin_token):
+        """Satis fiyati TL, maliyetin en az %100 uzerinde ve maliyet herkese acik degil."""
         r = session.get(f"{API}/products", params={"kind": "insurance"})
         items = {p["id"]: p for p in r.json()["items"]}
+        admin_rows = session.get(
+            f"{API}/admin/insurance/provider", headers={"Authorization": f"Bearer {admin_token}"}
+        ).json()["products"]
+        costs = {row["id"]: float(row.get("cost_try") or 0) for row in admin_rows}
         for pid, expected_days in EXPECTED_DAYS.items():
             p = items[pid]
             assert p["currency"] == "TRY", f"{pid} currency should be TRY"
             assert int(p["validity_days"]) == expected_days
             assert float(p["price"]) == float(p["price_try"])
-            cost = float(p["cost_try"])
-            assert cost > 0, f"{pid} cost_try missing"
-            assert abs(float(p["price_try"]) - round(cost * 2 / 10) * 10) < 0.01, (
-                f"{pid} price={p['price_try']} cost={cost} (%100 marj beklenir)"
+            # Maliyet ve saglayici bilgisi musteriye/rakibe gosterilmez
+            assert "cost_try" not in p, f"{pid} maliyet herkese acik yanitta gorunuyor"
+            cost = costs[pid]
+            assert cost > 0, f"{pid} cost_try missing (admin)"
+            assert float(p["price_try"]) >= cost * 2, (
+                f"{pid} price={p['price_try']} cost={cost} (en az %100 marj beklenir)"
             )
             # sigorta USD dönüşümü uygulanmıyor: price_usd olmamalı veya 0 olmalı
             assert not p.get("price_usd"), f"{pid} should NOT have price_usd (got {p.get('price_usd')})"
@@ -129,6 +135,8 @@ class TestInsuranceOrder:
         assert float(line["total"]) == round(unit_price * 2, 2)
         assert order["currency"] == "TRY"
         assert len(order["insured"]) == 2
+        # Satir maliyeti musteri yanitinda gorunmez
+        assert "unit_cost" not in line
         # validity 30 gün
         assert line["starts_on"] == "2026-03-01"
         assert line["ends_on"] == "2026-03-30"

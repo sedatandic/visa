@@ -33,11 +33,12 @@ def uploaded_files(api):
         "e4e5e6e7e8e9eaf1f2f3f4f5f6f7f8f9faffda0008010100003f00fbd0ffd9"
     )
     ids = {}
-    for key in ("passport", "photo", "ticket", "hotel"):
+    # "passport2"/"photo2": ikinci yolcu icin ayri dosya (mukerrer belge kurali)
+    for key in ("passport", "photo", "ticket", "hotel", "passport2", "photo2"):
         r = api.post(
             f"{BASE_URL}/api/uploads",
             files={"file": ("t.jpg", io.BytesIO(jpg), "image/jpeg")},
-            data={"doc_type": key},
+            data={"doc_type": key.rstrip("2")},
         )
         assert r.status_code == 200, f"upload {key} failed: {r.text}"
         ids[key] = r.json()["file_id"]
@@ -145,8 +146,8 @@ def test_create_application_child_defaults_student(api, uploaded_files):
             "passport_no": "U87654321",
             "passport_expiry": "2030-01-01",
             "visa_type_id": "visa_30_single",
-            "passport_file_id": uploaded_files["passport"],
-            "photo_file_id": uploaded_files["photo"],
+            "passport_file_id": uploaded_files["passport2"],
+            "photo_file_id": uploaded_files["photo2"],
         }
     )
     r = api.post(f"{BASE_URL}/api/applications", json=payload)

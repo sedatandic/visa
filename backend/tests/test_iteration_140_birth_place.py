@@ -120,6 +120,7 @@ class TestFormPdf:
 
         data = application_pdf.build_application_pdf(app_doc)
         text = PdfReader(io.BytesIO(data)).pages[0].extract_text()
-        assert "Doğum yeri" in text
+        # 2026-06-18: dogum yeri artik yolcu tablosunda her yolcu icin kolon olarak yazilir
+        assert "Doğum Yeri" in text
         assert "Istanbul" in text
         assert "ISTANBUL" not in text
