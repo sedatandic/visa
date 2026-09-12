@@ -246,19 +246,16 @@ export const FileDropzone = ({
                             </div>
                         </div>
                     )}
-                    {cameraSupported && (
-                        <Button
-                            type="button"
-                            className="h-12 w-full text-base"
-                            onClick={() => setCameraOpen(true)}
-                            data-testid={`${testId}-camera-button`}
-                        >
-                            <Camera className="mr-2 h-5 w-5" /> Kamerayla çek
-                        </Button>
-                    )}
-                    <button
-                        type="button"
+                    <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => inputRef.current?.click()}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                inputRef.current?.click();
+                            }
+                        }}
                         onDragOver={(e) => {
                             e.preventDefault();
                             setDragOver(true);
@@ -269,7 +266,7 @@ export const FileDropzone = ({
                             setDragOver(false);
                             handleFiles(e.dataTransfer.files);
                         }}
-                        className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-9 text-center transition-colors duration-150 ${
+                        className={`flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-9 text-center transition-colors duration-150 ${
                             dragOver ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/50"
                         }`}
                         data-testid={`${testId}-dropzone`}
@@ -288,15 +285,30 @@ export const FileDropzone = ({
                                         <UploadCloud className="h-5 w-5 text-primary" />
                                     )}
                                 </span>
-                                <span className="rounded-full bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary">
-                                    Dosya Seç
+                                <span className="flex items-center justify-center gap-2">
+                                    <span className="whitespace-nowrap rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary sm:px-4 sm:text-sm">
+                                        Dosya Seç
+                                    </span>
+                                    {cameraSupported && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setCameraOpen(true);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-colors duration-150 hover:bg-primary/20 sm:px-4 sm:text-sm"
+                                            data-testid={`${testId}-camera-button`}
+                                        >
+                                            <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Kamerayla çek
+                                        </button>
+                                    )}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
                                     Sürükleyip bırakabilirsiniz · JPG / PNG / PDF · Maks. 10 MB
                                 </span>
                             </>
                         )}
-                    </button>
+                    </div>
                 </div>
             )}
 

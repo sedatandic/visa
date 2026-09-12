@@ -167,7 +167,7 @@ export const AdminLayout = ({ children, title, description, actions = null }) =>
                 <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-card lg:flex">
                     <div className="flex h-[68px] items-center border-b border-border px-5">
                         <Link to="/admin" className="flex items-center gap-2.5">
-                            <BrandMark />
+                            <BrandMark compact />
                         </Link>
                     </div>
                     <div className="flex-1 overflow-y-auto px-3 py-5">
@@ -204,7 +204,7 @@ export const AdminLayout = ({ children, title, description, actions = null }) =>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-[86vw] max-w-xs overflow-y-auto p-0">
                                     <div className="flex h-[68px] items-center border-b border-border px-5">
-                                        <BrandMark />
+                                        <BrandMark compact />
                                     </div>
                                     <div className="px-3 py-5">
                                         <NavList badges={badges} />

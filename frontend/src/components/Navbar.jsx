@@ -74,7 +74,7 @@ const CHILD_GUIDE_GROUP_LABEL = "Çocuk Vizeleri (18 yaş altı)";
 const testId = (to) => `nav-link-${to.replace(/^\//, "").replaceAll("/", "-")}`;
 
 const navLinkClass = ({ isActive }) =>
-    `whitespace-nowrap rounded-lg px-2 py-2 text-lg font-semibold transition-colors duration-150 focus-visible:outline-none ${
+    `whitespace-nowrap rounded-lg px-2 py-2 text-base font-semibold transition-colors duration-150 focus-visible:outline-none ${
         isActive
             ? "bg-primary/10 text-primary"
             : "text-foreground/75 hover:bg-muted hover:text-foreground"
@@ -134,7 +134,7 @@ export const Navbar = () => {
             data-testid="site-navbar"
         >
             <div className="h-px w-full bg-border" aria-hidden="true" />
-            <div className="mx-auto flex h-[84px] w-full max-w-[1560px] items-end justify-between gap-2 px-4 pb-3 sm:h-[96px] sm:gap-4 sm:px-6 sm:pb-3.5 lg:h-[108px]">
+            <div className="mx-auto flex h-[84px] w-full max-w-[1560px] items-end justify-between gap-2 px-4 pb-3 sm:h-[104px] sm:gap-4 sm:px-6 sm:pb-3.5 lg:h-[120px]">
                 <Link
                     to="/"
                     onClick={goHomeTop}
@@ -148,13 +148,13 @@ export const Navbar = () => {
                     to="/"
                     onClick={goHomeTop}
                     aria-label="Ana sayfaya dön"
-                    className="hidden min-w-0 flex-1 items-center justify-start pb-1 min-[360px]:flex sm:pb-1.5 lg:pb-[2px]"
+                    className="hidden min-w-0 flex-1 items-end justify-start pb-[2px] min-[360px]:flex"
                     data-testid="brand-flag-pair"
                 >
                     <span className="flex items-center gap-1 lg:gap-2">
-                        <TrFlag className="h-5 w-10 min-[390px]:h-6 min-[390px]:w-12 min-[430px]:h-7 min-[430px]:w-14 min-[560px]:h-14 min-[560px]:w-28 sm:h-16 sm:w-32 lg:h-20 lg:w-40 xl:h-[46px] xl:w-[92px] min-[1400px]:h-14 min-[1400px]:w-28" />
-                        <ArrowRight className="h-3.5 w-3.5 shrink-0 text-primary lg:h-5 lg:w-5" />
-                        <UaeFlag className="h-5 w-10 min-[390px]:h-6 min-[390px]:w-12 min-[430px]:h-7 min-[430px]:w-14 min-[560px]:h-14 min-[560px]:w-28 sm:h-16 sm:w-32 lg:h-20 lg:w-40 xl:h-[46px] xl:w-[92px] min-[1400px]:h-14 min-[1400px]:w-28" />
+                        <TrFlag className="h-[22px] w-[44px] min-[390px]:h-6 min-[390px]:w-12 min-[430px]:h-[29px] min-[430px]:w-[58px] min-[560px]:h-[38px] min-[560px]:w-[76px] sm:h-11 sm:w-[88px] lg:h-[55px] lg:w-[110px] xl:h-[51px] xl:w-[102px] min-[1400px]:h-[55px] min-[1400px]:w-[110px]" />
+                        <ArrowRight className="h-3 w-3 shrink-0 text-primary lg:h-5 lg:w-5" />
+                        <UaeFlag className="h-[22px] w-[44px] min-[390px]:h-6 min-[390px]:w-12 min-[430px]:h-[29px] min-[430px]:w-[58px] min-[560px]:h-[38px] min-[560px]:w-[76px] sm:h-11 sm:w-[88px] lg:h-[55px] lg:w-[110px] xl:h-[51px] xl:w-[102px] min-[1400px]:h-[55px] min-[1400px]:w-[110px]" />
                     </span>
                 </Link>
 
@@ -171,7 +171,7 @@ export const Navbar = () => {
                             <button
                                 type="button"
                                 data-testid="navbar-more-menu-trigger"
-                                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-2 text-lg font-semibold transition-colors duration-150 focus-visible:outline-none ${
+                                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-2 text-base font-semibold transition-colors duration-150 focus-visible:outline-none ${
                                     menuActive
                                         ? "bg-primary/10 text-primary"
                                         : "text-foreground/75 hover:bg-muted hover:text-foreground"
@@ -219,7 +219,7 @@ export const Navbar = () => {
                     <a
                         href={contact.phoneHref}
                         aria-label={`Telefon: ${contact.phone}`}
-                        className="hidden items-center gap-2 whitespace-nowrap rounded-lg px-2 py-2 text-lg font-semibold text-foreground/75 transition-colors duration-150 hover:text-primary 2xl:flex"
+                        className="hidden items-center gap-2 whitespace-nowrap rounded-lg px-2 py-2 text-base font-semibold text-foreground/75 transition-colors duration-150 hover:text-primary 2xl:flex"
                         data-testid="navbar-phone-link"
                     >
                         <Phone className="h-4 w-4 text-[hsl(var(--brand-copper))]" aria-hidden="true" />
@@ -243,18 +243,21 @@ export const Navbar = () => {
                             <Menu className="h-5 w-5" />
                         </button>
                     </SheetTrigger>
-                    <SheetContent side="right" className="w-[88vw] max-w-sm overflow-y-auto p-0">
+                    <SheetContent
+                        side="right"
+                        className="w-[94vw] max-w-[26rem] overflow-y-auto p-0 [&>button]:top-[30px] min-[390px]:[&>button]:top-[32px] min-[430px]:[&>button]:top-[35px]"
+                    >
                         <SheetTitle className="sr-only">Menü</SheetTitle>
                         <SheetDescription className="sr-only">
                             Site menüsü: vize bilgileri, rehberler ve iletişim bağlantıları
                         </SheetDescription>
                         <div className="flex h-full flex-col" data-testid="mobile-menu">
-                            <div className="flex items-center gap-2 border-b border-border py-4 pl-4 pr-11">
+                            <div className="flex items-end gap-2 border-b border-border py-4 pl-3 pr-9">
                                 <BrandMark compact />
-                                <span className="flex shrink-0 items-center gap-1">
-                                    <TrFlag className="h-7 w-14 min-[390px]:h-8 min-[390px]:w-16 min-[430px]:h-9 min-[430px]:w-[72px]" />
+                                <span className="mb-[2px] flex shrink-0 items-center gap-1">
+                                    <TrFlag className="h-[25px] w-[50px] min-[390px]:h-7 min-[390px]:w-14 min-[430px]:h-[30px] min-[430px]:w-[60px]" />
                                     <ArrowRight className="h-3 w-3 shrink-0 text-primary" />
-                                    <UaeFlag className="h-7 w-14 min-[390px]:h-8 min-[390px]:w-16 min-[430px]:h-9 min-[430px]:w-[72px]" />
+                                    <UaeFlag className="h-[25px] w-[50px] min-[390px]:h-7 min-[390px]:w-14 min-[430px]:h-[30px] min-[430px]:w-[60px]" />
                                 </span>
                             </div>
 

@@ -3258,3 +3258,39 @@ sadelestirmemiz gerekiyor" -> secilen plan (a): tek oneri blogu + acilir katalog
 - Ölçüm doğrulaması (Playwright, bayrak bitiş X'i ile menü başlangıç X'i): 360/390/430/
   560/640/768/1024/1280/1400/1536/1680/1920/2560 px → hiçbirinde çakışma yok
   (en dar pay 1280'de 22 px, 1536'da 34 px).
+- (40 düzeltmesi) Kullanıcı geri bildirimleriyle son hâl: bayrak yüksekliği artık logonun
+  **"DUBAI Vize Hattı" yazı bandı** kadar (logo PNG'sinde yazı %39.6-%97.3 arası →
+  yüksekliğin ~%57'si). Bayrakların alt kenarı yazının alt hizasında, üst kenarı yazının
+  üst hizasında (ölçüm: topDiff/bottomDiff = 0 px). Aradaki ok bayrakların tam ortasında
+  (dikey fark 0 px). Mobil menüdeki kapatma (X) düğmesi logo/bayrak satırıyla aynı hizaya
+  alındı (`[&>button]:top-[26/28/30px]`). Ölçüler: mobil menü logo h-9/h-10/h-11 +
+  bayrak 21/23/25 px; üst navbar 20 → 24 → 29 → 32 → 37 → 46 px (1024+ sabit 46 px).
+  360-2560 px arası 13 genişlikte taşma kontrolü yapıldı.
+
+### 2026-06-19 (41) · "Kamerayla çek" düğmesi "Dosya Seç"in yanına taşındı
+- `FileDropzone`: kamera düğmesi artık yükleme alanının **üstündeki tam genişlik buton**
+  değil, kutunun içinde "Dosya Seç" pilinin **hemen sağında aynı biçimde** duran bir pil
+  (`px-3 text-xs sm:px-4 sm:text-sm`, tek satırda kalır).
+- Dış yükleme alanı `<button>` → `role="button"` + klavye destekli `<div>` oldu (buton
+  içinde buton geçersiz HTML olduğu için); sürükle-bırak, Enter/Space ve tıklama ile dosya
+  seçme korunuyor.
+- Doğrulama (Playwright, dokunmatik taklidi): pil "Dosya Seç"in sağında ve aynı satırda
+  (y farkı 0 px); kamera pilinden tam ekran kamera ekranı açılıyor ve dosya seçici
+  tetiklenmiyor; alana tıklayınca dosya seçici açılıyor; masaüstünde kamera pili görünmüyor.
+
+### 2026-06-19 (42) · Marka ve bayraklar %20 büyütüldü
+- Kullanıcı isteği: "Dubai vize hattı ve bayraklar %20 büyük olsun".
+- **Üst navbar**: logo 56→67 px (560+), 64→77 px (640+), 80→96 px (1024+ ve 1400+),
+  1280-1399'da 88 px. Bayraklar aynı oranda: 32→38, 37→44, 46→55 px (1280-1399: 51 px).
+  Navbar yüksekliği 96→104 (sm) ve 108→120 px (lg) yapıldı; menü bağlantıları
+  `text-lg`→`text-base` (büyüyen markaya yer açmak için).
+- **Mobil menü**: panel 88vw→94vw (max 26rem), logo 36/40/44 → 43/48/53 px, bayraklar
+  21/23/25 → 25/28/30 px; kapatma (X) düğmesi yeni satır ortasına hizalandı.
+- 320-430 px arası üst çubukta logo+bayrak+sepet+menü fiziksel olarak sığmadığı için
+  bayraklar 22/24/29 px'te bırakıldı (taşma payı 10-33 px ölçüldü); bu genişliklerde
+  büyük marka hamburger menüde görünüyor.
+- **Admin paneli** `BrandMark compact` kullanıyor: 68 px'lik üst barda logo 53 px
+  (önceden 80 px ile bara sığmıyordu).
+- Doğrulama (Playwright): 360/390/430/480/560/768/1024/1280/1536/1920 px'te taşma yok,
+  logo navbar sınırının içinde, bayrak üst hizası logo yazısıyla aynı, ok ortada;
+  admin başlığı ve teklif sayfası kontrol edildi.
